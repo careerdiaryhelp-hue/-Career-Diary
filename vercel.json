@@ -11,5 +11,11 @@
       "destination": "https://careerdiary.in/:path*",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ]
 }

@@ -8,7 +8,17 @@ export default function TopTicker({ jobs = [], onSelectJob }) {
   return (
     <>
       <div className="last-date-bar">
-        Last Date Reminder:- <a href="#" onClick={(e) => { e.preventDefault(); if (tickerJobs[0]) onSelectJob(tickerJobs[0].id); }}>Click Here to Apply for Last Date Jobs List : {today}</a>
+        Last Date Reminder:- <a
+          href={tickerJobs[0] ? `/${tickerJobs[0].id}` : '/'}
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+              e.preventDefault();
+              if (tickerJobs[0]) onSelectJob(tickerJobs[0].id);
+            }
+          }}
+        >
+          Click Here to Apply for Last Date Jobs List : {today}
+        </a>
       </div>
       <div className="top-bar">
         <div className="container top-bar-inner">
@@ -20,7 +30,15 @@ export default function TopTicker({ jobs = [], onSelectJob }) {
               {tickerJobs.map((job, idx) => (
                 <span key={job.id}>
                   {idx === 0 ? '|- ' : '|| '}
-                  <a href="#" onClick={(e) => { e.preventDefault(); onSelectJob(job.id); }}>
+                  <a
+                    href={`/${job.id}`}
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                        e.preventDefault();
+                        onSelectJob(job.id);
+                      }
+                    }}
+                  >
                     {job.title}
                   </a>
                 </span>

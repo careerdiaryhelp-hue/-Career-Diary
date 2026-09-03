@@ -19,13 +19,20 @@ export default function HighlightsGrid({
             <div className="empty-state">No featured notifications available.</div>
           ) : (
             topItems.map((job, index) => (
-              <div
+              <a
                 key={job.id}
+                href={`/${job.id}`}
                 className={`banner-card ${boxColors[index] || 'bg-box-pink'}`}
-                onClick={() => onSelectJob(job.id)}
+                style={{ textDecoration: 'none', display: 'flex' }}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                    e.preventDefault();
+                    onSelectJob(job.id);
+                  }
+                }}
               >
                 <div className="banner-title">{job.title}</div>
-              </div>
+              </a>
             ))
           )}
         </div>

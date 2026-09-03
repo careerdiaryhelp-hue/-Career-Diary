@@ -1,7 +1,16 @@
 import React from 'react';
 import { Send } from 'lucide-react';
 
-export default function Footer({ onCategorySelect, onSearchSelect, onStaticPage }) {
+export default function Footer({ onNavigate }) {
+  const handleLink = (e, path) => {
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      if (onNavigate) {
+        onNavigate(path);
+      }
+    }
+  };
+
   return (
     <footer className="main-footer">
       <div className="container footer-content">
@@ -39,22 +48,22 @@ export default function Footer({ onCategorySelect, onSearchSelect, onStaticPage 
         <div className="footer-col">
           <h4>Quick Categories</h4>
           <ul>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>Latest Jobs 2025-2026</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('ADMIT CARD'); }}>Hall Ticket &amp; Admit Cards</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('RESULT / ANSWER KEY'); }}>Results &amp; Answer Key</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('SYLLABUS'); }}>Exam Pattern &amp; Syllabus</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('ADMISSION'); }}>Admission Notifications</a></li>
+            <li><a href="/latest-jobs" onClick={(e) => handleLink(e, '/latest-jobs')}>Latest Jobs 2025-2026</a></li>
+            <li><a href="/admit-card" onClick={(e) => handleLink(e, '/admit-card')}>Hall Ticket &amp; Admit Cards</a></li>
+            <li><a href="/results" onClick={(e) => handleLink(e, '/results')}>Results &amp; Answer Key</a></li>
+            <li><a href="/syllabus" onClick={(e) => handleLink(e, '/syllabus')}>Exam Pattern &amp; Syllabus</a></li>
+            <li><a href="/admission" onClick={(e) => handleLink(e, '/admission')}>Admission Notifications</a></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4>Popular Exam Alerts</h4>
           <ul>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>SSC CGL / CHSL / MTS</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>RRB NTPC &amp; Group D</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>Bihar Police &amp; BSSC</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>BPSC TRE 4.0 &amp; 71st CCE</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>IBPS / SBI PO &amp; Clerk</a></li>
+            <li><a href="/ssc" onClick={(e) => handleLink(e, '/ssc')}>SSC CGL / CHSL / MTS</a></li>
+            <li><a href="/rrb" onClick={(e) => handleLink(e, '/rrb')}>RRB NTPC &amp; Group D</a></li>
+            <li><a href="/bihar-police" onClick={(e) => handleLink(e, '/bihar-police')}>Bihar Police &amp; BSSC</a></li>
+            <li><a href="/bpsc" onClick={(e) => handleLink(e, '/bpsc')}>BPSC TRE 4.0 &amp; 71st CCE</a></li>
+            <li><a href="/bank" onClick={(e) => handleLink(e, '/bank')}>IBPS / SBI PO &amp; Clerk</a></li>
           </ul>
         </div>
 
@@ -74,9 +83,9 @@ export default function Footer({ onCategorySelect, onSearchSelect, onStaticPage 
         <div className="container footer-bottom-inner">
           <p>© 2025-2026 <strong>Career Diary Help</strong>. All Rights Reserved. Not affiliated with any official government organization.</p>
           <div className="footer-bottom-links">
-            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('privacy'); }}>Privacy Policy</a> |&nbsp;
-            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('terms'); }}>Terms &amp; Conditions</a> |&nbsp;
-            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('contact'); }}>Contact Us</a>
+            <a href="/privacy-policy" onClick={(e) => handleLink(e, '/privacy-policy')}>Privacy Policy</a> |&nbsp;
+            <a href="/terms-conditions" onClick={(e) => handleLink(e, '/terms-conditions')}>Terms &amp; Conditions</a> |&nbsp;
+            <a href="/contact-us" onClick={(e) => handleLink(e, '/contact-us')}>Contact Us</a>
           </div>
         </div>
       </div>

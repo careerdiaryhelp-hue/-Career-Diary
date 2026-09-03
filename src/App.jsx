@@ -11,12 +11,8 @@ import Footer from './components/Footer';
 
 // Dedicated Detail Pages
 import JobDetailPage from './pages/JobDetailPage';
-import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
-import ResultDetailPage from './pages/ResultDetailPage';
-import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 // Dedicated Category Listing Pages
-import AdmissionsListingPage from './pages/AdmissionsListingPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
 // Static Pages
@@ -43,31 +39,208 @@ export default function App() {
     return INITIAL_JOBS;
   });
 
-  // Admin authentication state & route check
+  // Admin authentication state
   const [isAdmin, setIsAdmin] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true' || params.get('admin') === 'secret') return true;
     return localStorage.getItem('career_diary_admin') === 'true';
   });
 
-  const [isAdminRoute, setIsAdminRoute] = useState(() => {
-    const path = window.location.pathname.toLowerCase();
-    const search = window.location.search.toLowerCase();
-    return path.includes('/admin') || search.includes('admin');
-  });
-
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
   const [currentCategory, setCurrentCategory] = useState('all');
   const [currentStateFilter, setCurrentStateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false); // full page login
-  const [staticPage, setStaticPage] = useState(null); // 'privacy' | 'terms' | 'contact'
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [staticPage, setStaticPage] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
   }, [isAdmin]);
+
+  // URL Routing: Synchronize internal state with browser URL pathname
+  const syncRouteFromUrl = () => {
+    const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    const cleanPath = rawPath.split('#')[0].split('?')[0].toLowerCase();
+    const searchParams = new URLSearchParams(window.location.search);
+    const qParam = searchParams.get('q');
+
+    // Admin Route
+    if (cleanPath === 'admin' || searchParams.get('admin') === 'true' || searchParams.get('admin') === 'secret') {
+      setIsAdminRoute(true);
+      setSelectedJobId(null);
+      setStaticPage(null);
+      document.title = 'Admin Panel | Career Diary';
+      return;
+    }
+    setIsAdminRoute(false);
+
+    // Static Pages
+    if (cleanPath === 'privacy-policy' || cleanPath === 'privacy') {
+      setStaticPage('privacy');
+      setSelectedJobId(null);
+      setCurrentCategory('all');
+      document.title = 'Privacy Policy | Career Diary';
+      return;
+    }
+    if (cleanPath === 'terms-conditions' || cleanPath === 'terms') {
+      setStaticPage('terms');
+      setSelectedJobId(null);
+      setCurrentCategory('all');
+      document.title = 'Terms & Conditions | Career Diary';
+      return;
+    }
+    if (cleanPath === 'contact-us' || cleanPath === 'contact') {
+      setStaticPage('contact');
+      setSelectedJobId(null);
+      setCurrentCategory('all');
+      document.title = 'Contact Us | Career Diary';
+      return;
+    }
+    setStaticPage(null);
+
+    // Categories
+    if (cleanPath === 'latest-jobs' || cleanPath === 'latest-job') {
+      setCurrentCategory('LATEST JOB');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'Latest Govt Jobs 2026 | Career Diary';
+      return;
+    }
+    if (cleanPath === 'admit-card' || cleanPath === 'admit-cards') {
+      setCurrentCategory('ADMIT CARD');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'Admit Cards & Hall Tickets 2026 | Career Diary';
+      return;
+    }
+    if (cleanPath === 'result' || cleanPath === 'results' || cleanPath === 'answer-key' || cleanPath === 'answer-keys' || cleanPath === 'results-keys') {
+      setCurrentCategory('RESULT / ANSWER KEY');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'Results & Answer Keys 2026 | Career Diary';
+      return;
+    }
+    if (cleanPath === 'syllabus') {
+      setCurrentCategory('SYLLABUS');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'Exam Pattern & Syllabus 2026 | Career Diary';
+      return;
+    }
+    if (cleanPath === 'admission' || cleanPath === 'admissions') {
+      setCurrentCategory('ADMISSION');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'College & University Admissions 2026 | Career Diary';
+      return;
+    }
+    if (cleanPath === 'important' || cleanPath === 'important-links') {
+      setCurrentCategory('IMPORTANT');
+      setSelectedJobId(null);
+      setSearchQuery(qParam || '');
+      document.title = 'Important Links & Services 2026 | Career Diary';
+      return;
+    }
+
+    // Popular Exam / Tag Slugs (e.g. /rrb, /ssc, /bpsc, /upsc, /bihar-police, /bank)
+    if (cleanPath === 'rrb' || cleanPath === 'railway' || cleanPath === 'railways') {
+      setCurrentCategory('all');
+      setSearchQuery('RRB');
+      setSelectedJobId(null);
+      document.title = 'Railway RRB Recruitment, Admit Card & Results | Career Diary';
+      return;
+    }
+    if (cleanPath === 'ssc') {
+      setCurrentCategory('all');
+      setSearchQuery('SSC');
+      setSelectedJobId(null);
+      document.title = 'SSC CGL, CHSL, GD, MTS Recruitment | Career Diary';
+      return;
+    }
+    if (cleanPath === 'bpsc') {
+      setCurrentCategory('all');
+      setSearchQuery('BPSC');
+      setSelectedJobId(null);
+      document.title = 'Bihar BPSC TRE, CCE Recruitment | Career Diary';
+      return;
+    }
+    if (cleanPath === 'upsc') {
+      setCurrentCategory('all');
+      setSearchQuery('UPSC');
+      setSelectedJobId(null);
+      document.title = 'UPSC Civil Services & Engineering Notifications | Career Diary';
+      return;
+    }
+    if (cleanPath === 'bihar-police' || cleanPath === 'police') {
+      setCurrentCategory('all');
+      setSearchQuery('Bihar Police');
+      setSelectedJobId(null);
+      document.title = 'Bihar Police Constable & SI Recruitment | Career Diary';
+      return;
+    }
+    if (cleanPath === 'bank' || cleanPath === 'ibps' || cleanPath === 'sbi') {
+      setCurrentCategory('all');
+      setSearchQuery('Bank');
+      setSelectedJobId(null);
+      document.title = 'Banking Recruitment, IBPS, SBI PO & Clerk | Career Diary';
+      return;
+    }
+
+    // Home route
+    if (!cleanPath || cleanPath === '') {
+      setCurrentCategory('all');
+      setSelectedJobId(null);
+      if (qParam) {
+        setSearchQuery(qParam);
+      }
+      document.title = 'CAREER DIARY - GOVT JOB PORTAL | Latest Jobs, Admit Card, Results';
+      return;
+    }
+
+    // Post slug match (e.g. /railway-rrb-group-d-... or /india-post-gds-recruitment-2026)
+    let slug = cleanPath;
+    if (slug.startsWith('post/')) slug = slug.substring(5);
+    if (slug.startsWith('job/')) slug = slug.substring(4);
+
+    let matched = jobs.find(j => j && j.id && j.id.toLowerCase() === slug);
+    if (!matched) {
+      matched = jobs.find(j => j && j.id && (j.id.toLowerCase().includes(slug) || slug.includes(j.id.toLowerCase())));
+    }
+
+    if (matched) {
+      setSelectedJobId(matched.id);
+      document.title = `${matched.title} | Career Diary`;
+      return;
+    }
+
+    // Default fallback to home
+    setCurrentCategory('all');
+    setSelectedJobId(null);
+    document.title = 'CAREER DIARY - GOVT JOB PORTAL | Latest Jobs, Admit Card, Results';
+  };
+
+  // Navigate to any path with pushState + instant state sync
+  const navigateTo = (path, replace = false) => {
+    if (replace) {
+      window.history.replaceState(null, '', path);
+    } else {
+      window.history.pushState(null, '', path);
+    }
+    syncRouteFromUrl();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Sync route on mount and when browser back/forward buttons are clicked
+  useEffect(() => {
+    syncRouteFromUrl();
+    const handlePopState = () => {
+      syncRouteFromUrl();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [jobs]);
 
   // Open login page automatically if accessing /admin route while unauthenticated
   useEffect(() => {
@@ -75,11 +248,6 @@ export default function App() {
       setShowAdminLogin(true);
     }
   }, [isAdminRoute, isAdmin]);
-
-  // Scroll to top when changing page views
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedJobId, currentCategory, isAdminRoute]);
 
   const handleAddJob = (newJob) => {
     setJobs([newJob, ...jobs]);
@@ -90,8 +258,7 @@ export default function App() {
   };
 
   const handleResetFilters = () => {
-    setIsAdminRoute(false);
-    setCurrentCategory('all');
+    navigateTo('/');
     setCurrentStateFilter('all');
     setSearchQuery('');
   };
@@ -100,6 +267,15 @@ export default function App() {
     setIsAdmin(false);
     setIsAdminRoute(false);
     localStorage.setItem('career_diary_admin', 'false');
+    navigateTo('/');
+  };
+
+  const handleBackToAllJobs = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      navigateTo('/');
+    }
   };
 
   // Filtered jobs resolver
@@ -141,13 +317,11 @@ export default function App() {
   // Helper to render dedicated detail page based on category
   const renderDetailPage = () => {
     if (!selectedJob) return null;
-    return <JobDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
+    return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };
 
   const goHome = () => {
-    setStaticPage(null);
-    setSelectedJobId(null);
-    setIsAdminRoute(false);
+    navigateTo('/');
     setShowAdminLogin(false);
   };
 
@@ -157,7 +331,7 @@ export default function App() {
     if (showAdminLogin && !isAdmin) return (
       <AdminLoginPage
         onLoginSuccess={() => { setIsAdmin(true); setShowAdminLogin(false); }}
-        onCancel={() => { setShowAdminLogin(false); setIsAdminRoute(false); }}
+        onCancel={() => { setShowAdminLogin(false); setIsAdminRoute(false); navigateTo('/'); }}
       />
     );
 
@@ -172,30 +346,28 @@ export default function App() {
           jobs={filteredJobs}
           onAddJob={() => setIsPostModalOpen(true)}
           onDeleteJob={handleDeleteJob}
-          onBack={() => setIsAdminRoute(false)}
+          onBack={() => { setIsAdminRoute(false); navigateTo('/'); }}
           onLogout={handleLogoutAdmin}
         />
       );
     }
 
-    if (currentCategory === 'ADMISSION' && !searchQuery && currentStateFilter === 'all') {
-      return <AdmissionsListingPage jobs={filteredJobs} onSelectJob={(id) => setSelectedJobId(id)} />;
-    }
-
     return (
       <>
-        <HighlightsGrid
-          jobs={filteredJobs}
-          currentStateFilter={currentStateFilter}
-          setCurrentStateFilter={setCurrentStateFilter}
-          onSelectJob={(id) => setSelectedJobId(id)}
-        />
+        {currentCategory === 'all' && !searchQuery && currentStateFilter === 'all' && (
+          <HighlightsGrid
+            jobs={filteredJobs}
+            currentStateFilter={currentStateFilter}
+            setCurrentStateFilter={setCurrentStateFilter}
+            onSelectJob={(id) => navigateTo('/' + id)}
+          />
+        )}
 
-        {(searchQuery || currentCategory !== 'all' || currentStateFilter !== 'all') && (
+        {(searchQuery || currentStateFilter !== 'all') && (
           <div className="container" style={{ marginTop: '16px' }}>
             <div className="search-indicator">
               <span>
-                Search results for "<strong>{searchQuery || `${currentCategory} (${currentStateFilter})`}</strong>" ({filteredJobs.length} matches)
+                Search results for "<strong>{searchQuery || currentStateFilter}</strong>" ({filteredJobs.length} matches)
               </span>
               <button className="btn btn-sm btn-outline" onClick={handleResetFilters}>
                 Reset Search
@@ -206,7 +378,9 @@ export default function App() {
 
         <JobColumnsGrid
           jobs={filteredJobs}
-          onSelectJob={(id) => setSelectedJobId(id)}
+          currentCategory={currentCategory}
+          searchQuery={searchQuery}
+          onSelectJob={(id) => navigateTo('/' + id)}
         />
       </>
     );
@@ -214,7 +388,7 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <TopTicker jobs={jobs} onSelectJob={(id) => setSelectedJobId(id)} />
+      <TopTicker jobs={jobs} onSelectJob={(id) => navigateTo('/' + id)} />
 
       <Header
         searchQuery={searchQuery}
@@ -222,7 +396,7 @@ export default function App() {
         isAdmin={isAdmin}
         onOpenPostModal={() => setIsPostModalOpen(true)}
         onOpenAdminModal={() => {
-          setIsAdminRoute(true);
+          navigateTo('/admin');
           setShowAdminLogin(true);
         }}
         onLogoutAdmin={handleLogoutAdmin}
@@ -232,10 +406,9 @@ export default function App() {
       <Navbar
         currentCategory={currentCategory}
         setCurrentCategory={(cat) => {
-          setSelectedJobId(null);
-          setIsAdminRoute(false);
           setCurrentCategory(cat);
         }}
+        onNavigate={(path) => navigateTo(path)}
       />
 
       {/* Main View Switcher */}
@@ -248,31 +421,7 @@ export default function App() {
         onAddJob={handleAddJob}
       />
 
-
-      <Footer
-        isAdmin={isAdmin}
-        onOpenAdminModal={() => {
-          setIsAdminRoute(true);
-          setShowAdminLogin(true);
-        }}
-        onLogoutAdmin={handleLogoutAdmin}
-        onCategorySelect={(cat) => {
-          setSelectedJobId(null);
-          setIsAdminRoute(false);
-          setCurrentCategory(cat);
-        }}
-        onSearchSelect={(q) => {
-          setSelectedJobId(null);
-          setIsAdminRoute(false);
-          setSearchQuery(q);
-        }}
-        onStaticPage={(page) => {
-          setStaticPage(page);
-          setSelectedJobId(null);
-          setIsAdminRoute(false);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      <Footer onNavigate={(path) => navigateTo(path)} />
 
       {/* Floating Action Buttons */}
       <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="floating-btn float-whatsapp">

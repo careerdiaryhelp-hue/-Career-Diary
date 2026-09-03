@@ -26,9 +26,15 @@ export default function AdmissionsListingPage({ jobs, onSelectJob }) {
       {/* Grid of Admissions Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
         {admissionsList.map((item) => (
-          <div
+          <a
             key={item.id}
-            onClick={() => onSelectJob(item.id)}
+            href={`/${item.id}`}
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                e.preventDefault();
+                onSelectJob(item.id);
+              }
+            }}
             style={{
               backgroundColor: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
@@ -38,8 +44,10 @@ export default function AdmissionsListingPage({ jobs, onSelectJob }) {
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+              justifyContent: 'space-between',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              textDecoration: 'none',
+              color: 'inherit'
             }}
             className="highlight-card"
           >
@@ -77,7 +85,7 @@ export default function AdmissionsListingPage({ jobs, onSelectJob }) {
                 View Full Details <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </div>

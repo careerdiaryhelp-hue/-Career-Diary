@@ -1,9 +1,9 @@
-import { jobsData } from './jobsData';
-import { admitCardsData } from './admitCardsData';
-import { syllabusData } from './syllabusData';
-import { resultsData } from './resultsData';
-import { admissionsData } from './admissionsData';
-import { importantData } from './importantData';
+import { jobsData } from './jobsData.js';
+import { admitCardsData } from './admitCardsData.js';
+import { syllabusData } from './syllabusData.js';
+import { resultsData } from './resultsData.js';
+import { admissionsData } from './admissionsData.js';
+import { importantData } from './importantData.js';
 
 // Export individual category data files
 export {

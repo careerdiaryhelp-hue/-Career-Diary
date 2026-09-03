@@ -9,7 +9,17 @@ export default function Header({
   return (
     <header className="main-header">
       <div className="container header-container">
-        <div className="brand-logo" onClick={onResetFilters}>
+        <a
+          href="/"
+          className="brand-logo"
+          style={{ textDecoration: 'none', cursor: 'pointer' }}
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+              e.preventDefault();
+              onResetFilters();
+            }
+          }}
+        >
           <img
             src="/image.png"
             alt="Career Diary Logo"
@@ -19,7 +29,7 @@ export default function Header({
             <span className="logo-title">CAREER DIARY</span>
             <span className="logo-subtitle">CAREERDIARY.BLOGSPOT.COM • GOVT JOB PORTAL</span>
           </div>
-        </div>
+        </a>
 
         <div className="search-box-wrapper">
           <Search className="search-icon w-5 h-5" />
