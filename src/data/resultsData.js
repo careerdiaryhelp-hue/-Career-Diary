@@ -1,5 +1,24 @@
 export const resultsData = [
   {
+    id: "idbi-assistant-manager-result-2026",
+    title: "IDBI ASSISTANT MANAGER INTERVIEW RESULT 2026",
+    category: "RESULT / ANSWER KEY",
+    state: "All India",
+    badge: "Out",
+    lastDate: "28-07-2026",
+    vacancies: "Assistant Manager",
+    bannerColor: "purple",
+    organization: "IDBI Bank",
+    postName: "Assistant Manager",
+    appStart: "28/07/2026",
+    appLast: "28/07/2026",
+    description: "IDBI Bank has released the Assistant Manager Interview Result 2026.",
+    importantLinks: {
+      "Download Result": "https://apps.idbibank.in/rs-assistant-executive-june-2019-1.asp",
+      "Official Website": "https://www.idbibank.in"
+    }
+  },
+  {
     id: "haryana-htet-omr-answer-sheet-scorecard-2026",
     title: "HARYANA HTET OMR ANSWER SHEET & SCORE CARD 2026 OUT",
     category: "RESULT / ANSWER KEY",
