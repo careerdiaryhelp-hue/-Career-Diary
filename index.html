@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Diary - #1 Indian Govt Job Portal, Admit Card, Results & Syllabus</title>
+  <meta name="description" content="Career Diary is India's leading job portal for latest government recruitment updates, admit cards, exam results, syllabus, and online application forms.">
+  <meta name="keywords" content="Career Diary, Sarkari Result, Latest Jobs, Admit Card, Syllabus, Answer Key, Exam Result, SSC CGL, RRB NTPC, Bihar Police, BPSC">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+  
+  <!-- Top Announcement Ticker Bar -->
+  <div class="top-bar">
+    <div class="container top-bar-inner">
+      <div class="ticker-label">
+        <i class="fa-solid fa-bolt icon-pulse"></i> LATEST UPDATES
+      </div>
+      <div class="ticker-wrapper">
+        <div class="ticker-content" id="topTicker">
+          <span><a href="#" onclick="openJobDetail(1); return false;">🔴 Bihar Police Constable 19838 Exam City / Admit Card 2025 OUT!</a></span>
+          <span><a href="#" onclick="openJobDetail(2); return false;">🔥 SSC CGL Recruitment 2025 Online Form Apply - Last Date Extended!</a></span>
+          <span><a href="#" onclick="openJobDetail(3); return false;">⚡ Railway RRB NTPC UG Level Application Status 2025 Link Active</a></span>
+          <span><a href="#" onclick="openJobDetail(4); return false;">📌 RRB Technician Grade 1 & 3 Recruitment Notification Released</a></span>
+          <span><a href="#" onclick="openJobDetail(5); return false;">🎓 Bihar B.Ed Counselling 2025 Registration Started</a></span>
+        </div>
+      </div>
+      <div class="top-social-actions">
+        <a href="https://t.me/" target="_blank" class="social-btn telegram-btn" title="Join Telegram">
+          <i class="fa-brands fa-telegram"></i> Telegram
+        </a>
+        <a href="https://whatsapp.com/" target="_blank" class="social-btn whatsapp-btn" title="Join WhatsApp">
+          <i class="fa-brands fa-whatsapp"></i> WhatsApp
+        </a>
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Light/Dark Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Header section -->
+  <header class="main-header">
+    <div class="container header-container">
+      <div class="brand-logo" onclick="resetFilters()">
+        <div class="logo-icon">
+          <i class="fa-solid fa-book-bookmark"></i>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">CAREER DIARY</span>
+          <span class="logo-subtitle">CAREERDIARY.BLOGSPOT.COM • GOVT JOB PORTAL</span>
+        </div>
+      </div>
+
+      <div class="search-box-wrapper">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" placeholder="Search Jobs, Admit Cards, Syllabus, Results..." autocomplete="off">
+        <button class="clear-search-btn" id="clearSearchBtn" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAdminModal()">
+          <i class="fa-solid fa-plus"></i> Post Job Update
+        </button>
+        <button class="btn btn-secondary" onclick="openAgeCalcModal()">
+          <i class="fa-solid fa-calculator"></i> Age Calculator
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Category Nav Bar -->
+  <nav class="nav-bar">
+    <div class="container nav-container">
+      <ul class="nav-links" id="navCategoryFilter">
+        <li class="active" data-cat="all"><a href="#"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li data-cat="LATEST JOB"><a href="#"><i class="fa-solid fa-briefcase"></i> Latest Jobs</a></li>
+        <li data-cat="ADMIT CARD"><a href="#"><i class="fa-solid fa-id-card"></i> Admit Card</a></li>
+        <li data-cat="RESULT / ANSWER KEY"><a href="#"><i class="fa-solid fa-square-poll-vertical"></i> Results & Keys</a></li>
+        <li data-cat="SYLLABUS"><a href="#"><i class="fa-solid fa-file-lines"></i> Syllabus</a></li>
+        <li data-cat="ADMISSION"><a href="#"><i class="fa-solid fa-graduation-cap"></i> Admission</a></li>
+        <li data-cat="IMPORTANT"><a href="#"><i class="fa-solid fa-star"></i> Important Links</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Sub Header Banners Carousel / Highlight Badges (Exact Blogger Grid matching user's image) -->
+  <section class="featured-highlights-section">
+    <div class="container">
+      <div class="section-title-wrapper">
+        <h2 class="section-heading"><i class="fa-solid fa-fire text-danger"></i> TOP RECRUITMENT HIGHLIGHTS 2025</h2>
+        <div class="state-filter-pills" id="stateFilters">
+          <button class="pill-btn active" data-state="all">All India</button>
+          <button class="pill-btn" data-state="Bihar">Bihar</button>
+          <button class="pill-btn" data-state="SSC">SSC</button>
+          <button class="pill-btn" data-state="Railway">Railway</button>
+          <button class="pill-btn" data-state="Banking">Banking</button>
+        </div>
+      </div>
+
+      <!-- Colorful Banners Grid like draft screenshot -->
+      <div class="top-banners-grid" id="topBannersGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Grid Section (4 Columns: LATEST JOB | SYLLABUS | ADMIT CARD | ANSWER KEY/RESULT) -->
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- Filter Banner / Search indicator -->
+      <div id="searchResultIndicator" class="search-indicator" style="display:none;">
+        <span>Search results for "<strong id="searchQueryText"></strong>" (<span id="searchResultCount">0</span> matches)</span>
+        <button class="btn btn-sm btn-outline" onclick="resetFilters()">Reset Search</button>
+      </div>
+
+      <div class="columns-4-grid" id="mainColumnsGrid">
+        
+        <!-- Column 1: LATEST JOB -->
+        <div class="column-card col-pink" id="col-latest-job">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-briefcase"></i> LATEST JOB</h3>
+            <span class="badge badge-count" id="count-latest-job">0</span>
+          </div>
+          <div class="column-body" id="list-latest-job">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+
+        <!-- Column 2: SYLLABUS -->
+        <div class="column-card col-green" id="col-syllabus">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-file-lines"></i> SYLLABUS</h3>
+            <span class="badge badge-count" id="count-syllabus">0</span>
+          </div>
+          <div class="column-body" id="list-syllabus">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+
+        <!-- Column 3: ADMIT CARD -->
+        <div class="column-card col-blue" id="col-admit-card">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-id-card"></i> ADMIT CARD</h3>
+            <span class="badge badge-count" id="count-admit-card">0</span>
+          </div>
+          <div class="column-body" id="list-admit-card">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+
+        <!-- Column 4: ANSWER KEY & RESULT -->
+        <div class="column-card col-purple" id="col-result">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-square-check"></i> ANSWER KEY / RESULT</h3>
+            <span class="badge badge-count" id="count-result">0</span>
+          </div>
+          <div class="column-body" id="list-result">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Secondary Links Grid (Admission & Important Forms) -->
+      <div class="secondary-grid">
+        <div class="column-card col-orange">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-user-graduate"></i> ADMISSION 2025</h3>
+          </div>
+          <div class="column-body" id="list-admission">
+            <!-- Dynamic admission items -->
+          </div>
+        </div>
+
+        <div class="column-card col-teal">
+          <div class="column-header">
+            <h3><i class="fa-solid fa-bookmark"></i> IMPORTANT SCHEMES & CERTIFICATES</h3>
+          </div>
+          <div class="column-body" id="list-important">
+            <!-- Dynamic important items -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Job Detail Full View Modal -->
+  <div class="modal-overlay" id="jobDetailModal">
+    <div class="modal-card modal-large">
+      <button class="modal-close-btn" onclick="closeModal('jobDetailModal')"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-content-body" id="jobDetailContent">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Post New Job Modal -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('adminModal')"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-pen-to-square"></i> Add New Job / Notification Update</h2>
+        <p>Post new job alerts, admit cards, or syllabus directly to Career Diary.</p>
+      </div>
+      <form id="adminPostForm">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="postTitle" required placeholder="e.g. SSC CGL Recruitment 2025 Online Form Apply">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="postCategory" required>
+              <option value="LATEST JOB">LATEST JOB</option>
+              <option value="ADMIT CARD">ADMIT CARD</option>
+              <option value="SYLLABUS">SYLLABUS</option>
+              <option value="RESULT / ANSWER KEY">RESULT / ANSWER KEY</option>
+              <option value="ADMISSION">ADMISSION</option>
+              <option value="IMPORTANT">IMPORTANT</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>State / Category Tag *</label>
+            <input type="text" id="postState" required placeholder="e.g. Bihar, SSC, Railway, Central">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status Badge Tag</label>
+            <select id="postBadge">
+              <option value="New!">New!</option>
+              <option value="Out">Out</option>
+              <option value="START">START</option>
+              <option value="Link Active">Link Active</option>
+              <option value="Last Date">Last Date Soon</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Total Vacancies</label>
+            <input type="text" id="postVacancies" placeholder="e.g. 17,727 Posts">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Last Date to Apply</label>
+            <input type="text" id="postLastDate" placeholder="e.g. 25/08/2025">
+          </div>
+          <div class="form-group">
+            <label>Banner Color</label>
+            <select id="postBannerColor">
+              <option value="pink">Magenta Pink</option>
+              <option value="green">Bright Green</option>
+              <option value="orange">Orange Maroon</option>
+              <option value="blue">Royal Blue</option>
+              <option value="purple">Violet Purple</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Full Description / Details *</label>
+          <textarea id="postDescription" rows="4" required placeholder="Enter brief overview, eligibility, and steps to apply..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('adminModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up"></i> Publish Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Age Calculator Tool Modal -->
+  <div class="modal-overlay" id="ageCalcModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('ageCalcModal')"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-calculator text-primary"></i> Govt Job Age Calculator</h2>
+        <p>Calculate your exact age in years, months, and days for job eligibility cut-off date.</p>
+      </div>
+      <div class="calc-form">
+        <div class="form-group">
+          <label>Your Date of Birth (DOB) *</label>
+          <input type="date" id="dobInput" required>
+        </div>
+        <div class="form-group">
+          <label>Cut-Off / Calculation Date *</label>
+          <input type="date" id="cutoffDateInput" required>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="calculateAge()">
+          <i class="fa-solid fa-rotate"></i> Calculate Age
+        </button>
+
+        <div id="ageResultBox" class="calc-result" style="display:none;">
+          <h4>Calculated Age Result:</h4>
+          <div class="age-display" id="ageOutputText">-- Years, -- Months, -- Days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="container footer-content">
+      <div class="footer-col brand-col">
+        <div class="brand-logo footer-logo">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span>CAREER DIARY</span>
+        </div>
+        <p class="footer-desc">
+          Career Diary (careerdiary.blogspot.com / careerdiary1.blogspot.com) is India's most trusted portal for competitive exams, Indian Govt jobs recruitment updates, admit cards, answer keys, and syllabus notifications.
+        </p>
+        <div class="social-links">
+          <a href="#" class="social-icon"><i class="fa-brands fa-telegram"></i></a>
+          <a href="#" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
+          <a href="#" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Categories</h4>
+        <ul>
+          <li><a href="#" onclick="filterCategory('LATEST JOB')">Latest Jobs 2025</a></li>
+          <li><a href="#" onclick="filterCategory('ADMIT CARD')">Hall Ticket & Admit Cards</a></li>
+          <li><a href="#" onclick="filterCategory('RESULT / ANSWER KEY')">Results & Answer Key</a></li>
+          <li><a href="#" onclick="filterCategory('SYLLABUS')">Exam Pattern & Syllabus</a></li>
+          <li><a href="#" onclick="filterCategory('ADMISSION')">Admission Notifications</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Popular Exam Alerts</h4>
+        <ul>
+          <li><a href="#" onclick="filterBySearch('SSC')">SSC CGL / CHSL / MTS</a></li>
+          <li><a href="#" onclick="filterBySearch('Railway')">RRB NTPC & Group D</a></li>
+          <li><a href="#" onclick="filterBySearch('Bihar')">Bihar Police & BSSC</a></li>
+          <li><a href="#" onclick="filterBySearch('BPSC')">BPSC 71st CCE 2025</a></li>
+          <li><a href="#" onclick="filterBySearch('Bank')">IBPS / SBI PO & Clerk</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Subscribe Alerts</h4>
+        <p>Get instant Job Alerts sent to your inbox!</p>
+        <div class="subscribe-form">
+          <input type="email" placeholder="Enter your email address...">
+          <button class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>© 2025-2026 <strong>Career Diary Help</strong>. All Rights Reserved. Not affiliated with any official government organization.</p>
+        <div class="footer-bottom-links">
+          <a href="#">Privacy Policy</a> | 
+          <a href="#">Terms & Conditions</a> | 
+          <a href="#">Contact Us</a> | 
+          <a href="#">Disclaimer</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
