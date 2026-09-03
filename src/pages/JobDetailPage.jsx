@@ -1,20 +1,30 @@
 import React from 'react';
-import { ArrowLeft, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin, Share2 } from 'lucide-react';
+import { ArrowLeft, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin } from 'lucide-react';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
 
-  const getLinkUrl = (key) => {
+  const getLinkUrl = (...keys) => {
     if (job.importantLinks && typeof job.importantLinks === 'object') {
-      const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key));
-      if (foundKey) return job.importantLinks[foundKey];
+      for (const key of keys) {
+        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
+          return job.importantLinks[foundKey];
+        }
+      }
+      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
+      if (firstVal) return firstVal;
     }
+    if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
+    if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
     return null;
   };
 
-  const primaryApplyUrl = getLinkUrl('apply') || getLinkUrl('registration') || "https://careerdiary.in";
-  const notificationUrl = getLinkUrl('notification') || getLinkUrl('official') || "https://careerdiary.in";
-  const officialWebUrl = getLinkUrl('official website') || getLinkUrl('website') || "https://careerdiary.in";
+  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' official apply online portal')}`;
+
+  const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || fallbackSearchUrl;
+  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || primaryApplyUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || primaryApplyUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -48,7 +58,7 @@ export default function JobDetailPage({ job, onBack }) {
         {/* Quick Top CTA Box */}
         <div style={{ backgroundColor: 'rgba(230, 0, 92, 0.05)', border: '1px solid rgba(230, 0, 92, 0.2)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--primary-color)' }}>Direct Online Application Portal Active</div>
+            <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--primary-color)' }}>Direct Official Application Portal Active</div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Last Date to Submit Online Application: <strong>{job.appLast || job.lastDate || 'As per schedule'}</strong></div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -189,30 +199,37 @@ export default function JobDetailPage({ job, onBack }) {
           </h3>
           <table className="table-styled">
             <tbody>
-              <tr>
-                <td style={{ fontWeight: '700', width: '55%' }}>Apply Online Link</td>
-                <td>
-                  <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                    Click Here to Apply Online
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Download Official Notification PDF</td>
-                <td>
-                  <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    Download Notification PDF
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Official Website</td>
-                <td>
-                  <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
-                    Visit Official Portal
-                  </a>
-                </td>
-              </tr>
+              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
+                Object.entries(job.importantLinks).map(([label, url], idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                    <td>
+                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                        Click Here
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <>
+                  <tr>
+                    <td style={{ fontWeight: '700', width: '55%' }}>Apply Online Link</td>
+                    <td>
+                      <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                        Click Here to Apply Online
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: '700' }}>Download Official Notification PDF</td>
+                    <td>
+                      <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        Download Notification PDF
+                      </a>
+                    </td>
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>

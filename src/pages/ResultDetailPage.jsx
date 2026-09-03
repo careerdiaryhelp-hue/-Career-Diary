@@ -4,17 +4,27 @@ import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link,
 export default function ResultDetailPage({ job, onBack }) {
   if (!job) return null;
 
-  const getLinkUrl = (key) => {
+  const getLinkUrl = (...keys) => {
     if (job.importantLinks && typeof job.importantLinks === 'object') {
-      const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key));
-      if (foundKey) return job.importantLinks[foundKey];
+      for (const key of keys) {
+        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
+          return job.importantLinks[foundKey];
+        }
+      }
+      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
+      if (firstVal) return firstVal;
     }
+    if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
+    if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
     return null;
   };
 
-  const resultUrl = getLinkUrl('result') || getLinkUrl('scorecard') || getLinkUrl('key') || getLinkUrl('answer') || "https://careerdiary.in";
-  const notificationUrl = getLinkUrl('notification') || getLinkUrl('official') || "https://careerdiary.in";
-  const officialWebUrl = getLinkUrl('official website') || getLinkUrl('website') || "https://careerdiary.in";
+  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' result scorecard answer key')}`;
+
+  const resultUrl = getLinkUrl('result', 'scorecard', 'key', 'answer', 'marks', 'merit') || fallbackSearchUrl;
+  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'cutoff') || resultUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || resultUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -44,7 +54,7 @@ export default function ResultDetailPage({ job, onBack }) {
           </div>
         </div>
 
-        {/* Quick Top CTA Box for Result Download */}
+        {/* Quick Top CTA Box */}
         <div style={{ backgroundColor: 'rgba(142, 68, 173, 0.08)', border: '1px solid rgba(142, 68, 173, 0.3)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#8e44ad' }}>Check Official Result / Cut Off / Score Card</div>
@@ -108,30 +118,37 @@ export default function ResultDetailPage({ job, onBack }) {
           </h3>
           <table className="table-styled">
             <tbody>
-              <tr>
-                <td style={{ fontWeight: '700', width: '55%' }}>Check Result / Download Score Card</td>
-                <td>
-                  <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#8e44ad', color: '#fff' }}>
-                    Click Here to Check Result
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Download Tentative Answer Key / Objection Link</td>
-                <td>
-                  <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    View Answer Key
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Official Portal Website</td>
-                <td>
-                  <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
-                    Visit Official Site
-                  </a>
-                </td>
-              </tr>
+              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
+                Object.entries(job.importantLinks).map(([label, url], idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                    <td>
+                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#8e44ad', color: '#fff' }}>
+                        Click Here
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <>
+                  <tr>
+                    <td style={{ fontWeight: '700', width: '55%' }}>Check Result / Download Score Card</td>
+                    <td>
+                      <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#8e44ad', color: '#fff' }}>
+                        Click Here to Check Result
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: '700' }}>Download Tentative Answer Key / Objection Link</td>
+                    <td>
+                      <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        View Answer Key
+                      </a>
+                    </td>
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>

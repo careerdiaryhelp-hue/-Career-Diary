@@ -1,20 +1,30 @@
 import React from 'react';
-import { ArrowLeft, Building2, Tag, CalendarCheck, FileText, UserCheck, Info, Link, FileDown, Send, MessageCircle, AlertCircle, MapPin } from 'lucide-react';
+import { ArrowLeft, Building2, Tag, CalendarCheck, FileText, UserCheck, Info, Link, FileDown, Send, MessageCircle, AlertCircle } from 'lucide-react';
 
 export default function AdmitCardDetailPage({ job, onBack }) {
   if (!job) return null;
 
-  const getLinkUrl = (key) => {
+  const getLinkUrl = (...keys) => {
     if (job.importantLinks && typeof job.importantLinks === 'object') {
-      const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key));
-      if (foundKey) return job.importantLinks[foundKey];
+      for (const key of keys) {
+        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
+          return job.importantLinks[foundKey];
+        }
+      }
+      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
+      if (firstVal) return firstVal;
     }
+    if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
+    if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
     return null;
   };
 
-  const admitCardUrl = getLinkUrl('admit') || getLinkUrl('status') || getLinkUrl('city') || "https://careerdiary.in";
-  const notificationUrl = getLinkUrl('notification') || getLinkUrl('official') || "https://careerdiary.in";
-  const officialWebUrl = getLinkUrl('official website') || getLinkUrl('website') || "https://careerdiary.in";
+  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' download admit card hall ticket')}`;
+
+  const admitCardUrl = getLinkUrl('admit', 'status', 'city', 'download', 'hall', 'login') || fallbackSearchUrl;
+  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'brochure') || admitCardUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || admitCardUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -44,7 +54,7 @@ export default function AdmitCardDetailPage({ job, onBack }) {
           </div>
         </div>
 
-        {/* Quick Top CTA Box for Admit Card Download */}
+        {/* Quick Top CTA Box */}
         <div style={{ backgroundColor: 'rgba(0, 136, 204, 0.08)', border: '1px solid rgba(0, 136, 204, 0.3)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#0088cc' }}>Direct Admit Card / Exam City Link Active</div>
@@ -108,30 +118,37 @@ export default function AdmitCardDetailPage({ job, onBack }) {
           </h3>
           <table className="table-styled">
             <tbody>
-              <tr>
-                <td style={{ fontWeight: '700', width: '55%' }}>Download Admit Card / Hall Ticket</td>
-                <td>
-                  <a href={admitCardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff' }}>
-                    Click Here to Download
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Check Exam City / Application Status</td>
-                <td>
-                  <a href={admitCardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    Check Status
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Official Website Portal</td>
-                <td>
-                  <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
-                    Visit Official Site
-                  </a>
-                </td>
-              </tr>
+              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
+                Object.entries(job.importantLinks).map(([label, url], idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                    <td>
+                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff' }}>
+                        Click Here
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <>
+                  <tr>
+                    <td style={{ fontWeight: '700', width: '55%' }}>Download Admit Card / Hall Ticket</td>
+                    <td>
+                      <a href={admitCardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff' }}>
+                        Click Here to Download
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: '700' }}>Check Exam City / Application Status</td>
+                    <td>
+                      <a href={admitCardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        Check Status
+                      </a>
+                    </td>
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>

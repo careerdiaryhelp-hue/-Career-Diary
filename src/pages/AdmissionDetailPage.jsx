@@ -4,17 +4,27 @@ import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, U
 export default function AdmissionDetailPage({ job, onBack }) {
   if (!job) return null;
 
-  const getLinkUrl = (key) => {
+  const getLinkUrl = (...keys) => {
     if (job.importantLinks && typeof job.importantLinks === 'object') {
-      const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key));
-      if (foundKey) return job.importantLinks[foundKey];
+      for (const key of keys) {
+        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
+          return job.importantLinks[foundKey];
+        }
+      }
+      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
+      if (firstVal) return firstVal;
     }
+    if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
+    if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
     return null;
   };
 
-  const primaryApplyUrl = getLinkUrl('apply') || getLinkUrl('counseling') || getLinkUrl('form') || "https://careerdiary.in";
-  const notificationUrl = getLinkUrl('notification') || getLinkUrl('official') || "https://careerdiary.in";
-  const officialWebUrl = getLinkUrl('official website') || getLinkUrl('website') || "https://careerdiary.in";
+  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' official apply online portal')}`;
+
+  const primaryApplyUrl = getLinkUrl('apply', 'counseling', 'counselling', 'form', 'registration', 'login') || fallbackSearchUrl;
+  const notificationUrl = getLinkUrl('notification', 'prospectus', 'brochure', 'pdf', 'notice') || primaryApplyUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || primaryApplyUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -33,7 +43,7 @@ export default function AdmissionDetailPage({ job, onBack }) {
         
         {/* Banner Header */}
         <div style={{ borderBottom: '2px solid #e67e22', paddingBottom: '16px', marginBottom: '20px' }}>
-          <span className="badge badge-orange" style={{ marginBottom: '8px', display: 'inline-block' }}>COURSE & COLLEGE ADMISSION 2026</span>
+          <span className="badge badge-orange" style={{ marginBottom: '8px', display: 'inline-block' }}>COURSE & COLLEGE ADMISSION</span>
           <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-heading)', lineHeight: '1.4', marginBottom: '12px' }}>
             {job.title}
           </h1>
@@ -49,7 +59,7 @@ export default function AdmissionDetailPage({ job, onBack }) {
         <div style={{ backgroundColor: 'rgba(230, 126, 34, 0.08)', border: '1px solid rgba(230, 126, 34, 0.3)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#e67e22' }}>Online Admission & Counseling Registration Open</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Apply before last date: <strong>{job.appLast || job.lastDate || 'As per admission schedule'}</strong></div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Last Date to Register: <strong>{job.appLast || job.lastDate || 'As per admission schedule'}</strong></div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
@@ -126,30 +136,37 @@ export default function AdmissionDetailPage({ job, onBack }) {
           </h3>
           <table className="table-styled">
             <tbody>
-              <tr>
-                <td style={{ fontWeight: '700', width: '55%' }}>Apply Online for Admission / Counseling</td>
-                <td>
-                  <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
-                    Click Here to Apply Online
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Download Admission Prospectus PDF</td>
-                <td>
-                  <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    Download Prospectus
-                  </a>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: '700' }}>Official University / Board Website</td>
-                <td>
-                  <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
-                    Visit Official Site
-                  </a>
-                </td>
-              </tr>
+              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
+                Object.entries(job.importantLinks).map(([label, url], idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                    <td>
+                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
+                        Click Here
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <>
+                  <tr>
+                    <td style={{ fontWeight: '700', width: '55%' }}>Apply Online for Admission / Counseling</td>
+                    <td>
+                      <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
+                        Click Here to Apply Online
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: '700' }}>Download Admission Prospectus PDF</td>
+                    <td>
+                      <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        Download Prospectus
+                      </a>
+                    </td>
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>
