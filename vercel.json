@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.careerdiary.in"
+        }
+      ],
+      "destination": "https://careerdiary.in/:path*",
+      "permanent": true
+    }
+  ]
+}
