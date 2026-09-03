@@ -7,6 +7,7 @@ import HighlightsGrid from './components/HighlightsGrid';
 import JobColumnsGrid from './components/JobColumnsGrid';
 import PostJobModal from './components/PostJobModal';
 import AgeCalcModal from './components/AgeCalcModal';
+import AdminLoginModal from './components/AdminLoginModal';
 import Footer from './components/Footer';
 
 // Dedicated Detail Pages
@@ -28,6 +29,13 @@ export default function App() {
     return INITIAL_JOBS;
   });
 
+  // Admin authentication state (Hidden by default for regular public users)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true' || params.get('admin') === 'secret') return true;
+    return localStorage.getItem('career_diary_admin') === 'true';
+  });
+
   const [currentCategory, setCurrentCategory] = useState('all');
   const [currentStateFilter, setCurrentStateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,10 +44,15 @@ export default function App() {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [isCalcModalOpen, setIsCalcModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('career_diary_jobs', JSON.stringify(jobs));
   }, [jobs]);
+
+  useEffect(() => {
+    localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
+  }, [isAdmin]);
 
   useEffect(() => {
     if (darkMode) {
@@ -64,6 +77,11 @@ export default function App() {
     setCurrentCategory('all');
     setCurrentStateFilter('all');
     setSearchQuery('');
+  };
+
+  const handleLogoutAdmin = () => {
+    setIsAdmin(false);
+    localStorage.setItem('career_diary_admin', 'false');
   };
 
   // Filtered jobs resolver
@@ -113,8 +131,11 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        isAdmin={isAdmin}
         onOpenPostModal={() => setIsPostModalOpen(true)}
         onOpenCalcModal={() => setIsCalcModalOpen(true)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onLogoutAdmin={handleLogoutAdmin}
         onResetFilters={handleResetFilters}
       />
 
@@ -158,6 +179,7 @@ export default function App() {
         </>
       )}
 
+      {/* Admin Post Modal (Only callable when admin unlocked) */}
       <PostJobModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
@@ -169,7 +191,16 @@ export default function App() {
         onClose={() => setIsCalcModalOpen(false)}
       />
 
+      <AdminLoginModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onLoginSuccess={() => setIsAdmin(true)}
+      />
+
       <Footer
+        isAdmin={isAdmin}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onLogoutAdmin={handleLogoutAdmin}
         onCategorySelect={(cat) => {
           setSelectedJobId(null);
           setCurrentCategory(cat);

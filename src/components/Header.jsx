@@ -1,13 +1,16 @@
 import React from 'react';
-import { BookmarkCheck, Search, X, PlusCircle, Calculator, Moon, Sun } from 'lucide-react';
+import { BookmarkCheck, Search, X, PlusCircle, Calculator, Moon, Sun, ShieldCheck, LogOut } from 'lucide-react';
 
 export default function Header({
   searchQuery,
   setSearchQuery,
   darkMode,
   setDarkMode,
+  isAdmin,
   onOpenPostModal,
   onOpenCalcModal,
+  onOpenAdminModal,
+  onLogoutAdmin,
   onResetFilters
 }) {
   return (
@@ -40,12 +43,22 @@ export default function Header({
         </div>
 
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={onOpenPostModal}>
-            <PlusCircle className="w-4 h-4" /> Post Job Update
-          </button>
+          {/* Post Job Update Button - ONLY VISIBLE TO ADMIN */}
+          {isAdmin ? (
+            <>
+              <button className="btn btn-primary" onClick={onOpenPostModal} title="Admin: Post New Job Update">
+                <PlusCircle className="w-4 h-4" /> Post Job Update
+              </button>
+              <button className="btn btn-sm btn-outline" onClick={onLogoutAdmin} title="Exit Admin Mode">
+                <LogOut className="w-4 h-4" /> Exit Admin
+              </button>
+            </>
+          ) : null}
+
           <button className="btn btn-secondary" onClick={onOpenCalcModal}>
             <Calculator className="w-4 h-4" /> Age Calculator
           </button>
+
           <button
             className="icon-btn"
             onClick={() => setDarkMode(!darkMode)}

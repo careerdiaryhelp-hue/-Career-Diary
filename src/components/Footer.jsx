@@ -1,7 +1,7 @@
 import React from 'react';
-import { BookmarkCheck, Send, PhoneCall, Globe, Share2 } from 'lucide-react';
+import { BookmarkCheck, Send, PhoneCall, Globe, Share2, Lock, ShieldCheck } from 'lucide-react';
 
-export default function Footer({ onCategorySelect, onSearchSelect }) {
+export default function Footer({ onCategorySelect, onSearchSelect, isAdmin, onOpenAdminModal, onLogoutAdmin }) {
   return (
     <footer className="main-footer">
       <div className="container footer-content">
@@ -11,12 +11,12 @@ export default function Footer({ onCategorySelect, onSearchSelect }) {
             <span>CAREER DIARY</span>
           </div>
           <p className="footer-desc">
-            Career Diary (careerdiary.blogspot.com / careerdiary1.blogspot.com) is India's most trusted portal for competitive exams, Indian Govt jobs recruitment updates, admit cards, answer keys, and syllabus notifications.
+            Career Diary (careerdiary.in / careerdiary.blogspot.com) is India's most trusted portal for competitive exams, Indian Govt jobs recruitment updates, admit cards, answer keys, and syllabus notifications.
           </p>
           <div className="social-links">
             <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="social-icon" title="Telegram Channel"><Send className="w-4 h-4" /></a>
             <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="social-icon" title="WhatsApp Channel"><PhoneCall className="w-4 h-4" /></a>
-            <a href="#" className="social-icon" title="Website"><Globe className="w-4 h-4" /></a>
+            <a href="https://careerdiary.in" className="social-icon" title="Website"><Globe className="w-4 h-4" /></a>
             <a href="#" className="social-icon" title="Share"><Share2 className="w-4 h-4" /></a>
           </div>
         </div>
@@ -24,7 +24,7 @@ export default function Footer({ onCategorySelect, onSearchSelect }) {
         <div className="footer-col">
           <h4>Quick Categories</h4>
           <ul>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>Latest Jobs 2025</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('LATEST JOB'); }}>Latest Jobs 2025-2026</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('ADMIT CARD'); }}>Hall Ticket & Admit Cards</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('RESULT / ANSWER KEY'); }}>Results & Answer Key</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onCategorySelect('SYLLABUS'); }}>Exam Pattern & Syllabus</a></li>
@@ -38,7 +38,7 @@ export default function Footer({ onCategorySelect, onSearchSelect }) {
             <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('SSC'); }}>SSC CGL / CHSL / MTS</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('Railway'); }}>RRB NTPC & Group D</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('Bihar'); }}>Bihar Police & BSSC</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('BPSC'); }}>BPSC 71st CCE 2025</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('BPSC'); }}>BPSC TRE 4.0 & 71st CCE</a></li>
             <li><a href="#" onClick={(e) => { e.preventDefault(); onSearchSelect('Bank'); }}>IBPS / SBI PO & Clerk</a></li>
           </ul>
         </div>
@@ -62,7 +62,15 @@ export default function Footer({ onCategorySelect, onSearchSelect }) {
             <a href="#">Privacy Policy</a> | 
             <a href="#">Terms & Conditions</a> | 
             <a href="#">Contact Us</a> | 
-            <a href="#">Disclaimer</a>
+            {isAdmin ? (
+              <a href="#" onClick={(e) => { e.preventDefault(); onLogoutAdmin(); }} style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
+                <ShieldCheck className="w-3 h-3 inline mr-1" /> Admin (Exit)
+              </a>
+            ) : (
+              <a href="#" onClick={(e) => { e.preventDefault(); onOpenAdminModal(); }} style={{ opacity: 0.7 }}>
+                <Lock className="w-3 h-3 inline mr-1" /> Admin Login
+              </a>
+            )}
           </div>
         </div>
       </div>
