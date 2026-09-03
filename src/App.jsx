@@ -6,7 +6,7 @@ import Navbar from './components/Navbar';
 import HighlightsGrid from './components/HighlightsGrid';
 import JobColumnsGrid from './components/JobColumnsGrid';
 import PostJobModal from './components/PostJobModal';
-import AdminLoginModal from './components/AdminLoginModal';
+import AdminLoginPage from './pages/AdminLoginPage';
 import Footer from './components/Footer';
 
 // Dedicated Detail Pages
@@ -69,7 +69,7 @@ export default function App() {
 
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false); // full page login
   const [staticPage, setStaticPage] = useState(null); // 'privacy' | 'terms' | 'contact'
 
   useEffect(() => {
@@ -80,10 +80,10 @@ export default function App() {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
   }, [isAdmin]);
 
-  // Open login modal automatically if accessing /admin route while unauthenticated
+  // Open login page automatically if accessing /admin route while unauthenticated
   useEffect(() => {
     if (isAdminRoute && !isAdmin) {
-      setIsAdminModalOpen(true);
+      setShowAdminLogin(true);
     }
   }, [isAdminRoute, isAdmin]);
 
@@ -170,10 +170,19 @@ export default function App() {
     setStaticPage(null);
     setSelectedJobId(null);
     setIsAdminRoute(false);
+    setShowAdminLogin(false);
   };
 
   // Helper to render main area when no item is selected
   const renderMainContent = () => {
+    // Admin login page (full page, no popup)
+    if (showAdminLogin && !isAdmin) return (
+      <AdminLoginPage
+        onLoginSuccess={() => { setIsAdmin(true); setShowAdminLogin(false); }}
+        onCancel={() => { setShowAdminLogin(false); setIsAdminRoute(false); }}
+      />
+    );
+
     // Static pages
     if (staticPage === 'privacy') return <PrivacyPolicyPage onBack={goHome} />;
     if (staticPage === 'terms') return <TermsPage onBack={goHome} />;
@@ -236,7 +245,7 @@ export default function App() {
         onOpenPostModal={() => setIsPostModalOpen(true)}
         onOpenAdminModal={() => {
           setIsAdminRoute(true);
-          setIsAdminModalOpen(true);
+          setShowAdminLogin(true);
         }}
         onLogoutAdmin={handleLogoutAdmin}
         onResetFilters={handleResetFilters}
@@ -261,17 +270,12 @@ export default function App() {
         onAddJob={handleAddJob}
       />
 
-      <AdminLoginModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        onLoginSuccess={() => setIsAdmin(true)}
-      />
 
       <Footer
         isAdmin={isAdmin}
         onOpenAdminModal={() => {
           setIsAdminRoute(true);
-          setIsAdminModalOpen(true);
+          setShowAdminLogin(true);
         }}
         onLogoutAdmin={handleLogoutAdmin}
         onCategorySelect={(cat) => {
