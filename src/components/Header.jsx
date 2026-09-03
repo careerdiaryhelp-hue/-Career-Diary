@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookmarkCheck, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 export default function Header({
   searchQuery,
@@ -10,9 +10,11 @@ export default function Header({
     <header className="main-header">
       <div className="container header-container">
         <div className="brand-logo" onClick={onResetFilters}>
-          <div className="logo-icon">
-            <BookmarkCheck className="w-7 h-7" />
-          </div>
+          <img
+            src="/image.png"
+            alt="Career Diary Logo"
+            className="header-logo-img"
+          />
           <div className="logo-text">
             <span className="logo-title">CAREER DIARY</span>
             <span className="logo-subtitle">CAREERDIARY.BLOGSPOT.COM • GOVT JOB PORTAL</span>

@@ -267,6 +267,17 @@ body.dark-mode .icon-btn:hover {
   font-size: 1.5rem;
   box-shadow: 0 4px 10px rgba(216,27,96,0.3);
 }
+.header-logo-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 4px 12px rgba(0, 137, 123, 0.25);
+  transition: transform 0.2s ease;
+}
+.header-logo-img:hover {
+  transform: scale(1.05);
+}
 .logo-text {
   display: flex;
   flex-direction: column;

@@ -7,7 +7,7 @@ export default function Footer({ onCategorySelect, onSearchSelect, onStaticPage 
       <div className="container footer-content">
         <div className="footer-col brand-col">
           <div className="brand-logo footer-logo">
-            <img src="/favicon.svg" alt="Career Diary Logo" style={{ width: '28px', height: '28px', marginRight: '8px', verticalAlign: 'middle' }} />
+            <img src="/image.png" alt="Career Diary Logo" style={{ width: '36px', height: '36px', borderRadius: '50%', marginRight: '10px', verticalAlign: 'middle', objectFit: 'contain' }} />
             <span>CAREER DIARY</span>
           </div>
           <p className="footer-desc">
@@ -30,8 +30,8 @@ export default function Footer({ onCategorySelect, onSearchSelect, onStaticPage 
             </a>
             {/* Website */}
             <a href="https://careerdiary.in" className="social-icon" title="Visit Website"
-              style={{ background: '#d81b60' }}>
-              <img src="/favicon.svg" alt="Website" style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} />
+              style={{ background: 'transparent', padding: '0', borderRadius: '50%', overflow: 'hidden' }}>
+              <img src="/image.png" alt="Website" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'contain', display: 'block' }} />
             </a>
           </div>
         </div>
