@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin } from 'lucide-react';
+import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -21,236 +21,310 @@ export default function JobDetailPage({ job, onBack }) {
   };
 
   const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' official apply online portal')}`;
-
   const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || fallbackSearchUrl;
   const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || primaryApplyUrl;
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || primaryApplyUrl;
+  const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || primaryApplyUrl;
+
+  const importantDates = job.importantDates || {};
+  const applicationFee = job.applicationFee || {};
+  const ageLimit = job.ageLimit || {};
+  const vacancyDetails = job.vacancyDetails || [];
+  const importantLinks = job.importantLinks || {};
+
+  const postDate = job.postDate || job.importantDates?.postDate || null;
+  const shortInfo = job.uniqueDescription || job.description || `${job.organization || 'The organization'} has released the official notification for ${job.title}. Eligible candidates can apply online before the last date. Read the notification carefully before submitting the form.`;
 
   return (
-    <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
-      {/* Back Button & Breadcrumb */}
-      <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px' }}>
+      {/* Back Button */}
+      <div style={{ marginBottom: '12px' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <ArrowLeft className="w-4 h-4" /> Back to All Jobs
         </button>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Home &gt; Latest Govt Jobs &gt; <strong>{job.title.substring(0, 30)}...</strong>
-        </span>
       </div>
 
-      {/* Main Container Card */}
-      <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', boxShadow: 'var(--card-shadow)' }}>
-        
-        {/* Banner Header */}
-        <div style={{ borderBottom: '2px solid var(--primary-color)', paddingBottom: '16px', marginBottom: '20px' }}>
-          <span className="badge badge-pink" style={{ marginBottom: '8px', display: 'inline-block' }}>LATEST GOVT JOB</span>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-heading)', lineHeight: '1.4', marginBottom: '12px' }}>
-            {job.title}
-          </h1>
-          <div className="job-detail-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '0.9rem', color: 'var(--text-main)' }}>
-            <span><Building2 className="w-4 h-4 inline mr-1" style={{ color: 'var(--primary-color)' }} /> <strong>Organization:</strong> {job.organization || 'Government Recruitment Board'}</span>
-            <span><Tag className="w-4 h-4 inline mr-1" style={{ color: 'var(--primary-color)' }} /> <strong>Post Name:</strong> {job.postName || job.title}</span>
-            <span><UserCheck className="w-4 h-4 inline mr-1" style={{ color: 'var(--primary-color)' }} /> <strong>Total Vacancies:</strong> {job.vacancies || job.totalPosts || 'Various'}</span>
-            {job.state && <span><MapPin className="w-4 h-4 inline mr-1" style={{ color: 'var(--primary-color)' }} /> <strong>Job Location:</strong> {job.state} / All India</span>}
-          </div>
-        </div>
+      {/* Main Detail Container */}
+      <div className="sr-detail-container">
 
-        {/* Quick Top CTA Box */}
-        <div style={{ backgroundColor: 'rgba(230, 0, 92, 0.05)', border: '1px solid rgba(230, 0, 92, 0.2)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--primary-color)' }}>Direct Official Application Portal Active</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Last Date to Submit Online Application: <strong>{job.appLast || job.lastDate || 'As per schedule'}</strong></div>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-              <Link className="w-4 h-4 inline mr-1" /> Apply Online Now
-            </a>
-            <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-              <FileDown className="w-4 h-4 inline mr-1" /> Download Notification PDF
-            </a>
-          </div>
-        </div>
-
-        {/* 2 Column Details: Dates & Application Fees */}
-        <div className="detail-boxes-grid" style={{ marginBottom: '24px' }}>
-          <div className="detail-info-box">
-            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CalendarCheck className="w-5 h-5" /> Important Dates
-            </h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ padding: '8px 0', borderBottom: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Application Start Date:</span> <strong>{job.appStart || job.importantDates?.applyStart || 'Declared'}</strong>
-              </li>
-              <li style={{ padding: '8px 0', borderBottom: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Last Date to Apply Online:</span> <strong style={{ color: 'var(--primary-color)' }}>{job.appLast || job.lastDate || job.importantDates?.applyLastDate || 'As per rules'}</strong>
-              </li>
-              <li style={{ padding: '8px 0', borderBottom: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Fee Payment Last Date:</span> <strong>{job.importantDates?.feeLastDate || job.appLast || job.lastDate || 'Same as last date'}</strong>
-              </li>
-              <li style={{ padding: '8px 0', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Exam / CBT Date:</span> <strong>{job.importantDates?.examDate || 'To Be Announced Soon'}</strong>
-              </li>
-            </ul>
-          </div>
-
-          <div className="detail-info-box">
-            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <IndianRupee className="w-5 h-5" /> Application Fee Details
-            </h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ padding: '8px 0', borderBottom: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>General / OBC / EWS:</span> <strong>{job.feeGen || job.applicationFee?.['General / OBC / EWS'] || job.applicationFee?.['general_obc_ews'] || '₹100'}</strong>
-              </li>
-              <li style={{ padding: '8px 0', borderBottom: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>SC / ST / PwD / Female:</span> <strong>{job.feeSc || job.applicationFee?.['SC / ST'] || job.applicationFee?.['sc_st'] || '₹0 (Exempted)'}</strong>
-              </li>
-              <li style={{ padding: '8px 0', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Mode of Payment:</span> <strong>{job.applicationFee?.paymentMode || 'Online (Debit / Credit Card, Net Banking, UPI)'}</strong>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Age Limit & Qualification Box */}
-        <div className="detail-info-box" style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <UserCheck className="w-5 h-5" /> Age Limit & Educational Qualification
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-            <div style={{ background: 'var(--bg-main)', padding: '10px', borderRadius: '6px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Minimum Age:</span>
-              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-heading)' }}>{job.minAge || job.ageLimit?.minimum || job.ageLimit?.min || '18 Years'}</div>
-            </div>
-            <div style={{ background: 'var(--bg-main)', padding: '10px', borderRadius: '6px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Maximum Age:</span>
-              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-heading)' }}>{job.maxAge || job.ageLimit?.maximum || job.ageLimit?.max || '37 Years'}</div>
-            </div>
-            <div style={{ background: 'var(--bg-main)', padding: '10px', borderRadius: '6px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Age Relaxation:</span>
-              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-heading)' }}>{job.ageLimit?.relaxation || 'As per Govt Rules (SC/ST 5Y, OBC 3Y)'}</div>
-            </div>
-          </div>
-          <div style={{ fontSize: '0.94rem', lineHeight: '1.6', paddingTop: '10px', borderTop: '1px dashed var(--border-color)', color: 'var(--text-main)' }}>
-            <strong>Educational Qualification:</strong> {job.qualification || job.eligibility?.education || job.eligibility?.qualification || 'Passed 10th / 12th / Diploma / Degree from a recognized board or university.'}
-          </div>
-        </div>
-
-        {/* Recruitment Description */}
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-heading)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Info className="w-5 h-5" style={{ color: 'var(--primary-color)' }} /> Overview & Job Description
-          </h3>
-          <p style={{ fontSize: '0.96rem', lineHeight: '1.7', color: 'var(--text-main)' }}>
-            {job.description || job.uniqueDescription || 'Official notification details, post-wise vacancies, eligibility conditions, and application procedures for candidates.'}
-          </p>
-        </div>
-
-        {/* Selection Process */}
-        {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 && (
-          <div className="detail-info-box" style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 className="w-5 h-5" /> Selection Process Stages
-            </h3>
-            <ol style={{ paddingLeft: '20px', fontSize: '0.94rem', lineHeight: '1.7', margin: 0, color: 'var(--text-main)' }}>
-              {job.selectionProcess.map((step, idx) => (
-                <li key={idx} style={{ marginBottom: '6px' }}><strong>Stage {idx + 1}:</strong> {step}</li>
-              ))}
-            </ol>
-          </div>
+        {/* Title */}
+        <h1 className="sr-main-title">{job.title}</h1>
+        {postDate && (
+          <div className="sr-post-date">Post Date: {postDate}</div>
         )}
 
-        {/* Vacancy Breakdown Table */}
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-heading)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Building2 className="w-5 h-5" style={{ color: 'var(--primary-color)' }} /> Post Wise Vacancy Details
-          </h3>
-          <table className="table-styled">
+        {/* Short Information */}
+        <div className="sr-short-info">
+          <strong>Short Information :</strong> {shortInfo}
+        </div>
+
+        {/* Social Banners */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer"
+            style={{ background: '#0088cc', color: '#fff', padding: '8px 18px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Send className="w-4 h-4" /> Join Telegram Channel
+          </a>
+          <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer"
+            style={{ background: '#25d366', color: '#fff', padding: '8px 18px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <MessageCircle className="w-4 h-4" /> Join WhatsApp Channel
+          </a>
+        </div>
+
+        {/* Main Info Table */}
+        <table className="sr-table">
+          <tbody>
+            {/* Pink Heading Row */}
+            <tr>
+              <td colSpan={2} className="sr-table-heading">
+                {job.organization || 'Government Recruitment Board'} : {job.postName || job.title}<br />
+                <span style={{ fontSize: '1rem', fontWeight: 'normal' }}>Short Details</span>
+              </td>
+            </tr>
+
+            {/* Website / Important Info */}
+            <tr>
+              <td style={{ textAlign: 'center', fontWeight: 'bold', width: '50%' }}>
+                <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>
+                  {job.organization || 'Official Website'}
+                </a>
+              </td>
+              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                Post Name: {job.postName || job.title}
+              </td>
+            </tr>
+            {(job.vacancies || job.totalPosts) && (
+              <tr>
+                <td colSpan={2} style={{ textAlign: 'center', fontWeight: 'bold', color: '#008000' }}>
+                  Total Vacancies: {job.vacancies || job.totalPosts}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Important Dates & Application Fee */}
+        <table className="sr-table">
+          <tbody>
+            <tr>
+              <td colSpan={2} className="sr-table-subheading">
+                Important Dates &amp; Application Fee
+              </td>
+            </tr>
+            <tr>
+              {/* Dates Column */}
+              <td style={{ verticalAlign: 'top', width: '50%', padding: 0 }}>
+                <div className="sr-dates-fees-header">Important Dates</div>
+                <ul className="sr-list">
+                  <li>⚫ <strong>Application Start :</strong> {importantDates.applyStart || job.appStart || 'As per notification'}</li>
+                  <li>⚫ <strong>Last Date to Apply :</strong> <span style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'As per notification'}</span></li>
+                  {(importantDates.feeLastDate || job.appLast) && (
+                    <li>⚫ <strong>Fee Payment Last Date :</strong> {importantDates.feeLastDate || job.appLast}</li>
+                  )}
+                  {importantDates.examDate && (
+                    <li>⚫ <strong>Exam Date :</strong> {importantDates.examDate}</li>
+                  )}
+                  {importantDates.admitCard && (
+                    <li>⚫ <strong>Admit Card :</strong> {importantDates.admitCard}</li>
+                  )}
+                  {importantDates.result && (
+                    <li>⚫ <strong>Result Date :</strong> {importantDates.result}</li>
+                  )}
+                  {Object.entries(importantDates)
+                    .filter(([k]) => !['applyStart', 'lastDate', 'applyLastDate', 'feeLastDate', 'examDate', 'admitCard', 'result', 'postDate'].includes(k))
+                    .map(([k, v]) => (
+                      <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                    ))}
+                </ul>
+              </td>
+
+              {/* Fees Column */}
+              <td style={{ verticalAlign: 'top', padding: 0 }}>
+                <div className="sr-dates-fees-header">Application Fee</div>
+                <ul className="sr-list">
+                  {applicationFee['General / OBC / EWS'] || job.feeGen ? (
+                    <li>⚫ <strong>General / OBC :</strong> {applicationFee['General / OBC / EWS'] || job.feeGen}</li>
+                  ) : (
+                    <li>⚫ <strong>General / OBC :</strong> As per notification</li>
+                  )}
+                  {applicationFee['SC / ST'] || job.feeSc ? (
+                    <li>⚫ <strong>SC / ST / PwD :</strong> {applicationFee['SC / ST'] || job.feeSc}</li>
+                  ) : null}
+                  {Object.entries(applicationFee)
+                    .filter(([k]) => !['General / OBC / EWS', 'SC / ST', 'paymentMode'].includes(k))
+                    .map(([k, v]) => (
+                      <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                    ))}
+                  <li>⚫ <strong>Payment Mode :</strong> {applicationFee.paymentMode || 'Online (Debit/Credit Card, Net Banking, UPI)'}</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Age Limit & Qualification */}
+        <table className="sr-table">
+          <tbody>
+            <tr>
+              <td colSpan={2} className="sr-table-subheading">Age Limit &amp; Educational Qualification</td>
+            </tr>
+            <tr>
+              <td style={{ textAlign: 'center' }}>
+                <strong>Minimum Age :</strong> {ageLimit.minimum || ageLimit.min || job.minAge || '18 Years'}
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <strong>Maximum Age :</strong> {ageLimit.maximum || ageLimit.max || job.maxAge || '37 Years'}
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={2} style={{ textAlign: 'center', color: '#008000' }}>
+                <strong>Age Relaxation :</strong> {ageLimit.relaxation || 'As per Govt. Rules (SC/ST 5 Yrs, OBC 3 Yrs, PwD 10 Yrs)'}
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={2}>
+                <strong>Educational Qualification :</strong> {job.qualification || job.eligibility?.education || job.eligibility?.qualification || 'Candidates must have passed 10th / 12th / Diploma / Degree from a Recognized Board / University.'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Mode of Selection */}
+        {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 && (
+          <table className="sr-table">
+            <tbody>
+              <tr>
+                <td className="sr-table-subheading">Mode of Selection</td>
+              </tr>
+              <tr>
+                <td>
+                  <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                    {job.selectionProcess.map((step, idx) => (
+                      <li key={idx}>{step}</li>
+                    ))}
+                  </ol>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+
+        {/* Vacancy Details Table */}
+        {vacancyDetails.length > 0 && (
+          <table className="sr-table sr-vacancy-table">
             <thead>
               <tr>
-                <th>Post Name / Cadre</th>
+                <th colSpan={3} className="sr-table-heading">
+                  {job.title} : Vacancy Details
+                </th>
+              </tr>
+              <tr>
+                <th>Post Name</th>
                 <th>Total Posts</th>
-                <th>Required Qualification</th>
+                <th>Eligibility Criteria</th>
               </tr>
             </thead>
             <tbody>
-              {job.vacancyDetails && Array.isArray(job.vacancyDetails) && job.vacancyDetails.length > 0 ? (
-                job.vacancyDetails.map((v, idx) => (
-                  <tr key={idx}>
-                    <td>{v["Post Name"] || v.postName || v.Post || v.name || job.postName || job.title}</td>
-                    <td><strong>{v.Total || v.total || v.vacancies || job.vacancies || 'Various'}</strong></td>
-                    <td>{v.Eligibility || v.eligibility || job.qualification || 'As per rules'}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td>{job.postName || job.title}</td>
-                  <td><strong>{job.vacancies || job.totalPosts || 'Various Posts'}</strong></td>
-                  <td>{job.qualification || 'As specified in eligibility box'}</td>
+              {vacancyDetails.map((v, idx) => (
+                <tr key={idx}>
+                  <td>{v['Post Name'] || v.postName || v.Post || v.name || '-'}</td>
+                  <td><strong>{v.Total || v.total || v.vacancies || '-'}</strong></td>
+                  <td>{v.Eligibility || v.eligibility || job.qualification || 'As per rules'}</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
+        )}
 
-        {/* Direct Links Section */}
-        <div style={{ marginBottom: '30px' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Link className="w-5 h-5" /> Official Direct Links
-          </h3>
-          <table className="table-styled">
-            <tbody>
-              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
-                Object.entries(job.importantLinks).map(([label, url], idx) => (
-                  <tr key={idx}>
-                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
-                    <td>
-                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                        Click Here
-                      </a>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <>
-                  <tr>
-                    <td style={{ fontWeight: '700', width: '55%' }}>Apply Online Link</td>
-                    <td>
-                      <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                        Click Here to Apply Online
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ fontWeight: '700' }}>Download Official Notification PDF</td>
-                    <td>
-                      <a href={notificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                        Download Notification PDF
-                      </a>
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* How to Fill Form */}
+        <table className="sr-table">
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">How To Fill {job.title} Online Form</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                  <li>Interested candidates can submit their application online before the last date.</li>
+                  <li>Use the &quot;Click Here&quot; link provided below under Important Links section to apply directly.</li>
+                  <li>Alternatively, visit the official website of the organization to complete the process online.</li>
+                  <li>Make sure to complete the application before the deadline: <strong style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'check notification'}</strong>.</li>
+                  <li><strong>Note –</strong> छात्रों से अनुरोध है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से पढ़ें। (Last Date, Age Limit &amp; Education Qualification)</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        {/* Join Social Media Community */}
-        <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-          <h4 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '8px', color: 'var(--text-heading)' }}>
-            Get Daily Govt Job Alerts Direct on Your Phone
-          </h4>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            Join 50,000+ candidates receiving instant updates for SSC, Railways, BPSC, Banking & State Jobs.
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn" style={{ backgroundColor: '#0088cc', color: '#fff', padding: '10px 20px', fontSize: '0.95rem' }}>
-              <Send className="w-4 h-4 inline mr-1" /> Join Telegram Channel
-            </a>
-            <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn" style={{ backgroundColor: '#25D366', color: '#fff', padding: '10px 20px', fontSize: '0.95rem' }}>
-              <MessageCircle className="w-4 h-4 inline mr-1" /> Join WhatsApp Channel
-            </a>
+        {/* Important Links Table */}
+        <table className="sr-table sr-links-table">
+          <tbody>
+            <tr>
+              <td colSpan={2} className="sr-table-heading">
+                Some Useful Important Links
+              </td>
+            </tr>
+
+            {/* Render all importantLinks from data */}
+            {Object.keys(importantLinks).length > 0 ? (
+              Object.entries(importantLinks).map(([label, url], idx) => (
+                <tr key={idx}>
+                  <td style={{ textAlign: 'center', width: '60%' }}>{label}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <a
+                      href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Click Here
+                    </a>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <>
+                <tr>
+                  <td style={{ textAlign: 'center' }}>Apply Online</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ textAlign: 'center' }}>Download Official Notification</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <a href={notificationUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ textAlign: 'center' }}>Official Website</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <a href={officialWebUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                  </td>
+                </tr>
+              </>
+            )}
+
+            {/* Telegram & WhatsApp */}
+            <tr>
+              <td style={{ textAlign: 'center' }}>Join Our Telegram Channel</td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer">Click Here</a>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ textAlign: 'center' }}>Join Our WhatsApp Channel</td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer">Click Here</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Expert Tip if available */}
+        {job.expertTip && (
+          <div style={{ backgroundColor: '#fffde7', border: '1px solid #f9a825', padding: '12px 16px', borderRadius: '6px', marginTop: '10px', fontSize: '0.95rem', color: '#333' }}>
+            💡 <strong>Expert Tip:</strong> {job.expertTip}
           </div>
-        </div>
+        )}
 
       </div>
     </div>

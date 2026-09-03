@@ -982,3 +982,359 @@ body.dark-mode .job-item-link:hover {
 .footer-bottom-links a:hover {
   color: #fff;
 }
+
+/* =========================================
+   NEW UI OVERRIDES (ResultBharat Style)
+   ========================================= */
+
+/* Top Yellow Bar */
+.last-date-bar {
+  background-color: #ffff00;
+  color: #ff0000;
+  text-align: center;
+  font-weight: 800;
+  padding: 8px;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+.last-date-bar a {
+  color: #ff0000;
+  text-decoration: none;
+}
+.last-date-bar a:hover {
+  text-decoration: underline;
+}
+
+/* Ticker Overrides */
+.top-bar {
+  background: #ffffff;
+  color: #000000;
+  padding: 0;
+  border-bottom: 2px solid #2e7d32;
+}
+.top-bar-inner {
+  gap: 0;
+  padding: 0;
+}
+.ticker-label {
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 0;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  z-index: 2;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+.ticker-content a {
+  color: #0d47a1;
+  font-weight: 700;
+}
+.ticker-content a:hover {
+  color: #d32f2f;
+}
+
+/* 8-Box Highlights Grid */
+.bg-box-pink { background: #e91e63 !important; }
+.bg-box-blue { background: #0056b3 !important; }
+.bg-box-green { background: #28a745 !important; }
+.bg-box-purple { background: #d500f9 !important; }
+.bg-box-orange { background: #ff5722 !important; }
+.bg-box-teal { background: #00897b !important; }
+.bg-box-darkred { background: #b71c1c !important; }
+
+.top-banners-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px; /* Very tight spacing */
+}
+@media (max-width: 768px) {
+  .top-banners-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.banner-card {
+  border-radius: 0;
+  border: 1px solid #fff;
+  min-height: 60px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: none;
+}
+.banner-card:hover {
+  transform: none;
+  opacity: 0.9;
+}
+.banner-title {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+/* 3-Column Layout Overrides */
+.columns-3-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 992px) {
+  .columns-3-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .columns-3-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col-darkred .column-header {
+  background: #a71b30 !important;
+  border: 1px solid #a71b30;
+  justify-content: center;
+  padding: 8px 16px;
+}
+.col-darkred .column-header h3 {
+  font-size: 1.3rem;
+  letter-spacing: 0;
+  color: #fff;
+}
+.col-darkred .column-body {
+  background: #ffffff !important;
+  border: 1px solid #a71b30;
+  border-top: none;
+  padding: 10px;
+  border-radius: 0 0 10px 10px;
+}
+.col-darkred {
+  border-radius: 10px;
+  border: none;
+}
+.col-darkred .column-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.col-darkred .column-body li {
+  position: relative;
+  padding-left: 14px;
+  margin-bottom: 8px;
+}
+.col-darkred .column-body li::before {
+  content: "■";
+  color: #a71b30;
+  font-size: 0.5rem;
+  position: absolute;
+  left: 0;
+  top: 7px;
+}
+.col-darkred .job-item-link {
+  border-bottom: none;
+  padding: 0;
+  color: #0d47a1 !important; /* Dark blue links */
+  display: inline;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.col-darkred .job-item-link:hover {
+  background-color: transparent !important;
+  transform: none !important;
+  color: #b71c1c !important;
+  text-decoration: underline;
+}
+
+.badge-tag {
+  font-size: 0.65rem;
+  margin-left: 2px;
+}
+sup .badge-tag {
+  vertical-align: super;
+  padding: 1px 4px;
+}
+
+/* Floating Buttons */
+.floating-btn {
+  position: fixed;
+  bottom: 20px;
+  padding: 10px 16px;
+  border-radius: 30px;
+  color: #fff !important;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+  transition: transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.floating-btn:hover {
+  transform: scale(1.05);
+  color: #fff;
+}
+.float-whatsapp {
+  left: 20px;
+  background-color: #25d366;
+}
+.float-telegram {
+  right: 20px;
+  background-color: #0088cc;
+}
+@media (max-width: 600px) {
+  .floating-btn {
+    bottom: 10px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .float-whatsapp { left: 10px; }
+  .float-telegram { right: 10px; }
+}
+
+/* =========================================
+   SARKARI RESULT JOB DETAIL PAGE STYLES
+   ========================================= */
+
+.sr-detail-container {
+  background-color: #fff;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  padding: 20px;
+  border: 1px solid #ccc;
+  margin-top: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.sr-main-title {
+  color: #ff0080; /* Pinkish red */
+  font-size: 1.6rem;
+  font-weight: bold;
+  text-align: left;
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.sr-post-date {
+  color: #008000; /* Green */
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+}
+
+.sr-short-info {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* Unified Table styling (SarkariResult style) */
+.sr-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  border: 2px solid #000;
+}
+
+.sr-table th, .sr-table td {
+  border: 1px solid #000;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.sr-table-heading {
+  background-color: #ff0080;
+  color: #fff !important;
+  text-align: center !important;
+  font-size: 1.3rem;
+  font-weight: bold;
+  padding: 10px !important;
+}
+
+.sr-table-subheading {
+  background-color: #008000;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.sr-dates-fees-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.sr-dates-col, .sr-fees-col {
+  flex: 1;
+  min-width: 300px;
+}
+.sr-dates-col {
+  border-right: 1px solid #000;
+}
+@media (max-width: 650px) {
+  .sr-dates-col {
+    border-right: none;
+    border-bottom: 1px solid #000;
+  }
+}
+
+.sr-dates-fees-header {
+  color: #008000;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 10px;
+  border-bottom: 1px solid #000;
+}
+
+.sr-list {
+  list-style: none;
+  padding: 10px 15px;
+  margin: 0;
+}
+.sr-list li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.sr-age-limit {
+  text-align: center;
+  font-weight: bold;
+  color: #008000;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.sr-vacancy-table th {
+  background-color: #008000;
+  color: white;
+  text-align: center;
+}
+.sr-vacancy-table td {
+  text-align: center;
+}
+
+.sr-links-table td {
+  font-weight: bold;
+  text-align: center;
+}
+.sr-links-table td a {
+  color: #0000ff;
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+.sr-links-table td a:hover {
+  text-decoration: underline;
+  color: #ff0000;
+}
+
+.sr-questions {
+  margin-top: 20px;
+}
+.sr-questions .q {
+  font-weight: bold;
+  color: #ff0080;
+  margin-bottom: 5px;
+}
+.sr-questions .a {
+  margin-bottom: 15px;
+  color: #000;
+}

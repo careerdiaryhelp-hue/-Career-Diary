@@ -268,6 +268,14 @@ export default function App() {
           setSearchQuery(q);
         }}
       />
+
+      {/* Floating Action Buttons */}
+      <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="floating-btn float-whatsapp">
+        Join WhatsApp
+      </a>
+      <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="floating-btn float-telegram">
+        Join Telegram
+      </a>
     </div>
   );
 }
