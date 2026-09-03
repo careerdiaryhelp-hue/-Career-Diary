@@ -16,6 +16,9 @@ import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
 import ResultDetailPage from './pages/ResultDetailPage';
 import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
+// Dedicated Category Listing Pages
+import AdmissionsListingPage from './pages/AdmissionsListingPage';
+
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     const saved = localStorage.getItem('career_diary_jobs');
@@ -29,7 +32,7 @@ export default function App() {
     return INITIAL_JOBS;
   });
 
-  // Admin authentication state (Hidden by default for regular public users)
+  // Admin authentication state
   const [isAdmin, setIsAdmin] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true' || params.get('admin') === 'secret') return true;
@@ -67,7 +70,7 @@ export default function App() {
   // Scroll to top when changing page views
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedJobId]);
+  }, [selectedJobId, currentCategory]);
 
   const handleAddJob = (newJob) => {
     setJobs([newJob, ...jobs]);
@@ -122,6 +125,42 @@ export default function App() {
     return <JobDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
   };
 
+  // Helper to render main area when no item is selected
+  const renderMainContent = () => {
+    if (currentCategory === 'ADMISSION' && !searchQuery && currentStateFilter === 'all') {
+      return <AdmissionsListingPage jobs={jobs} onSelectJob={(id) => setSelectedJobId(id)} />;
+    }
+
+    return (
+      <>
+        <HighlightsGrid
+          jobs={filteredJobs}
+          currentStateFilter={currentStateFilter}
+          setCurrentStateFilter={setCurrentStateFilter}
+          onSelectJob={(id) => setSelectedJobId(id)}
+        />
+
+        {(searchQuery || currentCategory !== 'all' || currentStateFilter !== 'all') && (
+          <div className="container" style={{ marginTop: '16px' }}>
+            <div className="search-indicator">
+              <span>
+                Search results for "<strong>{searchQuery || `${currentCategory} (${currentStateFilter})`}</strong>" ({filteredJobs.length} matches)
+              </span>
+              <button className="btn btn-sm btn-outline" onClick={handleResetFilters}>
+                Reset Search
+              </button>
+            </div>
+          </div>
+        )}
+
+        <JobColumnsGrid
+          jobs={filteredJobs}
+          onSelectJob={(id) => setSelectedJobId(id)}
+        />
+      </>
+    );
+  };
+
   return (
     <div className="app-root">
       <TopTicker onSelectJob={(id) => setSelectedJobId(id)} />
@@ -147,39 +186,10 @@ export default function App() {
         }}
       />
 
-      {/* Main View Switcher: Page Detail View OR Home Grid View */}
-      {selectedJobId && selectedJob ? (
-        renderDetailPage()
-      ) : (
-        <>
-          <HighlightsGrid
-            jobs={filteredJobs}
-            currentStateFilter={currentStateFilter}
-            setCurrentStateFilter={setCurrentStateFilter}
-            onSelectJob={(id) => setSelectedJobId(id)}
-          />
+      {/* Main View Switcher: Page Detail View OR Category Listing View OR Home Grid View */}
+      {selectedJobId && selectedJob ? renderDetailPage() : renderMainContent()}
 
-          {(searchQuery || currentCategory !== 'all' || currentStateFilter !== 'all') && (
-            <div className="container" style={{ marginTop: '16px' }}>
-              <div className="search-indicator">
-                <span>
-                  Search results for "<strong>{searchQuery || `${currentCategory} (${currentStateFilter})`}</strong>" ({filteredJobs.length} matches)
-                </span>
-                <button className="btn btn-sm btn-outline" onClick={handleResetFilters}>
-                  Reset Search
-                </button>
-              </div>
-            </div>
-          )}
-
-          <JobColumnsGrid
-            jobs={filteredJobs}
-            onSelectJob={(id) => setSelectedJobId(id)}
-          />
-        </>
-      )}
-
-      {/* Admin Post Modal (Only callable when admin unlocked) */}
+      {/* Admin Post Modal */}
       <PostJobModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
