@@ -5,7 +5,7 @@ import { resultsData } from './resultsData';
 import { admissionsData } from './admissionsData';
 import { importantData } from './importantData';
 
-// Export individual category data files for modular consumption
+// Export individual category data files
 export {
   jobsData,
   admitCardsData,
@@ -15,12 +15,14 @@ export {
   importantData
 };
 
-// Merged master INITIAL_JOBS array for the entire application
+// Merged master INITIAL_JOBS array containing all posts
 export const INITIAL_JOBS = [
   ...jobsData,
   ...admitCardsData,
-  ...syllabusData,
   ...resultsData,
   ...admissionsData,
+  ...syllabusData,
   ...importantData
 ];
+
+

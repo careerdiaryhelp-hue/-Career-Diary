@@ -26,26 +26,17 @@ import ContactUsPage from './pages/ContactUsPage';
 
 export default function App() {
   const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('career_diary_jobs');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('career_diary_jobs');
+      if (saved) {
         const parsed = JSON.parse(saved);
-        // Clean out test items created during testing
-        const cleanSaved = parsed.filter((j) => {
-          if (!j || !j.title) return false;
-          const t = j.title.toLowerCase().trim();
-          return !t.startsWith('test') && t !== 'test';
-        });
-
-        const existingIds = new Set(cleanSaved.map((j) => j.id));
-        const missing = INITIAL_JOBS.filter((j) => !existingIds.has(j.id));
-        if (missing.length > 0) {
-          return [...cleanSaved, ...missing];
+        const customAdminJobs = parsed.filter((j) => j && j.id && !String(j.id).startsWith('bb-'));
+        if (customAdminJobs.length > 0) {
+          return [...customAdminJobs, ...INITIAL_JOBS];
         }
-        return cleanSaved;
-      } catch (e) {
-        return INITIAL_JOBS;
       }
+    } catch (e) {
+      console.warn('Error reading saved jobs', e);
     }
     return INITIAL_JOBS;
   });
@@ -73,7 +64,12 @@ export default function App() {
   const [staticPage, setStaticPage] = useState(null); // 'privacy' | 'terms' | 'contact'
 
   useEffect(() => {
-    localStorage.setItem('career_diary_jobs', JSON.stringify(jobs));
+    try {
+      const customAdminJobs = jobs.filter((j) => j && j.id && !String(j.id).startsWith('bb-'));
+      localStorage.setItem('career_diary_jobs', JSON.stringify(customAdminJobs));
+    } catch (e) {
+      console.warn('Could not save custom jobs to localStorage', e);
+    }
   }, [jobs]);
 
   useEffect(() => {
@@ -152,17 +148,6 @@ export default function App() {
   // Helper to render dedicated detail page based on category
   const renderDetailPage = () => {
     if (!selectedJob) return null;
-    const cat = (selectedJob.category || '').toUpperCase();
-
-    if (cat.includes('ADMIT CARD')) {
-      return <AdmitCardDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
-    }
-    if (cat.includes('RESULT') || cat.includes('ANSWER KEY')) {
-      return <ResultDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
-    }
-    if (cat.includes('ADMISSION')) {
-      return <AdmissionDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
-    }
     return <JobDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
   };
 
