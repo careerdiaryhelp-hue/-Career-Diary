@@ -214,7 +214,7 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <TopTicker onSelectJob={(id) => setSelectedJobId(id)} />
+      <TopTicker jobs={jobs} onSelectJob={(id) => setSelectedJobId(id)} />
 
       <Header
         searchQuery={searchQuery}
