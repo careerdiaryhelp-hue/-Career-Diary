@@ -2,9 +2,17 @@ import React from 'react';
 import { Briefcase, FileText, IdCard, CheckSquare, GraduationCap, Bookmark, ChevronRight } from 'lucide-react';
 
 export default function JobColumnsGrid({ jobs, onSelectJob }) {
-  const renderColumn = (category, title, icon, colorClass) => {
+  const renderColumn = (categoryKey, title, icon, colorClass) => {
     const Icon = icon;
-    const catJobs = jobs.filter((j) => j.category === category);
+    const targetCat = categoryKey.toUpperCase();
+
+    const catJobs = jobs.filter((j) => {
+      const jobCat = (j.category || '').toUpperCase();
+      if (targetCat.includes('RESULT')) {
+        return jobCat.includes('RESULT') || jobCat.includes('ANSWER KEY');
+      }
+      return jobCat === targetCat || jobCat.includes(targetCat) || targetCat.includes(jobCat);
+    });
 
     return (
       <div className={`column-card ${colorClass}`}>
@@ -37,10 +45,10 @@ export default function JobColumnsGrid({ jobs, onSelectJob }) {
                   <ChevronRight className="w-3.5 h-3.5 inline opacity-60 mr-1" />
                   {job.title}
                   {job.badge && <span className={`badge-tag ${badgeClass}`}>{job.badge}</span>}
-                  {job.lastDate && (
+                  {(job.appLast || job.lastDate) && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                       {' '}
-                      (Last Date: {job.lastDate})
+                      (Last Date: {job.appLast || job.lastDate})
                     </span>
                   )}
                 </a>
@@ -63,7 +71,7 @@ export default function JobColumnsGrid({ jobs, onSelectJob }) {
         </div>
 
         <div className="secondary-grid">
-          {renderColumn('ADMISSION', 'ADMISSION 2025', GraduationCap, 'col-orange')}
+          {renderColumn('ADMISSION', 'ADMISSION 2025-2026', GraduationCap, 'col-orange')}
           {renderColumn('IMPORTANT', 'IMPORTANT SCHEMES & CERTIFICATES', Bookmark, 'col-teal')}
         </div>
       </div>

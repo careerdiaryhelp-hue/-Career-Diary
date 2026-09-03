@@ -23,7 +23,13 @@ export default function App() {
     const saved = localStorage.getItem('career_diary_jobs');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const existingIds = new Set(parsed.map((j) => j.id));
+        const missing = INITIAL_JOBS.filter((j) => !existingIds.has(j.id));
+        if (missing.length > 0) {
+          return [...parsed, ...missing];
+        }
+        return parsed;
       } catch (e) {
         return INITIAL_JOBS;
       }
@@ -76,7 +82,18 @@ export default function App() {
 
   // Filtered jobs resolver
   const filteredJobs = jobs.filter((job) => {
-    const matchCategory = currentCategory === 'all' || job.category === currentCategory;
+    const jobCat = (job.category || '').toUpperCase();
+    const curCat = currentCategory.toUpperCase();
+
+    let matchCategory = currentCategory === 'all';
+    if (!matchCategory) {
+      if (curCat.includes('RESULT')) {
+        matchCategory = jobCat.includes('RESULT') || jobCat.includes('ANSWER KEY');
+      } else {
+        matchCategory = jobCat === curCat || jobCat.includes(curCat) || curCat.includes(jobCat);
+      }
+    }
+
     const matchState =
       currentStateFilter === 'all' ||
       (job.state && job.state.toLowerCase() === currentStateFilter.toLowerCase());
@@ -170,7 +187,7 @@ export default function App() {
         }}
       />
 
-      {/* Main View Switcher: Page Detail View OR Category Listing View OR Home Grid View */}
+      {/* Main View Switcher */}
       {selectedJobId && selectedJob ? renderDetailPage() : renderMainContent()}
 
       {/* Admin Post Modal */}
