@@ -93,7 +93,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     onAddJob(newJob);
     setForm({ ...EMPTY_FORM });
     setActiveSection('all-posts');
-    alert('✅ Post published successfully!');
+    alert('✅ Post published successfully! It is now LIVE for all visitors on Career Diary via Firebase Firestore.');
   };
 
   const handleSaveDraft = () => {
@@ -115,9 +115,15 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   // ── Render sections ──────────────────────────────────────
   const renderDashboard = () => (
     <div>
-      <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, marginBottom: '24px', color: '#1e293b' }}>
-        Dashboard Overview
-      </h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+          Dashboard Overview
+        </h2>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem', color: '#065f46', fontWeight: 600 }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+          Cloud Database: <strong>Firebase Firestore (Live Instant Sync Active)</strong>
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>

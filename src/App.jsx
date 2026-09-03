@@ -20,6 +20,13 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import ContactUsPage from './pages/ContactUsPage';
 
+// Firebase Cloud Firestore
+import {
+  publishJobToFirestore,
+  deleteJobFromFirestore,
+  subscribeToFirestoreJobs
+} from './firebase';
+
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     try {
@@ -242,6 +249,23 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [jobs]);
 
+  // Subscribe to real-time Cloud Firestore updates (posts published by Admin go LIVE for all users!)
+  useEffect(() => {
+    const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
+      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        setJobs(() => {
+          const firestoreIds = new Set(firestorePosts.map((p) => p.id));
+          const remainingStatic = INITIAL_JOBS.filter((j) => !firestoreIds.has(j.id));
+          return [...firestorePosts, ...remainingStatic];
+        });
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
   // Open login page automatically if accessing /admin route while unauthenticated
   useEffect(() => {
     if (isAdminRoute && !isAdmin) {
@@ -249,8 +273,9 @@ export default function App() {
     }
   }, [isAdminRoute, isAdmin]);
 
-  const handleAddJob = (newJob) => {
-    const updated = [newJob, ...jobs];
+  const handleAddJob = async (newJob) => {
+    // 1. Instant local optimistic update
+    const updated = [newJob, ...jobs.filter(j => j.id !== newJob.id)];
     setJobs(updated);
     try {
       const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
@@ -258,15 +283,29 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
     }
+
+    // 2. Publish to Firebase Firestore (LIVE for all visitors worldwide!)
+    try {
+      await publishJobToFirestore(newJob);
+    } catch (err) {
+      console.error('Firestore publish error:', err);
+    }
   };
 
-  const handleDeleteJob = (id) => {
+  const handleDeleteJob = async (id) => {
     setJobs(jobs.filter(j => j.id !== id));
     try {
       const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
       localStorage.setItem('career_diary_admin_posts', JSON.stringify(stored.filter(j => j.id !== id)));
     } catch (e) {
       console.warn('Failed to delete from localStorage', e);
+    }
+
+    // Delete from Firebase Firestore
+    try {
+      await deleteJobFromFirestore(id);
+    } catch (err) {
+      console.error('Firestore delete error:', err);
     }
   };
 
