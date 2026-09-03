@@ -25,12 +25,19 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const existingIds = new Set(parsed.map((j) => j.id));
+        // Clean out test items created during testing
+        const cleanSaved = parsed.filter((j) => {
+          if (!j || !j.title) return false;
+          const t = j.title.toLowerCase().trim();
+          return !t.startsWith('test') && t !== 'test';
+        });
+
+        const existingIds = new Set(cleanSaved.map((j) => j.id));
         const missing = INITIAL_JOBS.filter((j) => !existingIds.has(j.id));
         if (missing.length > 0) {
-          return [...parsed, ...missing];
+          return [...cleanSaved, ...missing];
         }
-        return parsed;
+        return cleanSaved;
       } catch (e) {
         return INITIAL_JOBS;
       }
@@ -102,6 +109,10 @@ export default function App() {
 
   // Filtered jobs resolver
   const filteredJobs = jobs.filter((job) => {
+    if (!job || !job.title) return false;
+    const titleLower = job.title.toLowerCase().trim();
+    if (titleLower.startsWith('test') || titleLower === 'test') return false;
+
     const jobCat = (job.category || '').toUpperCase();
     const curCat = currentCategory.toUpperCase();
 
@@ -154,7 +165,7 @@ export default function App() {
     if (isAdminRoute && isAdmin) {
       return (
         <AdminDashboardPage
-          jobs={jobs}
+          jobs={filteredJobs}
           onAddJob={() => setIsPostModalOpen(true)}
           onDeleteJob={handleDeleteJob}
           onBack={() => setIsAdminRoute(false)}
@@ -164,7 +175,7 @@ export default function App() {
     }
 
     if (currentCategory === 'ADMISSION' && !searchQuery && currentStateFilter === 'all') {
-      return <AdmissionsListingPage jobs={jobs} onSelectJob={(id) => setSelectedJobId(id)} />;
+      return <AdmissionsListingPage jobs={filteredJobs} onSelectJob={(id) => setSelectedJobId(id)} />;
     }
 
     return (
