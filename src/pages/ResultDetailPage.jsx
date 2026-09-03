@@ -20,11 +20,9 @@ export default function ResultDetailPage({ job, onBack }) {
     return null;
   };
 
-  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' result scorecard answer key')}`;
-
-  const resultUrl = getLinkUrl('result', 'scorecard', 'key', 'answer', 'marks', 'merit') || fallbackSearchUrl;
-  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'cutoff') || resultUrl;
-  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || resultUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
+  const resultUrl = getLinkUrl('result', 'scorecard', 'key', 'answer', 'marks', 'merit') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'cutoff') || officialWebUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -119,16 +117,23 @@ export default function ResultDetailPage({ job, onBack }) {
           <table className="table-styled">
             <tbody>
               {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
-                Object.entries(job.importantLinks).map(([label, url], idx) => (
-                  <tr key={idx}>
-                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
-                    <td>
-                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#8e44ad', color: '#fff' }}>
-                        Click Here
-                      </a>
-                    </td>
-                  </tr>
-                ))
+                Object.entries(job.importantLinks).map(([label, url], idx) => {
+                  const isValid = typeof url === 'string' && url.startsWith('http');
+                  return (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                      <td>
+                        {isValid ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#8e44ad', color: '#fff' }}>
+                            Click Here
+                          </a>
+                        ) : (
+                          <span style={{ color: '#8e44ad', fontWeight: 'bold' }}>Link Active Soon</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <>
                   <tr>

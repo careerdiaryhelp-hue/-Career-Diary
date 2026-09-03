@@ -20,11 +20,10 @@ export default function JobDetailPage({ job, onBack }) {
     return null;
   };
 
-  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' official apply online portal')}`;
-  const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || fallbackSearchUrl;
-  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || primaryApplyUrl;
-  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || primaryApplyUrl;
-  const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || primaryApplyUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
+  const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || officialWebUrl;
+  const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || officialWebUrl;
 
   const importantDates = job.importantDates || {};
   const applicationFee = job.applicationFee || {};
@@ -266,36 +265,51 @@ export default function JobDetailPage({ job, onBack }) {
 
             {/* Render all importantLinks from data */}
             {Object.keys(importantLinks).length > 0 ? (
-              Object.entries(importantLinks).map(([label, url], idx) => (
-                <tr key={idx}>
-                  <td style={{ textAlign: 'center', width: '60%' }}>{label}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <a
-                      href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Click Here
-                    </a>
-                  </td>
-                </tr>
-              ))
+              Object.entries(importantLinks).map(([label, url], idx) => {
+                const isValidUrl = typeof url === 'string' && url.startsWith('http');
+                return (
+                  <tr key={idx}>
+                    <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{label}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {isValidUrl ? (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Click Here
+                        </a>
+                      ) : (
+                        <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Link Active Soon</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <>
                 <tr>
-                  <td style={{ textAlign: 'center' }}>Apply Online</td>
+                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Apply Online</td>
                   <td style={{ textAlign: 'center' }}>
-                    <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                    {primaryApplyUrl && primaryApplyUrl.startsWith('http') && !primaryApplyUrl.includes('careerdiary.in') ? (
+                      <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                    ) : (
+                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Link Active Soon</span>
+                    )}
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ textAlign: 'center' }}>Download Official Notification</td>
+                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Download Official Notification</td>
                   <td style={{ textAlign: 'center' }}>
-                    <a href={notificationUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                    {notificationUrl && notificationUrl.startsWith('http') && !notificationUrl.includes('careerdiary.in') ? (
+                      <a href={notificationUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                    ) : (
+                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Notification Coming Soon</span>
+                    )}
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ textAlign: 'center' }}>Official Website</td>
+                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Official Website</td>
                   <td style={{ textAlign: 'center' }}>
                     <a href={officialWebUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
                   </td>

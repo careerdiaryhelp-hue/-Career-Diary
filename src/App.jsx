@@ -27,12 +27,14 @@ import ContactUsPage from './pages/ContactUsPage';
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     try {
-      const saved = localStorage.getItem('career_diary_jobs');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const customAdminJobs = parsed.filter((j) => j && j.id && !String(j.id).startsWith('bb-'));
-        if (customAdminJobs.length > 0) {
-          return [...customAdminJobs, ...INITIAL_JOBS];
+      // Clear legacy cache so users get the fresh real posts immediately
+      localStorage.removeItem('career_diary_jobs');
+
+      const adminPosts = localStorage.getItem('career_diary_admin_posts');
+      if (adminPosts) {
+        const parsed = JSON.parse(adminPosts);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed, ...INITIAL_JOBS];
         }
       }
     } catch (e) {
@@ -62,15 +64,6 @@ export default function App() {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false); // full page login
   const [staticPage, setStaticPage] = useState(null); // 'privacy' | 'terms' | 'contact'
-
-  useEffect(() => {
-    try {
-      const customAdminJobs = jobs.filter((j) => j && j.id && !String(j.id).startsWith('bb-'));
-      localStorage.setItem('career_diary_jobs', JSON.stringify(customAdminJobs));
-    } catch (e) {
-      console.warn('Could not save custom jobs to localStorage', e);
-    }
-  }, [jobs]);
 
   useEffect(() => {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');

@@ -20,11 +20,9 @@ export default function AdmissionDetailPage({ job, onBack }) {
     return null;
   };
 
-  const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.title + ' official apply online portal')}`;
-
-  const primaryApplyUrl = getLinkUrl('apply', 'counseling', 'counselling', 'form', 'registration', 'login') || fallbackSearchUrl;
-  const notificationUrl = getLinkUrl('notification', 'prospectus', 'brochure', 'pdf', 'notice') || primaryApplyUrl;
-  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || primaryApplyUrl;
+  const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
+  const primaryApplyUrl = getLinkUrl('apply', 'counseling', 'counselling', 'form', 'registration', 'login') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'prospectus', 'brochure', 'pdf', 'notice') || officialWebUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
@@ -137,16 +135,23 @@ export default function AdmissionDetailPage({ job, onBack }) {
           <table className="table-styled">
             <tbody>
               {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
-                Object.entries(job.importantLinks).map(([label, url], idx) => (
-                  <tr key={idx}>
-                    <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
-                    <td>
-                      <a href={typeof url === 'string' && url.startsWith('http') ? url : fallbackSearchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
-                        Click Here
-                      </a>
-                    </td>
-                  </tr>
-                ))
+                Object.entries(job.importantLinks).map(([label, url], idx) => {
+                  const isValid = typeof url === 'string' && url.startsWith('http');
+                  return (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
+                      <td>
+                        {isValid ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
+                            Click Here
+                          </a>
+                        ) : (
+                          <span style={{ color: '#e67e22', fontWeight: 'bold' }}>Link Active Soon</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <>
                   <tr>
