@@ -262,7 +262,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       {/* Quick Import */}
       <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', padding: '14px 18px', marginBottom: '18px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontWeight: 700, color: '#475569', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Quick Import:</span>
-        <input type="text" placeholder="Paste sarkariresult.com / ibps.in URL here..." value={importUrl} onChange={e => setImportUrl(e.target.value)}
+        <input type="text" placeholder="Paste job portal / official notification URL here..." value={importUrl} onChange={e => setImportUrl(e.target.value)}
           style={{ flex: 1, minWidth: '240px', padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem', outline: 'none' }} />
         <button onClick={() => { if (importUrl) { alert('Auto-import coming soon! Fill the form manually.'); setImportUrl(''); } }}
           style={{ background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>

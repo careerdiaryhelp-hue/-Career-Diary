@@ -602,7 +602,7 @@ export const jobsData = [
     "importantLinks": {
       "Apply Online": "https://ibpsreg.ibps.in/aaioct25/",
       "Check Official Notification": "https://www.aai.aero/sites/default/files/examdashboard_advertisement/Detailed%20Advertisement%2012-2026-CHQ.pdf",
-      "Official Sarkari Result Website": "https://sarkariresult.com.cm/",
+      "Career Diary Official Website": "https://careerdiary.in/",
       "AAI Official Website": "https://www.aai.aero/en/careers/recruitment"
     }
   },
@@ -954,7 +954,7 @@ export const jobsData = [
       }
     ],
     "importantLinks": {
-      "WWW.CAREERDIARY.IN": "http://SarkariResult.Com"
+      "Career Diary Official Website": "https://careerdiary.in/",
     }
   },
   {
@@ -1411,7 +1411,7 @@ export const jobsData = [
     "importantLinks": {
       "Apply Online": "https://www.aai.aero/en/careers/recruitment",
       "Check Official Notification": "https://www.aai.aero/sites/default/files/examdashboard_advertisement/Detailed%20Advertisement%2012-2026-CHQ.pdf",
-      "Official Sarkari Result Website": "https://sarkariresult.com.cm/",
+     
       "AAI Official Website": "https://www.aai.aero/en/careers/recruitment"
     }
   },
@@ -1555,7 +1555,7 @@ export const jobsData = [
     "importantLinks": {
       "Apply Online Link": "https://app.nfr-recruitment.in/#/auth/home",
       "Check Official Notification": "https://nfr.indianrailways.gov.in/cris//uploads/files/1784037710106-Notification%20for%20Engagement%20of%20Trainees%20under%20Act%20Apprenticeship%202026%20-%20Dated%2014-07-2026.pdf",
-      "Check Sarkari Result": "https://sarkariresult.com.cm/",
+      "Career Diary Official Website": "https://careerdiary.in/",
       "Railway NFR Official Website": "https://nfr.indianrailways.gov.in/"
     }
   },
@@ -1837,7 +1837,7 @@ export const jobsData = [
     "importantLinks": {
       "Apply Online Link": "https://bsusc.bihar.gov.in/",
       "Check Official Notification": "http://sarkariresult.com.cm/wp-content/uploads/2026/07/6d79258f-6944-0010-891a-2c41c58ef78d.pdf",
-      "Check Sarkari Result": "https://sarkariresult.com.cm/",
+      "Career Diary Official Website": "https://careerdiary.in/",
       "Bihar BSUSC Official Website": "https://bsusc.bihar.gov.in/Home/Index"
     }
   },
@@ -2146,7 +2146,7 @@ export const jobsData = [
       "Apply Online": "https://uppsc.up.nic.in/CandidatePages/Notifications.aspx",
       "Check Official Notification": "https://uppsc.up.nic.in/OuterPages/View_Enclosure.aspx?ID=114&amp;flag=H&amp;FID=928",
       "Check Syllabus & Exam Pattern": "http://sarkariresult.com.cm/wp-content/uploads/2026/06/UPPSC-PCS-Pre-Syllabus-Exam-Pattern-Hindi-PDF-2026.pdf",
-      "Official Sarkari Result Website": "https://sarkariresult.com.cm/",
+      "Career Diary Official Website": "https://careerdiary.in/",
       "UPPSC Official Website": "https://uppsc.up.nic.in/"
     }
   },

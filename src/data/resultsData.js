@@ -3295,7 +3295,7 @@ export const resultsData = [
       "Check Correction Date Notice": "http://sarkariresult.com.cm/wp-content/uploads/2025/09/UP-Police-SI-Application-Form-Correction-Notice-2025.pdf",
       "Check Degree Related Notice": "https://uppbpb.gov.in/FilesUploaded/Notice/SI-Form-Clarification312c6d42-dfe4-49a6-9f97-a4e1d6f52940.pdf",
       "Download Official Notification": "https://uppbpb.gov.in/FilesUploaded/Notice/SI_vigyapti_202567e84cf2-8d04-4072-bdbc-56f3c8e1ccbe.pdf",
-      "Download Syllabus / Exam Pattern": "https://sarkariresult.com.cm/up-police-si-syllabus-exam-pattern-2025/",
+      "Download Syllabus / Exam Pattern": "https://uppbpb.gov.in/",
       "UP Police Official Website": "https://uppbpb.gov.in/Home/Index"
     }
   },
@@ -3701,7 +3701,7 @@ export const resultsData = [
       "Apply Online Link": "https://ssc.gov.in/",
       "Download Date Extend Notice": "https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Extension_Notice_CTDP_2025_21.10.2025.pdf",
       "Check Official Notification": "http://sarkariresult.com.cm/wp-content/uploads/2025/09/Delhi-Police-Constable-Recruitment-2025.pdf",
-      "Download Syllabus / Exam Pattern": "https://sarkariresult.com.cm/ssc-delhi-police-constable-syllabus-exam-pattern-2025/",
+      "Download Syllabus / Exam Pattern": "https://ssc.gov.in/",
       "SSC Delhi Official Website": "https://ssc.nic.in/"
     }
   },
@@ -4052,7 +4052,7 @@ export const resultsData = [
       "Apply Online Link": "https://ssc.gov.in/",
       "Download Date Extend Notice": "https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Extension_Notice_CTDP_2025_21.10.2025.pdf",
       "Check Official Notification": "http://sarkariresult.com.cm/wp-content/uploads/2025/09/Delhi-Police-Constable-Recruitment-2025.pdf",
-      "Download Syllabus / Exam Pattern": "https://sarkariresult.com.cm/ssc-delhi-police-constable-syllabus-exam-pattern-2025/",
+      "Download Syllabus / Exam Pattern": "https://ssc.gov.in/",
       "SSC Delhi Official Website": "https://ssc.nic.in/"
     }
   },
@@ -6873,7 +6873,7 @@ export const resultsData = [
       "Online Correction Link": "https://www.upprpb.in/#/auth/landing",
       "Check Correction Notice": "https://uppbpb.gov.in/FilesUploaded/Notice/202512171749338462fbfc01f-4006-4709-afa9-928f9851486f.pdf",
       "Apply Online": "https://www.upprpb.in/#/auth/landing",
-      "UP Police OTR Registration": "https://sarkariresult.com.cm/up-police-upprpb-one-time-registration-otr-online-form-2025/",
+      "UP Police OTR Registration": "https://ccp23.onlinereg.co.in/",
       "Download Official Notification": "https://uppbpb.gov.in/FilesUploaded/Notice/Homeguard-Vigyapti-Annexure040580ca-3efd-4a45-b5c1-b90fee424333.pdf",
       "Check Syllabus & Exam Pattern": "https://uppbpb.gov.in/FilesUploaded/Notice/Homeguard-Vigyapti-Annexure040580ca-3efd-4a45-b5c1-b90fee424333.pdf",
       "UPPRPB Official Website": "https://uppbpb.gov.in/Home/Index"
@@ -7025,7 +7025,7 @@ export const resultsData = [
       "Check Correction Date Notice": "http://sarkariresult.com.cm/wp-content/uploads/2025/09/UP-Police-SI-Application-Form-Correction-Notice-2025.pdf",
       "Check Degree Related Notice": "https://uppbpb.gov.in/FilesUploaded/Notice/SI-Form-Clarification312c6d42-dfe4-49a6-9f97-a4e1d6f52940.pdf",
       "Download Official Notification": "https://uppbpb.gov.in/FilesUploaded/Notice/SI_vigyapti_202567e84cf2-8d04-4072-bdbc-56f3c8e1ccbe.pdf",
-      "Download Syllabus / Exam Pattern": "https://sarkariresult.com.cm/up-police-si-syllabus-exam-pattern-2025/",
+      "Download Syllabus / Exam Pattern": "https://uppbpb.gov.in/",
       "UP Police Official Website": "https://uppbpb.gov.in/Home/Index"
     }
   },

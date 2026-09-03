@@ -363,7 +363,7 @@ export const importantData = [
       "Check Re-Evaluation Result Notice": "https://www.cbse.gov.in/cbsenew/documents/Press_Release_revl_21062026.pdf",
       "Download Class 12th Result": "https://results.digilocker.gov.in/CBSE12th2026resultXIInruew.html",
       "Activate DigiLocker Account": "https://cbseservices.digilocker.gov.in/activatecbse",
-      "Download Class 10th Result": "https://sarkariresult.com.cm/cbse-board-10th-2026/",
+      "Download Class 10th Result": "https://results.cbse.nic.in/",
       "Check Re-Schedule Exam Date Sheet": "https://www.cbse.gov.in/cbsenew/documents/Rescheduling_Class_X_XII_30122025.pdf",
       "Check New Exam Date Sheet": "https://www.cbse.gov.in/cbsenew/documents/CBSE_DATE_SHEET_X_XII_Final_30102025.pdf",
       "Check Exam Date Sheet": "https://www.cbse.gov.in/cbsenew/documents/Tentative_DateSheet_24092025.pdf",
