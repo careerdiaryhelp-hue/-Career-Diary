@@ -250,11 +250,24 @@ export default function App() {
   }, [isAdminRoute, isAdmin]);
 
   const handleAddJob = (newJob) => {
-    setJobs([newJob, ...jobs]);
+    const updated = [newJob, ...jobs];
+    setJobs(updated);
+    try {
+      const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
+      localStorage.setItem('career_diary_admin_posts', JSON.stringify([newJob, ...stored.filter(j => j.id !== newJob.id)]));
+    } catch (e) {
+      console.warn('Failed to save to localStorage', e);
+    }
   };
 
   const handleDeleteJob = (id) => {
     setJobs(jobs.filter(j => j.id !== id));
+    try {
+      const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
+      localStorage.setItem('career_diary_admin_posts', JSON.stringify(stored.filter(j => j.id !== id)));
+    } catch (e) {
+      console.warn('Failed to delete from localStorage', e);
+    }
   };
 
   const handleResetFilters = () => {
