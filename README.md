@@ -1,42 +1,16 @@
-# Career Diary - Govt Job Alert & Recruitment Portal
+# React + Vite
 
-Career Diary (careerdiary.blogspot.com / careerdiary1.blogspot.com) is a modern, responsive Indian Government Job Recruitment Portal & Exam Updates Website.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## 🌟 Key Features
+Currently, two official plugins are available:
 
-- **Top Announcement Ticker**: Real-time breaking news marquee ticker for major recruitment updates.
-- **Top Highlights Grid**: Colorful visual banner cards matching the exact layout of Career Diary / Sarkari Result portals (RPSC 71st CCE, SSC CGL, RRB NTPC, Bihar Police Constable, etc.).
-- **4 Main Section Columns**:
-  - 💼 **LATEST JOB** (Crimson / Pink theme)
-  - 📜 **SYLLABUS** (Green / Teal theme)
-  - 🪪 **ADMIT CARD** (Royal Blue theme)
-  - 📊 **ANSWER KEY / RESULT** (Purple / Violet theme)
-- **State & Category Filtering**: Instant filter pills for All India, Bihar, SSC, Railway, and Banking.
-- **Live Search**: Instant keyword search with highlighting across all posts.
-- **Interactive Job Detail Modal**: Detailed breakdown of Important Dates, Application Fees, Age Limit, Vacancy Tables, Eligibility, and Direct Links.
-- **Post Job Update Modal**: Interactive admin panel to publish custom recruitment posts with LocalStorage persistence.
-- **Govt Job Age Calculator**: Tool to calculate exact age in years, months, and days against recruitment cut-off dates.
-- **Dark / Light Theme Toggle**: Seamless dark mode support for night viewing.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🚀 Live Demo & Running Locally
+## React Compiler
 
-Simply open `index.html` in any web browser or serve via any static file server:
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-```bash
-python3 -m http.server 8085
-```
+## Expanding the Oxlint configuration
 
-Navigate to `http://localhost:8085` in your browser.
-
-## 📁 Repository Structure
-
-```
-├── index.html        # Main HTML structure with semantic elements
-├── style.css         # Modern CSS design system with glassmorphism & responsive layout
-├── app.js            # Dynamic application logic, dataset, modals & local storage persistence
-└── README.md         # Documentation
-```
-
-## 📜 License
-
-MIT License. Created for Career Diary Help.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
