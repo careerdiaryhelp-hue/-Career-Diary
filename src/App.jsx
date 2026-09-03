@@ -6,7 +6,6 @@ import Navbar from './components/Navbar';
 import HighlightsGrid from './components/HighlightsGrid';
 import JobColumnsGrid from './components/JobColumnsGrid';
 import PostJobModal from './components/PostJobModal';
-import AgeCalcModal from './components/AgeCalcModal';
 import AdminLoginModal from './components/AdminLoginModal';
 import Footer from './components/Footer';
 
@@ -42,11 +41,9 @@ export default function App() {
   const [currentCategory, setCurrentCategory] = useState('all');
   const [currentStateFilter, setCurrentStateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [darkMode, setDarkMode] = useState(false);
 
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [isCalcModalOpen, setIsCalcModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   useEffect(() => {
@@ -56,16 +53,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
   }, [isAdmin]);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add('dark-mode');
-      document.body.classList.remove('light-mode');
-    } else {
-      document.body.classList.add('light-mode');
-      document.body.classList.remove('dark-mode');
-    }
-  }, [darkMode]);
 
   // Scroll to top when changing page views
   useEffect(() => {
@@ -168,11 +155,8 @@ export default function App() {
       <Header
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isAdmin={isAdmin}
         onOpenPostModal={() => setIsPostModalOpen(true)}
-        onOpenCalcModal={() => setIsCalcModalOpen(true)}
         onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onLogoutAdmin={handleLogoutAdmin}
         onResetFilters={handleResetFilters}
@@ -194,11 +178,6 @@ export default function App() {
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
         onAddJob={handleAddJob}
-      />
-
-      <AgeCalcModal
-        isOpen={isCalcModalOpen}
-        onClose={() => setIsCalcModalOpen(false)}
       />
 
       <AdminLoginModal

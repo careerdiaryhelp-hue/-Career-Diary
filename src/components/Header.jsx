@@ -1,15 +1,11 @@
 import React from 'react';
-import { BookmarkCheck, Search, X, PlusCircle, Calculator, Moon, Sun, ShieldCheck, LogOut } from 'lucide-react';
+import { BookmarkCheck, Search, X, PlusCircle, LogOut } from 'lucide-react';
 
 export default function Header({
   searchQuery,
   setSearchQuery,
-  darkMode,
-  setDarkMode,
   isAdmin,
   onOpenPostModal,
-  onOpenCalcModal,
-  onOpenAdminModal,
   onLogoutAdmin,
   onResetFilters
 }) {
@@ -54,18 +50,6 @@ export default function Header({
               </button>
             </>
           ) : null}
-
-          <button className="btn btn-secondary" onClick={onOpenCalcModal}>
-            <Calculator className="w-4 h-4" /> Age Calculator
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => setDarkMode(!darkMode)}
-            title="Toggle Light/Dark Theme"
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
         </div>
       </div>
     </header>
