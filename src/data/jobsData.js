@@ -1,5 +1,78 @@
 export const jobsData = [
   {
+    "id": "india-post-gds-online-form-2026",
+    "title": "India Post GDS Online Form 2026 (23,757 Posts)",
+    "organization": "Department of Post, India Post",
+    "category": "LATEST JOB",
+    "state": "All India",
+    "badge": "New!",
+    "lastDate": "21 September 2026",
+    "vacancies": "23,757 Posts",
+    "postName": "Gramin Dak Sevak (GDS) – BPM / ABPM / Dak Sevak",
+    "status": "Online Registration Active",
+    "updateType": "New Recruitment Notification",
+    "postDate": "03 September 2026",
+    "expertTip": "SarkariGuide Expert Tip: GDS selection is purely merit-based on Class 10 marks — no written exam. Make sure your 10th marksheet details are entered correctly. Apply before 21 September 2026.",
+    "totalPosts": "23,757 Posts",
+    "appStart": "02 September 2026",
+    "appLast": "21 September 2026",
+    "feeGen": "₹100/-",
+    "feeSc": "₹0/- (Exempted)",
+    "minAge": "18 Years",
+    "maxAge": "40 Years",
+    "uniqueDescription": "Department of Post, India Post has released a notification for the recruitment of India Post Gramin Dak Sevak (GDS) Online Engagement Schedule-II, July-2026. A total of 23,757 positions are available across India. One-Time Registration started on 31 August 2026 (last date 19 September 2026). Online application submission started on 02 September 2026 and candidates can apply until 21 September 2026. Minimum age required is 18 Years & Maximum Age is 40 Years as on 21 September 2026. (Advt. No.: 17-12/2026)",
+    "qualification": "Candidates must have passed Class 10th with Mathematics and English from a recognized board and must know the local language of the concerned postal circle.",
+    "eligibility": {
+      "education": "Class 10 pass with Mathematics and English; knowledge of local language mandatory.",
+      "fresherEligible": true,
+      "location": "All India (Circle-wise)"
+    },
+    "ageLimit": {
+      "minimum": "18 Years",
+      "maximum": "40 Years",
+      "asOn": "21 September 2026",
+      "relaxation": "As per Govt. Rules (SC/ST 5 Yrs, OBC 3 Yrs, PwD 10 Yrs)"
+    },
+    "applicationFee": {
+      "General / OBC / EWS": "₹100/-",
+      "SC / ST / PH": "₹0/- (Exempted)",
+      "All Category Female": "₹0/- (Exempted)",
+      "paymentMode": "Online — Debit Card, Credit Card, Net Banking, IMPS, Cash Card / Mobile Wallet"
+    },
+    "importantDates": {
+      "applyStart": "02 September 2026",
+      "lastDate": "21 September 2026",
+      "applyLastDate": "21 September 2026",
+      "Registration Start": "31 August 2026",
+      "Registration Last Date": "19 September 2026",
+      "Correction Date": "23 – 24 September 2026",
+      "Merit List": "Will Be Updated Soon"
+    },
+    "selectionProcess": [
+      "Merit List (Based on Class 10 Marks)",
+      "Document Verification",
+      "Final Selection"
+    ],
+    "vacancyDetails": [
+      { "Post Name": "General", "Total": "10,640", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "EWS", "Total": "2,160", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "OBC", "Total": "4,433", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "SC", "Total": "3,082", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "ST", "Total": "2,773", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "PWD-A", "Total": "192", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "PWD-B", "Total": "227", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "PWD-C", "Total": "178", "Eligibility": "Class 10 Pass" },
+      { "Post Name": "PWD-DE", "Total": "72", "Eligibility": "Class 10 Pass" }
+    ],
+    "importantLinks": {
+      "Apply Online (Active from 02 Sep 2026)": "https://indiapostgdsonline.gov.in/",
+      "Online Registration Form": "https://app.indiapost.gov.in/gdscandidate/registration",
+      "Check Circle Wise Notification": "https://indiapost.gov.in/gdsonlineengagement/pdf/Annexure-Ia.pdf",
+      "Check Official Notification": "https://www.indiapost.gov.in/gdsonlineengagement/pdf/descriptive-notification.pdf",
+      "India Post GDS Official Website": "https://indiapostgdsonline.gov.in/"
+    }
+  },
+  {
     "id": "pgimer-chandigarh-recruitment-2026",
     "title": "PGIMER Chandigarh Group A, B, C Recruitment 2026 – 60 MTS, Medical Officer Posts",
     "organization": "Postgraduate Institute of Medical Education and Research (PGIMER), Chandigarh",
