@@ -17,6 +17,7 @@ import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 // Dedicated Category Listing Pages
 import AdmissionsListingPage from './pages/AdmissionsListingPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 export default function App() {
   const [jobs, setJobs] = useState(() => {
@@ -37,11 +38,17 @@ export default function App() {
     return INITIAL_JOBS;
   });
 
-  // Admin authentication state
+  // Admin authentication state & route check
   const [isAdmin, setIsAdmin] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true' || params.get('admin') === 'secret') return true;
     return localStorage.getItem('career_diary_admin') === 'true';
+  });
+
+  const [isAdminRoute, setIsAdminRoute] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    return path.includes('/admin') || search.includes('admin');
   });
 
   const [currentCategory, setCurrentCategory] = useState('all');
@@ -60,16 +67,28 @@ export default function App() {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
   }, [isAdmin]);
 
+  // Open login modal automatically if accessing /admin route while unauthenticated
+  useEffect(() => {
+    if (isAdminRoute && !isAdmin) {
+      setIsAdminModalOpen(true);
+    }
+  }, [isAdminRoute, isAdmin]);
+
   // Scroll to top when changing page views
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedJobId, currentCategory]);
+  }, [selectedJobId, currentCategory, isAdminRoute]);
 
   const handleAddJob = (newJob) => {
     setJobs([newJob, ...jobs]);
   };
 
+  const handleDeleteJob = (id) => {
+    setJobs(jobs.filter(j => j.id !== id));
+  };
+
   const handleResetFilters = () => {
+    setIsAdminRoute(false);
     setCurrentCategory('all');
     setCurrentStateFilter('all');
     setSearchQuery('');
@@ -77,6 +96,7 @@ export default function App() {
 
   const handleLogoutAdmin = () => {
     setIsAdmin(false);
+    setIsAdminRoute(false);
     localStorage.setItem('career_diary_admin', 'false');
   };
 
@@ -131,6 +151,18 @@ export default function App() {
 
   // Helper to render main area when no item is selected
   const renderMainContent = () => {
+    if (isAdminRoute && isAdmin) {
+      return (
+        <AdminDashboardPage
+          jobs={jobs}
+          onAddJob={() => setIsPostModalOpen(true)}
+          onDeleteJob={handleDeleteJob}
+          onBack={() => setIsAdminRoute(false)}
+          onLogout={handleLogoutAdmin}
+        />
+      );
+    }
+
     if (currentCategory === 'ADMISSION' && !searchQuery && currentStateFilter === 'all') {
       return <AdmissionsListingPage jobs={jobs} onSelectJob={(id) => setSelectedJobId(id)} />;
     }
@@ -174,7 +206,10 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         isAdmin={isAdmin}
         onOpenPostModal={() => setIsPostModalOpen(true)}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onOpenAdminModal={() => {
+          setIsAdminRoute(true);
+          setIsAdminModalOpen(true);
+        }}
         onLogoutAdmin={handleLogoutAdmin}
         onResetFilters={handleResetFilters}
       />
@@ -183,6 +218,7 @@ export default function App() {
         currentCategory={currentCategory}
         setCurrentCategory={(cat) => {
           setSelectedJobId(null);
+          setIsAdminRoute(false);
           setCurrentCategory(cat);
         }}
       />
@@ -205,14 +241,19 @@ export default function App() {
 
       <Footer
         isAdmin={isAdmin}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onOpenAdminModal={() => {
+          setIsAdminRoute(true);
+          setIsAdminModalOpen(true);
+        }}
         onLogoutAdmin={handleLogoutAdmin}
         onCategorySelect={(cat) => {
           setSelectedJobId(null);
+          setIsAdminRoute(false);
           setCurrentCategory(cat);
         }}
         onSearchSelect={(q) => {
           setSelectedJobId(null);
+          setIsAdminRoute(false);
           setSearchQuery(q);
         }}
       />
