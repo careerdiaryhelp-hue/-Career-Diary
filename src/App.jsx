@@ -19,6 +19,11 @@ import AdmissionDetailPage from './pages/AdmissionDetailPage';
 import AdmissionsListingPage from './pages/AdmissionsListingPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
+// Static Pages
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import ContactUsPage from './pages/ContactUsPage';
+
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     const saved = localStorage.getItem('career_diary_jobs');
@@ -65,6 +70,7 @@ export default function App() {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [staticPage, setStaticPage] = useState(null); // 'privacy' | 'terms' | 'contact'
 
   useEffect(() => {
     localStorage.setItem('career_diary_jobs', JSON.stringify(jobs));
@@ -160,8 +166,19 @@ export default function App() {
     return <JobDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
   };
 
+  const goHome = () => {
+    setStaticPage(null);
+    setSelectedJobId(null);
+    setIsAdminRoute(false);
+  };
+
   // Helper to render main area when no item is selected
   const renderMainContent = () => {
+    // Static pages
+    if (staticPage === 'privacy') return <PrivacyPolicyPage onBack={goHome} />;
+    if (staticPage === 'terms') return <TermsPage onBack={goHome} />;
+    if (staticPage === 'contact') return <ContactUsPage onBack={goHome} />;
+
     if (isAdminRoute && isAdmin) {
       return (
         <AdminDashboardPage
@@ -266,6 +283,12 @@ export default function App() {
           setSelectedJobId(null);
           setIsAdminRoute(false);
           setSearchQuery(q);
+        }}
+        onStaticPage={(page) => {
+          setStaticPage(page);
+          setSelectedJobId(null);
+          setIsAdminRoute(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
 

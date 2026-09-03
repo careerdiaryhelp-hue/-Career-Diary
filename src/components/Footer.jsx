@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookmarkCheck, Send, PhoneCall, Globe, Share2, Lock, ShieldCheck } from 'lucide-react';
 
-export default function Footer({ onCategorySelect, onSearchSelect, isAdmin, onOpenAdminModal, onLogoutAdmin }) {
+export default function Footer({ onCategorySelect, onSearchSelect, isAdmin, onOpenAdminModal, onLogoutAdmin, onStaticPage }) {
   return (
     <footer className="main-footer">
       <div className="container footer-content">
@@ -59,9 +59,9 @@ export default function Footer({ onCategorySelect, onSearchSelect, isAdmin, onOp
         <div className="container footer-bottom-inner">
           <p>© 2025-2026 <strong>Career Diary Help</strong>. All Rights Reserved. Not affiliated with any official government organization.</p>
           <div className="footer-bottom-links">
-            <a href="#">Privacy Policy</a> | 
-            <a href="#">Terms & Conditions</a> | 
-            <a href="#">Contact Us</a> | 
+            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('privacy'); }}>Privacy Policy</a> | 
+            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('terms'); }}>Terms &amp; Conditions</a> | 
+            <a href="#" onClick={(e) => { e.preventDefault(); onStaticPage('contact'); }}>Contact Us</a> | 
             {isAdmin ? (
               <a href="#" onClick={(e) => { e.preventDefault(); onLogoutAdmin(); }} style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
                 <ShieldCheck className="w-3 h-3 inline mr-1" /> Admin (Exit)
