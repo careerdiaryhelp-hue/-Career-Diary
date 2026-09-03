@@ -38,10 +38,10 @@ export default function TopTicker({ onSelectJob }) {
           </div>
         </div>
         <div className="top-social-actions">
-          <a href="https://t.me/" target="_blank" rel="noopener noreferrer" className="social-btn telegram-btn">
+          <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="social-btn telegram-btn">
             <Send className="w-3.5 h-3.5" /> Telegram
           </a>
-          <a href="https://whatsapp.com/" target="_blank" rel="noopener noreferrer" className="social-btn whatsapp-btn">
+          <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="social-btn whatsapp-btn">
             <PhoneCall className="w-3.5 h-3.5" /> WhatsApp
           </a>
         </div>

@@ -14,10 +14,10 @@ export default function Footer({ onCategorySelect, onSearchSelect }) {
             Career Diary (careerdiary.blogspot.com / careerdiary1.blogspot.com) is India's most trusted portal for competitive exams, Indian Govt jobs recruitment updates, admit cards, answer keys, and syllabus notifications.
           </p>
           <div className="social-links">
-            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" className="social-icon"><Send className="w-4 h-4" /></a>
-            <a href="https://whatsapp.com/" target="_blank" rel="noopener noreferrer" className="social-icon"><PhoneCall className="w-4 h-4" /></a>
-            <a href="#" className="social-icon"><Globe className="w-4 h-4" /></a>
-            <a href="#" className="social-icon"><Share2 className="w-4 h-4" /></a>
+            <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="social-icon" title="Telegram Channel"><Send className="w-4 h-4" /></a>
+            <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="social-icon" title="WhatsApp Channel"><PhoneCall className="w-4 h-4" /></a>
+            <a href="#" className="social-icon" title="Website"><Globe className="w-4 h-4" /></a>
+            <a href="#" className="social-icon" title="Share"><Share2 className="w-4 h-4" /></a>
           </div>
         </div>
 

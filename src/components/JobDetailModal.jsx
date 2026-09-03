@@ -85,7 +85,7 @@ export default function JobDetailModal({ job, onClose }) {
             <button onClick={() => alert('Simulated Official Notification PDF Downloaded!')} className="btn btn-secondary btn-block">
               <FileDown className="w-4 h-4" /> Download Notification PDF
             </button>
-            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-block">
+            <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-block">
               <Send className="w-4 h-4" /> Join Telegram Alert
             </a>
           </div>
