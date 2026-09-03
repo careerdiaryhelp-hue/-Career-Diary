@@ -5,10 +5,15 @@ import Header from './components/Header';
 import Navbar from './components/Navbar';
 import HighlightsGrid from './components/HighlightsGrid';
 import JobColumnsGrid from './components/JobColumnsGrid';
-import JobDetailModal from './components/JobDetailModal';
 import PostJobModal from './components/PostJobModal';
 import AgeCalcModal from './components/AgeCalcModal';
 import Footer from './components/Footer';
+
+// Dedicated Detail Pages
+import JobDetailPage from './pages/JobDetailPage';
+import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
+import ResultDetailPage from './pages/ResultDetailPage';
+import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 export default function App() {
   const [jobs, setJobs] = useState(() => {
@@ -46,6 +51,11 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Scroll to top when changing page views
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedJobId]);
+
   const handleAddJob = (newJob) => {
     setJobs([newJob, ...jobs]);
   };
@@ -77,6 +87,23 @@ export default function App() {
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
+  // Helper to render dedicated detail page based on category
+  const renderDetailPage = () => {
+    if (!selectedJob) return null;
+    const cat = (selectedJob.category || '').toUpperCase();
+
+    if (cat.includes('ADMIT CARD')) {
+      return <AdmitCardDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
+    }
+    if (cat.includes('RESULT') || cat.includes('ANSWER KEY')) {
+      return <ResultDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
+    }
+    if (cat.includes('ADMISSION')) {
+      return <AdmissionDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
+    }
+    return <JobDetailPage job={selectedJob} onBack={() => setSelectedJobId(null)} />;
+  };
+
   return (
     <div className="app-root">
       <TopTicker onSelectJob={(id) => setSelectedJobId(id)} />
@@ -93,38 +120,43 @@ export default function App() {
 
       <Navbar
         currentCategory={currentCategory}
-        setCurrentCategory={setCurrentCategory}
+        setCurrentCategory={(cat) => {
+          setSelectedJobId(null);
+          setCurrentCategory(cat);
+        }}
       />
 
-      <HighlightsGrid
-        jobs={filteredJobs}
-        currentStateFilter={currentStateFilter}
-        setCurrentStateFilter={setCurrentStateFilter}
-        onSelectJob={(id) => setSelectedJobId(id)}
-      />
+      {/* Main View Switcher: Page Detail View OR Home Grid View */}
+      {selectedJobId && selectedJob ? (
+        renderDetailPage()
+      ) : (
+        <>
+          <HighlightsGrid
+            jobs={filteredJobs}
+            currentStateFilter={currentStateFilter}
+            setCurrentStateFilter={setCurrentStateFilter}
+            onSelectJob={(id) => setSelectedJobId(id)}
+          />
 
-      {(searchQuery || currentCategory !== 'all' || currentStateFilter !== 'all') && (
-        <div className="container" style={{ marginTop: '16px' }}>
-          <div className="search-indicator">
-            <span>
-              Search results for "<strong>{searchQuery || `${currentCategory} (${currentStateFilter})`}</strong>" ({filteredJobs.length} matches)
-            </span>
-            <button className="btn btn-sm btn-outline" onClick={handleResetFilters}>
-              Reset Search
-            </button>
-          </div>
-        </div>
+          {(searchQuery || currentCategory !== 'all' || currentStateFilter !== 'all') && (
+            <div className="container" style={{ marginTop: '16px' }}>
+              <div className="search-indicator">
+                <span>
+                  Search results for "<strong>{searchQuery || `${currentCategory} (${currentStateFilter})`}</strong>" ({filteredJobs.length} matches)
+                </span>
+                <button className="btn btn-sm btn-outline" onClick={handleResetFilters}>
+                  Reset Search
+                </button>
+              </div>
+            </div>
+          )}
+
+          <JobColumnsGrid
+            jobs={filteredJobs}
+            onSelectJob={(id) => setSelectedJobId(id)}
+          />
+        </>
       )}
-
-      <JobColumnsGrid
-        jobs={filteredJobs}
-        onSelectJob={(id) => setSelectedJobId(id)}
-      />
-
-      <JobDetailModal
-        job={selectedJob}
-        onClose={() => setSelectedJobId(null)}
-      />
 
       <PostJobModal
         isOpen={isPostModalOpen}
@@ -138,8 +170,14 @@ export default function App() {
       />
 
       <Footer
-        onCategorySelect={(cat) => setCurrentCategory(cat)}
-        onSearchSelect={(q) => setSearchQuery(q)}
+        onCategorySelect={(cat) => {
+          setSelectedJobId(null);
+          setCurrentCategory(cat);
+        }}
+        onSearchSelect={(q) => {
+          setSelectedJobId(null);
+          setSearchQuery(q);
+        }}
       />
     </div>
   );
