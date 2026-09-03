@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://careerdiary.in/sitemap.xml
+Sitemap: https://careerdiary.in/post-sitemap.xml

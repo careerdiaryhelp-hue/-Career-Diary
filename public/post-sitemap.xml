@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <url>
+    <loc>https://careerdiary.in/</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.00</priority>
+  </url>
+
+  <url>
+    <loc>https://careerdiary.in/?category=LATEST+JOB</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://careerdiary.in/?category=ADMIT+CARD</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://careerdiary.in/?category=RESULT</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://careerdiary.in/?category=SYLLABUS</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://careerdiary.in/?category=ADMISSION</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Individual Posts & Notifications -->
+  <url>
+    <loc>https://careerdiary.in/?job=iit-gate-2027-admission-form</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=iit-jam-2027-admission-form</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=bihar-stet-online-form-2026</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=up-deled-counseling-merit-list-2026</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=iim-cat-2026-admission-form</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=clat-admission-form-2026</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=bpsc-tre-4-2026</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=ssc-cgl-2025</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://careerdiary.in/?job=rrb-technician-2025</loc>
+    <lastmod>2026-09-03T15:25:00+00:00</lastmod>
+    <priority>0.85</priority>
+  </url>
+</urlset>
