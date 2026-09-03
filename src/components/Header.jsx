@@ -1,12 +1,9 @@
 import React from 'react';
-import { BookmarkCheck, Search, X, PlusCircle, LogOut } from 'lucide-react';
+import { BookmarkCheck, Search, X } from 'lucide-react';
 
 export default function Header({
   searchQuery,
   setSearchQuery,
-  isAdmin,
-  onOpenPostModal,
-  onLogoutAdmin,
   onResetFilters
 }) {
   return (
@@ -39,17 +36,6 @@ export default function Header({
         </div>
 
         <div className="header-actions">
-          {/* Post Job Update Button - ONLY VISIBLE TO ADMIN */}
-          {isAdmin ? (
-            <>
-              <button className="btn btn-primary" onClick={onOpenPostModal} title="Admin: Post New Job Update">
-                <PlusCircle className="w-4 h-4" /> Post Job Update
-              </button>
-              <button className="btn btn-sm btn-outline" onClick={onLogoutAdmin} title="Exit Admin Mode">
-                <LogOut className="w-4 h-4" /> Exit Admin
-              </button>
-            </>
-          ) : null}
         </div>
       </div>
     </header>
