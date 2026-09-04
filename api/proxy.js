@@ -1,16 +1,55 @@
 export default async function handler(req, res) {
-  // Allow CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const isNode = res && typeof res.status === 'function';
 
+  const sendJson = (status, data) => {
+    if (isNode) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(status).json(data);
+    }
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
+    });
+  };
+
+  // Allow CORS preflight
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    if (isNode) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(200).end();
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
+    });
   }
 
-  const { url: targetUrl } = req.query;
+  // Get target URL
+  let targetUrl = '';
+  if (req.query && req.query.url) {
+    targetUrl = req.query.url;
+  } else {
+    try {
+      const u = new URL(req.url, 'http://localhost');
+      targetUrl = u.searchParams.get('url') || '';
+    } catch (e) {}
+  }
+
   if (!targetUrl) {
-    return res.status(400).json({ error: 'Missing "url" query parameter' });
+    return sendJson(400, { error: 'Missing "url" query parameter' });
   }
 
   try {
@@ -26,7 +65,7 @@ export default async function handler(req, res) {
       if (wpRes.ok) {
         const wpData = await wpRes.json();
         const post = Array.isArray(wpData) ? wpData[0] : wpData;
-        return res.status(200).json({ success: true, type: 'wordpress_acf', data: post });
+        return sendJson(200, { success: true, type: 'wordpress_acf', data: post });
       }
     }
 
@@ -48,7 +87,7 @@ export default async function handler(req, res) {
         if (wpRes.ok) {
           const wpData = await wpRes.json();
           if (Array.isArray(wpData) && wpData.length > 0) {
-            return res.status(200).json({ success: true, type: 'wordpress_acf', data: wpData[0] });
+            return sendJson(200, { success: true, type: 'wordpress_acf', data: wpData[0] });
           }
         }
       } catch (e) {
@@ -74,13 +113,13 @@ export default async function handler(req, res) {
     const contentType = fetchRes.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const data = await fetchRes.json();
-      return res.status(200).json({ success: true, type: 'json', data });
+      return sendJson(200, { success: true, type: 'json', data });
     } else {
       const html = await fetchRes.text();
-      return res.status(200).json({ success: true, type: 'html', html });
+      return sendJson(200, { success: true, type: 'html', html });
     }
   } catch (err) {
     console.error('Serverless proxy error:', err);
-    return res.status(500).json({ error: err.message });
+    return sendJson(500, { error: err.message });
   }
 }

@@ -1206,8 +1206,13 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       // Step A: Fetch via our proxy API (/api/proxy) which avoids CORS restrictions
       try {
         const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}`;
-        const res = await fetch(proxyUrl);
-        if (res.ok) {
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 6000);
+        const res = await fetch(proxyUrl, { signal: ctrl.signal });
+        clearTimeout(timeoutId);
+
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
           const result = await res.json();
           if (result && result.success) {
             if (result.type === 'wordpress_acf') {
@@ -1220,12 +1225,15 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           }
         }
       } catch (e) {
-        console.warn('Local /api/proxy fetch failed, trying direct and public fallback:', e);
+        console.warn('Local/Live /api/proxy fetch error:', e);
       }
 
-      // Step B: Direct fetch if permitted
+      // Step B: Direct fetch if allowed by remote server CORS
       try {
-        const res = await fetch(raw);
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 3000);
+        const res = await fetch(raw, { signal: ctrl.signal });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
@@ -1244,7 +1252,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       try {
         const publicProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         const res = await fetch(publicProxy, { signal: controller.signal });
         clearTimeout(timeoutId);
         if (res.ok) {
@@ -1255,19 +1263,20 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         console.warn('Public CORS proxy failed:', e);
       }
 
-      // Step D: Open in-app dialog instead of browser prompt()
+      // Step D: Open in-app dialog if all automatic fetches are restricted
+      showToast('⚠️ Direct URL fetch was blocked. Paste HTML or JSON below to import instantly:', 'info');
       setInsertModal({
         isOpen: true,
         type: 'import',
         title: 'Paste & Import Post Content',
-        label: 'External URL fetch was restricted by browser CORS. Paste the HTML or JSON content below to import instantly:',
+        label: 'External URL fetch was restricted by CORS. Paste the post HTML or JSON snippet below to auto-fill all fields:',
         placeholder: 'Paste post HTML table code or JSON snippet here...',
         value: '',
       });
       return;
     }
 
-    showToast('💡 Tip: Paste a JSON snippet or HTML table code to auto-import fields', 'info');
+    showToast('💡 Tip: Paste a URL, JSON snippet, or HTML table code to auto-import fields', 'info');
   };
 
   const handlePublish = async () => {
