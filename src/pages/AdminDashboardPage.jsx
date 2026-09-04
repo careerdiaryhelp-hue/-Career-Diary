@@ -60,6 +60,8 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showMetadata, setShowMetadata] = useState(false);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
+  const [textColor, setTextColor] = useState('#000000');
+  const [highlightColor, setHighlightColor] = useState('#fef08a');
 
   const visualEditorRef = useRef(null);
   const isVisualFocusedRef = useRef(false);
@@ -156,16 +158,6 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     if (url && url.trim()) {
       execCmd('insertHTML', `<p><iframe src="${url.trim()}" width="100%" height="320" frameborder="0" allowfullscreen></iframe></p>`);
     }
-  };
-
-  const handleTextColor = () => {
-    const color = prompt('Enter text color (e.g. #c0392b, red, #0056b3):', '#c0392b');
-    if (color && color.trim()) execCmd('foreColor', color.trim());
-  };
-
-  const handleBgColor = () => {
-    const color = prompt('Enter highlight color (e.g. #fef08a, yellow):', '#fef08a');
-    if (color && color.trim()) execCmd('hiliteColor', color.trim());
   };
 
   const handleImportData = async () => {
@@ -861,9 +853,64 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
             <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
 
-            {/* Colors */}
-            <button type="button" onClick={handleTextColor} title="Text Color" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Palette size={14} style={{ color: '#c0392b' }} /></button>
-            <button type="button" onClick={handleBgColor} title="Highlight Color" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Highlighter size={14} style={{ color: '#ca8a04' }} /></button>
+            {/* Colors (Visual Color Picker matching Bigbooster) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Text Color">
+              <Palette size={15} style={{ color: '#64748b' }} />
+              <input
+                type="color"
+                value={textColor}
+                onInput={(e) => {
+                  setTextColor(e.target.value);
+                  execCmd('foreColor', e.target.value);
+                }}
+                onChange={(e) => {
+                  setTextColor(e.target.value);
+                  execCmd('foreColor', e.target.value);
+                }}
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  padding: 0,
+                  border: '1px solid #94a3b8',
+                  borderRadius: '3px',
+                  background: 'transparent',
+                  cursor: 'pointer'
+                }}
+                title="Choose Text Color"
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Highlight Color">
+              <button
+                type="button"
+                onClick={() => execCmd('hiliteColor', highlightColor)}
+                title="Highlight Selection"
+                style={{ background: '#fef08a', border: '1px solid #eab308', borderRadius: '3px', padding: '2px 4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Highlighter size={13} style={{ color: '#854d0e' }} />
+              </button>
+              <input
+                type="color"
+                value={highlightColor}
+                onInput={(e) => {
+                  setHighlightColor(e.target.value);
+                  execCmd('hiliteColor', e.target.value);
+                }}
+                onChange={(e) => {
+                  setHighlightColor(e.target.value);
+                  execCmd('hiliteColor', e.target.value);
+                }}
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  padding: 0,
+                  border: '1px solid #94a3b8',
+                  borderRadius: '3px',
+                  background: 'transparent',
+                  cursor: 'pointer'
+                }}
+                title="Choose Highlight Color"
+              />
+            </div>
 
             <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
 
