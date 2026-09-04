@@ -7,7 +7,8 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Link2, Unlink,
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
+  Calendar, Link as LinkIcon
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -18,6 +19,7 @@ const CATEGORIES = [
   { value: 'ANSWER KEY', label: 'Answer Key', icon: CheckSquare },
   { value: 'SYLLABUS', label: 'Syllabus', icon: FileText },
   { value: 'ADMISSION', label: 'Admission', icon: GraduationCap },
+  { value: 'DOCUMENTS', label: 'Documents', icon: BookmarkCheck },
   { value: 'CERTIFICATE VERIFICATION', label: 'Certificate Verification', icon: BookmarkCheck },
   { value: 'IMPORTANT', label: 'Important', icon: Bookmark },
 ];
@@ -56,7 +58,17 @@ const EMPTY_FORM = {
   ageLimit: {},
 };
 
-export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack, onLogout }) {
+export default function AdminDashboardPage({
+  jobs,
+  onAddJob,
+  onDeleteJob,
+  categories = [],
+  onSaveCategories,
+  breakingNews = [],
+  onSaveBreakingNews,
+  onBack,
+  onLogout
+}) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -69,6 +81,72 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   const [textColor, setTextColor] = useState('#000000');
   const [highlightColor, setHighlightColor] = useState('#fef08a');
+
+  // Dynamic Categories Management State (Matching Screenshots 1 & 3)
+  const [localCategories, setLocalCategories] = useState(() => {
+    if (categories && categories.length > 0) return categories;
+    try {
+      const saved = localStorage.getItem('career_diary_categories');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      { id: '1', name: 'Results', subtitle: 'Latest Exam Results 2026 - Check Merit Lists & Cut-Off Marks Online | [Career Diary 2026]', slug: '/results', order: 1, seoTitle: 'Results 2026', seoDescription: 'Download the [Result Pdf] All Result 2026 here. Download," "Direct Link," "Live," "Official." Get the direct link, exam date,...' },
+      { id: '2', name: 'Admit Card', subtitle: 'Latest Exams Admit Card 2026 - Download Admit Card ,Exam Date& Online | [Career Diary 2026]', slug: '/admit-card', order: 2, seoTitle: 'Admit Cards 2026', seoDescription: 'Get the latest updates on admit cards and hall tickets. Download your exam call letters for SSC, Banking, Railways, and...' },
+      { id: '3', name: 'Latest Jobs', subtitle: 'Latest Job 2026 @Careerdiary', slug: '/latest-jobs', order: 3, seoTitle: 'Latest Jobs 2026', seoDescription: 'Latest Government Jobs, Notifications, Apply Online...' },
+      { id: '4', name: 'Answer Key', subtitle: 'Official Answer Keys', slug: '/answer-key', order: 4, seoTitle: 'Answer Key 2026', seoDescription: 'Download official answer keys and response sheets...' },
+      { id: '5', name: 'Admission', subtitle: 'Admission Notices', slug: '/admission', order: 5, seoTitle: 'Admissions 2026', seoDescription: 'College, University, and School admissions 2026...' },
+      { id: '6', name: 'Syllabus', subtitle: 'Exam Syllabus & Pattern', slug: '/syllabus', order: 6, seoTitle: 'Exam Syllabus 2026', seoDescription: 'Detailed exam syllabus and selection process...' },
+      { id: '7', name: 'Documents', subtitle: 'Documents', slug: '/documents', order: 7, seoTitle: 'Documents 2026', seoDescription: 'Marksheet, admit card, exam City slip, Documents @CAREERDIARY,' },
+      { id: '8', name: 'Important', subtitle: 'Important Update', slug: '/important', order: 8, seoTitle: 'Important Updates', seoDescription: 'Scholarship, yojna, University Update, Government Scheme,' },
+    ];
+  });
+
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    subtitle: '',
+    slug: '',
+    order: 0,
+    seoTitle: '',
+    seoDescription: ''
+  });
+
+  // Dynamic Breaking News Management State (Matching Screenshots 2 & 4)
+  const [localBreakingNews, setLocalBreakingNews] = useState(() => {
+    if (breakingNews && breakingNews.length > 0) return breakingNews;
+    try {
+      const saved = localStorage.getItem('career_diary_breaking_news');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      { id: '1', message: 'BPSSC Bihar Police Range Officer of Forest Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/bpssc-bihar-police-range-officer-of-forest-recruitment-2026-online-form-16-post', priority: 0, expiry: '8/17/2026, 5:32:00 AM', active: true },
+      { id: '2', message: 'Railway RRB Section Controller Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/railway-rrb-section-controller-recruitment-2026', priority: 1, expiry: '8/15/2026, 4:53:00 PM', active: true },
+      { id: '3', message: 'Patna High Court Ex-Cadre Assistant Recruitment 2026 Online start', link: 'https://www.careerdiary.in/post/patna-high-court-ex-cadre-assistant-recruitment-2026', priority: 2, expiry: '8/30/2026, 11:52:00 PM', active: true },
+      { id: '4', message: 'JSSC 10+2 Inter Level JILCCE Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/jssc-10-2-inter-level-jilcce-recruitment-2026-online-start', priority: 0, expiry: '9/8/2026, 5:20:00 AM', active: true },
+      { id: '5', message: 'RRB Group D Level 1 Exam City & Admit Card Download', link: 'https://www.careerdiary.in/post/railway-rrb-group-d-admit-card-exam-city-2026-out', priority: 0, expiry: '8/31/2026, 11:21:00 PM', active: true },
+    ];
+  });
+
+  const [showNewsForm, setShowNewsForm] = useState(false);
+  const [editingNews, setEditingNews] = useState(null);
+  const [newsForm, setNewsForm] = useState({
+    category: 'Latest Job',
+    message: '',
+    link: '',
+    expiry: '',
+    priority: 0,
+    active: true
+  });
+
+  // Sync external props if provided
+  useEffect(() => {
+    if (categories && categories.length > 0) setLocalCategories(categories);
+  }, [categories]);
+
+  useEffect(() => {
+    if (breakingNews && breakingNews.length > 0) setLocalBreakingNews(breakingNews);
+  }, [breakingNews]);
 
   // In-App Toast State (Zero browser alert popups)
   const [toast, setToast] = useState(null);
@@ -2505,59 +2583,329 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     </div>
   );
 
-  const renderCategories = () => (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-            Categories Overview
-          </h2>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.88rem' }}>Browse and manage all posts organized by category</p>
-        </div>
-        <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
-          <FilePlus size={14} /> New Post
-        </button>
-      </div>
+  // ── Categories Management Section (Matching Screenshots 1 & 3) ──
+  const handleEditCategory = (cat) => {
+    setEditingCategory(cat);
+    setCategoryForm({
+      name: cat.name || '',
+      subtitle: cat.subtitle || '',
+      slug: cat.slug || '',
+      order: cat.order ?? 0,
+      seoTitle: cat.seoTitle || '',
+      seoDescription: cat.seoDescription || ''
+    });
+    setShowCategoryForm(true);
+  };
 
-      {/* Category Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-        {CATEGORIES.filter(c => c.value).map(cat => {
-          const count = jobs.filter(j => (j.category || '').toUpperCase().includes(cat.value.toUpperCase())).length;
-          const isSelected = filterCat.toUpperCase() === cat.value.toUpperCase();
-          const Icon = cat.icon || FileText;
-          return (
-            <div
-              key={cat.value}
-              onClick={() => {
-                setFilterCat(isSelected ? 'all' : cat.value);
-                setActiveSection('dashboard');
-              }}
-              style={{
-                background: isSelected ? '#eff6ff' : '#ffffff',
-                border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
-                <Icon size={20} />
+  const handleSaveCategorySubmit = (e) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) {
+      showToast('Please enter category name', 'error');
+      return;
+    }
+    const slugValue = categoryForm.slug.trim().startsWith('/')
+      ? categoryForm.slug.trim()
+      : '/' + (categoryForm.slug.trim() || categoryForm.name.toLowerCase().trim().replace(/\s+/g, '-'));
+
+    let updated;
+    if (editingCategory) {
+      updated = localCategories.map(c => c.id === editingCategory.id ? {
+        ...c,
+        ...categoryForm,
+        slug: slugValue,
+        order: Number(categoryForm.order) || 0
+      } : c);
+      showToast(`Category "${categoryForm.name}" updated!`, 'success');
+    } else {
+      const newCat = {
+        id: 'cat_' + Date.now(),
+        ...categoryForm,
+        slug: slugValue,
+        order: Number(categoryForm.order) || (localCategories.length + 1)
+      };
+      updated = [...localCategories, newCat];
+      showToast(`Category "${categoryForm.name}" created!`, 'success');
+    }
+    setLocalCategories(updated);
+    if (onSaveCategories) onSaveCategories(updated);
+    try {
+      localStorage.setItem('career_diary_categories', JSON.stringify(updated));
+    } catch (err) {}
+    setShowCategoryForm(false);
+    setEditingCategory(null);
+    setCategoryForm({ name: '', subtitle: '', slug: '', order: 0, seoTitle: '', seoDescription: '' });
+  };
+
+  const handleDeleteCategory = (catId, catName) => {
+    if (window.confirm(`Are you sure you want to delete category "${catName}"?`)) {
+      const updated = localCategories.filter(c => c.id !== catId);
+      setLocalCategories(updated);
+      if (onSaveCategories) onSaveCategories(updated);
+      try {
+        localStorage.setItem('career_diary_categories', JSON.stringify(updated));
+      } catch (err) {}
+      showToast(`Category "${catName}" deleted`, 'info');
+    }
+  };
+
+  const renderCategories = () => {
+    const sortedCategories = [...localCategories].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header matching Screenshot 1 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+              Manage Categories
+            </h1>
+          </div>
+          <button
+            onClick={() => {
+              if (showCategoryForm && !editingCategory) {
+                setShowCategoryForm(false);
+              } else {
+                setEditingCategory(null);
+                setCategoryForm({
+                  name: '',
+                  subtitle: '',
+                  slug: '',
+                  order: localCategories.length + 1,
+                  seoTitle: '',
+                  seoDescription: ''
+                });
+                setShowCategoryForm(true);
+              }
+            }}
+            style={{
+              background: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 22px',
+              fontWeight: 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Plus size={16} /> New Category
+          </button>
+        </div>
+
+        {/* Add/Edit Category Form Card (Matching Screenshot 3) */}
+        {showCategoryForm && (
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+            border: '1px solid #cbd5e1',
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              {editingCategory ? 'Edit Category' : 'Add New Category'}
+            </h3>
+            <form onSubmit={handleSaveCategorySubmit}>
+              {/* Row 1: Name, Slug, Order */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: '14px', marginBottom: '14px' }}>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={categoryForm.name}
+                  onChange={(e) => {
+                    const nameVal = e.target.value;
+                    setCategoryForm(prev => ({
+                      ...prev,
+                      name: nameVal,
+                      slug: prev.slug || ('/' + nameVal.toLowerCase().trim().replace(/\s+/g, '-'))
+                    }));
+                  }}
+                  required
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Slug (e.g. /results)"
+                  value={categoryForm.slug}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, slug: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                />
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={categoryForm.order}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, order: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem', textAlign: 'center' }}
+                />
               </div>
-              <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{cat.label}</div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>{count} posts</div>
+
+              {/* Row 2: Subtitle / Tagline */}
+              <div style={{ marginBottom: '14px' }}>
+                <input
+                  type="text"
+                  placeholder="Subtitle / Tagline (e.g. Latest Exam Results 2026 - Check Merit Lists)"
+                  value={categoryForm.subtitle}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, subtitle: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                />
               </div>
-            </div>
-          );
-        })}
+
+              {/* Row 3: SEO Title */}
+              <div style={{ marginBottom: '14px' }}>
+                <input
+                  type="text"
+                  placeholder="SEO Title"
+                  value={categoryForm.seoTitle}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, seoTitle: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              {/* Row 4: SEO Description */}
+              <div style={{ marginBottom: '18px' }}>
+                <textarea
+                  placeholder="SEO Description"
+                  rows={3}
+                  value={categoryForm.seoDescription}
+                  onChange={(e) => setCategoryForm(prev => ({ ...prev, seoDescription: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem', resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '9px 22px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save Category
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCategoryForm(false);
+                    setEditingCategory(null);
+                  }}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '9px 20px',
+                    fontWeight: 600,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Categories Table Card (Matching Screenshot 1) */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #cbd5e1',
+          overflow: 'hidden'
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '38%' }}>
+                  Name
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '42%' }}>
+                  Slug
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
+                  Order
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedCategories.map((cat, idx) => (
+                <tr key={cat.id || idx} style={{ borderBottom: idx === sortedCategories.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#0f172a' }}>
+                      {cat.name}
+                    </div>
+                    {cat.subtitle && (
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic', marginTop: '3px', lineHeight: 1.4 }}>
+                        {cat.subtitle}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>
+                      {cat.slug}
+                    </div>
+                    {(cat.seoDescription || cat.seoTitle) && (
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4, maxWidth: '480px' }}>
+                        {cat.seoDescription || cat.seoTitle}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: '16px 16px', textAlign: 'center', verticalAlign: 'top', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>
+                    {cat.order ?? idx + 1}
+                  </td>
+                  <td style={{ padding: '16px 20px', textAlign: 'center', verticalAlign: 'top' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        onClick={() => handleEditCategory(cat)}
+                        title="Edit Category"
+                        style={{
+                          width: '32px', height: '32px', borderRadius: '6px',
+                          background: '#eff6ff', border: '1px solid #bfdbfe',
+                          color: '#2563eb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Edit3 size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                        title="Delete Category"
+                        style={{
+                          width: '32px', height: '32px', borderRadius: '6px',
+                          background: '#fee2e2', border: '1px solid #fecaca',
+                          color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── New Post Form (Matching bigbooster create-post visual editor) ──
   const renderNewPost = () => (
@@ -3618,30 +3966,585 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     </div>
   );
 
-  const renderBreakingNews = () => (
-    <div>
-      <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px', color: '#1e293b' }}>Breaking News / Ticker</h2>
-      <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: '24px' }}>
-        <p style={{ color: '#64748b', marginBottom: '16px' }}>The ticker at the top of your website shows the latest updates. Currently showing:</p>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {[
-            'Bihar Police Constable 19838 Exam City / Admit Card 2025 OUT!',
-            'SSC CGL Recruitment 2025 Online Form Apply - Last Date Extended!',
-            'Railway RRB NTPC UG Level Application Status 2025 Link Active',
-            'RRB Technician Grade 1 & 3 Recruitment Notification Released',
-            'Bihar B.Ed Counselling 2025 Registration Started',
-          ].map((item, i) => (
-            <li key={i} style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', marginBottom: '8px', fontSize: '0.9rem', color: '#1e293b', borderLeft: '4px solid #0ea5e9' }}>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p style={{ marginTop: '16px', fontSize: '0.85rem', color: '#94a3b8' }}>
-          💡 To update ticker items, edit <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>src/components/TopTicker.jsx</code>
-        </p>
+  // ── Breaking News Management Section (Matching Screenshots 2 & 4) ──
+  // ── Breaking News Management Section (Matching Screenshots 2 & 4) ──
+  const handleEditNews = (newsItem) => {
+    setEditingNews(newsItem);
+    setNewsForm({
+      category: newsItem.category || 'Latest Job',
+      message: newsItem.message || '',
+      link: newsItem.link || '',
+      expiry: newsItem.expiry || '',
+      priority: newsItem.priority ?? 0,
+      active: newsItem.active !== false
+    });
+    setShowNewsForm(true);
+  };
+
+  const handleAutoImportCategoryNews = () => {
+    const published = (jobs || []).filter(j => j.status !== 'Draft' && j.status !== 'draft');
+    
+    // Top 2 from Result
+    const resJobs = published.filter(j => (j.category || '').toUpperCase().includes('RESULT')).slice(0, 2);
+    // Top 2 from Admit Card
+    const admJobs = published.filter(j => (j.category || '').toUpperCase().includes('ADMIT')).slice(0, 2);
+    // Top 2 from Latest Job
+    const latestJobs = published.filter(j => {
+      const c = (j.category || '').toUpperCase();
+      return (c.includes('JOB') || c.includes('RECRUITMENT')) && !c.includes('ADMIT') && !c.includes('RESULT');
+    }).slice(0, 2);
+    // Top 2 from Admission
+    const admissJobs = published.filter(j => (j.category || '').toUpperCase().includes('ADMISSION')).slice(0, 2);
+
+    const imported = [
+      ...resJobs.map((j, i) => ({
+        id: `auto-res-${Date.now()}-${i}`,
+        category: 'Result',
+        message: j.title,
+        link: `/${j.id}`,
+        priority: 1,
+        expiry: '12/31/2026, 11:59:00 PM',
+        active: true
+      })),
+      ...admJobs.map((j, i) => ({
+        id: `auto-adm-${Date.now()}-${i}`,
+        category: 'Admit Card',
+        message: j.title,
+        link: `/${j.id}`,
+        priority: 1,
+        expiry: '12/31/2026, 11:59:00 PM',
+        active: true
+      })),
+      ...latestJobs.map((j, i) => ({
+        id: `auto-job-${Date.now()}-${i}`,
+        category: 'Latest Job',
+        message: j.title,
+        link: `/${j.id}`,
+        priority: 1,
+        expiry: '12/31/2026, 11:59:00 PM',
+        active: true
+      })),
+      ...admissJobs.map((j, i) => ({
+        id: `auto-admiss-${Date.now()}-${i}`,
+        category: 'Admission',
+        message: j.title,
+        link: `/${j.id}`,
+        priority: 1,
+        expiry: '12/31/2026, 11:59:00 PM',
+        active: true
+      }))
+    ];
+
+    setLocalBreakingNews(imported);
+    if (onSaveBreakingNews) onSaveBreakingNews(imported);
+    try {
+      localStorage.setItem('career_diary_breaking_news', JSON.stringify(imported));
+    } catch (err) {}
+    showToast('⚡ 8 Top Posts (2 Result, 2 Admit Card, 2 Job, 2 Admission) synced to Breaking News!', 'success');
+  };
+
+  const handleSaveNewsSubmit = (e) => {
+    e.preventDefault();
+    if (!newsForm.message.trim()) {
+      showToast('Please enter breaking news message', 'error');
+      return;
+    }
+    let updated;
+    if (editingNews) {
+      updated = localBreakingNews.map(n => n.id === editingNews.id ? {
+        ...n,
+        ...newsForm,
+        priority: Number(newsForm.priority) || 0
+      } : n);
+      showToast('Breaking news alert updated!', 'success');
+    } else {
+      const newAlert = {
+        id: 'news_' + Date.now(),
+        ...newsForm,
+        priority: Number(newsForm.priority) || 0
+      };
+      updated = [newAlert, ...localBreakingNews];
+      showToast('Breaking news alert created!', 'success');
+    }
+    setLocalBreakingNews(updated);
+    if (onSaveBreakingNews) onSaveBreakingNews(updated);
+    try {
+      localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+    } catch (err) {}
+    setShowNewsForm(false);
+    setEditingNews(null);
+    setNewsForm({ category: 'Latest Job', message: '', link: '', expiry: '', priority: 0, active: true });
+  };
+
+  const handleToggleNewsStatus = (newsId) => {
+    const updated = localBreakingNews.map(n => n.id === newsId ? { ...n, active: !n.active } : n);
+    setLocalBreakingNews(updated);
+    if (onSaveBreakingNews) onSaveBreakingNews(updated);
+    try {
+      localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+    } catch (err) {}
+    const changed = updated.find(n => n.id === newsId);
+    showToast(`Alert is now ${changed?.active ? 'Active' : 'Inactive'}`, 'info');
+  };
+
+  const handleDeleteNews = (newsId) => {
+    if (window.confirm('Are you sure you want to delete this breaking news alert?')) {
+      const updated = localBreakingNews.filter(n => n.id !== newsId);
+      setLocalBreakingNews(updated);
+      if (onSaveBreakingNews) onSaveBreakingNews(updated);
+      try {
+        localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+      } catch (err) {}
+      showToast('Breaking news alert deleted', 'info');
+    }
+  };
+
+  const renderBreakingNews = () => {
+    const activeNewsList = localBreakingNews.filter(n => n.active !== false);
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header matching Screenshot 2 & 4 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Megaphone size={26} style={{ color: '#dc2626' }} />
+              <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                Manage Breaking News
+              </h1>
+            </div>
+            <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
+              Urgent ticker alerts shown at the top of the client application
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleAutoImportCategoryNews}
+              style={{
+                background: '#0f172a',
+                color: '#ffffff',
+                border: '1px solid #334155',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Auto-import top 2 posts each from Result, Admit Card, Job, and Admission"
+            >
+              <RotateCw size={15} /> Auto-Sync 2+2+2+2 Posts
+            </button>
+            <button
+              onClick={() => {
+                if (showNewsForm && !editingNews) {
+                  setShowNewsForm(false);
+                } else {
+                  setEditingNews(null);
+                  setNewsForm({
+                    category: 'Latest Job',
+                    message: '',
+                    link: '',
+                    expiry: '',
+                    priority: 0,
+                    active: true
+                  });
+                  setShowNewsForm(true);
+                }
+              }}
+              style={{
+                background: '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 22px',
+                fontWeight: 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(220, 38, 38, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Plus size={16} /> Add News Alert
+            </button>
+          </div>
+        </div>
+
+        {/* Live Preview Banner (Matching Screenshot 2 & 4) */}
+        <div style={{
+          background: '#000000',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+        }}>
+          <span style={{
+            background: '#dc2626',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '0.72rem',
+            padding: '3px 10px',
+            borderRadius: '4px',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            flexShrink: 0
+          }}>
+            BREAKING
+          </span>
+          <div style={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {activeNewsList.length > 0 ? (
+              activeNewsList.map((n, i) => (
+                <span key={n.id || i} style={{ marginRight: '24px' }}>
+                  {i === 0 ? '▶ ' : '   ✦   '}
+                  {n.category && (
+                    <span style={{
+                      color: n.category === 'Result' ? '#4ade80' : n.category === 'Admit Card' ? '#60a5fa' : n.category === 'Admission' ? '#c084fc' : '#fbbf24',
+                      fontWeight: 800,
+                      fontSize: '0.75rem',
+                      marginRight: '6px',
+                      textTransform: 'uppercase'
+                    }}>
+                      [{n.category}]
+                    </span>
+                  )}
+                  {n.message}
+                </span>
+              ))
+            ) : (
+              <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No active breaking news alerts currently displayed.</span>
+            )}
+          </div>
+        </div>
+
+        {/* Add/Edit News Form Card (Matching Screenshot 4) */}
+        {showNewsForm && (
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+            border: '1px solid #cbd5e1',
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Plus size={18} style={{ color: '#dc2626' }} /> {editingNews ? 'Edit News Alert' : 'Add New Alert'}
+            </h3>
+            <form onSubmit={handleSaveNewsSubmit}>
+              {/* Row 1: Category & Message */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    CATEGORY
+                  </label>
+                  <select
+                    value={newsForm.category || 'Latest Job'}
+                    onChange={(e) => setNewsForm(prev => ({ ...prev, category: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem', background: '#ffffff' }}
+                  >
+                    <option value="Result">Result</option>
+                    <option value="Admit Card">Admit Card</option>
+                    <option value="Latest Job">Latest Job</option>
+                    <option value="Admission">Admission</option>
+                    <option value="General">General / Alert</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    NEWS TEXT
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter the breaking news message..."
+                    value={newsForm.message}
+                    onChange={(e) => setNewsForm(prev => ({ ...prev, message: e.target.value }))}
+                    required
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Action Link & Expiry Date */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    ACTION LINK (OPTIONAL)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <LinkIcon size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                      type="text"
+                      placeholder="https://... or /post-slug"
+                      value={newsForm.link}
+                      onChange={(e) => setNewsForm(prev => ({ ...prev, link: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px 10px 36px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    EXPIRY DATE (OPTIONAL)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                      type="text"
+                      placeholder="dd/mm/yyyy, --:-- --"
+                      value={newsForm.expiry}
+                      onChange={(e) => setNewsForm(prev => ({ ...prev, expiry: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px 10px 36px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Priority & Initially Active */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                    PRIORITY:
+                  </label>
+                  <input
+                    type="number"
+                    value={newsForm.priority}
+                    onChange={(e) => setNewsForm(prev => ({ ...prev, priority: e.target.value }))}
+                    style={{ width: '70px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem', textAlign: 'center' }}
+                  />
+                </div>
+
+                <div
+                  onClick={() => setNewsForm(prev => ({ ...prev, active: !prev.active }))}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <div style={{
+                    width: '36px',
+                    height: '20px',
+                    borderRadius: '10px',
+                    background: newsForm.active ? '#10b981' : '#cbd5e1',
+                    position: 'relative',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      position: 'absolute',
+                      top: '2px',
+                      left: '2px',
+                      transform: newsForm.active ? 'translateX(16px)' : 'translateX(0)',
+                      transition: 'transform 0.2s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: newsForm.active ? '#047857' : '#64748b' }}>
+                    {newsForm.active ? 'Initially Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '9px 22px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save News
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewsForm(false);
+                    setEditingNews(null);
+                  }}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '9px 20px',
+                    fontWeight: 600,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Breaking News Table Card (Matching Screenshot 2 & 4) */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #cbd5e1',
+          overflow: 'hidden'
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%' }}>
+                  STATUS
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '55%' }}>
+                  NEWS MESSAGE
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
+                  PRIORITY
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '15%' }}>
+                  EXPIRY
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
+                  ACTIONS
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {localBreakingNews.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                    No breaking news alerts added yet. Click "+ Add News Alert" or "Auto-Sync 2+2+2+2 Posts" above.
+                  </td>
+                </tr>
+              ) : (
+                localBreakingNews.map((item, idx) => (
+                  <tr key={item.id || idx} style={{ borderBottom: idx === localBreakingNews.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                    {/* Status Toggle Switch */}
+                    <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
+                      <div
+                        onClick={() => handleToggleNewsStatus(item.id)}
+                        title={`Click to ${item.active ? 'Deactivate' : 'Activate'}`}
+                        style={{
+                          width: '36px',
+                          height: '20px',
+                          borderRadius: '10px',
+                          background: item.active ? '#10b981' : '#cbd5e1',
+                          position: 'relative',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '50%',
+                          background: '#ffffff',
+                          position: 'absolute',
+                          top: '2px',
+                          left: '2px',
+                          transform: item.active ? 'translateX(16px)' : 'translateX(0)',
+                          transition: 'transform 0.2s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }} />
+                      </div>
+                    </td>
+
+                    {/* News Message + Category Tag + Link */}
+                    <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                        {item.category && (
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background: item.category === 'Result' ? '#dcfce7' : item.category === 'Admit Card' ? '#eff6ff' : item.category === 'Admission' ? '#f5f3ff' : '#fef3c7',
+                            color: item.category === 'Result' ? '#166534' : item.category === 'Admit Card' ? '#1d4ed8' : item.category === 'Admission' ? '#6b21a8' : '#b45309',
+                            border: '1px solid currentColor',
+                            textTransform: 'uppercase'
+                          }}>
+                            {item.category}
+                          </span>
+                        )}
+                        <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.4 }}>
+                          {item.message}
+                        </span>
+                      </div>
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#2563eb', marginTop: '2px', textDecoration: 'none' }}
+                        >
+                          <LinkIcon size={12} /> {item.link}
+                        </a>
+                      )}
+                    </td>
+
+                    {/* Priority */}
+                    <td style={{ padding: '16px 16px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+                      {item.priority ?? 0}
+                    </td>
+
+                    {/* Expiry */}
+                    <td style={{ padding: '16px 20px', verticalAlign: 'middle', fontSize: '0.82rem', color: '#64748b' }}>
+                      {item.expiry || 'None'}
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ padding: '16px 20px', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          onClick={() => handleEditNews(item)}
+                          title="Edit News Alert"
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '6px',
+                            background: '#eff6ff', border: '1px solid #bfdbfe',
+                            color: '#2563eb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNews(item.id)}
+                          title="Delete News Alert"
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '6px',
+                            background: '#fee2e2', border: '1px solid #fecaca',
+                            color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── Layout ────────────────────────────────────────────────
   return (

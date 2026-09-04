@@ -1,26 +1,40 @@
 import React from 'react';
+import { ChevronRight } from 'lucide-react';
 
 export default function JobColumnsGrid({
-  jobs,
+  jobs = [],
   currentCategory = 'all',
   searchQuery = '',
-  onSelectJob
+  onSelectJob,
+  onNavigateCategory
 }) {
   const ALL_COLUMNS = [
-    { key: 'RESULT / ANSWER KEY', title: 'Result', colorClass: 'col-darkred', singleTitle: 'Results & Answer Keys 2026' },
-    { key: 'ADMIT CARD', title: 'Admit Card', colorClass: 'col-darkred', singleTitle: 'Admit Cards & Hall Tickets 2026' },
-    { key: 'LATEST JOB', title: 'Latest Jobs', colorClass: 'col-darkred', singleTitle: 'Latest Govt Jobs Notifications 2026' },
-    { key: 'SYLLABUS', title: 'Syllabus', colorClass: 'col-darkred', singleTitle: 'Exam Pattern & Syllabus 2026' },
-    { key: 'ADMISSION', title: 'Admission', colorClass: 'col-darkred', singleTitle: 'Admission Notifications 2026' },
-    { key: 'IMPORTANT', title: 'Important', colorClass: 'col-darkred', singleTitle: 'Important Links & Online Services 2026' },
+    { key: 'RESULT', title: 'Result', slug: '/results', colorClass: 'col-darkred', singleTitle: 'Results 2026' },
+    { key: 'ADMIT CARD', title: 'Admit Card', slug: '/admit-card', colorClass: 'col-darkred', singleTitle: 'Admit Cards & Hall Tickets 2026' },
+    { key: 'LATEST JOB', title: 'Latest Jobs', slug: '/latest-jobs', colorClass: 'col-darkred', singleTitle: 'Latest Govt Jobs Notifications 2026' },
+    { key: 'ANSWER KEY', title: 'Answer Key', slug: '/answer-key', colorClass: 'col-darkred', singleTitle: 'Answer Keys & Solutions 2026' },
+    { key: 'SYLLABUS', title: 'Syllabus', slug: '/syllabus', colorClass: 'col-darkred', singleTitle: 'Exam Pattern & Syllabus 2026' },
+    { key: 'ADMISSION', title: 'Admission', slug: '/admission', colorClass: 'col-darkred', singleTitle: 'Admission Notifications 2026' },
+    { key: 'DOCUMENTS', title: 'Documents', slug: '/documents', colorClass: 'col-darkred', singleTitle: 'Documents & Verification 2026' },
+    { key: 'IMPORTANT', title: 'Important', slug: '/important', colorClass: 'col-darkred', singleTitle: 'Important Links & Services 2026' },
+    { key: 'CERTIFICATE VERIFICATION', title: 'Certificate Verification', slug: '/certificate-verification', colorClass: 'col-darkred', singleTitle: 'Certificate Verification 2026' },
   ];
 
   const getJobsForCategory = (allJobs, categoryKey) => {
-    const targetCat = categoryKey.toUpperCase();
+    const targetCat = (categoryKey || '').toUpperCase();
     return allJobs.filter((j) => {
       const jobCat = (j.category || '').toUpperCase();
-      if (targetCat.includes('RESULT')) {
-        return jobCat.includes('RESULT') || jobCat.includes('ANSWER KEY');
+      if (targetCat === 'ANSWER KEY') {
+        return jobCat.includes('ANSWER') || jobCat.includes('KEY') || jobCat === 'ANSKEY';
+      }
+      if (targetCat === 'RESULT') {
+        return jobCat.includes('RESULT') && !jobCat.includes('ANSWER') && !jobCat.includes('KEY');
+      }
+      if (targetCat === 'DOCUMENTS') {
+        return jobCat.includes('DOCUMENT') || jobCat.includes('CERTIFICATE');
+      }
+      if (targetCat === 'LATEST JOB') {
+        return jobCat.includes('JOB') || jobCat.includes('RECRUITMENT');
       }
       return jobCat === targetCat || jobCat.includes(targetCat) || targetCat.includes(jobCat);
     });
@@ -74,20 +88,44 @@ export default function JobColumnsGrid({
   };
 
   const renderColumnCard = (col, catJobs, isSingle = false) => {
+    // Show maximum 20 posts in grid mode as requested
+    const displayedJobs = isSingle ? catJobs : catJobs.slice(0, 20);
+
     return (
       <div key={col.key} className={`column-card ${col.colorClass}`}>
         <div className="column-header">
           <h3>{isSingle ? (col.singleTitle || col.title) : col.title}</h3>
         </div>
         <div className="column-body">
-          {catJobs.length === 0 ? (
+          {displayedJobs.length === 0 ? (
             <div className="empty-state">No active updates.</div>
           ) : (
             <ul className={isSingle ? 'category-items-list' : ''}>
-              {catJobs.map((job) => renderJobItem(job, isSingle))}
+              {displayedJobs.map((job) => renderJobItem(job, isSingle))}
             </ul>
           )}
         </div>
+        {!isSingle && (
+          <div className="column-footer">
+            <a
+              href={col.slug}
+              className="col-view-more"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  if (onNavigateCategory) {
+                    onNavigateCategory(col.key);
+                  } else {
+                    window.history.pushState({}, '', col.slug);
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                }
+              }}
+            >
+              View More <ChevronRight size={14} />
+            </a>
+          </div>
+        )}
       </div>
     );
   };
@@ -102,6 +140,7 @@ export default function JobColumnsGrid({
     ) || {
       key: currentCategory,
       title: currentCategory,
+      slug: `/${currentCategory.toLowerCase().replace(/\s+/g, '-')}`,
       singleTitle: `${currentCategory} 2026`,
       colorClass: 'col-darkred',
     };
@@ -117,8 +156,7 @@ export default function JobColumnsGrid({
     );
   }
 
-  // Case 2: A search query is active (e.g. /rrb, /ssc, or user search)
-  // Only show columns that actually have matching jobs!
+  // Case 2: A search query is active
   if (searchQuery && searchQuery.trim()) {
     const populatedCols = ALL_COLUMNS.map((col) => ({
       ...col,
@@ -150,7 +188,7 @@ export default function JobColumnsGrid({
     return (
       <main className="main-content">
         <div className="container">
-          <div className="columns-3-grid">
+          <div className="columns-3x3-grid">
             {populatedCols.map((col) => renderColumnCard(col, col.items))}
           </div>
         </div>
@@ -159,20 +197,14 @@ export default function JobColumnsGrid({
   }
 
   // Case 3: Home Page (currentCategory === 'all' and no search)
-  // Render classic 2 rows of 3 columns
+  // Render classic 3x3 Grid (9 columns, 3 per row)
   return (
     <main className="main-content">
       <div className="container">
-        <div className="columns-3-grid">
-          {renderColumnCard(ALL_COLUMNS[0], getJobsForCategory(jobs, ALL_COLUMNS[0].key))}
-          {renderColumnCard(ALL_COLUMNS[1], getJobsForCategory(jobs, ALL_COLUMNS[1].key))}
-          {renderColumnCard(ALL_COLUMNS[2], getJobsForCategory(jobs, ALL_COLUMNS[2].key))}
-        </div>
-
-        <div className="columns-3-grid" style={{ marginTop: '16px' }}>
-          {renderColumnCard(ALL_COLUMNS[3], getJobsForCategory(jobs, ALL_COLUMNS[3].key))}
-          {renderColumnCard(ALL_COLUMNS[4], getJobsForCategory(jobs, ALL_COLUMNS[4].key))}
-          {renderColumnCard(ALL_COLUMNS[5], getJobsForCategory(jobs, ALL_COLUMNS[5].key))}
+        <div className="columns-3x3-grid">
+          {ALL_COLUMNS.map((col) =>
+            renderColumnCard(col, getJobsForCategory(jobs, col.key))
+          )}
         </div>
       </div>
     </main>

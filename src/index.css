@@ -289,6 +289,7 @@ body.dark-mode .icon-btn:hover {
   letter-spacing: 0.5px;
   background: linear-gradient(90deg, #c2185b, #7b1fa2);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .logo-subtitle {
@@ -909,6 +910,7 @@ body.dark-mode .job-item-link:hover {
 .footer-logo span {
   background: linear-gradient(90deg, #f48fb1, #ce93d8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .footer-desc {
@@ -1014,6 +1016,171 @@ body.dark-mode .job-item-link:hover {
 }
 .last-date-bar a:hover {
   text-decoration: underline;
+}
+
+/* Breaking News Bar (Matching Reference) */
+.breaking-news-bar {
+  background: #000000;
+  color: #ffffff;
+  padding: 0;
+  border-bottom: 1px solid #222;
+  overflow: hidden;
+  height: 38px;
+}
+.breaking-bar-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 0;
+  padding: 0;
+}
+.breaking-label {
+  background: #dc2626;
+  color: #ffffff;
+  padding: 0 16px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 2;
+  flex-shrink: 0;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+}
+.breaking-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-dot 1.2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.4; }
+}
+.breaking-ticker-wrapper {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.breaking-ticker-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker-scroll 35s linear infinite;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.breaking-ticker-wrapper:hover .breaking-ticker-content {
+  animation-play-state: paused;
+}
+.breaking-ticker-content a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breaking-ticker-content a:hover {
+  color: #fbbf24;
+  text-decoration: underline;
+}
+.breaking-item {
+  margin-right: 24px;
+}
+.breaking-cat-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin-right: 6px;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+.breaking-cat-tag.cat-result {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.15);
+}
+.breaking-cat-tag.cat-admit-card {
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.15);
+}
+.breaking-cat-tag.cat-latest-job,
+.breaking-cat-tag.cat-job {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.15);
+}
+.breaking-cat-tag.cat-admission {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.4);
+  background: rgba(192, 132, 252, 0.15);
+}
+
+/* 3x3 Grid Layout */
+.columns-3x3-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .columns-3x3-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .columns-3x3-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.column-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.column-body {
+  flex: 1;
+}
+
+.column-footer {
+  padding: 8px 14px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  text-align: right;
+  border-radius: 0 0 8px 8px;
+}
+
+.col-view-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.col-view-more:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+  transform: translateX(2px);
 }
 
 /* Ticker Overrides */
