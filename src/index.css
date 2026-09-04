@@ -1067,17 +1067,18 @@ body.dark-mode .job-item-link:hover {
   overflow: hidden;
   white-space: nowrap;
   position: relative;
-  display: flex;
-  align-items: center;
+  line-height: 38px;
 }
 .breaking-ticker-content {
   display: inline-block;
   white-space: nowrap;
-  animation: ticker-scroll 35s linear infinite;
+  animation: marquee 28s linear infinite;
   font-size: 0.88rem;
   font-weight: 600;
+  will-change: transform;
 }
-.breaking-ticker-wrapper:hover .breaking-ticker-content {
+.breaking-ticker-wrapper:hover .breaking-ticker-content,
+.breaking-ticker-content:hover {
   animation-play-state: paused;
 }
 .breaking-ticker-content a {
@@ -1090,7 +1091,14 @@ body.dark-mode .job-item-link:hover {
   text-decoration: underline;
 }
 .breaking-item {
-  margin-right: 24px;
+  margin-right: 28px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
 }
 .breaking-cat-tag {
   display: inline-block;
