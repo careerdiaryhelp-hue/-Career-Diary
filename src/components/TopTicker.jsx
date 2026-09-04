@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Bell, Flame, ExternalLink } from 'lucide-react';
 import { isResult, isAdmitCard, isLatestJob, isAdmission } from '../data/categoryHelpers.js';
 
@@ -45,6 +45,26 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
     activeBreakingNews = dynamicCategoryNews;
   }
 
+  // Duplicate items for 100% immediate load (translateX: 0) and seamless infinite loop
+  const displayBreakingNews = useMemo(() => {
+    if (!activeBreakingNews || activeBreakingNews.length === 0) return [];
+    let list = [...activeBreakingNews];
+    while (list.length < 8) {
+      list = [...list, ...activeBreakingNews];
+    }
+    // Duplicated: first half (0 to -50%) loops smoothly into second half (-50% to -100%)
+    return [...list, ...list];
+  }, [activeBreakingNews]);
+
+  const displayLatestJobs = useMemo(() => {
+    if (!tickerJobs || tickerJobs.length === 0) return [];
+    let list = [...tickerJobs];
+    while (list.length < 8) {
+      list = [...list, ...tickerJobs];
+    }
+    return [...list, ...list];
+  }, [tickerJobs]);
+
   return (
     <div className="header-tickers-wrapper">
       {/* 1. Last Date Reminder */}
@@ -63,7 +83,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
       </div>
 
       {/* 2. Breaking News Bar */}
-      {activeBreakingNews.length > 0 && (
+      {displayBreakingNews.length > 0 && (
         <div className="breaking-news-bar">
           <div className="container breaking-bar-inner">
             <div className="breaking-label">
@@ -72,11 +92,11 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
             </div>
             <div className="breaking-ticker-wrapper">
               <div className="breaking-ticker-content">
-                {activeBreakingNews.map((news, idx) => {
+                {displayBreakingNews.map((news, idx) => {
                   const hasLink = Boolean(news.link && news.link.trim());
                   return (
-                    <span key={news.id || idx} className="breaking-item">
-                      {idx === 0 ? '▶ ' : '   ✦   '}
+                    <span key={`${news.id || 'bn'}-${idx}`} className="breaking-item">
+                      <span className="breaking-separator">✦</span>
                       {news.category && (
                         <span className={`breaking-cat-tag cat-${news.category.toLowerCase().replace(/\s+/g, '-')}`}>
                           {news.category}
@@ -110,33 +130,35 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
       )}
 
       {/* 3. Latest Update Bar */}
-      <div className="top-bar">
-        <div className="container top-bar-inner">
-          <div className="ticker-label">
-            <Bell className="w-4 h-4 icon-pulse" /> Latest Update
-          </div>
-          <div className="ticker-wrapper">
-            <div className="ticker-content">
-              {tickerJobs.map((job, idx) => (
-                <span key={job.id}>
-                  {idx === 0 ? '|- ' : '|| '}
-                  <a
-                    href={`/${job.id}`}
-                    onClick={(e) => {
-                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                        e.preventDefault();
-                        onSelectJob(job.id);
-                      }
-                    }}
-                  >
-                    {job.title}
-                  </a>
-                </span>
-              ))}
+      {displayLatestJobs.length > 0 && (
+        <div className="top-bar">
+          <div className="container top-bar-inner">
+            <div className="ticker-label">
+              <Bell className="w-4 h-4 icon-pulse" /> Latest Update
+            </div>
+            <div className="ticker-wrapper">
+              <div className="ticker-content">
+                {displayLatestJobs.map((job, idx) => (
+                  <span key={`${job.id}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                    <span style={{ color: '#fbbf24', margin: '0 14px', fontSize: '0.8rem' }}>✦</span>
+                    <a
+                      href={`/${job.id}`}
+                      onClick={(e) => {
+                        if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                          e.preventDefault();
+                          onSelectJob(job.id);
+                        }
+                      }}
+                    >
+                      {job.title}
+                    </a>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

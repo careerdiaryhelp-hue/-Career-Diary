@@ -193,26 +193,29 @@ body.dark-mode .icon-btn:hover {
   flex: 1;
 }
 .ticker-content {
-  display: inline-block;
-  animation: marquee 55s linear infinite;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: ticker-loop 55s linear infinite;
+  will-change: transform;
+  padding-left: 14px;
 }
 .ticker-content:hover {
   animation-play-state: paused;
 }
-.ticker-content span {
-  margin-right: 32px;
-}
 .ticker-content a {
   color: #e2e8f0;
   font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s;
 }
 .ticker-content a:hover {
   color: #ffeb3b;
   text-decoration: underline;
 }
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+@keyframes ticker-loop {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .top-social-actions {
@@ -1079,12 +1082,14 @@ body.dark-mode .job-item-link:hover {
   line-height: 38px;
 }
 .breaking-ticker-content {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
-  animation: marquee 65s linear infinite;
+  animation: breaking-loop 55s linear infinite;
   font-size: 0.88rem;
   font-weight: 600;
   will-change: transform;
+  padding-left: 14px;
 }
 .breaking-ticker-wrapper:hover .breaking-ticker-content,
 .breaking-ticker-content:hover {
@@ -1100,14 +1105,20 @@ body.dark-mode .job-item-link:hover {
   text-decoration: underline;
 }
 .breaking-item {
-  margin-right: 28px;
-  display: inline-block;
-  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.breaking-separator {
+  color: #f59e0b;
+  margin: 0 16px;
+  font-size: 0.82rem;
+  opacity: 0.9;
 }
 
-@keyframes ticker-scroll {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+@keyframes breaking-loop {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 .breaking-cat-tag {
   display: inline-block;
