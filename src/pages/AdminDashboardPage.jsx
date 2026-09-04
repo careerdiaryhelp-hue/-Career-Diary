@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
-  LayoutDashboard, Layers, Megaphone, PlusSquare, Trash2, Search,
+  LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
   LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud,
   Download, BarChart3, FileText, IdCard, CheckSquare, GraduationCap, Bookmark, Briefcase,
   RotateCcw, RotateCw, Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript,
