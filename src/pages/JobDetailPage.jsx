@@ -137,28 +137,26 @@ export default function JobDetailPage({ job, onBack }) {
   // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
   const sanitizedContent = React.useMemo(() => {
     if (!job.content) return '';
-    return job.content
-      .replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
-        const lower = match.toLowerCase();
-        if (lower.endsWith('.pdf"') || lower.endsWith(".pdf'") || lower.endsWith('.jpg"') || lower.endsWith('.png"') || lower.endsWith('.jpeg"')) {
-          return match;
-        }
-        return 'href="https://careerdiary.in/"';
-      })
-      .replace(/https?:\/\/(?:www\.)?sarkariresult(?:\.com(?:\.cm)?)?[^\s"'>]*/gi, (url) => {
-        const lower = url.toLowerCase();
-        if (lower.endsWith('.pdf') || lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
-          return url;
-        }
-        return 'https://careerdiary.in/';
-      })
-      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
-      .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
-      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
-      .replace(/sarkari\s*result/gi, 'Career Diary')
-      .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
-      .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
-      .replace(/bigbooster(?:\.in)?/gi, 'Career Diary');
+    // 1. Replace competitor portal hrefs with https://careerdiary.in/ (excluding direct file downloads like .pdf, .jpg)
+    let out = job.content.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
+      const lower = match.toLowerCase();
+      if (lower.includes('.pdf') || lower.includes('.jpg') || lower.includes('.png') || lower.includes('.jpeg')) {
+        return match;
+      }
+      return 'href="https://careerdiary.in/"';
+    });
+
+    // 2. Only replace brand names in text content outside tags, keeping URLs in attributes intact
+    out = out.replace(/(>|^)([^<]*?)(<|$)/g, (match, prefix, text, suffix) => {
+      const cleanedText = text
+        .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
+        .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
+        .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
+        .replace(/bigbooster(?:\.in)?/gi, 'Career Diary');
+      return prefix + cleanedText + suffix;
+    });
+
+    return out;
   }, [job.content]);
 
   // Check if job.content already has its own embedded Important Links table to avoid duplicates
