@@ -1034,16 +1034,7 @@ export default function AdminDashboardPage({
       .replace(/&ldquo;/g, '"')
       .replace(/&ndash;/g, '–')
       .replace(/&mdash;/g, '—')
-      .replace(/&hellip;/g, '…')
-      .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
-      .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
-      .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
-      .replace(/bigbooster(?:\.in)?/gi, 'Career Diary')
-      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
-      .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
-      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
-      .replace(/resultbharat\.com/gi, 'careerdiary.in')
-      .replace(/rojgarresult\.com/gi, 'careerdiary.in')
+      // First, replace full URLs of competitor portals with careerdiary.in (preserving direct pdf/image files)
       .replace(/https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^\s"'<>]*/gi, (url) => {
         const lower = url.toLowerCase();
         if (lower.endsWith('.pdf') || lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
@@ -1051,6 +1042,15 @@ export default function AdminDashboardPage({
         }
         return 'https://careerdiary.in/';
       })
+      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
+      .replace(/resultbharat\.com/gi, 'careerdiary.in')
+      .replace(/rojgarresult\.com/gi, 'careerdiary.in')
+      .replace(/sarkari\s*result/gi, 'Career Diary')
+      .replace(/result\s*bharat/gi, 'Career Diary')
+      .replace(/rojgar\s*result/gi, 'Career Diary')
+      .replace(/bigbooster/gi, 'Career Diary')
       .replace(/\s+/g, ' ')
       .trim();
   };
@@ -1431,18 +1431,31 @@ export default function AdminDashboardPage({
       const rowHtml = trm[1];
       const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
       if (aMatch) {
-        const href = aMatch[1];
+        let href = aMatch[1];
         const aText = aMatch[2].replace(/<[^>]+>/g, '').trim();
         const cells = [...rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)];
         let label = cells.length >= 2 ? cells[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : aText;
         label = cleanStr(label);
         const ll = label.toLowerCase();
-        const hl = href.toLowerCase();
+        let hl = href.toLowerCase();
         if (
           !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
-          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('app') && !ll.includes('career diary') &&
-          (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city'))
+          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('app') &&
+          (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari'))
         ) {
+          if (
+            ll.includes('career diary') ||
+            ll.includes('careerdiary') ||
+            ll.includes('sarkari result') ||
+            hl.includes('sarkariresult') ||
+            hl.includes('resultbharat') ||
+            hl.includes('rojgarresult') ||
+            hl.includes('bigbooster')
+          ) {
+            if (!hl.endsWith('.pdf') && !hl.endsWith('.jpg') && !hl.endsWith('.png') && !hl.endsWith('.jpeg')) {
+              href = 'https://careerdiary.in/';
+            }
+          }
           if (label && href && !links[label]) links[label] = href;
         }
       }
@@ -1559,14 +1572,31 @@ export default function AdminDashboardPage({
           </tr>
         </thead>
         <tbody>
-          ${Object.entries(links).map(([k, u]) => `
+          ${Object.entries(links).map(([k, u]) => {
+            let finalUrl = u;
+            const kl = k.toLowerCase();
+            const ul = (u || '').toLowerCase();
+            if (
+              kl.includes('career diary') ||
+              kl.includes('careerdiary') ||
+              kl.includes('sarkari result') ||
+              ul.includes('sarkariresult') ||
+              ul.includes('resultbharat') ||
+              ul.includes('rojgarresult') ||
+              ul.includes('bigbooster')
+            ) {
+              if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
+                finalUrl = 'https://careerdiary.in/';
+              }
+            }
+            return `
             <tr>
               <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${k}</td>
               <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-                <a href="${u}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+                <a href="${finalUrl}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
               </td>
             </tr>
-          `).join('')}
+          `;}).join('')}
         </tbody>
       </table>` : ''}
     `.trim();
