@@ -5,15 +5,14 @@ export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
 
   const getLinkUrl = (...keys) => {
-    if (job.importantLinks && typeof job.importantLinks === 'object') {
+    const rawLinks = job.importantLinks || job.important_links;
+    if (rawLinks && typeof rawLinks === 'object') {
       for (const key of keys) {
-        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
-        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
-          return job.importantLinks[foundKey];
+        const foundKey = Object.keys(rawLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey && rawLinks[foundKey] && typeof rawLinks[foundKey] === 'string' && rawLinks[foundKey].startsWith('http')) {
+          return rawLinks[foundKey];
         }
       }
-      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
-      if (firstVal) return firstVal;
     }
     if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
     if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
@@ -21,15 +20,87 @@ export default function JobDetailPage({ job, onBack }) {
   };
 
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
-  const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || officialWebUrl;
-  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || officialWebUrl;
+  const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || job.applyUrl || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || job.notificationUrl || officialWebUrl;
   const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || officialWebUrl;
 
-  const importantDates = job.importantDates || {};
-  const applicationFee = job.applicationFee || {};
-  const ageLimit = job.ageLimit || {};
-  const vacancyDetails = job.vacancyDetails || [];
-  const importantLinks = job.importantLinks || {};
+  const importantDates = job.importantDates || job.important_dates || {};
+  const applicationFee = job.applicationFee || job.application_fee || {};
+  const ageLimit = job.ageLimit || job.age_limit || {};
+  const vacancyDetails = job.vacancyDetails || job.vacancy_details || [];
+
+  // Build comprehensive normalized list of important links
+  const rawLinks = job.importantLinks || job.important_links || {};
+  let customLinks = [];
+
+  if (Array.isArray(rawLinks)) {
+    rawLinks.forEach(item => {
+      if (typeof item === 'string' && item.startsWith('http')) {
+        customLinks.push({ label: 'Important Link', url: item });
+      } else if (item && typeof item === 'object') {
+        const label = item.label || item.key || item.name || item.title || 'Important Link';
+        const url = item.url || item.link || item.href || item.value || '';
+        if (label && url) customLinks.push({ label, url });
+      }
+    });
+  } else if (typeof rawLinks === 'object' && rawLinks !== null) {
+    Object.entries(rawLinks).forEach(([label, url]) => {
+      const cleanUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
+      if (label && cleanUrl) {
+        customLinks.push({ label, url: cleanUrl });
+      }
+    });
+  }
+
+  // Filter out any existing telegram / whatsapp to eliminate duplicates
+  const nonSocialLinks = customLinks.filter(
+    l => !l.label.toLowerCase().includes('telegram') && !l.label.toLowerCase().includes('whatsapp')
+  );
+
+  // Guarantee 'Apply Online' is present if available
+  const hasApply = nonSocialLinks.some(l => l.label.toLowerCase().includes('apply'));
+  if (!hasApply && job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) {
+    nonSocialLinks.unshift({ label: 'Apply Online', url: job.applyUrl });
+  }
+
+  // Guarantee 'Download Official Notification PDF' is present if available
+  const hasNotif = nonSocialLinks.some(l => l.label.toLowerCase().includes('notif') || l.label.toLowerCase().includes('pdf'));
+  if (!hasNotif && job.notificationUrl && typeof job.notificationUrl === 'string' && job.notificationUrl.startsWith('http')) {
+    const applyIdx = nonSocialLinks.findIndex(l => l.label.toLowerCase().includes('apply'));
+    nonSocialLinks.splice(applyIdx >= 0 ? applyIdx + 1 : 0, 0, {
+      label: 'Download Official Notification PDF',
+      url: job.notificationUrl
+    });
+  }
+
+  // Guarantee 'Official Website' is present if available
+  const hasOfficial = nonSocialLinks.some(l => l.label.toLowerCase().includes('official') || l.label.toLowerCase().includes('website'));
+  if (!hasOfficial && job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) {
+    nonSocialLinks.push({ label: 'Official Website', url: job.officialUrl });
+  }
+
+  // Default placeholders if nothing was provided
+  if (nonSocialLinks.length === 0) {
+    nonSocialLinks.push({
+      label: 'Apply Online',
+      url: primaryApplyUrl && !primaryApplyUrl.includes('careerdiary.in') ? primaryApplyUrl : null
+    });
+    nonSocialLinks.push({
+      label: 'Download Official Notification PDF',
+      url: notificationUrl && !notificationUrl.includes('careerdiary.in') ? notificationUrl : null
+    });
+    nonSocialLinks.push({
+      label: 'Official Website',
+      url: officialWebUrl
+    });
+  }
+
+  // Final table links with social community channels deduplicated at the bottom
+  const finalImportantLinks = [
+    ...nonSocialLinks,
+    { label: 'Join Telegram Channel', url: 'https://t.me/careerdiary' },
+    { label: 'Join WhatsApp Channel', url: 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u' },
+  ];
 
   const postDate = job.postDate || job.importantDates?.postDate || null;
   const shortInfo = job.uniqueDescription || job.description || `${job.organization || 'The organization'} has released the official notification for ${job.title}. Eligible candidates can apply online before the last date. Read the notification carefully before submitting the form.`;
@@ -274,73 +345,30 @@ export default function JobDetailPage({ job, onBack }) {
               </td>
             </tr>
 
-            {/* Render all importantLinks from data */}
-            {Object.keys(importantLinks).length > 0 ? (
-              Object.entries(importantLinks).map(([label, url], idx) => {
-                const isValidUrl = typeof url === 'string' && url.startsWith('http');
-                return (
-                  <tr key={idx}>
-                    <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{label}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      {isValidUrl ? (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Click Here
-                        </a>
-                      ) : (
-                        <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Link Active Soon</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Apply Online</td>
+            {finalImportantLinks.map((item, idx) => {
+              const isValidUrl = typeof item.url === 'string' && item.url.startsWith('http');
+              return (
+                <tr key={idx}>
+                  <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{item.label}</td>
                   <td style={{ textAlign: 'center' }}>
-                    {primaryApplyUrl && primaryApplyUrl.startsWith('http') && !primaryApplyUrl.includes('careerdiary.in') ? (
-                      <a href={primaryApplyUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
+                    {isValidUrl ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#0000ff', fontWeight: 'bold' }}
+                      >
+                        Click Here
+                      </a>
                     ) : (
-                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Link Active Soon</span>
+                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                        {item.label.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
+                      </span>
                     )}
                   </td>
                 </tr>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Download Official Notification</td>
-                  <td style={{ textAlign: 'center' }}>
-                    {notificationUrl && notificationUrl.startsWith('http') && !notificationUrl.includes('careerdiary.in') ? (
-                      <a href={notificationUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
-                    ) : (
-                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Notification Coming Soon</span>
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: '600' }}>Official Website</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <a href={officialWebUrl} target="_blank" rel="noopener noreferrer">Click Here</a>
-                  </td>
-                </tr>
-              </>
-            )}
-
-            {/* Telegram & WhatsApp */}
-            <tr>
-              <td style={{ textAlign: 'center' }}>Join Our Telegram Channel</td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer">Click Here</a>
-              </td>
-            </tr>
-            <tr>
-              <td style={{ textAlign: 'center' }}>Join Our WhatsApp Channel</td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer">Click Here</a>
-              </td>
-            </tr>
+              );
+            })}
           </tbody>
         </table>
 

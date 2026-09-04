@@ -49,6 +49,10 @@ const EMPTY_FORM = {
   maxAge: '37 Years',
   qualification: '',
   state: 'All India',
+  importantLinks: {},
+  importantDates: {},
+  applicationFee: {},
+  ageLimit: {},
 };
 
 export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack, onLogout }) {
@@ -103,7 +107,57 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const visualEditorRef = useRef(null);
   const isVisualFocusedRef = useRef(false);
 
-  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const set = (key, val) => {
+    setForm(f => {
+      const next = { ...f, [key]: val };
+      if (key === 'applyUrl' && val) {
+        next.importantLinks = { ...(next.importantLinks || {}), 'Apply Online': val };
+      }
+      if (key === 'notificationUrl' && val) {
+        next.importantLinks = { ...(next.importantLinks || {}), 'Download Official Notification PDF': val };
+      }
+      if (key === 'officialUrl' && val) {
+        next.importantLinks = { ...(next.importantLinks || {}), 'Official Website': val };
+      }
+      return next;
+    });
+  };
+
+  const updateCustomLink = (oldKey, newKey, newUrl) => {
+    setForm(prev => {
+      const nextLinks = { ...(prev.importantLinks || {}) };
+      if (oldKey && oldKey !== newKey) {
+        delete nextLinks[oldKey];
+      }
+      if (newKey && newKey.trim()) {
+        nextLinks[newKey.trim()] = newUrl;
+      }
+      const updates = { importantLinks: nextLinks };
+      const kl = (newKey || '').toLowerCase();
+      if (kl.includes('apply') && newUrl) updates.applyUrl = newUrl;
+      if ((kl.includes('notif') || kl.includes('pdf')) && newUrl) updates.notificationUrl = newUrl;
+      if ((kl.includes('official') || kl.includes('website')) && newUrl) updates.officialUrl = newUrl;
+      return { ...prev, ...updates };
+    });
+  };
+
+  const removeCustomLink = (keyToRemove) => {
+    setForm(prev => {
+      const nextLinks = { ...(prev.importantLinks || {}) };
+      delete nextLinks[keyToRemove];
+      return { ...prev, importantLinks: nextLinks };
+    });
+  };
+
+  const addCustomLink = () => {
+    setForm(prev => ({
+      ...prev,
+      importantLinks: {
+        ...(prev.importantLinks || {}),
+        [`Important Link ${Object.keys(prev.importantLinks || {}).length + 1}`]: ''
+      }
+    }));
+  };
 
   // Keep Visual Editor in sync when HTML source changes from left editor
   useEffect(() => {
@@ -255,7 +309,21 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
   const executeImport = (raw) => {
     if (!raw || !raw.trim()) return false;
-    const text = raw.trim();
+    let text = raw.trim();
+
+    // If user pasted snippet like `"importantLinks": { ... }` or `"title": "..."` without wrapping braces
+    if (!text.startsWith('{') && !text.startsWith('[') && text.includes(':')) {
+      if (
+        text.includes('"importantLinks"') ||
+        text.includes('"important_links"') ||
+        text.includes('"title"') ||
+        text.includes('"content"') ||
+        text.includes('"applyUrl"') ||
+        text.includes('"apply_url"')
+      ) {
+        text = `{ ${text} }`;
+      }
+    }
 
     // 1. JSON snippet import
     if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
@@ -266,6 +334,63 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           const importedTitle = cleanStr(p.title || p.post_title || '');
           const importedContent = cleanStr(p.content || p.htmlContent || p.html || '');
           const importedShort = cleanStr(p.short_info || p.uniqueDescription || p.description || '');
+
+          // Extract Important Links
+          const rawLinks = p.importantLinks || p.important_links || p.links || (p['Apply Online'] || p['Official Website'] ? p : null);
+          let extractedLinks = {};
+          let extractedApply = p.applyUrl || p.apply_url || '';
+          let extractedNotif = p.notificationUrl || p.notification_url || '';
+          let extractedOfficial = p.officialUrl || p.official_url || '';
+
+          if (rawLinks && typeof rawLinks === 'object') {
+            if (Array.isArray(rawLinks)) {
+              rawLinks.forEach(item => {
+                if (item && typeof item === 'object') {
+                  const label = cleanStr(item.label || item.key || item.name || item.title || 'Important Link');
+                  const url = item.url || item.link || item.href || item.value || '';
+                  if (label && url) extractedLinks[label] = url;
+                } else if (typeof item === 'string' && item.startsWith('http')) {
+                  extractedLinks['Important Link'] = item;
+                }
+              });
+            } else {
+              Object.entries(rawLinks).forEach(([k, v]) => {
+                const label = cleanStr(k);
+                const url = typeof v === 'string' ? v : (v?.url || v?.link || '');
+                if (label && url) extractedLinks[label] = url;
+              });
+            }
+
+            // Auto-detect applyUrl, notificationUrl, officialUrl
+            Object.entries(extractedLinks).forEach(([k, v]) => {
+              const kl = k.toLowerCase();
+              if (!extractedApply && (kl.includes('apply') || kl.includes('registration') || kl.includes('online form'))) {
+                extractedApply = v;
+              }
+              if (!extractedNotif && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('brochure'))) {
+                extractedNotif = v;
+              }
+              if (!extractedOfficial && (kl.includes('official') || kl.includes('website') || kl.includes('portal') || kl.includes('home'))) {
+                extractedOfficial = v;
+              }
+            });
+          }
+
+          // Extract Important Dates
+          const rawDates = p.importantDates || p.important_dates || {};
+          let extractedAppStart = p.appStart || p.apply_start || rawDates.applyStart || rawDates.appStart || rawDates.start || '';
+          let extractedLastDate = p.lastDate || p.appLast || p.last_date || rawDates.lastDate || rawDates.appLast || rawDates.last || '';
+          let extractedExamDate = p.examDate || p.exam_date || rawDates.examDate || rawDates.exam || '';
+
+          // Extract Application Fees
+          const rawFees = p.applicationFee || p.application_fee || {};
+          let extractedFeeGen = p.feeGen || p.fee_gen || rawFees.General || rawFees.general || rawFees.Gen || '';
+          let extractedFeeSc = p.feeSc || p.fee_sc || rawFees['SC / ST'] || rawFees.SC || rawFees.sc || '';
+
+          // Extract Age Limits
+          const rawAge = p.ageLimit || p.age_limit || {};
+          let extractedMinAge = p.minAge || p.min_age || rawAge.min || rawAge.minimum || '';
+          let extractedMaxAge = p.maxAge || p.max_age || rawAge.max || rawAge.maximum || '';
 
           setForm(prev => ({
             ...prev,
@@ -280,12 +405,32 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             seoDescription: cleanStr(p.seo_description || importedShort || prev.seoDescription),
             organization: cleanStr(p.organization || prev.organization),
             slug: p.slug || (importedTitle ? importedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : prev.slug),
+            applyUrl: extractedApply || prev.applyUrl,
+            notificationUrl: extractedNotif || prev.notificationUrl,
+            officialUrl: extractedOfficial || prev.officialUrl,
+            appStart: extractedAppStart || prev.appStart,
+            lastDate: extractedLastDate || prev.lastDate,
+            examDate: extractedExamDate || prev.examDate,
+            feeGen: extractedFeeGen || prev.feeGen,
+            feeSc: extractedFeeSc || prev.feeSc,
+            minAge: extractedMinAge || prev.minAge,
+            maxAge: extractedMaxAge || prev.maxAge,
+            importantLinks: {
+              ...(prev.importantLinks || {}),
+              ...extractedLinks
+            },
+            importantDates: {
+              ...(prev.importantDates || {}),
+              ...(typeof rawDates === 'object' ? rawDates : {})
+            },
           }));
+
           if (visualEditorRef.current && importedContent) {
             visualEditorRef.current.innerHTML = importedContent;
           }
           setImportUrl('');
-          showToast('✅ Post data and tables imported successfully!', 'success');
+          const linkCount = Object.keys(extractedLinks).length;
+          showToast(`✅ Post data and ${linkCount > 0 ? `${linkCount} important links` : 'tables'} imported successfully!`, 'success');
           return true;
         }
       } catch (err) {
@@ -307,6 +452,29 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         const extractedTotal = postMatch ? postMatch[1] : '';
         const cleanedHtml = cleanStr(doc.body.innerHTML);
 
+        // Also extract links from HTML tables if present
+        const extractedHtmlLinks = {};
+        let extractedApply = '';
+        let extractedNotif = '';
+        let extractedOfficial = '';
+
+        const trs = doc.querySelectorAll('tr');
+        trs.forEach(tr => {
+          const cells = tr.querySelectorAll('td, th');
+          if (cells.length >= 2) {
+            const label = cleanStr(cells[0].textContent.trim());
+            const a = cells[1].querySelector('a');
+            const href = a ? a.getAttribute('href') : '';
+            if (label && href && href.startsWith('http')) {
+              extractedHtmlLinks[label] = href;
+              const kl = label.toLowerCase();
+              if (!extractedApply && (kl.includes('apply') || kl.includes('registration'))) extractedApply = href;
+              if (!extractedNotif && (kl.includes('notif') || kl.includes('pdf'))) extractedNotif = href;
+              if (!extractedOfficial && (kl.includes('official') || kl.includes('website'))) extractedOfficial = href;
+            }
+          }
+        });
+
         setForm(prev => ({
           ...prev,
           title: extractedTitle || prev.title,
@@ -317,6 +485,13 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           seoTitle: extractedTitle || prev.seoTitle,
           seoDescription: extractedShort ? extractedShort.slice(0, 160) : prev.seoDescription,
           slug: extractedTitle ? extractedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : prev.slug,
+          applyUrl: extractedApply || prev.applyUrl,
+          notificationUrl: extractedNotif || prev.notificationUrl,
+          officialUrl: extractedOfficial || prev.officialUrl,
+          importantLinks: {
+            ...(prev.importantLinks || {}),
+            ...extractedHtmlLinks
+          }
         }));
         if (visualEditorRef.current && cleanedHtml) {
           visualEditorRef.current.innerHTML = cleanedHtml;
@@ -423,6 +598,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       seoKeywords: form.seoKeywords.trim(),
       seoDescription: form.seoDescription.trim() || form.description.trim(),
       applyUrl: form.applyUrl.trim() || '',
+      notificationUrl: form.notificationUrl.trim() || '',
       officialUrl: form.officialUrl.trim() || '',
       state: form.state.trim() || 'All India',
       feeGen: form.feeGen.trim() || '₹100',
@@ -433,11 +609,21 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       importantDates: {
         ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
         ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
-        ...(form.examDate ? { examDate: form.examDate.trim() } : {})
+        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
+        ...(form.importantDates || {})
       },
       importantLinks: {
+        ...(form.importantLinks || {}),
         ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
-        ...(form.notificationUrl ? { 'Download Notification': form.notificationUrl.trim() } : {}),
+        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
+        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
+        'Join Telegram Channel': 'https://t.me/careerdiary',
+        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
+      },
+      important_links: {
+        ...(form.importantLinks || {}),
+        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
+        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
         ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
@@ -872,9 +1058,58 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>OFFICIAL NOTIFICATION PDF</label>
                     <input type="url" placeholder="https://..." value={form.notificationUrl} onChange={e => set('notificationUrl', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem' }} />
                   </div>
-                  <div>
+                  <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>OFFICIAL PORTAL WEBSITE</label>
                     <input type="url" placeholder="https://..." value={form.officialUrl} onChange={e => set('officialUrl', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem' }} />
+                  </div>
+
+                  {/* All Useful Important Links (Custom Table) */}
+                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px dashed #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                        USEFUL IMPORTANT LINKS ({Object.keys(form.importantLinks || {}).length})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addCustomLink}
+                        style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        + Add Custom Link
+                      </button>
+                    </div>
+
+                    {Object.entries(form.importantLinks || {}).length === 0 ? (
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '6px 0' }}>
+                        No custom links yet. Paste post JSON snippet or click "+ Add Custom Link" above.
+                      </div>
+                    ) : (
+                      Object.entries(form.importantLinks || {}).map(([lbl, u], lIdx) => (
+                        <div key={lIdx} style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            value={lbl}
+                            onChange={e => updateCustomLink(lbl, e.target.value, u)}
+                            placeholder="Label (e.g. Apply Online)"
+                            style={{ width: '42%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}
+                          />
+                          <input
+                            type="url"
+                            value={u}
+                            onChange={e => updateCustomLink(lbl, lbl, e.target.value)}
+                            placeholder="https://..."
+                            style={{ flex: 1, padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.82rem' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeCustomLink(lbl)}
+                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', padding: '6px 9px', cursor: 'pointer', fontWeight: 'bold' }}
+                            title="Remove Link"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
