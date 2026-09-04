@@ -286,9 +286,14 @@ export default function App() {
 
     // 2. Publish to Firebase Firestore (LIVE for all visitors worldwide!)
     try {
-      await publishJobToFirestore(newJob);
+      const res = await publishJobToFirestore(newJob);
+      if (res && res.error) {
+        throw res.error;
+      }
+      return { success: true };
     } catch (err) {
       console.error('Firestore publish error:', err);
+      return { success: false, error: err };
     }
   };
 

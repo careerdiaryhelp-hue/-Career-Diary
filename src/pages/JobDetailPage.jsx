@@ -69,8 +69,17 @@ export default function JobDetailPage({ job, onBack }) {
           </a>
         </div>
 
-        {/* Main Info Table */}
-        <table className="sr-table">
+        {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
+        {job.content ? (
+          <div
+            className="sr-rich-html-content"
+            style={{ marginBottom: '24px' }}
+            dangerouslySetInnerHTML={{ __html: job.content }}
+          />
+        ) : (
+          <>
+            {/* Main Info Table */}
+            <table className="sr-table">
           <tbody>
             {/* Pink Heading Row */}
             <tr>
@@ -253,6 +262,8 @@ export default function JobDetailPage({ job, onBack }) {
             </tr>
           </tbody>
         </table>
+          </>
+        )}
 
         {/* Important Links Table */}
         <table className="sr-table sr-links-table">

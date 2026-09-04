@@ -1299,6 +1299,55 @@ sup .badge-tag {
   padding: 10px !important;
 }
 
+/* Rich HTML Content Styling for Visual Editor and Bigbooster posts */
+.sr-rich-html-content {
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  color: #111827;
+  overflow-x: auto;
+}
+.sr-rich-html-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  border: 2px solid #000;
+}
+.sr-rich-html-content th,
+.sr-rich-html-content td {
+  border: 1px solid #000;
+  padding: 8px 12px;
+}
+.sr-rich-html-content th {
+  background-color: #ff0080;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+}
+.sr-rich-html-content a {
+  color: #0000ff !important;
+  font-weight: bold;
+  text-decoration: underline;
+}
+.sr-rich-html-content a:hover {
+  color: #d32f2f !important;
+}
+.sr-rich-html-content h1,
+.sr-rich-html-content h2,
+.sr-rich-html-content h3 {
+  color: #b91c1c;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+.sr-rich-html-content ul,
+.sr-rich-html-content ol {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+.sr-rich-html-content p {
+  margin-bottom: 12px;
+}
+
 .sr-table-subheading {
   background-color: #008000;
   color: #fff;
