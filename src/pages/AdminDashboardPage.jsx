@@ -1007,9 +1007,12 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
     // 2. Standard JSON object / snippet import
     if (p && typeof p === 'object') {
-      const importedTitle = cleanStr(p.title || p.post_title || '');
-      const importedContent = cleanStr(p.content || p.htmlContent || p.html || '');
-      const importedShort = cleanStr(p.short_info || p.uniqueDescription || p.description || '');
+      const rawTitle = typeof p.title === 'object' && p.title ? p.title.rendered : p.title;
+      const rawContent = typeof p.content === 'object' && p.content ? p.content.rendered : (p.content || p.htmlContent || p.html);
+      const rawShort = typeof p.excerpt === 'object' && p.excerpt ? p.excerpt.rendered : (p.short_info || p.uniqueDescription || p.description);
+      const importedTitle = cleanStr(rawTitle || p.post_title || '');
+      const importedContent = cleanStr(rawContent || '');
+      const importedShort = cleanStr(rawShort || '');
 
       // Extract Important Links
       const rawLinks = p.importantLinks || p.important_links || p.links || (p['Apply Online'] || p['Official Website'] ? p : null);
@@ -1131,6 +1134,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       setShowMetadata(true);
       if (visualEditorRef.current && importedContent) {
         visualEditorRef.current.innerHTML = importedContent;
+        
       }
       setImportUrl('');
       const linkCount = Object.keys(extractedLinks).length;
@@ -1203,11 +1207,77 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
       showToast('⏳ Fetching post data from URL...', 'info');
 
-      // Step A: Fetch via our proxy API (/api/proxy) which avoids CORS restrictions
+      // Step 1: If user directly entered a WordPress REST API endpoint
+      if (raw.includes('/wp-json/wp/v2/posts')) {
+        try {
+          const corsProxy = `https://proxy.cors.sh/${raw}`;
+          const ctrl = new AbortController();
+          const to = setTimeout(() => ctrl.abort(), 6000);
+          const res = await fetch(corsProxy, { signal: ctrl.signal });
+          clearTimeout(to);
+          if (res.ok) {
+            const data = await res.json();
+            const post = Array.isArray(data) ? data[0] : data;
+            if (executeImport(post, raw)) return;
+          }
+        } catch (e) {
+          console.warn('Direct WP endpoint fetch failed:', e);
+        }
+      }
+
+      // Step 2: If URL has a slug segment, try fetching WordPress REST API endpoint via proxy.cors.sh
+      try {
+        const targetObj = new URL(raw);
+        const segments = targetObj.pathname.split('/').filter(Boolean);
+        const lastSeg = segments[segments.length - 1];
+        if (lastSeg && !lastSeg.includes('.') && !lastSeg.startsWith('wp-')) {
+          const wpUrl = `https://proxy.cors.sh/${targetObj.origin}/wp-json/wp/v2/posts?slug=${encodeURIComponent(lastSeg)}`;
+          const ctrl = new AbortController();
+          const to = setTimeout(() => ctrl.abort(), 5000);
+          const res = await fetch(wpUrl, { signal: ctrl.signal });
+          clearTimeout(to);
+          if (res.ok) {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                if (executeImport(data[0], raw)) return;
+              } else if (data && !Array.isArray(data) && (data.acf || data.title)) {
+                if (executeImport(data, raw)) return;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('WP REST API check failed:', e);
+      }
+
+      // Step 3: Universal fetch of the target URL via proxy.cors.sh (Works for Result Bharat, Sarkari Result, etc.)
+      try {
+        const corsProxy = `https://proxy.cors.sh/${raw}`;
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(corsProxy, { signal: ctrl.signal });
+        clearTimeout(to);
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await res.json();
+            if (executeImport(data, raw)) return;
+          } else {
+            const htmlText = await res.text();
+            if (executeImport(htmlText, raw)) return;
+          }
+        }
+      } catch (e) {
+        console.warn('proxy.cors.sh universal fetch failed:', e);
+      }
+
+      // Step 4: Fetch via /api/proxy (local dev Vite proxy or serverless function)
       try {
         const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}&_t=${Date.now()}`;
         const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 6000);
+        const timeoutId = setTimeout(() => ctrl.abort(), 4000);
         const res = await fetch(proxyUrl, { signal: ctrl.signal });
         clearTimeout(timeoutId);
 
@@ -1215,9 +1285,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         if (res.ok && contentType.includes('application/json')) {
           const result = await res.json();
           if (result && result.success) {
-            if (result.type === 'wordpress_acf') {
-              if (executeImport(result.data, raw)) return;
-            } else if (result.type === 'json') {
+            if (result.type === 'wordpress_acf' || result.type === 'json') {
               if (executeImport(result.data, raw)) return;
             } else if (result.type === 'html') {
               if (executeImport(result.html, raw)) return;
@@ -1228,7 +1296,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         console.warn('Local/Live /api/proxy fetch error:', e);
       }
 
-      // Step B: Direct fetch if allowed by remote server CORS
+      // Step 5: Direct fetch if allowed by remote server CORS
       try {
         const ctrl = new AbortController();
         const timeoutId = setTimeout(() => ctrl.abort(), 3000);
@@ -1248,22 +1316,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         console.warn('Direct fetch blocked by CORS:', e);
       }
 
-      // Step C: Fallback to public CORS proxy
-      try {
-        const publicProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(publicProxy, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const text = await res.text();
-          if (executeImport(text, raw)) return;
-        }
-      } catch (e) {
-        console.warn('Public CORS proxy failed:', e);
-      }
-
-      // Step D: Open in-app dialog if all automatic fetches are restricted
+      // Step 6: Fallback to in-app dialog if all automatic fetches failed
       showToast('⚠️ Direct URL fetch was blocked. Paste HTML or JSON below to import instantly:', 'info');
       setInsertModal({
         isOpen: true,
