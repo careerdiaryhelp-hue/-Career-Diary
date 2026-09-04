@@ -560,7 +560,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           </tr>
           ${appStart ? `<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Application Start Date</td><td style="border: 1px solid #000; padding: 8px 12px;">${appStart}</td></tr>` : ''}
           ${lastDate ? `<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Last Date for Apply</td><td style="border: 1px solid #000; padding: 8px 12px; color: #ff0000; font-weight: bold;">${lastDate}</td></tr>` : ''}
-          ${applyUrl ? `<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Apply Online Direct Link</td><td style="border: 1px solid #000; padding: 8px 12px;"><a href="${applyUrl}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a></td></tr>` : ''}
+
         </tbody>
       </table>
 
