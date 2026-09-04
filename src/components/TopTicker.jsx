@@ -50,11 +50,11 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
       {/* 1. Last Date Reminder */}
       <div className="last-date-bar">
         Last Date Reminder:- <a
-          href={tickerJobs[0] ? `/${tickerJobs[0].id}` : '/'}
+          href="/last-date-jobs"
           onClick={(e) => {
             if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
               e.preventDefault();
-              if (tickerJobs[0]) onSelectJob(tickerJobs[0].id);
+              onSelectJob('last-date-jobs');
             }
           }}
         >

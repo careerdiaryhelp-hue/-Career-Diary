@@ -19,6 +19,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import ContactUsPage from './pages/ContactUsPage';
+import LastDateJobsPage from './pages/LastDateJobsPage';
 
 // Firebase Cloud Firestore
 import {
@@ -193,6 +194,13 @@ export default function App() {
       setSelectedJobId(null);
       setCurrentCategory('all');
       document.title = 'Contact Us | Career Diary';
+      return;
+    }
+    if (cleanPath === 'last-date-jobs' || cleanPath === 'last-date-reminder' || cleanPath === 'last-date') {
+      setStaticPage('last-date');
+      setSelectedJobId(null);
+      setCurrentCategory('all');
+      document.title = 'Last Date Reminder – Govt Jobs Application Deadline List | Career Diary';
       return;
     }
     setStaticPage(null);
@@ -508,6 +516,15 @@ export default function App() {
     if (staticPage === 'privacy') return <PrivacyPolicyPage onBack={goHome} />;
     if (staticPage === 'terms') return <TermsPage onBack={goHome} />;
     if (staticPage === 'contact') return <ContactUsPage onBack={goHome} />;
+    if (staticPage === 'last-date') {
+      return (
+        <LastDateJobsPage
+          jobs={publishedJobs}
+          onSelectJob={(id) => navigateTo('/' + id)}
+          onBack={goHome}
+        />
+      );
+    }
 
     if (isAdminRoute && isAdmin) {
       return (

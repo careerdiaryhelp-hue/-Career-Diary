@@ -1000,15 +1000,16 @@ body.dark-mode .job-item-link:hover {
    NEW UI OVERRIDES (ResultBharat Style)
    ========================================= */
 
-/* Top Yellow Bar */
+/* Top Last Date Reminder Bar */
 .last-date-bar {
-  background-color: #ffff00;
+  background-color: #ffffff;
   color: #ff0000;
   text-align: center;
   font-weight: 800;
   padding: 8px;
   font-size: 1rem;
   letter-spacing: 0.5px;
+  border-bottom: 1px solid #e5e7eb;
 }
 .last-date-bar a {
   color: #ff0000;

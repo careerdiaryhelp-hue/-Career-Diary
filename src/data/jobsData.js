@@ -30,7 +30,9 @@ export const jobsData = [
     },
     "importantDates": {
       "Form Registration Start Date": "31 August 2026",
-      "Form Submission Start Date": "02 September 2026"
+      "Form Submission Start Date": "02 September 2026",
+      "Last Date for Apply Online": "04 September 2026 (Today)",
+      "Last Date for Fee Payment": "04 September 2026"
     },
     "selectionProcess": [
       "Written Examination / Merit List",
@@ -112,7 +114,7 @@ export const jobsData = [
     },
     "importantDates": {
       "Notification Date": "2026-08-27",
-      "Last Date": "2026-08-27 00:37:59"
+      "Last Date": "04 September 2026 (Today)"
     },
     "selectionProcess": [
       "Written Examination / Merit List",
