@@ -401,7 +401,7 @@ export default function App() {
       return (
         <AdminDashboardPage
           jobs={filteredJobs}
-          onAddJob={() => setIsPostModalOpen(true)}
+          onAddJob={handleAddJob}
           onDeleteJob={handleDeleteJob}
           onBack={() => { setIsAdminRoute(false); navigateTo('/'); }}
           onLogout={handleLogoutAdmin}
@@ -451,7 +451,10 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         isAdmin={isAdmin}
-        onOpenPostModal={() => setIsPostModalOpen(true)}
+        onOpenPostModal={() => {
+          navigateTo('/admin');
+          setIsAdminRoute(true);
+        }}
         onOpenAdminModal={() => {
           navigateTo('/admin');
           setShowAdminLogin(true);
