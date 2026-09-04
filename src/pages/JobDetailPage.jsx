@@ -29,6 +29,35 @@ export default function JobDetailPage({ job, onBack }) {
   const ageLimit = job.ageLimit || job.age_limit || {};
   const vacancyDetails = job.vacancyDetails || job.vacancy_details || [];
 
+  // Helper to sanitize links so Career Diary links point to https://careerdiary.in/
+  const sanitizeLink = (label, url) => {
+    let cleanLabel = (label || '').trim()
+      .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
+      .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
+      .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
+      .replace(/bigbooster(?:\.in)?/gi, 'Career Diary');
+
+    let cleanUrl = typeof url === 'string' ? url.trim() : (url?.url || url?.link || '');
+    const ul = cleanUrl.toLowerCase();
+    const ll = cleanLabel.toLowerCase();
+
+    if (
+      ll.includes('career diary') ||
+      ll.includes('careerdiary') ||
+      ll.includes('sarkari result') ||
+      ul.includes('sarkariresult') ||
+      ul.includes('resultbharat') ||
+      ul.includes('rojgarresult') ||
+      ul.includes('bigbooster')
+    ) {
+      if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
+        cleanUrl = 'https://careerdiary.in/';
+      }
+    }
+
+    return { label: cleanLabel, url: cleanUrl };
+  };
+
   // Build comprehensive normalized list of important links
   const rawLinks = job.importantLinks || job.important_links || {};
   let customLinks = [];
@@ -36,18 +65,18 @@ export default function JobDetailPage({ job, onBack }) {
   if (Array.isArray(rawLinks)) {
     rawLinks.forEach(item => {
       if (typeof item === 'string' && item.startsWith('http')) {
-        customLinks.push({ label: 'Important Link', url: item });
+        customLinks.push(sanitizeLink('Important Link', item));
       } else if (item && typeof item === 'object') {
         const label = item.label || item.key || item.name || item.title || 'Important Link';
         const url = item.url || item.link || item.href || item.value || '';
-        if (label && url) customLinks.push({ label, url });
+        if (label && url) customLinks.push(sanitizeLink(label, url));
       }
     });
   } else if (typeof rawLinks === 'object' && rawLinks !== null) {
     Object.entries(rawLinks).forEach(([label, url]) => {
-      const cleanUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
-      if (label && cleanUrl) {
-        customLinks.push({ label, url: cleanUrl });
+      const linkUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
+      if (label && linkUrl) {
+        customLinks.push(sanitizeLink(label, linkUrl));
       }
     });
   }
@@ -105,6 +134,41 @@ export default function JobDetailPage({ job, onBack }) {
   const postDate = job.postDate || job.importantDates?.postDate || null;
   const shortInfo = job.uniqueDescription || job.description || `${job.organization || 'The organization'} has released the official notification for ${job.title}. Eligible candidates can apply online before the last date. Read the notification carefully before submitting the form.`;
 
+  // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
+  const sanitizedContent = React.useMemo(() => {
+    if (!job.content) return '';
+    return job.content
+      .replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
+        const lower = match.toLowerCase();
+        if (lower.endsWith('.pdf"') || lower.endsWith(".pdf'") || lower.endsWith('.jpg"') || lower.endsWith('.png"') || lower.endsWith('.jpeg"')) {
+          return match;
+        }
+        return 'href="https://careerdiary.in/"';
+      })
+      .replace(/https?:\/\/(?:www\.)?sarkariresult(?:\.com(?:\.cm)?)?[^\s"'>]*/gi, (url) => {
+        const lower = url.toLowerCase();
+        if (lower.endsWith('.pdf') || lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
+          return url;
+        }
+        return 'https://careerdiary.in/';
+      })
+      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
+      .replace(/sarkari\s*result/gi, 'Career Diary')
+      .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
+      .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
+      .replace(/bigbooster(?:\.in)?/gi, 'Career Diary');
+  }, [job.content]);
+
+  // Check if job.content already has its own embedded Important Links table to avoid duplicates
+  const hasEmbeddedLinks = Boolean(
+    job.content &&
+    (job.content.toLowerCase().includes('important links') ||
+     job.content.includes('Click Here') ||
+     job.content.includes('sr-links-table'))
+  );
+
   return (
     <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px' }}>
       {/* Back Button */}
@@ -145,7 +209,7 @@ export default function JobDetailPage({ job, onBack }) {
           <div
             className="sr-rich-html-content"
             style={{ marginBottom: '24px' }}
-            dangerouslySetInnerHTML={{ __html: job.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         ) : (
           <>
@@ -336,41 +400,43 @@ export default function JobDetailPage({ job, onBack }) {
           </>
         )}
 
-        {/* Important Links Table */}
-        <table className="sr-table sr-links-table">
-          <tbody>
-            <tr>
-              <td colSpan={2} className="sr-table-heading">
-                Some Useful Important Links
-              </td>
-            </tr>
+        {/* Important Links Table - Only rendered if content does not already embed links */}
+        {!hasEmbeddedLinks && (
+          <table className="sr-table sr-links-table">
+            <tbody>
+              <tr>
+                <td colSpan={2} className="sr-table-heading">
+                  Some Useful Important Links
+                </td>
+              </tr>
 
-            {finalImportantLinks.map((item, idx) => {
-              const isValidUrl = typeof item.url === 'string' && item.url.startsWith('http');
-              return (
-                <tr key={idx}>
-                  <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{item.label}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    {isValidUrl ? (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#0000ff', fontWeight: 'bold' }}
-                      >
-                        Click Here
-                      </a>
-                    ) : (
-                      <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                        {item.label.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              {finalImportantLinks.map((item, idx) => {
+                const isValidUrl = typeof item.url === 'string' && item.url.startsWith('http');
+                return (
+                  <tr key={idx}>
+                    <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{item.label}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {isValidUrl ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#0000ff', fontWeight: 'bold' }}
+                        >
+                          Click Here
+                        </a>
+                      ) : (
+                        <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                          {item.label.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
 
         {/* Expert Tip if available */}
         {job.expertTip && (

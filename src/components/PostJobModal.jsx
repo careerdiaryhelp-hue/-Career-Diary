@@ -87,10 +87,10 @@ export default function PostJobModal({ isOpen, onClose, onAddJob }) {
               >
                 <option value="LATEST JOB">LATEST JOB</option>
                 <option value="ADMIT CARD">ADMIT CARD</option>
+                <option value="RESULT">RESULT</option>
+                <option value="ANSWER KEY">ANSWER KEY</option>
                 <option value="SYLLABUS">SYLLABUS</option>
-                <option value="RESULT / ANSWER KEY">RESULT / ANSWER KEY</option>
                 <option value="ADMISSION">ADMISSION</option>
-                <option value="IMPORTANT">IMPORTANT</option>
               </select>
             </div>
 

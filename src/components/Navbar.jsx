@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Briefcase, IdCard, CheckSquare, Key, FileText, GraduationCap, FileCheck, Star } from 'lucide-react';
+import { Home, Briefcase, IdCard, CheckSquare, Key, FileText, GraduationCap } from 'lucide-react';
 
 export default function Navbar({ currentCategory, setCurrentCategory, onNavigate }) {
   const navItems = [
@@ -10,8 +10,6 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
     { cat: 'ANSWER KEY', path: '/answer-key', label: 'Answer Key', icon: Key },
     { cat: 'SYLLABUS', path: '/syllabus', label: 'Syllabus', icon: FileText },
     { cat: 'ADMISSION', path: '/admission', label: 'Admission', icon: GraduationCap },
-    { cat: 'DOCUMENTS', path: '/documents', label: 'Documents', icon: FileCheck },
-    { cat: 'IMPORTANT', path: '/important', label: 'Important', icon: Star },
   ];
 
   return (

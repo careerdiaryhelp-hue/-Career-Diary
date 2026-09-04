@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
+import { ALL_COLUMNS, getJobsForCategory } from '../data/categoryHelpers.js';
 
 export default function JobColumnsGrid({
   jobs = [],
@@ -8,38 +9,6 @@ export default function JobColumnsGrid({
   onSelectJob,
   onNavigateCategory
 }) {
-  const ALL_COLUMNS = [
-    { key: 'RESULT', title: 'Result', slug: '/results', colorClass: 'col-darkred', singleTitle: 'Results 2026' },
-    { key: 'ADMIT CARD', title: 'Admit Card', slug: '/admit-card', colorClass: 'col-darkred', singleTitle: 'Admit Cards & Hall Tickets 2026' },
-    { key: 'LATEST JOB', title: 'Latest Jobs', slug: '/latest-jobs', colorClass: 'col-darkred', singleTitle: 'Latest Govt Jobs Notifications 2026' },
-    { key: 'ANSWER KEY', title: 'Answer Key', slug: '/answer-key', colorClass: 'col-darkred', singleTitle: 'Answer Keys & Solutions 2026' },
-    { key: 'SYLLABUS', title: 'Syllabus', slug: '/syllabus', colorClass: 'col-darkred', singleTitle: 'Exam Pattern & Syllabus 2026' },
-    { key: 'ADMISSION', title: 'Admission', slug: '/admission', colorClass: 'col-darkred', singleTitle: 'Admission Notifications 2026' },
-    { key: 'DOCUMENTS', title: 'Documents', slug: '/documents', colorClass: 'col-darkred', singleTitle: 'Documents & Verification 2026' },
-    { key: 'IMPORTANT', title: 'Important', slug: '/important', colorClass: 'col-darkred', singleTitle: 'Important Links & Services 2026' },
-    { key: 'CERTIFICATE VERIFICATION', title: 'Certificate Verification', slug: '/certificate-verification', colorClass: 'col-darkred', singleTitle: 'Certificate Verification 2026' },
-  ];
-
-  const getJobsForCategory = (allJobs, categoryKey) => {
-    const targetCat = (categoryKey || '').toUpperCase();
-    return allJobs.filter((j) => {
-      const jobCat = (j.category || '').toUpperCase();
-      if (targetCat === 'ANSWER KEY') {
-        return jobCat.includes('ANSWER') || jobCat.includes('KEY') || jobCat === 'ANSKEY';
-      }
-      if (targetCat === 'RESULT') {
-        return jobCat.includes('RESULT') && !jobCat.includes('ANSWER') && !jobCat.includes('KEY');
-      }
-      if (targetCat === 'DOCUMENTS') {
-        return jobCat.includes('DOCUMENT') || jobCat.includes('CERTIFICATE');
-      }
-      if (targetCat === 'LATEST JOB') {
-        return jobCat.includes('JOB') || jobCat.includes('RECRUITMENT');
-      }
-      return jobCat === targetCat || jobCat.includes(targetCat) || targetCat.includes(jobCat);
-    });
-  };
-
   const renderJobItem = (job, isSingle = false) => {
     let badgeClass = 'tag-last';
     let badgeText = job.badge || '';
@@ -88,8 +57,8 @@ export default function JobColumnsGrid({
   };
 
   const renderColumnCard = (col, catJobs, isSingle = false) => {
-    // Show maximum 20 posts in grid mode as requested
-    const displayedJobs = isSingle ? catJobs : catJobs.slice(0, 20);
+    // Show exactly 10 posts in homepage grid mode as requested; full list in single category view
+    const displayedJobs = isSingle ? catJobs : catJobs.slice(0, 10);
 
     return (
       <div key={col.key} className={`column-card ${col.colorClass}`}>
@@ -110,11 +79,12 @@ export default function JobColumnsGrid({
             <a
               href={col.slug}
               className="col-view-more"
+              title={`View all ${col.title} (${catJobs.length} updates)`}
               onClick={(e) => {
                 if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                   e.preventDefault();
                   if (onNavigateCategory) {
-                    onNavigateCategory(col.key);
+                    onNavigateCategory(col.key, col.slug);
                   } else {
                     window.history.pushState({}, '', col.slug);
                     window.dispatchEvent(new PopStateEvent('popstate'));
@@ -122,7 +92,7 @@ export default function JobColumnsGrid({
                 }
               }}
             >
-              View More <ChevronRight size={14} />
+              View More {col.title} &raquo;
             </a>
           </div>
         )}
@@ -130,7 +100,7 @@ export default function JobColumnsGrid({
     );
   };
 
-  // Case 1: A specific category is active (e.g. IMPORTANT, LATEST JOB, ADMIT CARD, etc.)
+  // Case 1: A specific category is active (e.g. RESULT, ADMIT CARD, LATEST JOB, ADMISSION, etc.)
   if (currentCategory && currentCategory !== 'all') {
     const activeCol = ALL_COLUMNS.find(
       (c) =>
@@ -150,7 +120,60 @@ export default function JobColumnsGrid({
     return (
       <main className="main-content">
         <div className="container columns-single-view">
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onNavigateCategory) onNavigateCategory('all', '/');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                color: '#1d4ed8',
+                textDecoration: 'none',
+                background: '#eff6ff',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                border: '1px solid #bfdbfe'
+              }}
+            >
+              ← Back to Home
+            </a>
+            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+              Showing all <strong>{catJobs.length}</strong> updates in {activeCol.title}
+            </span>
+          </div>
+
           {renderColumnCard(activeCol, catJobs, true)}
+
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onNavigateCategory) onNavigateCategory('all', '/');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 700,
+                fontSize: '0.92rem',
+                color: '#ffffff',
+                background: '#a71b30',
+                padding: '10px 24px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 6px rgba(167, 27, 48, 0.25)'
+              }}
+            >
+              ← Back to Home / All Updates
+            </a>
+          </div>
         </div>
       </main>
     );

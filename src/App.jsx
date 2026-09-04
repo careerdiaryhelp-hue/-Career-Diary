@@ -27,6 +27,17 @@ import {
   subscribeToFirestoreJobs
 } from './firebase';
 
+import {
+  isResult,
+  isAnswerKey,
+  isAdmitCard,
+  isLatestJob,
+  isAdmission,
+  isSyllabus,
+  isDocument,
+  isImportant
+} from './data/categoryHelpers';
+
 const DEFAULT_CATEGORIES = [
   { id: '1', name: 'Results', subtitle: 'Latest Exam Results 2026 - Check Merit Lists & Cut-Off Marks Online | [Career Diary 2026]', slug: '/results', order: 1, seoTitle: 'Results 2026', seoDescription: 'Download the [Result Pdf] All Result 2026 here. Download," "Direct Link," "Live," "Official." Get the direct link, exam date,...' },
   { id: '2', name: 'Admit Card', subtitle: 'Latest Exams Admit Card 2026 - Download Admit Card ,Exam Date& Online | [Career Diary 2026]', slug: '/admit-card', order: 2, seoTitle: 'Admit Cards 2026', seoDescription: 'Get the latest updates on admit cards and hall tickets. Download your exam call letters for SSC, Banking, Railways, and...' },
@@ -34,8 +45,6 @@ const DEFAULT_CATEGORIES = [
   { id: '4', name: 'Answer Key', subtitle: 'Official Answer Keys', slug: '/answer-key', order: 4, seoTitle: 'Answer Key 2026', seoDescription: 'Download official answer keys and response sheets...' },
   { id: '5', name: 'Admission', subtitle: 'Admission Notices', slug: '/admission', order: 5, seoTitle: 'Admissions 2026', seoDescription: 'College, University, and School admissions 2026...' },
   { id: '6', name: 'Syllabus', subtitle: 'Exam Syllabus & Pattern', slug: '/syllabus', order: 6, seoTitle: 'Exam Syllabus 2026', seoDescription: 'Detailed exam syllabus and selection process...' },
-  { id: '7', name: 'Documents', subtitle: 'Documents', slug: '/documents', order: 7, seoTitle: 'Documents 2026', seoDescription: 'Marksheet, admit card, exam City slip, Documents @CAREERDIARY,' },
-  { id: '8', name: 'Important', subtitle: 'Important Update', slug: '/important', order: 8, seoTitle: 'Important Updates', seoDescription: 'Scholarship, yojna, University Update, Government Scheme,' },
 ];
 
 const DEFAULT_BREAKING_NEWS = [
@@ -95,7 +104,18 @@ export default function App() {
   const [categories, setCategories] = useState(() => {
     try {
       const saved = localStorage.getItem('career_diary_categories');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const filtered = parsed.filter(
+            (c) =>
+              c &&
+              !['documents', 'important', 'certificate-verification'].includes((c.slug || '').replace(/^\//, '').toLowerCase()) &&
+              !['documents', 'important', 'certificate verification'].includes((c.name || '').toLowerCase())
+          );
+          if (filtered.length > 0) return filtered;
+        }
+      }
     } catch (e) {}
     return DEFAULT_CATEGORIES;
   });
@@ -220,18 +240,10 @@ export default function App() {
       document.title = 'College & University Admissions 2026 | Career Diary';
       return;
     }
-    if (cleanPath === 'documents' || cleanPath === 'document' || cleanPath === 'certificate-verification') {
-      setCurrentCategory('DOCUMENTS');
+    if (cleanPath === 'documents' || cleanPath === 'document' || cleanPath === 'certificate-verification' || cleanPath === 'important' || cleanPath === 'important-links') {
+      setCurrentCategory('all');
       setSelectedJobId(null);
-      setSearchQuery(qParam || '');
-      document.title = 'Documents & Verification 2026 | Career Diary';
-      return;
-    }
-    if (cleanPath === 'important' || cleanPath === 'important-links') {
-      setCurrentCategory('IMPORTANT');
-      setSelectedJobId(null);
-      setSearchQuery(qParam || '');
-      document.title = 'Important Links & Services 2026 | Career Diary';
+      navigateTo('/', true);
       return;
     }
 
@@ -431,17 +443,15 @@ export default function App() {
 
     let matchCategory = currentCategory === 'all';
     if (!matchCategory) {
-      if (curCat === 'RESULT') {
-        matchCategory = jobCat.includes('RESULT') && !jobCat.includes('ANSWER') && !jobCat.includes('KEY');
-      } else if (curCat === 'ANSWER KEY') {
-        matchCategory = jobCat.includes('ANSWER') || jobCat.includes('KEY') || jobCat === 'ANSKEY';
-      } else if (curCat === 'DOCUMENTS') {
-        matchCategory = jobCat.includes('DOCUMENT') || jobCat.includes('CERTIFICATE');
-      } else if (curCat === 'LATEST JOB') {
-        matchCategory = jobCat.includes('JOB') || jobCat.includes('RECRUITMENT');
-      } else {
-        matchCategory = jobCat === curCat || jobCat.includes(curCat) || curCat.includes(jobCat);
-      }
+      if (curCat === 'RESULT') matchCategory = isResult(job);
+      else if (curCat === 'ANSWER KEY' || curCat === 'ANSKEY') matchCategory = isAnswerKey(job);
+      else if (curCat === 'ADMIT CARD' || curCat === 'ADMIT') matchCategory = isAdmitCard(job);
+      else if (curCat === 'LATEST JOB' || curCat === 'JOB' || curCat === 'LATEST JOBS') matchCategory = isLatestJob(job);
+      else if (curCat === 'ADMISSION') matchCategory = isAdmission(job);
+      else if (curCat === 'SYLLABUS') matchCategory = isSyllabus(job);
+      else if (curCat === 'DOCUMENTS' || curCat === 'DOCUMENT' || curCat === 'CERTIFICATE VERIFICATION') matchCategory = isDocument(job);
+      else if (curCat === 'IMPORTANT') matchCategory = isImportant(job);
+      else matchCategory = jobCat === curCat || jobCat.includes(curCat) || curCat.includes(jobCat);
     }
 
     const matchState =
@@ -544,8 +554,14 @@ export default function App() {
           currentCategory={currentCategory}
           searchQuery={searchQuery}
           onSelectJob={(id) => navigateTo('/' + id)}
-          onNavigateCategory={(cat) => {
-            setCurrentCategory(cat);
+          onNavigateCategory={(cat, slug) => {
+            if (slug) {
+              navigateTo(slug);
+            } else if (cat === 'all') {
+              navigateTo('/');
+            } else {
+              setCurrentCategory(cat);
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         />

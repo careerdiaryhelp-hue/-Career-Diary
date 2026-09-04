@@ -911,53 +911,6 @@ export const jobsData = [
     }
   },
   {
-    "id": "top-online-form-current-jobs-vacancy-admission",
-    "title": "Top Online Form :: Current Jobs/Vacancy/Admission 🔄",
-    "organization": "Career Diary",
-    "category": "LATEST JOB",
-    "uniqueDescription": "Welcome to \"Career Diary \"Stay informed about the Latest Jobs of various competitive exams conducted by government bodies across India, whether you are waiting for the Job Notification of any recruitment exam, entrance exam or any other government exam then we update the Latest Job from time to time to keep you informed.",
-    "postName": "Top Online Form :: Current Jobs/Vacancy/Admission 🔄",
-    "status": "Active Notification",
-    "updateType": "Official Update",
-    "postDate": "2026-08-05 02:13:21",
-    "expertTip": "Career Diary Advice: Verify all eligibility criteria and last dates from the official notice before submitting.",
-    "totalPosts": "Updated On 05/08/2026",
-    "jobLocation": "All India",
-    "eligibility": {
-      "education": "As per official notification guidelines.",
-      "fresherEligible": true,
-      "location": "All India"
-    },
-    "ageLimit": {
-      "minimum": "18 Years",
-      "maximum": "37 Years",
-      "relaxation": "Age relaxation applicable as per official recruitment rules."
-    },
-    "applicationFee": {
-      "General / OBC": "₹ 100/-",
-      "SC / ST / PH": "₹ 0/-",
-      "paymentMode": "Online (Debit Card, Credit Card, Net Banking, UPI)"
-    },
-    "importantDates": {
-      "Last Date": "01 June 2026",
-      "Start Last Date": "03/07/2026"
-    },
-    "selectionProcess": [
-      "Written Examination / Merit List",
-      "Document Verification",
-      "Final Selection"
-    ],
-    "vacancyDetails": [
-      {
-        "Post Name": "Top Online Form :: Current Jobs/Vacancy/Admission 🔄",
-        "Total": "Updated On 05/08/2026"
-      }
-    ],
-    "importantLinks": {
-      "Career Diary Official Website": "https://careerdiary.in/",
-    }
-  },
-  {
     "id": "rajasthan-high-court-stenographer-recruitment-2026-apply-online-f",
     "title": "Rajasthan High Court Stenographer Recruitment 2026 Apply Online for 163 Post",
     "organization": "Career Diary",

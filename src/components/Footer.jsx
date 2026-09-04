@@ -1,5 +1,4 @@
 import React from 'react';
-import { Send } from 'lucide-react';
 
 export default function Footer({ onNavigate }) {
   const handleLink = (e, path) => {
@@ -65,17 +64,6 @@ export default function Footer({ onNavigate }) {
             <li><a href="/bpsc" onClick={(e) => handleLink(e, '/bpsc')}>BPSC TRE 4.0 &amp; 71st CCE</a></li>
             <li><a href="/bank" onClick={(e) => handleLink(e, '/bank')}>IBPS / SBI PO &amp; Clerk</a></li>
           </ul>
-        </div>
-
-        <div className="footer-col">
-          <h4>Subscribe Alerts</h4>
-          <p>Get instant Job Alerts sent to your inbox!</p>
-          <div className="subscribe-form">
-            <input type="email" placeholder="Enter your email address..." />
-            <button className="btn btn-primary" onClick={() => alert('Subscribe to our Telegram channel for instant alerts!')}>
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
 

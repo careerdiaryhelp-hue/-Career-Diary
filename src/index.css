@@ -887,7 +887,7 @@ body.dark-mode .job-item-link:hover {
 }
 .footer-content {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 32px;
   padding-bottom: 32px;
 }
@@ -1160,8 +1160,8 @@ body.dark-mode .job-item-link:hover {
 
 .column-footer {
   padding: 8px 14px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-top: 1px dashed rgba(167, 27, 48, 0.2);
   text-align: right;
   border-radius: 0 0 8px 8px;
 }
@@ -1170,16 +1170,19 @@ body.dark-mode .job-item-link:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #a71b30;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 .col-view-more:hover {
-  color: #b91c1c;
-  text-decoration: underline;
+  color: #ffffff;
+  background: #a71b30;
+  text-decoration: none;
   transform: translateX(2px);
 }
 

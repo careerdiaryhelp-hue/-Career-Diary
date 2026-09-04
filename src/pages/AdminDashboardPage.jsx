@@ -19,9 +19,6 @@ const CATEGORIES = [
   { value: 'ANSWER KEY', label: 'Answer Key', icon: CheckSquare },
   { value: 'SYLLABUS', label: 'Syllabus', icon: FileText },
   { value: 'ADMISSION', label: 'Admission', icon: GraduationCap },
-  { value: 'DOCUMENTS', label: 'Documents', icon: BookmarkCheck },
-  { value: 'CERTIFICATE VERIFICATION', label: 'Certificate Verification', icon: BookmarkCheck },
-  { value: 'IMPORTANT', label: 'Important', icon: Bookmark },
 ];
 
 const EMPTY_FORM = {
@@ -96,8 +93,6 @@ export default function AdminDashboardPage({
       { id: '4', name: 'Answer Key', subtitle: 'Official Answer Keys', slug: '/answer-key', order: 4, seoTitle: 'Answer Key 2026', seoDescription: 'Download official answer keys and response sheets...' },
       { id: '5', name: 'Admission', subtitle: 'Admission Notices', slug: '/admission', order: 5, seoTitle: 'Admissions 2026', seoDescription: 'College, University, and School admissions 2026...' },
       { id: '6', name: 'Syllabus', subtitle: 'Exam Syllabus & Pattern', slug: '/syllabus', order: 6, seoTitle: 'Exam Syllabus 2026', seoDescription: 'Detailed exam syllabus and selection process...' },
-      { id: '7', name: 'Documents', subtitle: 'Documents', slug: '/documents', order: 7, seoTitle: 'Documents 2026', seoDescription: 'Marksheet, admit card, exam City slip, Documents @CAREERDIARY,' },
-      { id: '8', name: 'Important', subtitle: 'Important Update', slug: '/important', order: 8, seoTitle: 'Important Updates', seoDescription: 'Scholarship, yojna, University Update, Government Scheme,' },
     ];
   });
 
@@ -1044,11 +1039,18 @@ export default function AdminDashboardPage({
       .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
       .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
       .replace(/bigbooster(?:\.in)?/gi, 'Career Diary')
+      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
       .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
       .replace(/sarkariresult\.com/gi, 'careerdiary.in')
       .replace(/resultbharat\.com/gi, 'careerdiary.in')
       .replace(/rojgarresult\.com/gi, 'careerdiary.in')
-      .replace(/https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult)\.com[^\s"'<>]*/gi, 'https://careerdiary.in')
+      .replace(/https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^\s"'<>]*/gi, (url) => {
+        const lower = url.toLowerCase();
+        if (lower.endsWith('.pdf') || lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
+          return url;
+        }
+        return 'https://careerdiary.in/';
+      })
       .replace(/\s+/g, ' ')
       .trim();
   };
@@ -1115,8 +1117,23 @@ export default function AdminDashboardPage({
       const textMatch = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
       if (textMatch && textMatch.length >= 1) {
         const label = clean(textMatch[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
-        const href = linkMatch ? linkMatch[1] : '';
+        let href = linkMatch ? linkMatch[1].trim() : '';
         if (label && href && href.startsWith('http')) {
+          const hl = href.toLowerCase();
+          const ll = label.toLowerCase();
+          if (
+            ll.includes('career diary') ||
+            ll.includes('careerdiary') ||
+            ll.includes('sarkari result') ||
+            hl.includes('sarkariresult') ||
+            hl.includes('resultbharat') ||
+            hl.includes('rojgarresult') ||
+            hl.includes('bigbooster')
+          ) {
+            if (!hl.endsWith('.pdf') && !hl.endsWith('.jpg') && !hl.endsWith('.png') && !hl.endsWith('.jpeg')) {
+              href = 'https://careerdiary.in/';
+            }
+          }
           links[label] = href;
         }
       }
@@ -1242,14 +1259,23 @@ export default function AdminDashboardPage({
           </tr>
         </thead>
         <tbody>
-          ${Object.entries(links).map(([k, u]) => `
+          ${Object.entries(links).map(([k, u]) => {
+            const kl = k.toLowerCase();
+            const ul = (u || '').toLowerCase();
+            let finalUrl = u;
+            if (kl.includes('career diary') || kl.includes('careerdiary') || kl.includes('sarkari result') || ul.includes('sarkariresult') || ul.includes('resultbharat') || ul.includes('rojgarresult') || ul.includes('bigbooster')) {
+              if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
+                finalUrl = 'https://careerdiary.in/';
+              }
+            }
+            return `
             <tr>
               <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${k}</td>
               <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-                <a href="${u}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+                <a href="${finalUrl}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
               </td>
             </tr>
-          `).join('')}
+          `;}).join('')}
         </tbody>
       </table>` : ''}
     `.trim();

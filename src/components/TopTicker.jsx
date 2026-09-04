@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell, Flame, ExternalLink } from 'lucide-react';
+import { isResult, isAdmitCard, isLatestJob, isAdmission } from '../data/categoryHelpers.js';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
@@ -10,13 +11,10 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
     return (jobs || []).filter(filterFn).slice(0, limit);
   };
 
-  const topResults = getCategoryPosts(j => (j.category || '').toUpperCase().includes('RESULT'), 2);
-  const topAdmits = getCategoryPosts(j => (j.category || '').toUpperCase().includes('ADMIT'), 2);
-  const topJobs = getCategoryPosts(j => {
-    const c = (j.category || '').toUpperCase();
-    return (c.includes('JOB') || c.includes('RECRUITMENT')) && !c.includes('ADMIT') && !c.includes('RESULT');
-  }, 2);
-  const topAdmissions = getCategoryPosts(j => (j.category || '').toUpperCase().includes('ADMISSION'), 2);
+  const topResults = getCategoryPosts(isResult, 2);
+  const topAdmits = getCategoryPosts(isAdmitCard, 2);
+  const topJobs = getCategoryPosts(isLatestJob, 2);
+  const topAdmissions = getCategoryPosts(isAdmission, 2);
 
   const dynamicCategoryNews = [
     ...topResults.map(j => ({ id: `dyn-res-${j.id}`, category: 'Result', message: j.title, link: `/${j.id}` })),
