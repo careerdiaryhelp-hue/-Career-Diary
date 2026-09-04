@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Calendar, Flame, Clock, Search, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { isResult, isAnswerKey, isAdmitCard } from '../data/categoryHelpers.js';
 
 // Month names mapping for dynamic parsing
 const MONTH_MAP = {
@@ -180,21 +181,39 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
     return null;
   };
 
-  // Build list of jobs with dynamically calculated last date info
+  // Build list of active jobs with dynamically calculated last date info
+  // STRICT RULE: All expired / closed jobs and non-job categories are filtered out
   const enrichedJobs = useMemo(() => {
     const todayRef = new Date();
+    const currentYear = todayRef.getFullYear();
+
     return (jobs || [])
-      .filter(j => j && j.status !== 'Draft' && j.status !== 'draft')
+      .filter(j => {
+        if (!j || j.status === 'Draft' || j.status === 'draft') return false;
+        if (j.status && (j.status.toLowerCase().includes('closed') || j.status.toLowerCase().includes('expired'))) return false;
+        // Only include jobs, recruitments, and admissions (exclude results, admit cards, answer keys)
+        if (isResult(j) || isAnswerKey(j) || isAdmitCard(j)) return false;
+        return true;
+      })
       .map(job => {
         const lastDateStr = extractLastDate(job);
         const parsedDate = parseDateSafe(lastDateStr);
-        const diffDays = getDayDiff(parsedDate, todayRef);
+        let diffDays = getDayDiff(parsedDate, todayRef);
+
+        // Check if date explicitly contains a past year (e.g. 2024, 2025 when current year is 2026)
+        let isPastYear = false;
+        const yearMatch = lastDateStr.match(/\b(201\d|202[0-5])\b/);
+        if (yearMatch && parseInt(yearMatch[1], 10) < currentYear) {
+          isPastYear = true;
+          if (diffDays === null || diffDays >= 0) {
+            diffDays = -999;
+          }
+        }
 
         const isToday = diffDays === 0;
         const isTomorrow = diffDays === 1;
         const isSoon = diffDays !== null && diffDays >= 0 && diffDays <= 15;
-        const isExpired = diffDays !== null && diffDays < 0;
-        const isActive = diffDays !== null ? diffDays >= 0 : true;
+        const isExpired = isPastYear || (diffDays !== null && diffDays < 0);
         const applyUrl = getApplyUrl(job);
 
         return {
@@ -206,10 +225,11 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
           isTomorrow,
           isSoon,
           isExpired,
-          isActive,
           applyUrlDirect: applyUrl,
         };
-      });
+      })
+      // "jo end ho gya hi wo na dikhe" -> STRICTLY filter out all expired / ended jobs
+      .filter(job => !job.isExpired);
   }, [jobs]);
 
   // Filter based on active tab and search query
@@ -218,7 +238,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
       .filter(job => {
         if (filterType === 'today') return job.isToday;
         if (filterType === 'week') return job.isToday || job.isSoon;
-        return true; // 'all'
+        return true; // 'all' active jobs
       })
       .filter(job => {
         if (!searchQuery.trim()) return true;
@@ -230,7 +250,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
         );
       })
       .sort((a, b) => {
-        // 1. Today's jobs always ranked at the top
+        // 1. Today's jobs always ranked at the very top
         if (a.isToday && !b.isToday) return -1;
         if (!a.isToday && b.isToday) return 1;
 
@@ -238,15 +258,12 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
         if (a.isTomorrow && !b.isTomorrow) return -1;
         if (!a.isTomorrow && b.isTomorrow) return 1;
 
-        // 3. Active upcoming jobs ranked before expired jobs
-        if (a.isActive && !b.isActive) return -1;
-        if (!a.isActive && b.isActive) return 1;
-
-        // 4. Sort active jobs chronologically by nearest deadline (least days remaining first)
+        // 3. Sort chronologically by nearest deadline (least days remaining first)
         if (a.diffDays !== null && b.diffDays !== null) {
-          if (a.diffDays >= 0 && b.diffDays >= 0) return a.diffDays - b.diffDays;
-          if (a.diffDays < 0 && b.diffDays < 0) return b.diffDays - a.diffDays;
+          return a.diffDays - b.diffDays;
         }
+
+        // 4. Jobs with specific dates before "Check Official Notice"
         if (a.diffDays !== null && b.diffDays === null) return -1;
         if (a.diffDays === null && b.diffDays !== null) return 1;
 
@@ -421,7 +438,6 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                   const isRowToday = job.isToday;
                   const isRowTomorrow = job.isTomorrow;
                   const isRowSoon = job.isSoon && !isRowToday && !isRowTomorrow;
-                  const isRowExpired = job.isExpired;
 
                   return (
                     <tr
@@ -500,23 +516,6 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                             </span>
                           )}
 
-                          {isRowExpired && (
-                            <span style={{
-                              backgroundColor: '#64748b',
-                              color: '#fff',
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: '3px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              marginTop: '2px',
-                              flexShrink: 0
-                            }}>
-                              CLOSED
-                            </span>
-                          )}
-
                           <a
                             href={`/${job.id}`}
                             onClick={(e) => {
@@ -526,7 +525,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                               }
                             }}
                             style={{
-                              color: isRowToday ? '#b91c1c' : (isRowTomorrow ? '#b45309' : (isRowExpired ? '#475569' : '#1d4ed8')),
+                              color: isRowToday ? '#b91c1c' : (isRowTomorrow ? '#b45309' : '#1d4ed8'),
                               fontWeight: isRowToday ? 700 : 600,
                               textDecoration: 'none',
                               lineHeight: '1.4'
@@ -561,17 +560,17 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                             ? '#fee2e2'
                             : isRowTomorrow
                             ? '#fef3c7'
-                            : (isRowExpired ? '#f1f5f9' : '#eff6ff'),
+                            : '#eff6ff',
                           color: isRowToday
                             ? '#dc2626'
                             : isRowTomorrow
                             ? '#b45309'
-                            : (isRowExpired ? '#64748b' : '#1e40af'),
+                            : '#1e40af',
                           border: isRowToday
                             ? '1px solid #fca5a5'
                             : isRowTomorrow
                             ? '1px solid #fde68a'
-                            : (isRowExpired ? '1px solid #e2e8f0' : '1px solid #bfdbfe'),
+                            : '1px solid #bfdbfe',
                           marginBottom: '4px'
                         }}>
                           {job.extractedLastDate}
@@ -582,7 +581,6 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                           {isRowToday && <span style={{ color: '#dc2626' }}>Ending Today!</span>}
                           {isRowTomorrow && <span style={{ color: '#d97706' }}>1 Day Left</span>}
                           {isRowSoon && job.diffDays !== null && <span style={{ color: '#2563eb' }}>{job.diffDays} days remaining</span>}
-                          {isRowExpired && <span style={{ color: '#64748b' }}>Deadline Passed</span>}
                         </div>
 
                         <div>
@@ -639,7 +637,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
               ) : (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                    No jobs found matching the selected filter.
+                    No active jobs found matching the selected filter.
                   </td>
                 </tr>
               )}
