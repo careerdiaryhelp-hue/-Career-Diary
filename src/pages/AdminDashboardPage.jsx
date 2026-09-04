@@ -392,10 +392,30 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     showToast('Inserted successfully into visual editor!', 'success');
   };
 
-  // Helper to sanitize external branding
+  // Helper to sanitize external branding and decode HTML entities
   const cleanStr = (str) => {
     if (!str || typeof str !== 'string') return '';
     return str
+      .replace(/&amp;/g, '&')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&#8211;/g, '–')
+      .replace(/&#8212;/g, '—')
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8216;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&#8230;/g, '…')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&rsquo;/g, "'")
+      .replace(/&lsquo;/g, "'")
+      .replace(/&rdquo;/g, '"')
+      .replace(/&ldquo;/g, '"')
+      .replace(/&ndash;/g, '–')
+      .replace(/&mdash;/g, '—')
+      .replace(/&hellip;/g, '…')
       .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
       .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
       .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
@@ -405,6 +425,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       .replace(/resultbharat\.com/gi, 'careerdiary.in')
       .replace(/rojgarresult\.com/gi, 'careerdiary.in')
       .replace(/https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult)\.com[^\s"'<>]*/gi, 'https://careerdiary.in')
+      .replace(/\s+/g, ' ')
       .trim();
   };
 
