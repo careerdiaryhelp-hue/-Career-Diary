@@ -68,7 +68,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
           <div className="container breaking-bar-inner">
             <div className="breaking-label">
               <span className="breaking-pulse-dot" />
-              BREAKING
+              BREAKING NEWS
             </div>
             <div className="breaking-ticker-wrapper">
               <div className="breaking-ticker-content">

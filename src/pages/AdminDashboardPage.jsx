@@ -4257,7 +4257,7 @@ export default function AdminDashboardPage({
             textTransform: 'uppercase',
             flexShrink: 0
           }}>
-            BREAKING
+            BREAKING NEWS
           </span>
           <div style={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {activeNewsList.length > 0 ? (

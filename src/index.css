@@ -194,7 +194,7 @@ body.dark-mode .icon-btn:hover {
 }
 .ticker-content {
   display: inline-block;
-  animation: marquee 28s linear infinite;
+  animation: marquee 55s linear infinite;
 }
 .ticker-content:hover {
   animation-play-state: paused;
@@ -1050,6 +1050,14 @@ body.dark-mode .job-item-link:hover {
   z-index: 2;
   flex-shrink: 0;
   box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .breaking-label {
+    padding: 0 10px;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
 }
 .breaking-pulse-dot {
   width: 7px;
@@ -1073,7 +1081,7 @@ body.dark-mode .job-item-link:hover {
 .breaking-ticker-content {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 28s linear infinite;
+  animation: marquee 65s linear infinite;
   font-size: 0.88rem;
   font-weight: 600;
   will-change: transform;
