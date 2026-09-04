@@ -1205,7 +1205,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
       // Step A: Fetch via our proxy API (/api/proxy) which avoids CORS restrictions
       try {
-        const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}`;
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}&_t=${Date.now()}`;
         const ctrl = new AbortController();
         const timeoutId = setTimeout(() => ctrl.abort(), 6000);
         const res = await fetch(proxyUrl, { signal: ctrl.signal });
