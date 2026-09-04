@@ -6,7 +6,7 @@ import {
   RotateCcw, RotateCw, Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Link2, Unlink,
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
-  ChevronDown, ChevronUp, Palette, Highlighter
+  ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -62,6 +62,43 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   const [textColor, setTextColor] = useState('#000000');
   const [highlightColor, setHighlightColor] = useState('#fef08a');
+
+  // In-App Toast State (Zero browser alert popups)
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => setToast({ message, type });
+
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 3800);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
+
+  // In-App Custom Input Modal State (Zero browser prompt popups)
+  const [insertModal, setInsertModal] = useState({
+    isOpen: false,
+    type: null, // 'link' | 'image' | 'video' | 'import'
+    title: '',
+    label: '',
+    placeholder: '',
+    value: '',
+  });
+  const savedSelectionRef = useRef(null);
+
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      savedSelectionRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const restoreSelection = () => {
+    if (savedSelectionRef.current) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedSelectionRef.current);
+    }
+  };
 
   const visualEditorRef = useRef(null);
   const isVisualFocusedRef = useRef(false);
@@ -139,47 +176,91 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     execCmd('insertHTML', tableHtml);
   };
 
-  const handleInsertLink = () => {
-    const url = prompt('Enter URL (e.g. https://...):', 'https://');
-    if (url && url.trim() && url !== 'https://') {
-      execCmd('createLink', url.trim());
-    }
+  const handleOpenLinkModal = () => {
+    saveSelection();
+    setInsertModal({
+      isOpen: true,
+      type: 'link',
+      title: 'Insert Web Link',
+      label: 'Destination Web Address (URL):',
+      placeholder: 'https://example.com',
+      value: 'https://',
+    });
   };
 
-  const handleInsertImage = () => {
-    const url = prompt('Enter Image URL:');
-    if (url && url.trim()) {
-      execCmd('insertImage', url.trim());
-    }
+  const handleOpenImageModal = () => {
+    saveSelection();
+    setInsertModal({
+      isOpen: true,
+      type: 'image',
+      title: 'Insert Image',
+      label: 'Direct Image URL:',
+      placeholder: 'https://example.com/photo.png',
+      value: '',
+    });
   };
 
-  const handleInsertVideo = () => {
-    const url = prompt('Enter Embed / Video URL:');
-    if (url && url.trim()) {
-      execCmd('insertHTML', `<p><iframe src="${url.trim()}" width="100%" height="320" frameborder="0" allowfullscreen></iframe></p>`);
-    }
+  const handleOpenVideoModal = () => {
+    saveSelection();
+    setInsertModal({
+      isOpen: true,
+      type: 'video',
+      title: 'Embed Video',
+      label: 'YouTube or Video Embed Link:',
+      placeholder: 'https://www.youtube.com/embed/...',
+      value: '',
+    });
   };
 
-  const handleImportData = async () => {
-    if (!importUrl.trim()) {
-      alert('Please paste a URL, JSON post snippet, or HTML source to import.');
+  const handleConfirmInsert = () => {
+    const val = insertModal.value.trim();
+    if (!val) {
+      setInsertModal(prev => ({ ...prev, isOpen: false }));
       return;
     }
-    const raw = importUrl.trim();
 
-    // Helper to sanitize external branding
-    const cleanStr = (str) => {
-      if (!str || typeof str !== 'string') return '';
-      return str
-        .replace(/sarkari\s*result(\.com(\.cm)?)?/gi, 'Career Diary')
-        .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
-        .replace(/sarkariresult\.com/gi, 'careerdiary.in');
-    };
+    if (insertModal.type === 'import') {
+      setInsertModal(prev => ({ ...prev, isOpen: false }));
+      setImportUrl(val);
+      setTimeout(() => executeImport(val), 60);
+      return;
+    }
+
+    if (visualEditorRef.current) {
+      visualEditorRef.current.focus();
+      restoreSelection();
+      if (insertModal.type === 'link') {
+        document.execCommand('createLink', false, val);
+      } else if (insertModal.type === 'image') {
+        document.execCommand('insertImage', false, val);
+      } else if (insertModal.type === 'video') {
+        const videoHtml = `<p><iframe src="${val}" width="100%" height="340" frameborder="0" allowfullscreen style="border-radius: 8px; margin: 12px 0;"></iframe></p>`;
+        document.execCommand('insertHTML', false, videoHtml);
+      }
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+    }
+    setInsertModal(prev => ({ ...prev, isOpen: false }));
+    showToast('Inserted successfully into visual editor!', 'success');
+  };
+
+  // Helper to sanitize external branding
+  const cleanStr = (str) => {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/sarkari\s*result(\.com(\.cm)?)?/gi, 'Career Diary')
+      .replace(/sarkariresult\.co\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.com/gi, 'careerdiary.in');
+  };
+
+  const executeImport = (raw) => {
+    if (!raw || !raw.trim()) return false;
+    const text = raw.trim();
 
     // 1. JSON snippet import
-    if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
+    if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
       try {
-        const parsed = JSON.parse(raw);
+        const parsed = JSON.parse(text);
         const p = Array.isArray(parsed) ? parsed[0] : parsed;
         if (p && typeof p === 'object') {
           const importedTitle = cleanStr(p.title || p.post_title || '');
@@ -204,8 +285,8 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             visualEditorRef.current.innerHTML = importedContent;
           }
           setImportUrl('');
-          alert('✅ Post data imported and filled into form successfully!');
-          return;
+          showToast('✅ Post data and tables imported successfully!', 'success');
+          return true;
         }
       } catch (err) {
         console.warn('JSON import error:', err);
@@ -213,10 +294,10 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     }
 
     // 2. Direct HTML code import
-    if (raw.includes('<') && raw.includes('>')) {
+    if (text.includes('<') && text.includes('>')) {
       try {
         const parser = new DOMParser();
-        const doc = parser.parseFromString(raw, 'text/html');
+        const doc = parser.parseFromString(text, 'text/html');
         const titleEl = doc.querySelector('h1, .post-title, h2, title');
         const extractedTitle = cleanStr(titleEl ? titleEl.textContent.trim() : '');
         const pEls = Array.from(doc.querySelectorAll('p'));
@@ -241,12 +322,24 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           visualEditorRef.current.innerHTML = cleanedHtml;
         }
         setImportUrl('');
-        alert('✅ HTML content and tables imported successfully!');
-        return;
+        showToast('✅ HTML content and tables imported successfully!', 'success');
+        return true;
       } catch (err) {
         console.warn('HTML parse error:', err);
       }
     }
+
+    return false;
+  };
+
+  const handleImportData = async () => {
+    if (!importUrl.trim()) {
+      showToast('Please paste a URL, JSON snippet, or HTML to import.', 'info');
+      return;
+    }
+    const raw = importUrl.trim();
+
+    if (executeImport(raw)) return;
 
     // 3. If user pasted a URL
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
@@ -272,7 +365,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
               visualEditorRef.current.innerHTML = importedContent;
             }
             setImportUrl('');
-            alert('✅ URL data fetched and imported successfully!');
+            showToast('✅ URL data fetched and imported successfully!', 'success');
             return;
           }
         }
@@ -280,23 +373,24 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         console.warn('Direct fetch blocked by CORS:', e);
       }
 
-      const pastedSnippet = prompt(
-        "🌐 URL Import Assistant:\nExternal browser URL fetching was restricted by CORS.\n\n👉 Easy solution: Simply copy the HTML content or JSON of the post and paste it below. It will automatically populate the Title, Vacancies, and Tables:",
-        ""
-      );
-      if (pastedSnippet && pastedSnippet.trim()) {
-        setImportUrl(pastedSnippet.trim());
-        setTimeout(() => handleImportData(), 80);
-      }
+      // Open in-app dialog instead of browser prompt()
+      setInsertModal({
+        isOpen: true,
+        type: 'import',
+        title: 'Paste & Import Post Content',
+        label: 'External URL fetch was restricted by browser CORS. Paste the HTML or JSON content below to import instantly:',
+        placeholder: 'Paste post HTML table code or JSON snippet here...',
+        value: '',
+      });
       return;
     }
 
-    alert('💡 Import Tip: You can paste either:\n1. Post JSON snippet (e.g. { "title": "...", "content": "..." })\n2. Direct HTML code with tables\n\nIt will auto-populate all fields and visual preview immediately!');
+    showToast('💡 Tip: Paste a JSON snippet or HTML table code to auto-import fields', 'info');
   };
 
   const handlePublish = async () => {
     if (!form.title.trim()) {
-      alert('Post Title is required!');
+      showToast('Post Title is required!', 'error');
       return;
     }
 
@@ -353,16 +447,16 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
     const res = await onAddJob(newJob);
     if (res && res.success === false) {
-      alert(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`);
+      showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
     } else {
-      alert('🎉 Post published successfully! It is now LIVE on Career Diary for all users worldwide via Firebase Firestore.');
+      showToast('🎉 Post published successfully! It is now LIVE on Career Diary for all users worldwide via Firebase Firestore.', 'success');
     }
     setForm({ ...EMPTY_FORM });
     setActiveSection('all-posts');
   };
 
   const handleSaveDraft = () => {
-    alert('Draft saved locally. Click Publish Post to make it live for everyone.');
+    showToast('💾 Draft saved locally. Click Publish Post to make it live for everyone.', 'info');
   };
 
   // ── Sidebar ──────────────────────────────────────────────
@@ -921,10 +1015,10 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
 
             {/* Inserts: Link, Image, Video, Table */}
-            <button type="button" onClick={handleInsertLink} title="Insert Link" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Link2 size={14} /></button>
+            <button type="button" onClick={handleOpenLinkModal} title="Insert Link" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Link2 size={14} /></button>
             <button type="button" onClick={() => execCmd('unlink')} title="Unlink" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Unlink size={14} /></button>
-            <button type="button" onClick={handleInsertImage} title="Insert Image" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Image size={14} /></button>
-            <button type="button" onClick={handleInsertVideo} title="Insert Video" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Video size={14} /></button>
+            <button type="button" onClick={handleOpenImageModal} title="Insert Image" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Image size={14} /></button>
+            <button type="button" onClick={handleOpenVideoModal} title="Insert Video" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Video size={14} /></button>
             <button type="button" onClick={handleInsertTable} title="Insert Sarkari Table" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', color: '#b91c1c' }}><Table size={14} /></button>
           </div>
 
@@ -1057,6 +1151,160 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         {activeSection === 'new-post' && renderNewPost()}
         {activeSection === 'breaking-news' && renderBreakingNews()}
       </div>
+
+      {/* Modern In-App Toast Notification (Zero browser alerts) */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '14px 20px',
+          borderRadius: '10px',
+          background: toast.type === 'error' ? '#ef4444' : toast.type === 'info' ? '#3b82f6' : '#10b981',
+          color: '#fff',
+          fontWeight: 600,
+          fontSize: '0.92rem',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+          maxWidth: '480px'
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={20} /> : toast.type === 'info' ? <Info size={20} /> : <CheckCircle2 size={20} />}
+          <span style={{ flex: 1 }}>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', marginLeft: '6px', padding: 0, opacity: 0.85 }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Modern In-App Insert/Import Modal (Zero browser prompts) */}
+      {insertModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setInsertModal(prev => ({ ...prev, isOpen: false }));
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            width: '100%',
+            maxWidth: insertModal.type === 'import' ? '600px' : '480px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {insertModal.type === 'link' && <Link2 size={18} style={{ color: '#2563eb' }} />}
+                {insertModal.type === 'image' && <Image size={18} style={{ color: '#10b981' }} />}
+                {insertModal.type === 'video' && <Video size={18} style={{ color: '#ef4444' }} />}
+                {insertModal.type === 'import' && <Download size={18} style={{ color: '#6366f1' }} />}
+                {insertModal.title}
+              </h3>
+              <button
+                onClick={() => setInsertModal(prev => ({ ...prev, isOpen: false }))}
+                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                {insertModal.label}
+              </label>
+
+              {insertModal.type === 'import' ? (
+                <textarea
+                  autoFocus
+                  rows={8}
+                  value={insertModal.value}
+                  onChange={e => setInsertModal(prev => ({ ...prev, value: e.target.value }))}
+                  placeholder={insertModal.placeholder}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.88rem',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    resize: 'vertical'
+                  }}
+                />
+              ) : (
+                <input
+                  type="text"
+                  autoFocus
+                  value={insertModal.value}
+                  onChange={e => setInsertModal(prev => ({ ...prev, value: e.target.value }))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleConfirmInsert();
+                    if (e.key === 'Escape') setInsertModal(prev => ({ ...prev, isOpen: false }));
+                  }}
+                  placeholder={insertModal.placeholder}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.92rem',
+                    outline: 'none'
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '14px 20px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setInsertModal(prev => ({ ...prev, isOpen: false }))}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#fff',
+                  color: '#475569',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
+                }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmInsert}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#2563eb',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
+                }}>
+                {insertModal.type === 'import' ? 'Import Data' : 'Insert'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
