@@ -335,9 +335,10 @@ export default function App() {
     }
   };
 
-  // Filtered jobs resolver
+  // Filtered jobs resolver (Drafts excluded from public visitors)
   const filteredJobs = jobs.filter((job) => {
     if (!job || !job.title) return false;
+    if (job.status === 'Draft' || job.status === 'draft') return false;
     const titleLower = job.title.toLowerCase().trim();
     if (titleLower.startsWith('test') || titleLower === 'test') return false;
 
@@ -374,6 +375,17 @@ export default function App() {
   // Helper to render dedicated detail page based on category
   const renderDetailPage = () => {
     if (!selectedJob) return null;
+    if ((selectedJob.status === 'Draft' || selectedJob.status === 'draft') && !isAdmin) {
+      return (
+        <div className="container" style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: 'Outfit, sans-serif', color: '#1e293b' }}>Post Not Available</h2>
+          <p style={{ color: '#64748b', marginTop: '10px' }}>This post is currently in draft mode and has not yet been published.</p>
+          <button className="btn btn-primary" onClick={() => navigateTo('/')} style={{ marginTop: '20px' }}>
+            Back to Home
+          </button>
+        </div>
+      );
+    }
     return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };
 
@@ -400,7 +412,7 @@ export default function App() {
     if (isAdminRoute && isAdmin) {
       return (
         <AdminDashboardPage
-          jobs={filteredJobs}
+          jobs={jobs}
           onAddJob={handleAddJob}
           onDeleteJob={handleDeleteJob}
           onBack={() => { setIsAdminRoute(false); navigateTo('/'); }}
@@ -443,9 +455,11 @@ export default function App() {
     );
   };
 
+  const publishedJobs = jobs.filter(j => j && j.status !== 'Draft' && j.status !== 'draft');
+
   return (
     <div className="app-root">
-      <TopTicker jobs={jobs} onSelectJob={(id) => navigateTo('/' + id)} />
+      <TopTicker jobs={publishedJobs} onSelectJob={(id) => navigateTo('/' + id)} />
 
       <Header
         searchQuery={searchQuery}

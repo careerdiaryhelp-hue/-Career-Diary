@@ -7,7 +7,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Link2, Unlink,
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -60,6 +60,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft'
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
@@ -139,6 +140,11 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         totalRows: table.rows.length,
         totalCols: tr ? tr.cells.length : (table.rows[0]?.cells.length || 0)
       });
+    } else {
+      activeTableElementRef.current = null;
+      activeRowElementRef.current = null;
+      activeCellElementRef.current = null;
+      setActiveTableState(null);
     }
   };
 
@@ -305,11 +311,55 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     admissions: jobs.filter(j => (j.category || '').toUpperCase().includes('ADMISSION')).length,
   }), [jobs]);
 
-  const filteredJobs = jobs.filter(j => {
-    const matchCat = filterCat === 'all' || (j.category || '').toUpperCase() === filterCat.toUpperCase();
-    const matchSearch = !searchTerm || j.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const formatCategory = (cat) => {
+    if (!cat) return 'Latest Jobs';
+    const c = String(cat).toUpperCase();
+    if (c.includes('JOB')) return 'Latest Jobs';
+    if (c.includes('ADMIT')) return 'Admit Card';
+    if (c.includes('RESULT')) return 'Results';
+    if (c.includes('ANSWER')) return 'Answer Key';
+    if (c.includes('SYLLABUS')) return 'Syllabus';
+    if (c.includes('ADMISSION')) return 'Admission';
+    if (c.includes('CERTIFICATE')) return 'Certificate';
+    if (c.includes('IMPORTANT')) return 'Important';
+    return cat;
+  };
+
+  const formatDate = (job) => {
+    if (job.postDate) {
+      const d = new Date(job.postDate);
+      if (!isNaN(d.getTime())) {
+        return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+      }
+      return job.postDate;
+    }
+    if (job.updatedAt) {
+      const d = new Date(job.updatedAt);
+      if (!isNaN(d.getTime())) {
+        return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+      }
+    }
+    if (job.lastDate) return job.lastDate;
+    return '8/31/2026';
+  };
+
+  const publishedCount = useMemo(() => jobs.filter(j => j && j.status !== 'Draft' && j.status !== 'draft').length, [jobs]);
+  const draftCount = useMemo(() => jobs.filter(j => j && (j.status === 'Draft' || j.status === 'draft')).length, [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(j => {
+      if (!j || !j.title) return false;
+      const isDraft = j.status === 'Draft' || j.status === 'draft';
+      const matchStatus = statusFilter === 'all'
+        ? true
+        : statusFilter === 'draft'
+          ? isDraft
+          : !isDraft;
+      const matchCat = filterCat === 'all' || (j.category || '').toUpperCase() === filterCat.toUpperCase();
+      const matchSearch = !searchTerm || j.title.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchStatus && matchCat && matchSearch;
+    });
+  }, [jobs, statusFilter, filterCat, searchTerm]);
 
   const handleStartNewPost = () => {
     setEditingJobId(null);
@@ -326,6 +376,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     setForm({
       title: job.title || '',
       category: job.category || 'LATEST JOB',
+      status: job.status || 'Published',
       organization: job.organization || '',
       vacancies: job.vacancies || job.totalPosts || '',
       totalPosts: job.totalPosts || job.vacancies || '',
@@ -361,7 +412,23 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       visualEditorRef.current.innerHTML = job.content || job.htmlContent || '';
     }
     setActiveSection('new-post');
-    showToast(`✏️ Loaded "${job.title}" for editing. Publishing will update this existing post without creating duplicates.`, 'info');
+    showToast(`✏️ Loaded "${job.title}" for editing.`, 'info');
+  };
+
+  const handleDuplicateJob = async (job) => {
+    if (!job) return;
+    const newId = `${job.id || 'post'}-copy-${Date.now()}`;
+    const duplicatedJob = {
+      ...job,
+      id: newId,
+      title: `${job.title} (Copy)`,
+      status: 'Draft',
+      displayOrder: (job.displayOrder ?? 0) + 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await onAddJob(duplicatedJob);
+    showToast(`📋 Post duplicated as Draft: "${duplicatedJob.title}"`, 'success');
   };
 
   // Group duplicate jobs by normalized title / slug
@@ -420,6 +487,166 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const handleVisualInput = (e) => {
     const html = e.currentTarget.innerHTML;
     setForm(prev => ({ ...prev, content: html }));
+  };
+
+  const applyBackgroundColor = (color, wholeRow = false) => {
+    if (!visualEditorRef.current) return;
+
+    // 1. If applying to whole row
+    if (wholeRow && activeRowElementRef.current && visualEditorRef.current.contains(activeRowElementRef.current)) {
+      Array.from(activeRowElementRef.current.cells).forEach(c => {
+        c.style.backgroundColor = color;
+      });
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Row background changed to ${color}`, 'success');
+      return;
+    }
+
+    // 2. If text selection exists in visual editor
+    restoreSelection();
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('hiliteColor', false, color);
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Highlight color applied!`, 'success');
+      return;
+    }
+
+    // 3. If an active table cell/header is selected
+    if (activeCellElementRef.current && visualEditorRef.current.contains(activeCellElementRef.current)) {
+      activeCellElementRef.current.style.backgroundColor = color;
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Cell background changed to ${color}`, 'success');
+      return;
+    }
+
+    // 4. If cursor is inside any block element
+    if (sel && sel.anchorNode) {
+      let node = sel.anchorNode;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      const block = node?.closest('th, td, p, div, h1, h2, h3, h4, h5, li');
+      if (block && visualEditorRef.current.contains(block)) {
+        block.style.backgroundColor = color;
+        const updated = visualEditorRef.current.innerHTML;
+        setForm(prev => ({ ...prev, content: updated }));
+        showToast(`🎨 Background color changed!`, 'success');
+        return;
+      }
+    }
+
+    execCmd('hiliteColor', color);
+  };
+
+  const applyTextColor = (color) => {
+    if (!visualEditorRef.current) return;
+
+    // 1. If text is selected in visual editor
+    restoreSelection();
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('foreColor', false, color);
+      try {
+        const range = sel.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        const el = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
+        if (el) {
+          if (el.tagName === 'FONT') {
+            el.setAttribute('color', color);
+            el.style.color = color;
+          }
+          el.querySelectorAll?.('font').forEach(f => {
+            f.setAttribute('color', color);
+            f.style.color = color;
+          });
+        }
+      } catch (err) {}
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Text color changed to ${color}`, 'success');
+      return;
+    }
+
+    // 2. If active table cell/header is selected
+    if (activeCellElementRef.current && visualEditorRef.current.contains(activeCellElementRef.current)) {
+      activeCellElementRef.current.style.color = color;
+      // Also update any nested font tags or child text spans
+      activeCellElementRef.current.querySelectorAll('font').forEach(f => {
+        f.setAttribute('color', color);
+        f.style.color = color;
+      });
+      activeCellElementRef.current.querySelectorAll('span, p, strong, b, em, a').forEach(el => {
+        el.style.color = color;
+      });
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Cell text color changed to ${color}`, 'success');
+      return;
+    }
+
+    // 3. If cursor is inside any block element
+    if (sel && sel.anchorNode) {
+      let node = sel.anchorNode;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      const block = node?.closest('th, td, p, div, h1, h2, h3, h4, h5, li');
+      if (block && visualEditorRef.current.contains(block)) {
+        block.style.color = color;
+        block.querySelectorAll?.('font').forEach(f => {
+          f.setAttribute('color', color);
+          f.style.color = color;
+        });
+        const updated = visualEditorRef.current.innerHTML;
+        setForm(prev => ({ ...prev, content: updated }));
+        showToast(`🎨 Text color changed!`, 'success');
+        return;
+      }
+    }
+
+    execCmd('foreColor', color);
+  };
+
+  const applyHeaderTheme = (bgColor, textColor = '#ffffff') => {
+    if (!visualEditorRef.current) return;
+
+    if (activeRowElementRef.current && visualEditorRef.current.contains(activeRowElementRef.current)) {
+      Array.from(activeRowElementRef.current.cells).forEach(cell => {
+        cell.style.backgroundColor = bgColor;
+        cell.style.color = textColor;
+        cell.querySelectorAll('font').forEach(f => {
+          f.setAttribute('color', textColor);
+          f.style.color = textColor;
+        });
+        cell.querySelectorAll('span, p, strong, b, em, a').forEach(el => {
+          el.style.color = textColor;
+        });
+      });
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Applied theme: ${bgColor}`, 'success');
+      return;
+    }
+
+    if (activeCellElementRef.current && visualEditorRef.current.contains(activeCellElementRef.current)) {
+      activeCellElementRef.current.style.backgroundColor = bgColor;
+      activeCellElementRef.current.style.color = textColor;
+      activeCellElementRef.current.querySelectorAll('font').forEach(f => {
+        f.setAttribute('color', textColor);
+        f.style.color = textColor;
+      });
+      activeCellElementRef.current.querySelectorAll('span, p, strong, b, em, a').forEach(el => {
+        el.style.color = textColor;
+      });
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast(`🎨 Applied theme to cell`, 'success');
+      return;
+    }
+
+    showToast('Click a table row or cell first to apply header style', 'info');
   };
 
   const handleInsertTable = () => {
@@ -1740,6 +1967,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       ...(existingJob || {}),
       id: finalSlug,
       title: form.title.trim(),
+      status: 'Published',
       category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
       organization: form.organization.trim() || (existingJob ? existingJob.organization : 'Career Diary Alert'),
       vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
@@ -1832,125 +2060,164 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     if (res && res.success === false) {
       showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
     } else if (isUpdate) {
-      showToast(`🔄 Post "${newJob.title}" updated successfully! (Existing post updated in-place, no duplicate created)`, 'success');
+      showToast(`🔄 Post "${newJob.title}" updated successfully!`, 'success');
     } else {
-      showToast('🎉 Post published successfully! It is now LIVE on Career Diary for all users worldwide via Firebase Firestore.', 'success');
+      showToast('🎉 Post published successfully! It is now LIVE on Career Diary.', 'success');
     }
     setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = '';
     }
-    setActiveSection('all-posts');
+    setActiveSection('dashboard');
   };
 
-  const handleSaveDraft = () => {
-    showToast('💾 Draft saved locally. Click Publish Post to make it live for everyone.', 'info');
+  const handleSaveDraft = async () => {
+    if (!form.title.trim()) {
+      showToast('⚠️ Please enter a Post Title before saving as draft!', 'error');
+      return;
+    }
+
+    const editorHtml = visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content;
+    const isUpdate = Boolean(editingJobId);
+
+    const baseSlug = form.slug.trim() || form.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const normalizeStr = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanFormTitle = normalizeStr(form.title);
+
+    const existingJob = jobs.find(j => 
+      (editingJobId && j.id === editingJobId) ||
+      (baseSlug && j.id && j.id.toLowerCase() === baseSlug.toLowerCase()) ||
+      (form.title && j.title && j.title.trim().toLowerCase() === form.title.trim().toLowerCase()) ||
+      (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
+    );
+
+    const finalSlug = existingJob ? existingJob.id : (baseSlug || `draft-${Date.now()}`);
+
+    const draftJob = {
+      ...(existingJob || {}),
+      id: finalSlug,
+      title: form.title.trim(),
+      status: 'Draft',
+      category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
+      organization: form.organization.trim() || (existingJob ? existingJob.organization : 'Career Diary Alert'),
+      vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
+      totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
+      displayOrder: Number(form.displayOrder) || (existingJob?.displayOrder ?? 0),
+      featured: Boolean(form.featured),
+      lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
+      appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
+      appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
+      badge: form.badge || (existingJob?.badge ?? 'Draft'),
+      bannerColor: form.bannerColor || (existingJob?.bannerColor ?? 'pink'),
+      description: form.description.trim() || (existingJob?.description ?? ''),
+      uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
+      shortInfo: form.description.trim() || (existingJob?.shortInfo ?? ''),
+      content: editorHtml || form.content.trim() || '',
+      htmlContent: editorHtml || form.content.trim() || '',
+      seoTitle: form.seoTitle.trim() || form.title.trim(),
+      seoKeywords: form.seoKeywords.trim() || (existingJob?.seoKeywords ?? ''),
+      seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
+      applyUrl: form.applyUrl.trim() || (existingJob?.applyUrl ?? ''),
+      notificationUrl: form.notificationUrl.trim() || (existingJob?.notificationUrl ?? ''),
+      officialUrl: form.officialUrl.trim() || (existingJob?.officialUrl ?? ''),
+      state: form.state.trim() || (existingJob?.state ?? 'All India'),
+      feeGen: form.feeGen.trim() || (existingJob?.feeGen ?? '₹100'),
+      feeSc: form.feeSc.trim() || (existingJob?.feeSc ?? '₹0'),
+      minAge: form.minAge.trim() || (existingJob?.minAge ?? '18 Years'),
+      maxAge: form.maxAge.trim() || (existingJob?.maxAge ?? '37 Years'),
+      qualification: form.qualification.trim() || (existingJob?.qualification ?? 'As per notification'),
+      importantDates: {
+        ...(existingJob?.importantDates || {}),
+        ...(form.importantDates || {}),
+        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
+        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
+        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
+      },
+      important_dates: {
+        ...(existingJob?.important_dates || {}),
+        ...(form.importantDates || {}),
+        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
+        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
+        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
+      },
+      applicationFee: {
+        ...(existingJob?.applicationFee || {}),
+        ...(form.applicationFee || {}),
+        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
+        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
+      },
+      application_fee: {
+        ...(existingJob?.application_fee || {}),
+        ...(form.applicationFee || {}),
+        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
+        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
+      },
+      ageLimit: {
+        ...(existingJob?.ageLimit || {}),
+        ...(form.ageLimit || {}),
+        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
+        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
+      },
+      age_limits: {
+        ...(existingJob?.age_limits || {}),
+        ...(form.ageLimit || {}),
+        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
+        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
+      },
+      importantLinks: {
+        ...(existingJob?.importantLinks || {}),
+        ...(form.importantLinks || {}),
+        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
+        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
+        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
+        'Join Telegram Channel': 'https://t.me/careerdiary',
+        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
+      },
+      important_links: {
+        ...(existingJob?.important_links || {}),
+        ...(form.importantLinks || {}),
+        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
+        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
+        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
+        'Join Telegram Channel': 'https://t.me/careerdiary',
+        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
+      },
+      postDate: existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const res = await onAddJob(draftJob);
+    if (res && res.success === false) {
+      showToast(`⚠️ Note: Draft saved locally, but Firestore warning: ${res.error?.message || res.error}`, 'info');
+    } else {
+      showToast('💾 Post saved as Draft! It will remain hidden from visitors until published.', 'success');
+    }
+    setEditingJobId(null);
+    setForm({ ...EMPTY_FORM });
+    if (visualEditorRef.current) {
+      visualEditorRef.current.innerHTML = '';
+    }
+    setActiveSection('dashboard');
   };
 
-  // ── Sidebar ──────────────────────────────────────────────
+  // ── Sidebar Nav Items ────────────────────────────────────
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'all-posts', label: 'Categories', icon: Layers },
+    { id: 'categories', label: 'Categories', icon: Layers },
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
-    { id: 'new-post', label: '+ New Post', icon: PlusSquare },
+    { id: 'new-post', label: 'New Post', icon: PlusSquare },
   ];
 
-  // ── Render sections ──────────────────────────────────────
+  // ── Render Sections ──────────────────────────────────────
   const renderDashboard = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-          Dashboard Overview
-        </h2>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem', color: '#065f46', fontWeight: 600 }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-          Cloud Database: <strong>Firebase Firestore (Live Instant Sync Active)</strong>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-        {[
-          { label: 'Total Posts', value: stats.total, color: '#6366f1', icon: BarChart3 },
-          { label: 'Latest Jobs', value: stats.jobs, color: '#0ea5e9', icon: Briefcase },
-          { label: 'Admit Cards', value: stats.admitCards, color: '#f59e0b', icon: IdCard },
-          { label: 'Results', value: stats.results, color: '#10b981', icon: CheckSquare },
-          { label: 'Admissions', value: stats.admissions, color: '#f43f5e', icon: GraduationCap },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderLeft: `4px solid ${color}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color, marginTop: '4px' }}>{value}</div>
-              </div>
-              <div style={{ background: color + '20', borderRadius: '10px', padding: '10px' }}>
-                <Icon size={22} style={{ color }} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Posts Table */}
-      <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', margin: 0 }}>Recent Posts</h3>
-          <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
-            <FilePlus size={14} /> New Post
-          </button>
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              {['Title', 'Category', 'Last Date', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.slice(0, 8).map(j => (
-              <tr key={j.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1e293b', fontSize: '0.88rem', maxWidth: '380px' }}>{j.title}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
-                    {j.category || 'JOB'}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 16px', fontSize: '0.82rem', color: '#64748b' }}>{j.lastDate || 'N/A'}</td>
-                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button onClick={() => handleEditJob(j)} title="Edit post" style={{ background: '#e0f2fe', border: 'none', color: '#0284c7', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    <Edit3 size={13} /> Edit
-                  </button>
-                  <button onClick={() => onDeleteJob(j.id)} title="Delete post" style={{ background: '#fee2e2', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    <Trash2 size={13} /> Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const renderAllPosts = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-          Manage All Posts ({filteredJobs.length})
-        </h2>
-        <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
-          <FilePlus size={14} /> New Post
-        </button>
-      </div>
-
+    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Duplicate warning & one-click cleanup banner */}
       {duplicateGroups.length > 0 && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 18px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontSize: '0.88rem', fontWeight: 600 }}>
             <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
-            <span>Found {duplicateGroups.length} duplicate post group(s) in your list. Click to keep 1 clean copy and remove duplicates.</span>
+            <span>Found {duplicateGroups.length} duplicate post group(s) in your list. Click to clean duplicates.</span>
           </div>
           <button onClick={handleCleanDuplicates} style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
             Clean Duplicates (Keep 1 Copy)
@@ -1958,63 +2225,336 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         </div>
       )}
 
-      {/* Filter & Search */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text" placeholder="Search posts by title..."
-            value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.88rem', background: '#fff', outline: 'none' }}
-          />
+      {/* Main White Card matching screenshot */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+        border: '1px solid #f1f5f9',
+        padding: '28px 32px'
+      }}>
+        {/* Top Header Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+              Post Dashboard
+            </h1>
+            <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
+              Career Diary Content Management Panel
+            </p>
+          </div>
+          <button
+            onClick={handleStartNewPost}
+            style={{
+              background: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 22px',
+              fontWeight: 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
+          >
+            <Plus size={18} strokeWidth={2.5} /> Create Post
+          </button>
         </div>
-        <select
-          value={filterCat} onChange={e => setFilterCat(e.target.value)}
-          style={{ padding: '9px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.88rem', background: '#fff', outline: 'none', cursor: 'pointer' }}>
-          <option value="all">All Categories</option>
-          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
+
+        {/* Filter and Search Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {/* Status Tabs (All, Published, Drafts) */}
+          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
+            {[
+              { id: 'all', label: `All Posts (${jobs.length})` },
+              { id: 'published', label: `Published (${publishedCount})` },
+              { id: 'draft', label: `Drafts (${draftCount})` },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                style={{
+                  background: statusFilter === tab.id ? '#ffffff' : 'transparent',
+                  color: statusFilter === tab.id ? '#0f172a' : '#64748b',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '0.82rem',
+                  fontWeight: statusFilter === tab.id ? 700 : 600,
+                  cursor: 'pointer',
+                  boxShadow: statusFilter === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search & Category filter */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+            <div style={{ position: 'relative', minWidth: '220px', maxWidth: '320px', width: '100%' }}>
+              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                placeholder="Search posts by title..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 34px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                  background: '#f8fafc',
+                  color: '#1e293b'
+                }}
+              />
+            </div>
+            <select
+              value={filterCat}
+              onChange={e => setFilterCat(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '0.86rem',
+                outline: 'none',
+                background: '#f8fafc',
+                color: '#1e293b',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Categories</option>
+              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Table matching the screenshot */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TITLE</th>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>STATUS</th>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>ORDER</th>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>CATEGORY</th>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>DATE</th>
+                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredJobs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>No posts found</p>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.85rem' }}>Try clearing your search or filter, or create a new post.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredJobs.map(job => {
+                  const isDraft = job.status === 'Draft' || job.status === 'draft';
+                  return (
+                    <tr
+                      key={job.id}
+                      style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {/* TITLE */}
+                      <td style={{ padding: '14px 14px', maxWidth: '440px' }}>
+                        <span
+                          onClick={() => handleEditJob(job)}
+                          style={{
+                            color: '#2563eb',
+                            fontWeight: 600,
+                            fontSize: '0.92rem',
+                            cursor: 'pointer',
+                            lineHeight: 1.45,
+                            display: 'inline',
+                          }}
+                          title="Click to edit post"
+                          onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          {job.title}
+                        </span>
+                      </td>
+
+                      {/* STATUS */}
+                      <td style={{ padding: '14px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          background: isDraft ? '#fef3c7' : '#dcfce7',
+                          color: isDraft ? '#b45309' : '#15803d',
+                        }}>
+                          {isDraft ? 'Draft' : 'Published'}
+                        </span>
+                      </td>
+
+                      {/* ORDER */}
+                      <td style={{ padding: '14px 14px', textAlign: 'center', color: '#64748b', fontSize: '0.88rem', fontWeight: 600 }}>
+                        {job.displayOrder ?? 0}
+                      </td>
+
+                      {/* CATEGORY */}
+                      <td style={{ padding: '14px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          background: '#eff6ff',
+                          color: '#2563eb',
+                        }}>
+                          {formatCategory(job.category)}
+                        </span>
+                      </td>
+
+                      {/* DATE */}
+                      <td style={{ padding: '14px 14px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem', whiteSpace: 'nowrap' }}>
+                        {formatDate(job)}
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td style={{ padding: '14px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {/* Duplicate */}
+                          <button
+                            onClick={() => handleDuplicateJob(job)}
+                            title="Duplicate as Draft"
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: '#eff6ff', border: '1px solid #c7d2fe',
+                              color: '#4f46e5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.15s'
+                            }}
+                          >
+                            <Copy size={15} />
+                          </button>
+
+                          {/* Edit */}
+                          <button
+                            onClick={() => handleEditJob(job)}
+                            title="Edit Post"
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: '#fef3c7', border: '1px solid #fde68a',
+                              color: '#d97706', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.15s'
+                            }}
+                          >
+                            <Edit3 size={15} />
+                          </button>
+
+                          {/* View Live */}
+                          <button
+                            onClick={() => window.open('/' + job.id, '_blank')}
+                            title="View Live Post"
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: '#e0f2fe', border: '1px solid #bae6fd',
+                              color: '#0284c7', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.15s'
+                            }}
+                          >
+                            <ExternalLink size={15} />
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
+                                onDeleteJob(job.id);
+                                showToast(`🗑️ Deleted "${job.title}"`, 'info');
+                              }
+                            }}
+                            title="Delete Post"
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: '#fee2e2', border: '1px solid #fecaca',
+                              color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.15s'
+                            }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCategories = () => (
+    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+            Categories Overview
+          </h2>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.88rem' }}>Browse and manage all posts organized by category</p>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
+          <FilePlus size={14} /> New Post
+        </button>
       </div>
 
-      {/* Posts Table */}
-      <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              {['#', 'Title', 'Category', 'Last Date', 'Action'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredJobs.slice(0, 50).map((job, idx) => (
-              <tr key={job.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px 16px', fontSize: '0.8rem', color: '#94a3b8' }}>{idx + 1}</td>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1e293b', fontSize: '0.9rem', maxWidth: '400px' }}>
-                  <a href={`/${job.id}`} target="_blank" rel="noopener noreferrer" style={{ color: '#0d47a1', textDecoration: 'none' }}>
-                    {job.title}
-                  </a>
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
-                    {job.category || 'JOB'}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 16px', fontSize: '0.82rem', color: '#64748b' }}>{job.lastDate || job.appLast || 'N/A'}</td>
-                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button onClick={() => handleEditJob(job)} title="Edit post"
-                    style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    <Edit3 size={13} /> Edit
-                  </button>
-                  <button onClick={() => onDeleteJob(job.id)} title="Delete post"
-                    style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    <Trash2 size={13} /> Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Category Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+        {CATEGORIES.filter(c => c.value).map(cat => {
+          const count = jobs.filter(j => (j.category || '').toUpperCase().includes(cat.value.toUpperCase())).length;
+          const isSelected = filterCat.toUpperCase() === cat.value.toUpperCase();
+          const Icon = cat.icon || FileText;
+          return (
+            <div
+              key={cat.value}
+              onClick={() => {
+                setFilterCat(isSelected ? 'all' : cat.value);
+                setActiveSection('dashboard');
+              }}
+              style={{
+                background: isSelected ? '#eff6ff' : '#ffffff',
+                border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+              }}
+            >
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                <Icon size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{cat.label}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>{count} posts</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -2561,62 +3101,120 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
             <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
 
-            {/* Colors (Visual Color Picker matching Bigbooster) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Text Color">
-              <Palette size={15} style={{ color: '#64748b' }} />
+            {/* Text Color Controls with Quick Presets */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Text Color">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <Palette size={14} style={{ color: '#2563eb' }} />
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155' }}>Text:</span>
+              </div>
+              {[
+                { color: '#000000', label: 'Black' },
+                { color: '#ffffff', label: 'White', border: true },
+                { color: '#ff0000', label: 'Red' },
+                { color: '#008000', label: 'Green' },
+                { color: '#0d47a1', label: 'Blue' },
+              ].map(swatch => (
+                <button
+                  key={swatch.color}
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    setTextColor(swatch.color);
+                    applyTextColor(swatch.color);
+                  }}
+                  title={`Text Color: ${swatch.label}`}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '3px',
+                    background: swatch.color,
+                    border: swatch.border ? '1px solid #94a3b8' : '1px solid rgba(0,0,0,0.15)',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                />
+              ))}
               <input
                 type="color"
                 value={textColor}
+                onMouseDown={saveSelection}
                 onInput={(e) => {
                   setTextColor(e.target.value);
-                  execCmd('foreColor', e.target.value);
+                  applyTextColor(e.target.value);
                 }}
                 onChange={(e) => {
                   setTextColor(e.target.value);
-                  execCmd('foreColor', e.target.value);
+                  applyTextColor(e.target.value);
                 }}
                 style={{
-                  width: '22px',
-                  height: '22px',
+                  width: '20px',
+                  height: '20px',
                   padding: 0,
                   border: '1px solid #94a3b8',
                   borderRadius: '3px',
                   background: 'transparent',
                   cursor: 'pointer'
                 }}
-                title="Choose Text Color"
+                title="Custom Text Color"
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Highlight Color">
-              <button
-                type="button"
-                onClick={() => execCmd('hiliteColor', highlightColor)}
-                title="Highlight Selection"
-                style={{ background: '#fef08a', border: '1px solid #eab308', borderRadius: '3px', padding: '2px 4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                <Highlighter size={13} style={{ color: '#854d0e' }} />
-              </button>
+            {/* Background / Highlight Color Controls with Quick Presets */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }} title="Background / Highlight Color">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <Highlighter size={14} style={{ color: '#d97706' }} />
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155' }}>Bg:</span>
+              </div>
+              {[
+                { color: '#ff0080', label: 'Pink / Magenta' },
+                { color: '#008000', label: 'Green' },
+                { color: '#0d47a1', label: 'Navy Blue' },
+                { color: '#b91c1c', label: 'Red' },
+                { color: '#fef08a', label: 'Yellow' },
+                { color: '#ffffff', label: 'White / Clear', border: true },
+              ].map(swatch => (
+                <button
+                  key={swatch.color}
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    setHighlightColor(swatch.color);
+                    applyBackgroundColor(swatch.color);
+                  }}
+                  title={`Bg Color: ${swatch.label}`}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '3px',
+                    background: swatch.color,
+                    border: swatch.border ? '1px solid #94a3b8' : '1px solid rgba(0,0,0,0.15)',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                />
+              ))}
               <input
                 type="color"
                 value={highlightColor}
+                onMouseDown={saveSelection}
                 onInput={(e) => {
                   setHighlightColor(e.target.value);
-                  execCmd('hiliteColor', e.target.value);
+                  applyBackgroundColor(e.target.value);
                 }}
                 onChange={(e) => {
                   setHighlightColor(e.target.value);
-                  execCmd('hiliteColor', e.target.value);
+                  applyBackgroundColor(e.target.value);
                 }}
                 style={{
-                  width: '18px',
-                  height: '18px',
+                  width: '20px',
+                  height: '20px',
                   padding: 0,
                   border: '1px solid #94a3b8',
                   borderRadius: '3px',
                   background: 'transparent',
                   cursor: 'pointer'
                 }}
-                title="Choose Highlight Color"
+                title="Custom Background / Highlight Color"
               />
             </div>
 
@@ -2665,98 +3263,301 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
           {/* Active Table Tools Ribbon above Canvas */}
           <div style={{
-            background: activeTableState ? '#eff6ff' : '#f8fafc',
-            border: activeTableState ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+            background: activeTableState ? '#f0fdf4' : '#f8fafc',
+            border: activeTableState ? '1px solid #86efac' : '1px solid #cbd5e1',
             borderBottom: 'none',
             borderRadius: '8px 8px 0 0',
-            padding: '7px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '8px',
+            padding: '8px 12px',
             fontSize: '0.8rem',
             transition: 'all 0.2s'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: 700 }}>
-              <Table size={15} style={{ color: activeTableState ? '#2563eb' : '#64748b' }} />
-              <span>Table Tools:</span>
-              {activeTableState ? (
-                <span style={{ fontWeight: 600, color: '#1d4ed8', fontSize: '0.78rem' }}>
-                  (Row {activeTableState.rowIndex + 1} of {activeTableState.totalRows} | Col {activeTableState.cellIndex + 1} of {activeTableState.totalCols})
-                </span>
-              ) : (
-                <span style={{ fontWeight: 500, color: '#64748b', fontSize: '0.75rem' }}>
-                  Click inside any table below to edit rows, columns & tables
-                </span>
-              )}
+            {/* Row 1: Table Structure (Row, Col, Table manipulation) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px',
+              paddingBottom: '8px',
+              borderBottom: '1px solid #e2e8f0',
+              marginBottom: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: 700 }}>
+                <Table size={15} style={{ color: activeTableState ? '#059669' : '#64748b' }} />
+                <span>Table Tools:</span>
+                {activeTableState ? (
+                  <span style={{ fontWeight: 600, color: '#047857', fontSize: '0.78rem' }}>
+                    (Row {activeTableState.rowIndex + 1} of {activeTableState.totalRows} | Col {activeTableState.cellIndex + 1} of {activeTableState.totalCols})
+                  </span>
+                ) : (
+                  <span style={{ fontWeight: 500, color: '#64748b', fontSize: '0.75rem' }}>
+                    Click inside any table below to edit rows, columns & colors
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Row:</span>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleAddRow('above')}
+                  title="Add Row Above"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                  <ArrowUp size={12} /> + Above
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleAddRow('below')}
+                  title="Add Row Below"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                  <ArrowDown size={12} /> + Below
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleDeleteRow}
+                  title="Delete Current Row"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
+                  <Minus size={12} /> Delete Row
+                </button>
+
+                <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+
+                <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Col:</span>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleAddColumn('left')}
+                  title="Add Column to Left"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
+                  <ArrowLeft size={12} /> + Left
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleAddColumn('right')}
+                  title="Add Column to Right"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
+                  <ArrowRight size={12} /> + Right
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleDeleteColumn}
+                  title="Delete Current Column"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
+                  <Minus size={12} /> Delete Col
+                </button>
+
+                <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleDeleteTable}
+                  title="Delete entire table"
+                  style={{ padding: '4px 10px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>
+                  <Trash2 size={12} /> Delete Table
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Row:</span>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleAddRow('above')}
-                title="Add Row Above"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
-                <ArrowUp size={12} /> + Above
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleAddRow('below')}
-                title="Add Row Below"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
-                <ArrowDown size={12} /> + Below
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={handleDeleteRow}
-                title="Delete Current Row"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
-                <Minus size={12} /> Delete Row
-              </button>
+            {/* Row 2: Table Colors & Header Styling Bar */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              {/* Header Style Presets */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155' }}>Header Presets:</span>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#ff0080', '#ffffff')}
+                  title="Apply Sarkari Pink Header Theme"
+                  style={{ padding: '3px 8px', background: '#ff0080', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Pink
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#047857', '#ffffff')}
+                  title="Apply Emerald Green Header Theme"
+                  style={{ padding: '3px 8px', background: '#047857', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Green
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#0d47a1', '#ffffff')}
+                  title="Apply Navy Blue Header Theme"
+                  style={{ padding: '3px 8px', background: '#0d47a1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Navy
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#b91c1c', '#ffffff')}
+                  title="Apply Red Header Theme"
+                  style={{ padding: '3px 8px', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Red
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#1e293b', '#ffffff')}
+                  title="Apply Dark Slate Header Theme"
+                  style={{ padding: '3px 8px', background: '#1e293b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyHeaderTheme('#f1f5f9', '#0f172a')}
+                  title="Apply Light Grey Header Theme"
+                  style={{ padding: '3px 8px', background: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>
+                  Grey
+                </button>
+              </div>
 
-              <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+              {/* Cell / Row Background & Text Color Pickers */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {/* Cell / Row Background Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                  <Highlighter size={13} style={{ color: '#d97706' }} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginRight: '2px' }}>Cell Bg:</span>
+                  {[
+                    { color: '#ff0080', label: 'Pink' },
+                    { color: '#047857', label: 'Green' },
+                    { color: '#0d47a1', label: 'Navy' },
+                    { color: '#b91c1c', label: 'Red' },
+                    { color: '#fef08a', label: 'Yellow' },
+                    { color: '#ffffff', label: 'White', border: true },
+                  ].map(swatch => (
+                    <button
+                      key={swatch.color}
+                      type="button"
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setHighlightColor(swatch.color);
+                        applyBackgroundColor(swatch.color, false);
+                      }}
+                      title={`Cell Bg: ${swatch.label}`}
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '3px',
+                        background: swatch.color,
+                        border: swatch.border ? '1px solid #94a3b8' : '1px solid rgba(0,0,0,0.15)',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={highlightColor}
+                    onMouseDown={saveSelection}
+                    onInput={(e) => {
+                      setHighlightColor(e.target.value);
+                      applyBackgroundColor(e.target.value, false);
+                    }}
+                    onChange={(e) => {
+                      setHighlightColor(e.target.value);
+                      applyBackgroundColor(e.target.value, false);
+                    }}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      padding: 0,
+                      border: '1px solid #94a3b8',
+                      borderRadius: '3px',
+                      background: 'transparent',
+                      cursor: 'pointer'
+                    }}
+                    title="Custom Cell Background Color"
+                  />
+                  <button
+                    type="button"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyBackgroundColor(highlightColor, true)}
+                    title="Apply current background color to the entire active row"
+                    style={{
+                      marginLeft: '4px',
+                      padding: '2px 6px',
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '3px',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      cursor: 'pointer'
+                    }}>
+                    Row Bg
+                  </button>
+                </div>
 
-              <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Col:</span>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleAddColumn('left')}
-                title="Add Column to Left"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
-                <ArrowLeft size={12} /> + Left
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleAddColumn('right')}
-                title="Add Column to Right"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
-                <ArrowRight size={12} /> + Right
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={handleDeleteColumn}
-                title="Delete Current Column"
-                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
-                <Minus size={12} /> Delete Col
-              </button>
-
-              <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
-
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={handleDeleteTable}
-                title="Delete entire table"
-                style={{ padding: '4px 10px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>
-                <Trash2 size={12} /> Delete Table
-              </button>
+                {/* Cell Text Color Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                  <Palette size={13} style={{ color: '#2563eb' }} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginRight: '2px' }}>Cell Text:</span>
+                  {[
+                    { color: '#ffffff', label: 'White', border: true },
+                    { color: '#000000', label: 'Black' },
+                    { color: '#dc2626', label: 'Red' },
+                    { color: '#047857', label: 'Green' },
+                    { color: '#0d47a1', label: 'Blue' },
+                  ].map(swatch => (
+                    <button
+                      key={swatch.color}
+                      type="button"
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setTextColor(swatch.color);
+                        applyTextColor(swatch.color);
+                      }}
+                      title={`Text Color: ${swatch.label}`}
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '3px',
+                        background: swatch.color,
+                        border: swatch.border ? '1px solid #94a3b8' : '1px solid rgba(0,0,0,0.15)',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={textColor}
+                    onMouseDown={saveSelection}
+                    onInput={(e) => {
+                      setTextColor(e.target.value);
+                      applyTextColor(e.target.value);
+                    }}
+                    onChange={(e) => {
+                      setTextColor(e.target.value);
+                      applyTextColor(e.target.value);
+                    }}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      padding: 0,
+                      border: '1px solid #94a3b8',
+                      borderRadius: '3px',
+                      background: 'transparent',
+                      cursor: 'pointer'
+                    }}
+                    title="Custom Text Color"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2844,64 +3645,87 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
   // ── Layout ────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', background: '#f1f5f9', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', background: '#f8fafc', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
 
-      {/* Sidebar */}
+      {/* Sidebar matching screenshot */}
       <div style={{
-        width: sidebarOpen ? '240px' : '64px', flexShrink: 0,
-        background: '#1e293b', color: '#fff', display: 'flex', flexDirection: 'column',
+        width: sidebarOpen ? '230px' : '64px', flexShrink: 0,
+        background: '#0f172a', color: '#fff', display: 'flex', flexDirection: 'column',
         transition: 'width 0.25s ease', overflow: 'hidden'
       }}>
-        {/* Logo */}
-        <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <BookmarkCheck size={24} style={{ color: '#f43f5e', flexShrink: 0 }} />
-          {sidebarOpen && <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.05rem', whiteSpace: 'nowrap', color: '#fff' }}>Career Diary</span>}
+        {/* Logo / Brand matching screenshot */}
+        <div style={{ padding: '24px 20px 20px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {sidebarOpen && (
+            <span style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.2rem', whiteSpace: 'nowrap', color: '#ffffff', letterSpacing: '-0.02em' }}>
+              Career Diary
+            </span>
+          )}
+          {!sidebarOpen && <BookmarkCheck size={24} style={{ color: '#3b82f6', margin: '0 auto' }} />}
         </div>
 
         {/* Nav Items */}
-        <nav style={{ flex: 1, padding: '12px 8px' }}>
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => {
-              if (id === 'new-post') {
-                handleStartNewPost();
-              } else {
-                setActiveSection(id);
-              }
-            }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '10px 10px',
-                background: activeSection === id ? 'rgba(255,255,255,0.12)' : 'transparent',
-                border: 'none', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px',
-                color: activeSection === id ? '#fff' : '#94a3b8',
-                borderLeft: activeSection === id ? '3px solid #f43f5e' : '3px solid transparent',
-                transition: 'all 0.15s'
-              }}>
-              <Icon size={18} style={{ flexShrink: 0 }} />
-              {sidebarOpen && <span style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>{label}</span>}
-              {sidebarOpen && activeSection === id && <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.6 }} />}
-            </button>
-          ))}
+        <nav style={{ flex: 1, padding: '10px 12px' }}>
+          {navItems.map(({ id, label, icon: Icon }) => {
+            const isActive = activeSection === id;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  if (id === 'new-post') {
+                    handleStartNewPost();
+                  } else {
+                    setActiveSection(id);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '11px 14px',
+                  background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  marginBottom: '6px',
+                  color: isActive ? '#ffffff' : '#94a3b8',
+                  fontWeight: isActive ? 600 : 500,
+                  fontSize: '0.92rem',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) e.currentTarget.style.color = '#94a3b8';
+                }}
+              >
+                <Icon size={19} style={{ flexShrink: 0, color: isActive ? '#ffffff' : '#94a3b8' }} />
+                {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Bottom Buttons */}
-        <div style={{ padding: '12px 8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <button onClick={onBack}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px', fontSize: '0.88rem' }}>
             <Eye size={18} style={{ flexShrink: 0 }} />
-            {sidebarOpen && <span style={{ fontSize: '0.88rem', whiteSpace: 'nowrap' }}>View Website</span>}
+            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>View Website</span>}
           </button>
           <button onClick={onLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#f87171' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#f87171', fontSize: '0.88rem' }}>
             <LogOut size={18} style={{ flexShrink: 0 }} />
-            {sidebarOpen && <span style={{ fontSize: '0.88rem', whiteSpace: 'nowrap' }}>Logout</span>}
+            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Logout</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: '28px' }}>
         {activeSection === 'dashboard' && renderDashboard()}
-        {activeSection === 'all-posts' && renderAllPosts()}
+        {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
         {activeSection === 'new-post' && renderNewPost()}
         {activeSection === 'breaking-news' && renderBreakingNews()}
       </div>
