@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
-  LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud,
+  LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud, Edit3,
   Download, BarChart3, FileText, IdCard, CheckSquare, GraduationCap, Bookmark, Briefcase,
   RotateCcw, RotateCw, Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Link2, Unlink,
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
-  ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info
+  ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -60,6 +61,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showMetadata, setShowMetadata] = useState(true);
@@ -106,6 +108,39 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
 
   const visualEditorRef = useRef(null);
   const isVisualFocusedRef = useRef(false);
+
+  const [activeTableState, setActiveTableState] = useState(null);
+  const activeTableElementRef = useRef(null);
+  const activeRowElementRef = useRef(null);
+  const activeCellElementRef = useRef(null);
+
+  const updateActiveTableInfo = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      return;
+    }
+    let node = sel.anchorNode;
+    if (!node) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+    const td = node?.closest('td, th');
+    const tr = node?.closest('tr');
+    const table = node?.closest('table');
+
+    if (table && visualEditorRef.current?.contains(table)) {
+      activeTableElementRef.current = table;
+      activeRowElementRef.current = tr || null;
+      activeCellElementRef.current = td || null;
+      setActiveTableState({
+        hasTable: true,
+        rowIndex: tr ? tr.rowIndex : 0,
+        cellIndex: td ? td.cellIndex : 0,
+        totalRows: table.rows.length,
+        totalCols: tr ? tr.cells.length : (table.rows[0]?.cells.length || 0)
+      });
+    }
+  };
 
   const set = (key, val) => {
     setForm(f => {
@@ -276,6 +311,98 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     return matchCat && matchSearch;
   });
 
+  const handleStartNewPost = () => {
+    setEditingJobId(null);
+    setForm({ ...EMPTY_FORM });
+    if (visualEditorRef.current) {
+      visualEditorRef.current.innerHTML = '';
+    }
+    setActiveSection('new-post');
+  };
+
+  const handleEditJob = (job) => {
+    if (!job) return;
+    setEditingJobId(job.id);
+    setForm({
+      title: job.title || '',
+      category: job.category || 'LATEST JOB',
+      organization: job.organization || '',
+      vacancies: job.vacancies || job.totalPosts || '',
+      totalPosts: job.totalPosts || job.vacancies || '',
+      displayOrder: job.displayOrder ?? 0,
+      featured: Boolean(job.featured),
+      slug: job.id || '',
+      lastDate: job.lastDate || job.appLast || '',
+      appStart: job.appStart || '',
+      examDate: job.examDate || '',
+      badge: job.badge || 'New!',
+      bannerColor: job.bannerColor || 'pink',
+      description: job.description || job.uniqueDescription || job.shortInfo || '',
+      content: job.content || job.htmlContent || '',
+      seoTitle: job.seoTitle || job.title || '',
+      seoKeywords: job.seoKeywords || '',
+      seoDescription: job.seoDescription || job.description || '',
+      applyUrl: job.applyUrl || job.importantLinks?.['Apply Online'] || '',
+      notificationUrl: job.notificationUrl || job.importantLinks?.['Download Official Notification PDF'] || '',
+      officialUrl: job.officialUrl || job.importantLinks?.['Official Website'] || '',
+      feeGen: job.feeGen || job.applicationFee?.General || '',
+      feeSc: job.feeSc || job.applicationFee?.['SC / ST'] || '',
+      minAge: job.minAge || job.ageLimit?.['Minimum Age'] || '',
+      maxAge: job.maxAge || job.ageLimit?.['Maximum Age'] || '',
+      qualification: job.qualification || '',
+      state: job.state || 'All India',
+      importantLinks: job.importantLinks || {},
+      importantDates: job.importantDates || {},
+      applicationFee: job.applicationFee || {},
+      ageLimit: job.ageLimit || {},
+    });
+
+    if (visualEditorRef.current) {
+      visualEditorRef.current.innerHTML = job.content || job.htmlContent || '';
+    }
+    setActiveSection('new-post');
+    showToast(`✏️ Loaded "${job.title}" for editing. Publishing will update this existing post without creating duplicates.`, 'info');
+  };
+
+  // Group duplicate jobs by normalized title / slug
+  const duplicateGroups = useMemo(() => {
+    const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const map = new Map();
+    jobs.forEach(job => {
+      const key = normalize(job.title || job.id);
+      if (!key) return;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(job);
+    });
+    const dupes = [];
+    map.forEach(group => {
+      if (group.length > 1) {
+        dupes.push(group);
+      }
+    });
+    return dupes;
+  }, [jobs]);
+
+  const handleCleanDuplicates = () => {
+    let deletedCount = 0;
+    duplicateGroups.forEach(group => {
+      // Keep the cleanest ID (prefer ID without timestamp suffixes like -1234, or latest updated)
+      const sorted = [...group].sort((a, b) => {
+        const aHasSuffix = /-\d{4,}$/.test(a.id);
+        const bHasSuffix = /-\d{4,}$/.test(b.id);
+        if (aHasSuffix && !bHasSuffix) return 1;
+        if (!aHasSuffix && bHasSuffix) return -1;
+        return (b.updatedAt || '').localeCompare(a.updatedAt || '');
+      });
+      // Keep sorted[0], delete all other duplicates
+      sorted.slice(1).forEach(dupe => {
+        onDeleteJob(dupe.id);
+        deletedCount++;
+      });
+    });
+    showToast(`🧹 Removed ${deletedCount} duplicate post(s)! Kept 1 clean copy for each.`, 'success');
+  };
+
   const slugPreview = form.slug.trim() || (form.title
     ? form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     : '');
@@ -315,13 +442,205 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             <td style="border: 1px solid #000; padding: 8px 12px;">${form.appStart || 'Check Notice'}</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Apply Online Direct Link</td>
-            <td style="border: 1px solid #000; padding: 8px 12px;"><a href="${form.applyUrl || 'https://careerdiary.in/'}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a></td>
+            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Last Date for Apply</td>
+            <td style="border: 1px solid #000; padding: 8px 12px; color: #ff0000; font-weight: bold;">${form.lastDate || 'Check Notice'}</td>
           </tr>
         </tbody>
       </table><p></p>
     `;
     execCmd('insertHTML', tableHtml);
+    setTimeout(updateActiveTableInfo, 50);
+  };
+
+  const handleAddRow = (position = 'below') => {
+    let table = activeTableElementRef.current;
+    let tr = activeRowElementRef.current;
+    if (!table) {
+      table = visualEditorRef.current?.querySelector('table');
+    }
+    if (!table) {
+      showToast('⚠️ Please click inside a table to add a row.', 'info');
+      return;
+    }
+    if (!tr) {
+      tr = position === 'above' ? table.rows[0] : table.rows[table.rows.length - 1];
+    }
+    if (!tr) return;
+
+    const numCols = tr.cells.length || (table.rows[0]?.cells.length) || 2;
+    const newTr = document.createElement('tr');
+    for (let i = 0; i < numCols; i++) {
+      const td = document.createElement('td');
+      td.style.border = '1px solid #000';
+      td.style.padding = '8px 12px';
+      td.style.fontSize = '0.9rem';
+      td.innerHTML = '&nbsp;';
+      newTr.appendChild(td);
+    }
+
+    if (position === 'above') {
+      tr.parentNode.insertBefore(newTr, tr);
+    } else {
+      tr.parentNode.insertBefore(newTr, tr.nextSibling);
+    }
+
+    activeRowElementRef.current = newTr;
+    activeCellElementRef.current = newTr.cells[0];
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    updateActiveTableInfo();
+    showToast(`✅ Row added ${position}!`, 'success');
+  };
+
+  const handleDeleteRow = () => {
+    let table = activeTableElementRef.current;
+    let tr = activeRowElementRef.current;
+    if (!table) {
+      table = visualEditorRef.current?.querySelector('table');
+    }
+    if (!table) {
+      showToast('⚠️ Please click inside a table row to delete it.', 'info');
+      return;
+    }
+    if (!tr) {
+      tr = table.rows[table.rows.length - 1];
+    }
+    if (!tr) return;
+
+    if (table.rows.length <= 1) {
+      table.remove();
+      activeTableElementRef.current = null;
+      activeRowElementRef.current = null;
+      activeCellElementRef.current = null;
+      setActiveTableState(null);
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      showToast('🗑️ Table deleted (last row was removed).', 'info');
+      return;
+    }
+
+    const nextRow = tr.nextElementSibling || tr.previousElementSibling;
+    tr.remove();
+    activeRowElementRef.current = nextRow;
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    updateActiveTableInfo();
+    showToast('🗑️ Row deleted successfully!', 'success');
+  };
+
+  const handleAddColumn = (position = 'right') => {
+    let table = activeTableElementRef.current;
+    let cell = activeCellElementRef.current;
+    if (!table) {
+      table = visualEditorRef.current?.querySelector('table');
+    }
+    if (!table) {
+      showToast('⚠️ Please click inside a table cell to add columns.', 'info');
+      return;
+    }
+    const cellIdx = cell ? cell.cellIndex : (position === 'left' ? 0 : (table.rows[0]?.cells.length || 1) - 1);
+    const targetIdx = position === 'left' ? cellIdx : cellIdx + 1;
+
+    for (let i = 0; i < table.rows.length; i++) {
+      const row = table.rows[i];
+      const isHeaderRow = row.parentNode?.tagName === 'THEAD' || row.querySelector('th');
+      const newCell = document.createElement(isHeaderRow && i === 0 ? 'th' : 'td');
+      newCell.style.border = '1px solid #000';
+      newCell.style.padding = '8px 12px';
+      newCell.style.fontSize = '0.9rem';
+      if (isHeaderRow && i === 0) {
+        newCell.style.background = '#ff0080';
+        newCell.style.color = '#fff';
+        newCell.style.fontWeight = 'bold';
+        newCell.innerHTML = 'Heading';
+      } else {
+        newCell.innerHTML = '&nbsp;';
+      }
+      if (targetIdx >= row.cells.length) {
+        row.appendChild(newCell);
+      } else {
+        row.insertBefore(newCell, row.cells[targetIdx]);
+      }
+    }
+
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    updateActiveTableInfo();
+    showToast(`✅ Column added ${position}!`, 'success');
+  };
+
+  const handleDeleteColumn = () => {
+    let table = activeTableElementRef.current;
+    let cell = activeCellElementRef.current;
+    if (!table) {
+      table = visualEditorRef.current?.querySelector('table');
+    }
+    if (!table) {
+      showToast('⚠️ Please click inside a table column to delete it.', 'info');
+      return;
+    }
+    const cellIdx = cell ? cell.cellIndex : ((table.rows[0]?.cells.length || 1) - 1);
+
+    for (let i = 0; i < table.rows.length; i++) {
+      const row = table.rows[i];
+      if (row.cells.length > cellIdx) {
+        row.deleteCell(cellIdx);
+      }
+    }
+
+    if (table.rows[0] && table.rows[0].cells.length === 0) {
+      table.remove();
+      activeTableElementRef.current = null;
+      activeRowElementRef.current = null;
+      activeCellElementRef.current = null;
+      setActiveTableState(null);
+    }
+
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    updateActiveTableInfo();
+    showToast('🗑️ Column deleted successfully!', 'success');
+  };
+
+  const handleDeleteTable = () => {
+    let table = activeTableElementRef.current;
+    if (!table) {
+      table = visualEditorRef.current?.querySelector('table');
+    }
+    if (!table) {
+      showToast('⚠️ No table found to delete.', 'info');
+      return;
+    }
+
+    table.remove();
+    activeTableElementRef.current = null;
+    activeRowElementRef.current = null;
+    activeCellElementRef.current = null;
+    setActiveTableState(null);
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    showToast('🗑️ Table deleted completely!', 'success');
+  };
+
+  const handleEditorKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        if (node?.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        const td = node?.closest('td, th');
+        const tr = node?.closest('tr');
+        const table = node?.closest('table');
+        if (td && tr && table) {
+          const isLastCell = td === tr.cells[tr.cells.length - 1];
+          const isLastRow = tr === table.rows[table.rows.length - 1];
+          if (isLastCell && isLastRow && !e.shiftKey) {
+            e.preventDefault();
+            handleAddRow('below');
+          }
+        }
+      }
+    }
   };
 
   const handleOpenLinkModal = () => {
@@ -1020,7 +1339,20 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             visualEditorRef.current.innerHTML = wpParsed.content;
           }
           setImportUrl('');
-          showToast(`✅ Post data, organization, dates, and ${Object.keys(wpParsed.importantLinks).length} links imported successfully!`, 'success');
+          const checkSlug = wpParsed.slug || (wpParsed.title ? wpParsed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '');
+          const checkTitle = (wpParsed.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const existing = jobs.find(j => 
+            (checkSlug && j.id && j.id.toLowerCase() === checkSlug.toLowerCase()) ||
+            (wpParsed.title && j.title && j.title.trim().toLowerCase() === wpParsed.title.trim().toLowerCase()) ||
+            (checkTitle && j.title && (j.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') === checkTitle)
+          );
+          if (existing) {
+            setEditingJobId(existing.id);
+            showToast(`ℹ️ Post exists in database ("${existing.title}"). Publishing will UPDATE it without creating duplicates.`, 'info');
+          } else {
+            setEditingJobId(null);
+            showToast(`✅ Post data, organization, dates, and ${Object.keys(wpParsed.importantLinks).length} links imported successfully!`, 'success');
+          }
           return true;
         }
       }
@@ -1159,7 +1491,20 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       }
       setImportUrl('');
       const linkCount = Object.keys(extractedLinks).length;
-      showToast(`✅ Post data and ${linkCount > 0 ? `${linkCount} important links` : 'tables'} imported successfully!`, 'success');
+      const checkSlug2 = p.slug || (importedTitle ? importedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '');
+      const checkTitle2 = (importedTitle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const existing2 = jobs.find(j => 
+        (checkSlug2 && j.id && j.id.toLowerCase() === checkSlug2.toLowerCase()) ||
+        (importedTitle && j.title && j.title.trim().toLowerCase() === importedTitle.trim().toLowerCase()) ||
+        (checkTitle2 && j.title && (j.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') === checkTitle2)
+      );
+      if (existing2) {
+        setEditingJobId(existing2.id);
+        showToast(`ℹ️ Post exists in database ("${existing2.title}"). Publishing will UPDATE it without creating duplicates.`, 'info');
+      } else {
+        setEditingJobId(null);
+        showToast(`✅ Post data and ${linkCount > 0 ? `${linkCount} important links` : 'tables'} imported successfully!`, 'success');
+      }
       return true;
     }
 
@@ -1204,7 +1549,20 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
           setImportUrl('');
           const linksCount = Object.keys(parsed.importantLinks).length;
           const datesCount = Object.keys(parsed.importantDates).length;
-          showToast(`✅ Imported: ${parsed.organization || 'Organization'}, ${datesCount} Dates & ${linksCount} Links!`, 'success');
+          const checkSlug3 = parsed.slug || (parsed.title ? parsed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '');
+          const checkTitle3 = (parsed.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const existing3 = jobs.find(j => 
+            (checkSlug3 && j.id && j.id.toLowerCase() === checkSlug3.toLowerCase()) ||
+            (parsed.title && j.title && j.title.trim().toLowerCase() === parsed.title.trim().toLowerCase()) ||
+            (checkTitle3 && j.title && (j.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') === checkTitle3)
+          );
+          if (existing3) {
+            setEditingJobId(existing3.id);
+            showToast(`ℹ️ Post exists in database ("${existing3.title}"). Publishing will UPDATE it without creating duplicates.`, 'info');
+          } else {
+            setEditingJobId(null);
+            showToast(`✅ Imported: ${parsed.organization || 'Organization'}, ${datesCount} Dates & ${linksCount} Links!`, 'success');
+          }
           return true;
         }
       } catch (err) {
@@ -1360,75 +1718,96 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
     }
 
     const baseSlug = form.slug.trim() || form.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    let finalSlug = baseSlug;
-    if (jobs.some(j => j.id === finalSlug)) {
-      finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
-    }
+    const normalizeStr = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanFormTitle = normalizeStr(form.title);
+
+    // Look for existing job to update instead of creating duplicate:
+    // 1) Explicitly editing an existing post (editingJobId)
+    // 2) Slug / ID matches an existing job (case-insensitive)
+    // 3) Exact title matches an existing job (case-insensitive)
+    // 4) Normalized clean title matches an existing job (ignoring punctuation/spaces)
+    const existingJob = jobs.find(j => 
+      (editingJobId && j.id === editingJobId) ||
+      (baseSlug && j.id && j.id.toLowerCase() === baseSlug.toLowerCase()) ||
+      (form.title && j.title && j.title.trim().toLowerCase() === form.title.trim().toLowerCase()) ||
+      (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
+    );
+
+    const isUpdate = Boolean(existingJob);
+    const finalSlug = existingJob ? existingJob.id : baseSlug;
 
     const newJob = {
+      ...(existingJob || {}),
       id: finalSlug,
       title: form.title.trim(),
-      category: form.category || 'LATEST JOB',
-      organization: form.organization.trim() || 'Career Diary Alert',
-      vacancies: form.totalPosts.trim() || form.vacancies.trim() || 'Various',
-      totalPosts: form.totalPosts.trim() || form.vacancies.trim() || 'Various',
-      displayOrder: Number(form.displayOrder) || 0,
+      category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
+      organization: form.organization.trim() || (existingJob ? existingJob.organization : 'Career Diary Alert'),
+      vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
+      totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
+      displayOrder: Number(form.displayOrder) || (existingJob?.displayOrder ?? 0),
       featured: Boolean(form.featured),
-      lastDate: form.lastDate.trim() || '',
-      appLast: form.lastDate.trim() || '',
-      appStart: form.appStart.trim() || '',
-      badge: form.badge || 'New!',
-      bannerColor: form.bannerColor || 'pink',
-      description: form.description.trim(),
-      uniqueDescription: form.description.trim(),
-      shortInfo: form.description.trim(),
-      content: form.content.trim(),
-      htmlContent: form.content.trim(),
+      lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
+      appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
+      appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
+      badge: form.badge || (existingJob?.badge ?? 'New!'),
+      bannerColor: form.bannerColor || (existingJob?.bannerColor ?? 'pink'),
+      description: form.description.trim() || (existingJob?.description ?? ''),
+      uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
+      shortInfo: form.description.trim() || (existingJob?.shortInfo ?? ''),
+      content: form.content.trim() || (existingJob?.content ?? ''),
+      htmlContent: form.content.trim() || (existingJob?.htmlContent ?? ''),
       seoTitle: form.seoTitle.trim() || form.title.trim(),
-      seoKeywords: form.seoKeywords.trim(),
-      seoDescription: form.seoDescription.trim() || form.description.trim(),
-      applyUrl: form.applyUrl.trim() || '',
-      notificationUrl: form.notificationUrl.trim() || '',
-      officialUrl: form.officialUrl.trim() || '',
-      state: form.state.trim() || 'All India',
-      feeGen: form.feeGen.trim() || '₹100',
-      feeSc: form.feeSc.trim() || '₹0',
-      minAge: form.minAge.trim() || '18 Years',
-      maxAge: form.maxAge.trim() || '37 Years',
-      qualification: form.qualification.trim() || 'As per notification',
+      seoKeywords: form.seoKeywords.trim() || (existingJob?.seoKeywords ?? ''),
+      seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
+      applyUrl: form.applyUrl.trim() || (existingJob?.applyUrl ?? ''),
+      notificationUrl: form.notificationUrl.trim() || (existingJob?.notificationUrl ?? ''),
+      officialUrl: form.officialUrl.trim() || (existingJob?.officialUrl ?? ''),
+      state: form.state.trim() || (existingJob?.state ?? 'All India'),
+      feeGen: form.feeGen.trim() || (existingJob?.feeGen ?? '₹100'),
+      feeSc: form.feeSc.trim() || (existingJob?.feeSc ?? '₹0'),
+      minAge: form.minAge.trim() || (existingJob?.minAge ?? '18 Years'),
+      maxAge: form.maxAge.trim() || (existingJob?.maxAge ?? '37 Years'),
+      qualification: form.qualification.trim() || (existingJob?.qualification ?? 'As per notification'),
       importantDates: {
+        ...(existingJob?.importantDates || {}),
+        ...(form.importantDates || {}),
         ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
         ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
         ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-        ...(form.importantDates || {})
       },
       important_dates: {
+        ...(existingJob?.important_dates || {}),
+        ...(form.importantDates || {}),
         ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
         ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
         ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-        ...(form.importantDates || {})
       },
       applicationFee: {
+        ...(existingJob?.applicationFee || {}),
+        ...(form.applicationFee || {}),
         ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
         ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-        ...(form.applicationFee || {})
       },
       application_fee: {
+        ...(existingJob?.application_fee || {}),
+        ...(form.applicationFee || {}),
         ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
         ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-        ...(form.applicationFee || {})
       },
       ageLimit: {
+        ...(existingJob?.ageLimit || {}),
+        ...(form.ageLimit || {}),
         ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-        ...(form.ageLimit || {})
       },
       age_limits: {
+        ...(existingJob?.age_limits || {}),
+        ...(form.ageLimit || {}),
         ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-        ...(form.ageLimit || {})
       },
       importantLinks: {
+        ...(existingJob?.importantLinks || {}),
         ...(form.importantLinks || {}),
         ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
         ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
@@ -1437,6 +1816,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
       important_links: {
+        ...(existingJob?.important_links || {}),
         ...(form.importantLinks || {}),
         ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
         ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
@@ -1444,16 +1824,23 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
-      postDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      postDate: existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      updatedAt: new Date().toISOString(),
     };
 
     const res = await onAddJob(newJob);
     if (res && res.success === false) {
       showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
+    } else if (isUpdate) {
+      showToast(`🔄 Post "${newJob.title}" updated successfully! (Existing post updated in-place, no duplicate created)`, 'success');
     } else {
       showToast('🎉 Post published successfully! It is now LIVE on Career Diary for all users worldwide via Firebase Firestore.', 'success');
     }
+    setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
+    if (visualEditorRef.current) {
+      visualEditorRef.current.innerHTML = '';
+    }
     setActiveSection('all-posts');
   };
 
@@ -1509,7 +1896,7 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', margin: 0 }}>Recent Posts</h3>
-          <button className="btn btn-primary btn-sm" onClick={() => setActiveSection('new-post')}>
+          <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
             <FilePlus size={14} /> New Post
           </button>
         </div>
@@ -1531,9 +1918,12 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px', fontSize: '0.82rem', color: '#64748b' }}>{j.lastDate || 'N/A'}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <button onClick={() => onDeleteJob(j.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
-                    <Trash2 size={16} />
+                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button onClick={() => handleEditJob(j)} title="Edit post" style={{ background: '#e0f2fe', border: 'none', color: '#0284c7', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <Edit3 size={13} /> Edit
+                  </button>
+                  <button onClick={() => onDeleteJob(j.id)} title="Delete post" style={{ background: '#fee2e2', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <Trash2 size={13} /> Delete
                   </button>
                 </td>
               </tr>
@@ -1550,10 +1940,23 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
           Manage All Posts ({filteredJobs.length})
         </h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setActiveSection('new-post')}>
+        <button className="btn btn-primary btn-sm" onClick={handleStartNewPost}>
           <FilePlus size={14} /> New Post
         </button>
       </div>
+
+      {/* Duplicate warning & one-click cleanup banner */}
+      {duplicateGroups.length > 0 && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 18px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontSize: '0.88rem', fontWeight: 600 }}>
+            <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+            <span>Found {duplicateGroups.length} duplicate post group(s) in your list. Click to keep 1 clean copy and remove duplicates.</span>
+          </div>
+          <button onClick={handleCleanDuplicates} style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+            Clean Duplicates (Keep 1 Copy)
+          </button>
+        </div>
+      )}
 
       {/* Filter & Search */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -1598,7 +2001,11 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px', fontSize: '0.82rem', color: '#64748b' }}>{job.lastDate || job.appLast || 'N/A'}</td>
-                <td style={{ padding: '12px 16px' }}>
+                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button onClick={() => handleEditJob(job)} title="Edit post"
+                    style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <Edit3 size={13} /> Edit
+                  </button>
                   <button onClick={() => onDeleteJob(job.id)} title="Delete post"
                     style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
                     <Trash2 size={13} /> Delete
@@ -1618,18 +2025,29 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
       {/* Top Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>Create New Post</h2>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '4px 0 0' }}>Visual Editing Mode: Edit directly in the preview pane</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+              {editingJobId ? 'Edit / Update Post' : 'Create New Post'}
+            </h2>
+            {editingJobId && (
+              <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
+                Updating Existing Post (No Duplicates)
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '4px 0 0' }}>
+            {editingJobId ? `Editing existing post (${editingJobId}) — changes will update in-place without creating duplicates` : 'Visual Editing Mode: Edit directly in the preview pane'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-outline btn-sm" onClick={() => setActiveSection('dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
+          <button className="btn btn-outline btn-sm" onClick={() => { setEditingJobId(null); setForm({ ...EMPTY_FORM }); setActiveSection('dashboard'); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
             <X size={14} /> Cancel
           </button>
           <button onClick={handleSaveDraft} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
             <Save size={14} /> Save Draft
           </button>
-          <button onClick={handlePublish} style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)' }}>
-            <UploadCloud size={16} /> Publish Post
+          <button onClick={handlePublish} style={{ background: editingJobId ? '#2563eb' : '#10b981', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', boxShadow: editingJobId ? '0 2px 6px rgba(37, 99, 235, 0.3)' : '0 2px 6px rgba(16, 185, 129, 0.3)' }}>
+            <UploadCloud size={16} /> {editingJobId ? 'Update Post' : 'Publish Post'}
           </button>
         </div>
       </div>
@@ -2216,13 +2634,138 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             <button type="button" onClick={handleOpenImageModal} title="Insert Image" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Image size={14} /></button>
             <button type="button" onClick={handleOpenVideoModal} title="Insert Video" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Video size={14} /></button>
             <button type="button" onClick={handleInsertTable} title="Insert Sarkari Table" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', color: '#b91c1c' }}><Table size={14} /></button>
+
+            <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
+
+            {/* Quick Table Manipulation Group in Toolbar */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px' }} title="Table Controls (Click any table cell below to edit rows/cols)">
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '3px', padding: '0 3px' }}>
+                <Table size={13} style={{ color: '#0284c7' }} /> Table:
+              </span>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => handleAddRow('above')} title="Add Row Above" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#047857' }}>
+                <ArrowUp size={11} /> +Row
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => handleAddRow('below')} title="Add Row Below" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#047857' }}>
+                <ArrowDown size={11} /> +Row
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteRow} title="Delete Selected Row" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #fecaca', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#dc2626' }}>
+                <Minus size={11} /> -Row
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => handleAddColumn('right')} title="Add Column to Right" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#1d4ed8' }}>
+                <ArrowRight size={11} /> +Col
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteColumn} title="Delete Selected Column" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #fecaca', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#dc2626' }}>
+                <Minus size={11} /> -Col
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteTable} title="Delete entire table" style={{ padding: '3px 7px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
+                <Trash2 size={11} /> Del Table
+              </button>
+            </div>
+          </div>
+
+          {/* Active Table Tools Ribbon above Canvas */}
+          <div style={{
+            background: activeTableState ? '#eff6ff' : '#f8fafc',
+            border: activeTableState ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+            borderBottom: 'none',
+            borderRadius: '8px 8px 0 0',
+            padding: '7px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
+            fontSize: '0.8rem',
+            transition: 'all 0.2s'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: 700 }}>
+              <Table size={15} style={{ color: activeTableState ? '#2563eb' : '#64748b' }} />
+              <span>Table Tools:</span>
+              {activeTableState ? (
+                <span style={{ fontWeight: 600, color: '#1d4ed8', fontSize: '0.78rem' }}>
+                  (Row {activeTableState.rowIndex + 1} of {activeTableState.totalRows} | Col {activeTableState.cellIndex + 1} of {activeTableState.totalCols})
+                </span>
+              ) : (
+                <span style={{ fontWeight: 500, color: '#64748b', fontSize: '0.75rem' }}>
+                  Click inside any table below to edit rows, columns & tables
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Row:</span>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => handleAddRow('above')}
+                title="Add Row Above"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                <ArrowUp size={12} /> + Above
+              </button>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => handleAddRow('below')}
+                title="Add Row Below"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                <ArrowDown size={12} /> + Below
+              </button>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={handleDeleteRow}
+                title="Delete Current Row"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
+                <Minus size={12} /> Delete Row
+              </button>
+
+              <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+
+              <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>Col:</span>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => handleAddColumn('left')}
+                title="Add Column to Left"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
+                <ArrowLeft size={12} /> + Left
+              </button>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => handleAddColumn('right')}
+                title="Add Column to Right"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#1d4ed8' }}>
+                <ArrowRight size={12} /> + Right
+              </button>
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={handleDeleteColumn}
+                title="Delete Current Column"
+                style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
+                <Minus size={12} /> Delete Col
+              </button>
+
+              <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={handleDeleteTable}
+                title="Delete entire table"
+                style={{ padding: '4px 10px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>
+                <Trash2 size={12} /> Delete Table
+              </button>
+            </div>
           </div>
 
           {/* Paper Canvas Preview Area */}
           <div style={{
             background: '#ffffff',
             border: '1px solid #cbd5e1',
-            borderRadius: '8px',
+            borderRadius: '0 0 8px 8px',
+            borderTop: '1px solid #e2e8f0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
             padding: '24px',
             minHeight: '520px',
@@ -2246,9 +2789,18 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
             <div
               ref={visualEditorRef}
               contentEditable={true}
-              onFocus={() => { isVisualFocusedRef.current = true; }}
-              onBlur={() => { isVisualFocusedRef.current = false; }}
+              onFocus={() => {
+                isVisualFocusedRef.current = true;
+                updateActiveTableInfo();
+              }}
+              onBlur={() => {
+                isVisualFocusedRef.current = false;
+              }}
               onInput={handleVisualInput}
+              onClick={updateActiveTableInfo}
+              onKeyUp={updateActiveTableInfo}
+              onMouseUp={updateActiveTableInfo}
+              onKeyDown={handleEditorKeyDown}
               className="sr-rich-html-content"
               style={{
                 minHeight: '440px',
@@ -2309,7 +2861,13 @@ export default function AdminDashboardPage({ jobs, onAddJob, onDeleteJob, onBack
         {/* Nav Items */}
         <nav style={{ flex: 1, padding: '12px 8px' }}>
           {navItems.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => setActiveSection(id)}
+            <button key={id} onClick={() => {
+              if (id === 'new-post') {
+                handleStartNewPost();
+              } else {
+                setActiveSection(id);
+              }
+            }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '10px 10px',
                 background: activeSection === id ? 'rgba(255,255,255,0.12)' : 'transparent',
