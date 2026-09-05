@@ -7,8 +7,14 @@ export default function HighlightsGrid({
   const topItems = jobs.slice(0, 8);
   
   const boxColors = [
-    'bg-box-pink', 'bg-box-blue', 'bg-box-green', 'bg-box-purple',
-    'bg-box-orange', 'bg-box-teal', 'bg-box-darkred', 'bg-box-pink'
+    'bg-box-redorange',   // #ff3300 (BPSC TRE style)
+    'bg-box-forestgreen', // #006b00 (UP Scholarship style)
+    'bg-box-magentapink', // #ef35bf (India Post GDS style)
+    'bg-box-vividblue',   // #1e7fe8 (CTET style)
+    'bg-box-olive',       // #8d9200 (RRB JE style)
+    'bg-box-deepblue',    // #1a2fc8 (Bihar STET style)
+    'bg-box-orange',      // #ff6a00 (Anganwadi style)
+    'bg-box-maroon'       // #a80000 (UPSSSC PET style)
   ];
 
   return (

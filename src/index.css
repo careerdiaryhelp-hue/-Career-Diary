@@ -1040,61 +1040,108 @@ body.dark-mode .job-item-link:hover {
 /* Sarkari Result Style Marquee & Welcome Section */
 .sr-top-section {
   text-align: center;
-  padding: 14px 12px 12px 12px;
+  padding: 16px 12px 14px 12px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
+.sr-portal-title,
+.sr-main-title {
+  color: #0c1cae !important;
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.3 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
 .sr-welcome-text {
-  color: #cf2e2e;
-  font-size: 1.05rem;
-  font-weight: 800;
-  margin: 0 0 8px 0;
-  letter-spacing: 0.3px;
-  line-height: 1.4;
-  font-family: Arial, Helvetica, sans-serif;
+  color: #d32f2f !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  margin: 0 0 8px 0 !important;
+  letter-spacing: 0.2px;
+  line-height: 1.4 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
 }
 .sr-app-links {
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.94rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 10px 0 !important;
+  line-height: 1.5 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
 }
 .sr-app-links a {
-  color: #0c1cae;
-  text-decoration: none;
+  color: #0c1cae !important;
+  text-decoration: none !important;
+  font-weight: 800 !important;
   transition: color 0.15s;
 }
 .sr-app-links a:hover {
-  color: #ab183d;
-  text-decoration: underline;
+  color: #d32f2f !important;
+  text-decoration: underline !important;
 }
 .sr-app-sep {
-  color: #ff0000;
+  color: #d32f2f !important;
+  font-weight: 800 !important;
+  margin: 0 8px !important;
+}
+.sr-marquee-box {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 0;
+  margin: 10px auto 14px auto;
+  max-width: 1280px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.sr-marquee-box-header {
+  background: #ff007f;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid #000000;
+  position: relative;
+}
+.sr-marquee-pill {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 3px 24px;
+  color: #ff2b2b;
+  font-family: 'Fredoka', 'Outfit', system-ui, -apple-system, sans-serif;
+  font-size: 1.45rem;
   font-weight: 800;
-  margin: 0 8px;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .sr-marquee-container {
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  padding: 8px 12px;
+  background: #ffffff;
 }
+#marquee1,
 .sr-marquee-row {
   width: 100%;
   overflow: hidden;
   text-align: center;
-  height: 26px;
-  line-height: 26px;
+  margin: 2px 0;
+  line-height: 1.5;
 }
+#marquee1 marquee,
 .sr-marquee-row marquee {
   width: 100%;
   white-space: nowrap !important;
   overflow: hidden;
-  height: 26px;
-  line-height: 26px;
+  height: 26px !important;
+  line-height: 26px !important;
+  display: block;
 }
 .sr-marquee-item {
   display: inline-flex;
@@ -1102,36 +1149,45 @@ body.dark-mode .job-item-link:hover {
   margin: 0 4px;
 }
 .sr-marquee-item a {
-  color: #0c1cae;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.96rem;
+  color: #0c1cae !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  font-size: 0.98rem !important;
   transition: color 0.15s;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, Helvetica, sans-serif !important;
 }
 .sr-marquee-item a:hover {
-  color: #ab183d;
-  text-decoration: underline;
+  color: #d32f2f !important;
+  text-decoration: underline !important;
+}
+.sr-marquee-item span {
+  color: #0c1cae !important;
+  font-weight: 700 !important;
+  font-size: 0.98rem !important;
 }
 .sr-marquee-sep {
-  color: #64748b;
-  font-weight: 700;
-  margin: 0 12px;
-  font-size: 0.95rem;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  margin: 0 12px !important;
+  font-size: 0.95rem !important;
 }
 @media (max-width: 768px) {
+  .sr-portal-title,
+  .sr-main-title {
+    font-size: 1.15rem !important;
+  }
   .sr-welcome-text {
-    font-size: 0.85rem;
+    font-size: 0.85rem !important;
   }
   .sr-app-links {
-    font-size: 0.8rem;
+    font-size: 0.78rem !important;
   }
   .sr-marquee-item a {
-    font-size: 0.82rem;
+    font-size: 0.85rem !important;
   }
   .sr-marquee-sep,
   .sr-app-sep {
-    margin: 0 5px;
+    margin: 0 4px !important;
   }
 }
 
@@ -1359,43 +1415,75 @@ body.dark-mode .job-item-link:hover {
   color: #d32f2f;
 }
 
-/* 8-Box Highlights Grid */
-.bg-box-pink { background: #e91e63 !important; }
-.bg-box-blue { background: #0056b3 !important; }
-.bg-box-green { background: #28a745 !important; }
+/* Sarkari Result 8-Box Highlights */
+.bg-box-redorange   { background: #ff3300 !important; }
+.bg-box-forestgreen { background: #006b00 !important; }
+.bg-box-magentapink { background: #ef35bf !important; }
+.bg-box-vividblue   { background: #1e7fe8 !important; }
+.bg-box-olive       { background: #8d9200 !important; }
+.bg-box-deepblue    { background: #1a2fc8 !important; }
+.bg-box-orange      { background: #ff6a00 !important; }
+.bg-box-maroon      { background: #a80000 !important; }
+
+/* Legacy box colors fallback */
+.bg-box-pink { background: #ef35bf !important; }
+.bg-box-blue { background: #1e7fe8 !important; }
+.bg-box-green { background: #006b00 !important; }
 .bg-box-purple { background: #d500f9 !important; }
-.bg-box-orange { background: #ff5722 !important; }
 .bg-box-teal { background: #00897b !important; }
-.bg-box-darkred { background: #b71c1c !important; }
+.bg-box-darkred { background: #a80000 !important; }
 
 .top-banners-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 2px; /* Very tight spacing */
+  gap: 2px;
+  margin: 10px 0 16px 0;
 }
 @media (max-width: 768px) {
   .top-banners-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
   }
 }
 .banner-card {
-  border-radius: 0;
-  border: 1px solid #fff;
-  min-height: 60px;
-  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 68px;
+  padding: 6px 10px;
   text-align: center;
+  text-decoration: none !important;
+  color: #ffffff !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.22;
+  border: 2px solid #ffffff;
+  border-radius: 0;
+  box-sizing: border-box;
   box-shadow: none;
+  transition: opacity 0.2s ease;
 }
 .banner-card:hover {
   transform: none;
   opacity: 0.9;
 }
 .banner-title {
-  font-size: 1rem;
-  line-height: 1.2;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #ffffff !important;
+  line-height: 1.22;
+}
+@media (max-width: 768px) {
+  .banner-card {
+    min-height: 52px;
+    font-size: 11.5px;
+    padding: 3px 4px;
+  }
+  .banner-title {
+    font-size: 11.5px;
+  }
 }
 
 /* 3-Column Layout Overrides */
@@ -1415,60 +1503,122 @@ body.dark-mode .job-item-link:hover {
   }
 }
 
-.col-darkred .column-header {
-  background: #a71b30 !important;
-  border: 1px solid #a71b30;
-  justify-content: center;
-  padding: 8px 16px;
-}
-.col-darkred .column-header h3 {
-  font-size: 1.3rem;
-  letter-spacing: 0;
-  color: #fff;
-}
-.col-darkred .column-body {
+.col-darkred,
+.column-card.col-darkred {
+  display: flex;
+  flex-direction: column;
   background: #ffffff !important;
-  border: 1px solid #a71b30;
-  border-top: none;
-  padding: 10px;
-  border-radius: 0 0 10px 10px;
-}
-.col-darkred {
-  border-radius: 10px;
-  border: none;
-}
-.col-darkred .column-body ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.col-darkred .column-body li {
-  position: relative;
-  padding-left: 14px;
+  border: 2px solid #ab183d !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
   margin-bottom: 8px;
 }
-.col-darkred .column-body li::before {
-  content: "■";
-  color: #a71b30;
-  font-size: 0.5rem;
-  position: absolute;
-  left: 0;
-  top: 7px;
+.col-darkred:hover,
+.column-card.col-darkred:hover {
+  box-shadow: none !important;
 }
+
+.col-darkred .column-header {
+  background: #ab183d !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.col-darkred .column-header h3 {
+  font-family: Arial, Roboto, Helvetica, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  margin: 0;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+.col-darkred .column-header h3 a {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+.col-darkred .column-header h3 a:hover {
+  text-decoration: underline !important;
+}
+
+.col-darkred .column-body {
+  flex: 1;
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 12px 14px 10px 22px;
+  min-height: 380px;
+}
+
+.col-darkred ul.sarkari-quick-list,
+.col-darkred .column-body ul {
+  list-style-type: disc !important;
+  color: #0c1cae; /* bullet is blue like Sarkari Result */
+  margin: 0;
+  padding: 0 0 0 14px;
+}
+
+.col-darkred .column-body li {
+  margin-bottom: 12px;
+  line-height: 1.42;
+  padding-left: 2px;
+  position: static;
+}
+.col-darkred .column-body li::before {
+  content: none !important;
+  display: none !important;
+}
+
 .col-darkred .job-item-link {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #0c1cae !important; /* Exact blue */
+  font-weight: 700;
+  font-size: 0.94rem;
+  line-height: 1.42;
+  text-decoration: none;
   border-bottom: none;
   padding: 0;
-  color: #0d47a1 !important; /* Dark blue links */
   display: inline;
-  font-weight: 700;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  border-radius: 0;
 }
 .col-darkred .job-item-link:hover {
-  background-color: transparent !important;
+  color: #ab183d !important;
+  text-decoration: underline !important;
+  background: transparent !important;
   transform: none !important;
-  color: #b71c1c !important;
-  text-decoration: underline;
+}
+
+.col-darkred .column-footer {
+  padding: 8px 12px 12px 12px;
+  background: #ffffff;
+  border-top: 1px solid #f1f1f1;
+  text-align: center;
+  border-radius: 0;
+}
+
+.col-darkred .col-view-more {
+  display: inline-block;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0c1cae;
+  border: 1px solid #ab183d;
+  border-radius: 3px;
+  padding: 4px 16px;
+  text-decoration: none;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+.col-darkred .col-view-more:hover {
+  background: #ab183d;
+  color: #ffffff;
+  text-decoration: none;
+  transform: none;
 }
 
 .badge-tag {

@@ -10,6 +10,10 @@ export default function JobColumnsGrid({
   onNavigateCategory
 }) {
   const renderJobItem = (job, isSingle = false) => {
+    if (!job || !job.title) return null;
+    const tl = job.title.toLowerCase();
+    if (tl.includes('top online form') || (job.id && job.id.includes('top-online-form'))) return null;
+
     const rawBadge = job.badge || '';
     let badgeText = rawBadge;
     let badgeClass = 'tag-amber';
@@ -72,13 +76,30 @@ export default function JobColumnsGrid({
     return (
       <div key={col.key} className={`column-card ${col.colorClass}`}>
         <div className="column-header">
-          <h3>{isSingle ? (col.singleTitle || col.title) : col.title}</h3>
+          <h3>
+            <a
+              href={col.slug}
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  if (onNavigateCategory) {
+                    onNavigateCategory(col.key, col.slug);
+                  } else {
+                    window.history.pushState({}, '', col.slug);
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                }
+              }}
+            >
+              {isSingle ? (col.singleTitle || col.title) : col.title}
+            </a>
+          </h3>
         </div>
         <div className="column-body">
           {displayedJobs.length === 0 ? (
             <div className="empty-state">No active updates.</div>
           ) : (
-            <ul className={isSingle ? 'category-items-list' : ''}>
+            <ul className={`sarkari-quick-list ${isSingle ? 'category-items-list' : ''}`}>
               {displayedJobs.map((job) => renderJobItem(job, isSingle))}
             </ul>
           )}
@@ -101,7 +122,7 @@ export default function JobColumnsGrid({
                 }
               }}
             >
-              View More {col.title} &raquo;
+              View More
             </a>
           </div>
         )}
@@ -152,9 +173,6 @@ export default function JobColumnsGrid({
             >
               ← Back to Home
             </a>
-            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-              Showing all <strong>{catJobs.length}</strong> updates in {activeCol.title}
-            </span>
           </div>
 
           {renderColumnCard(activeCol, catJobs, true)}

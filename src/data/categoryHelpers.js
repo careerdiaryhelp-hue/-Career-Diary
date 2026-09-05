@@ -115,7 +115,7 @@ export const getJobsForCategory = (allJobs = [], categoryKey = '') => {
 export const ALL_COLUMNS = [
   { key: 'RESULT', title: 'Result', slug: '/results', colorClass: 'col-darkred', singleTitle: 'Results 2026' },
   { key: 'ADMIT CARD', title: 'Admit Card', slug: '/admit-card', colorClass: 'col-darkred', singleTitle: 'Admit Cards & Hall Tickets 2026' },
-  { key: 'LATEST JOB', title: 'Latest Jobs', slug: '/latest-jobs', colorClass: 'col-darkred', singleTitle: 'Latest Govt Jobs Notifications 2026' },
+  { key: 'LATEST JOB', title: 'Latest Job', slug: '/latest-jobs', colorClass: 'col-darkred', singleTitle: 'Latest Govt Jobs Notifications 2026' },
   { key: 'ANSWER KEY', title: 'Answer Key', slug: '/answer-key', colorClass: 'col-darkred', singleTitle: 'Answer Keys & Solutions 2026' },
   { key: 'SYLLABUS', title: 'Syllabus', slug: '/syllabus', colorClass: 'col-darkred', singleTitle: 'Exam Pattern & Syllabus 2026' },
   { key: 'ADMISSION', title: 'Admission', slug: '/admission', colorClass: 'col-darkred', singleTitle: 'Admission Notifications 2026' },

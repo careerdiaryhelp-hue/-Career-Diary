@@ -76,7 +76,8 @@ export default function App() {
       if (adminPosts) {
         const parsed = JSON.parse(adminPosts);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return [...parsed, ...INITIAL_JOBS];
+          const cleaned = parsed.filter(p => !p.title?.toLowerCase().includes('top online form') && !p.id?.includes('top-online-form'));
+          return [...cleaned, ...INITIAL_JOBS];
         }
       }
     } catch (e) {
@@ -132,7 +133,7 @@ export default function App() {
             localStorage.setItem('career_diary_breaking_news', JSON.stringify(DEFAULT_BREAKING_NEWS));
             return DEFAULT_BREAKING_NEWS;
           }
-          return parsed;
+          return parsed.filter(n => !n.message?.toLowerCase().includes('top online form') && !n.title?.toLowerCase().includes('top online form'));
         }
       }
     } catch (e) {}
@@ -156,6 +157,32 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('career_diary_admin', isAdmin ? 'true' : 'false');
   }, [isAdmin]);
+
+  // Clean up any deleted 'Top Online Forms' from persistent storage
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem('career_diary_admin_posts');
+      if (p) {
+        const parsed = JSON.parse(p);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(item => !item.title?.toLowerCase().includes('top online form') && !item.id?.includes('top-online-form'));
+          if (filtered.length !== parsed.length) {
+            localStorage.setItem('career_diary_admin_posts', JSON.stringify(filtered));
+          }
+        }
+      }
+      const b = localStorage.getItem('career_diary_breaking_news');
+      if (b) {
+        const parsed = JSON.parse(b);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(item => !item.message?.toLowerCase().includes('top online form') && !item.title?.toLowerCase().includes('top online form'));
+          if (filtered.length !== parsed.length) {
+            localStorage.setItem('career_diary_breaking_news', JSON.stringify(filtered));
+          }
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   // URL Routing: Synchronize internal state with browser URL pathname
   const syncRouteFromUrl = () => {
@@ -444,7 +471,7 @@ export default function App() {
     if (!job || !job.title) return false;
     if (job.status === 'Draft' || job.status === 'draft') return false;
     const titleLower = job.title.toLowerCase().trim();
-    if (titleLower.startsWith('test') || titleLower === 'test') return false;
+    if (titleLower.startsWith('test') || titleLower === 'test' || titleLower.includes('top online form') || (job.id && job.id.includes('top-online-form'))) return false;
 
     const jobCat = (job.category || '').toUpperCase();
     const curCat = currentCategory.toUpperCase();
