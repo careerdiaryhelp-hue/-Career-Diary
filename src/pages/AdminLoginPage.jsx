@@ -23,26 +23,34 @@ export default function AdminLoginPage({ onLoginSuccess, onCancel }) {
 
   return (
     <div style={{
-      minHeight: 'calc(100vh - 120px)',
+      minHeight: '100vh',
+      width: '100vw',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
       fontFamily: 'Plus Jakarta Sans, sans-serif',
+      boxSizing: 'border-box'
     }}>
       <div style={{ width: '100%', maxWidth: '440px' }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '64px', height: '64px', borderRadius: '16px',
-            background: 'linear-gradient(135deg, #d81b60, #7b1fa2)',
-            marginBottom: '16px', boxShadow: '0 8px 24px rgba(216,27,96,0.4)'
-          }}>
-            <BookmarkCheck size={32} color="#fff" />
-          </div>
+          <img
+            src="/image.png"
+            alt="Career Diary Logo"
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              objectFit: 'contain',
+              background: '#ffffff',
+              padding: '6px',
+              marginBottom: '16px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.35)'
+            }}
+          />
           <div style={{ color: '#fff', fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.5px' }}>
             CAREER DIARY
           </div>

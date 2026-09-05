@@ -104,20 +104,16 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
         </p>
 
         <p className="sr-app-links">
-          <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
-            Career Diary Android Apps
-          </a>
-          <span className="sr-app-sep">||</span>
           <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer">
             Career Diary WhatsApp Channel
           </a>
           <span className="sr-app-sep">||</span>
-          <a href="https://t.me/careerdiaryhelp" target="_blank" rel="noopener noreferrer">
+          <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer">
             Telegram Channel
           </a>
           <span className="sr-app-sep">||</span>
-          <a href="https://instagram.com/careerdiary.in" target="_blank" rel="noopener noreferrer">
-            Follow Instagram
+          <a href="https://www.facebook.com/Careerdiary1?mibextid=ZbWKwL" target="_blank" rel="noopener noreferrer">
+            Follow Facebook
           </a>
         </p>
 

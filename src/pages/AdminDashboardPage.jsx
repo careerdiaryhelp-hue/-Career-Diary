@@ -4614,26 +4614,53 @@ export default function AdminDashboardPage({
 
   // ── Layout ────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', background: '#f8fafc', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+    <div style={{
+      display: 'flex',
+      height: '100vh',
+      minHeight: '100vh',
+      width: '100vw',
+      maxWidth: '100vw',
+      background: '#f8fafc',
+      fontFamily: 'Plus Jakarta Sans, sans-serif',
+      overflow: 'hidden'
+    }}>
 
       {/* Sidebar matching screenshot */}
       <div style={{
-        width: sidebarOpen ? '230px' : '64px', flexShrink: 0,
-        background: '#0f172a', color: '#fff', display: 'flex', flexDirection: 'column',
-        transition: 'width 0.25s ease', overflow: 'hidden'
+        width: sidebarOpen ? '230px' : '64px',
+        height: '100vh',
+        flexShrink: 0,
+        background: '#0a0f1d',
+        color: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'width 0.25s ease',
+        overflow: 'hidden'
       }}>
-        {/* Logo / Brand matching screenshot */}
-        <div style={{ padding: '24px 20px 20px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Logo / Brand matching screenshot 2 */}
+        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <img
+            src="/image.png"
+            alt="Career Diary Logo"
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              objectFit: 'contain',
+              background: '#ffffff',
+              padding: '2px',
+              flexShrink: 0
+            }}
+          />
           {sidebarOpen && (
-            <span style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.2rem', whiteSpace: 'nowrap', color: '#ffffff', letterSpacing: '-0.02em' }}>
+            <span style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.15rem', whiteSpace: 'nowrap', color: '#ffffff', letterSpacing: '-0.02em' }}>
               Career Diary
             </span>
           )}
-          {!sidebarOpen && <BookmarkCheck size={24} style={{ color: '#3b82f6', margin: '0 auto' }} />}
         </div>
 
         {/* Nav Items */}
-        <nav style={{ flex: 1, padding: '10px 12px' }}>
+        <nav style={{ flex: 1, padding: '12px 10px' }}>
           {navItems.map(({ id, label, icon: Icon }) => {
             const isActive = activeSection === id;
             return (
@@ -4652,24 +4679,30 @@ export default function AdminDashboardPage({
                   gap: '12px',
                   width: '100%',
                   padding: '11px 14px',
-                  background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                  border: 'none',
+                  background: isActive ? 'rgba(37, 99, 235, 0.14)' : 'transparent',
+                  border: isActive ? '1px solid rgba(59, 130, 246, 0.45)' : '1px solid transparent',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   marginBottom: '6px',
-                  color: isActive ? '#ffffff' : '#94a3b8',
+                  color: isActive ? '#60a5fa' : '#94a3b8',
                   fontWeight: isActive ? 600 : 500,
                   fontSize: '0.92rem',
                   transition: 'all 0.15s'
                 }}
                 onMouseEnter={e => {
-                  if (!isActive) e.currentTarget.style.color = '#ffffff';
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  }
                 }}
                 onMouseLeave={e => {
-                  if (!isActive) e.currentTarget.style.color = '#94a3b8';
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.background = 'transparent';
+                  }
                 }}
               >
-                <Icon size={19} style={{ flexShrink: 0, color: isActive ? '#ffffff' : '#94a3b8' }} />
+                <Icon size={19} style={{ flexShrink: 0, color: isActive ? '#60a5fa' : '#94a3b8' }} />
                 {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
               </button>
             );
@@ -4692,7 +4725,7 @@ export default function AdminDashboardPage({
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '28px' }}>
+      <div style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '24px 32px', background: '#f8fafc' }}>
         {activeSection === 'dashboard' && renderDashboard()}
         {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
         {activeSection === 'new-post' && renderNewPost()}

@@ -531,14 +531,6 @@ export default function App() {
 
   // Helper to render main area when no item is selected
   const renderMainContent = () => {
-    // Admin login page (full page, no popup)
-    if (showAdminLogin && !isAdmin) return (
-      <AdminLoginPage
-        onLoginSuccess={() => { setIsAdmin(true); setShowAdminLogin(false); }}
-        onCancel={() => { setShowAdminLogin(false); setIsAdminRoute(false); navigateTo('/'); }}
-      />
-    );
-
     // Static pages
     if (staticPage === 'privacy') return <PrivacyPolicyPage onBack={goHome} />;
     if (staticPage === 'terms') return <TermsPage onBack={goHome} />;
@@ -549,22 +541,6 @@ export default function App() {
           jobs={publishedJobs}
           onSelectJob={(id) => navigateTo('/' + id)}
           onBack={goHome}
-        />
-      );
-    }
-
-    if (isAdminRoute && isAdmin) {
-      return (
-        <AdminDashboardPage
-          jobs={jobs}
-          onAddJob={handleAddJob}
-          onDeleteJob={handleDeleteJob}
-          categories={categories}
-          onSaveCategories={handleSaveCategories}
-          breakingNews={breakingNews}
-          onSaveBreakingNews={handleSaveBreakingNews}
-          onBack={() => { setIsAdminRoute(false); navigateTo('/'); }}
-          onLogout={handleLogoutAdmin}
         />
       );
     }
@@ -615,6 +591,42 @@ export default function App() {
 
   const publishedJobs = jobs.filter(j => j && j.status !== 'Draft' && j.status !== 'draft');
 
+  // Standalone Full-Page Admin Mode (Zero Public Header, Navbar, Tickers, Footer, Floating Buttons)
+  if (isAdminRoute || (showAdminLogin && !isAdmin)) {
+    if (!isAdmin) {
+      return (
+        <AdminLoginPage
+          onLoginSuccess={() => {
+            setIsAdmin(true);
+            setShowAdminLogin(false);
+            setIsAdminRoute(true);
+          }}
+          onCancel={() => {
+            setShowAdminLogin(false);
+            setIsAdminRoute(false);
+            navigateTo('/');
+          }}
+        />
+      );
+    }
+    return (
+      <AdminDashboardPage
+        jobs={jobs}
+        onAddJob={handleAddJob}
+        onDeleteJob={handleDeleteJob}
+        categories={categories}
+        onSaveCategories={handleSaveCategories}
+        breakingNews={breakingNews}
+        onSaveBreakingNews={handleSaveBreakingNews}
+        onBack={() => {
+          setIsAdminRoute(false);
+          navigateTo('/');
+        }}
+        onLogout={handleLogoutAdmin}
+      />
+    );
+  }
+
   return (
     <div className="app-root">
       {/* Header with Search */}
@@ -629,6 +641,7 @@ export default function App() {
         onOpenAdminModal={() => {
           navigateTo('/admin');
           setShowAdminLogin(true);
+          setIsAdminRoute(true);
         }}
         onLogoutAdmin={handleLogoutAdmin}
         onResetFilters={handleResetFilters}

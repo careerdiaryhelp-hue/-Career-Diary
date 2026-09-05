@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Phone, MapPin, Send, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Send, MessageCircle, Share2 } from 'lucide-react';
 
 export default function ContactUsPage({ onBack }) {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -60,6 +60,11 @@ export default function ContactUsPage({ onBack }) {
                     <MessageCircle style={{ display: 'inline', marginRight: '6px', color: '#25d366' }} size={16} />
                     <strong>WhatsApp Channel:</strong><br />
                     <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff' }}>Join WhatsApp</a>
+                  </li>
+                  <li>
+                    <Share2 style={{ display: 'inline', marginRight: '6px', color: '#1877f2' }} size={16} />
+                    <strong>Facebook Page:</strong><br />
+                    <a href="https://www.facebook.com/Careerdiary1?mibextid=ZbWKwL" target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff' }}>facebook.com/Careerdiary1</a>
                   </li>
                 </ul>
               </td>
