@@ -2111,7 +2111,7 @@ export default function AdminDashboardPage({
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
       appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
       appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
-      badge: form.badge || (existingJob?.badge ?? 'New!'),
+      badge: form.badge !== undefined ? form.badge : (existingJob?.badge ?? 'New!'),
       bannerColor: form.bannerColor || (existingJob?.bannerColor ?? 'pink'),
       description: form.description.trim() || (existingJob?.description ?? ''),
       uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
@@ -2242,7 +2242,7 @@ export default function AdminDashboardPage({
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
       appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
       appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
-      badge: form.badge || (existingJob?.badge ?? 'Draft'),
+      badge: form.badge !== undefined ? form.badge : (existingJob?.badge ?? 'Draft'),
       bannerColor: form.bannerColor || (existingJob?.bannerColor ?? 'pink'),
       description: form.description.trim() || (existingJob?.description ?? ''),
       uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
@@ -3096,17 +3096,111 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* Featured Checkbox */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>
-                  <input
-                    type="checkbox"
-                    checked={form.featured}
-                    onChange={e => set('featured', e.target.checked)}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  Featured in Top Cards
-                </label>
+              {/* Featured in Top Cards & Post Badge Settings */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                {/* Row 1: Featured Checkbox */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155', userSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={form.featured}
+                      onChange={e => set('featured', e.target.checked)}
+                      style={{ width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
+                    />
+                    <span>Featured in Top Cards</span>
+                  </label>
+                  {form.featured && (
+                    <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      ★ Featured Active
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ height: '1px', background: '#e2e8f0' }} />
+
+                {/* Row 2: Post Badge Selector */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      POST BADGE TAG
+                    </label>
+                    {/* Live Badge Preview in Header */}
+                    {form.badge && form.badge.trim() !== '' && form.badge !== 'None' ? (
+                      <span className={`badge-tag ${
+                        form.badge.toLowerCase().includes('out') || form.badge.toLowerCase().includes('green') ? 'tag-out' :
+                        form.badge.toLowerCase().includes('new') || form.badge.toLowerCase().includes('start') || form.badge.toLowerCase().includes('red') ? 'tag-new' :
+                        form.badge.toLowerCase().includes('active') || form.badge.toLowerCase().includes('link') || form.badge.toLowerCase().includes('admit') || form.badge.toLowerCase().includes('blue') ? 'tag-active' :
+                        form.badge.toLowerCase().includes('result') || form.badge.toLowerCase().includes('answer') || form.badge.toLowerCase().includes('purple') ? 'tag-purple' :
+                        form.badge.toLowerCase().includes('extended') || form.badge.toLowerCase().includes('teal') ? 'tag-teal' : 'tag-amber'
+                      }`} style={{ margin: 0, padding: '2px 8px', fontSize: '0.72rem', fontWeight: 800 }}>
+                        {form.badge === 'New!' ? 'New' : form.badge}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>No Badge</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      value={['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''].includes(form.badge) ? (form.badge || 'None') : 'custom'}
+                      onChange={e => {
+                        if (e.target.value === 'None') set('badge', '');
+                        else if (e.target.value === 'custom') set('badge', form.badge || 'New!');
+                        else set('badge', e.target.value);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        background: '#ffffff',
+                        color: '#1e293b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="New!">New! (Red)</option>
+                      <option value="Out">Out (Green)</option>
+                      <option value="START">START (Red)</option>
+                      <option value="Link Active">Link Active (Blue)</option>
+                      <option value="Last Date">Last Date (Amber)</option>
+                      <option value="Answer Key">Answer Key</option>
+                      <option value="Admit Card">Admit Card</option>
+                      <option value="Result">Result</option>
+                      <option value="Extended">Extended</option>
+                      <option value="custom">Custom Text...</option>
+                      <option value="None">None (No Badge)</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      placeholder="Custom Text"
+                      value={form.badge || ''}
+                      onChange={e => set('badge', e.target.value)}
+                      style={{
+                        width: '120px',
+                        padding: '8px 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        background: '#ffffff',
+                        boxSizing: 'border-box'
+                      }}
+                      title="Edit badge text"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Short Information */}
@@ -4037,68 +4131,6 @@ export default function AdminDashboardPage({
     setShowNewsForm(true);
   };
 
-  const handleAutoImportCategoryNews = () => {
-    const published = (jobs || []).filter(j => j.status !== 'Draft' && j.status !== 'draft');
-    
-    // Top 2 from Result
-    const resJobs = published.filter(j => (j.category || '').toUpperCase().includes('RESULT')).slice(0, 2);
-    // Top 2 from Admit Card
-    const admJobs = published.filter(j => (j.category || '').toUpperCase().includes('ADMIT')).slice(0, 2);
-    // Top 2 from Latest Job
-    const latestJobs = published.filter(j => {
-      const c = (j.category || '').toUpperCase();
-      return (c.includes('JOB') || c.includes('RECRUITMENT')) && !c.includes('ADMIT') && !c.includes('RESULT');
-    }).slice(0, 2);
-    // Top 2 from Admission
-    const admissJobs = published.filter(j => (j.category || '').toUpperCase().includes('ADMISSION')).slice(0, 2);
-
-    const imported = [
-      ...resJobs.map((j, i) => ({
-        id: `auto-res-${Date.now()}-${i}`,
-        category: 'Result',
-        message: j.title,
-        link: `/${j.id}`,
-        priority: 1,
-        expiry: '12/31/2026, 11:59:00 PM',
-        active: true
-      })),
-      ...admJobs.map((j, i) => ({
-        id: `auto-adm-${Date.now()}-${i}`,
-        category: 'Admit Card',
-        message: j.title,
-        link: `/${j.id}`,
-        priority: 1,
-        expiry: '12/31/2026, 11:59:00 PM',
-        active: true
-      })),
-      ...latestJobs.map((j, i) => ({
-        id: `auto-job-${Date.now()}-${i}`,
-        category: 'Latest Job',
-        message: j.title,
-        link: `/${j.id}`,
-        priority: 1,
-        expiry: '12/31/2026, 11:59:00 PM',
-        active: true
-      })),
-      ...admissJobs.map((j, i) => ({
-        id: `auto-admiss-${Date.now()}-${i}`,
-        category: 'Admission',
-        message: j.title,
-        link: `/${j.id}`,
-        priority: 1,
-        expiry: '12/31/2026, 11:59:00 PM',
-        active: true
-      }))
-    ];
-
-    setLocalBreakingNews(imported);
-    if (onSaveBreakingNews) onSaveBreakingNews(imported);
-    try {
-      localStorage.setItem('career_diary_breaking_news', JSON.stringify(imported));
-    } catch (err) {}
-    showToast('⚡ 8 Top Posts (2 Result, 2 Admit Card, 2 Job, 2 Admission) synced to Breaking News!', 'success');
-  };
-
   const handleSaveNewsSubmit = (e) => {
     e.preventDefault();
     if (!newsForm.message.trim()) {
@@ -4174,28 +4206,6 @@ export default function AdminDashboardPage({
             </p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={handleAutoImportCategoryNews}
-              style={{
-                background: '#0f172a',
-                color: '#ffffff',
-                border: '1px solid #334155',
-                borderRadius: '8px',
-                padding: '10px 18px',
-                fontWeight: 600,
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'all 0.15s ease'
-              }}
-              title="Auto-import top 2 posts each from Result, Admit Card, Job, and Admission"
-            >
-              <RotateCw size={15} /> Auto-Sync 2+2+2+2 Posts
-            </button>
             <button
               onClick={() => {
                 if (showNewsForm && !editingNews) {
@@ -4484,7 +4494,7 @@ export default function AdminDashboardPage({
               {localBreakingNews.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                    No breaking news alerts added yet. Click "+ Add News Alert" or "Auto-Sync 2+2+2+2 Posts" above.
+                    No breaking news alerts added yet. Click "+ Add News Alert" above.
                   </td>
                 </tr>
               ) : (

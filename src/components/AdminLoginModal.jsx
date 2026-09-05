@@ -9,14 +9,14 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Default admin passcode: admin123 or 1234
-    if (passcode === 'admin123' || passcode === '1234' || passcode.toLowerCase() === 'admin') {
+    // Admin passcode: Careerdiary12345
+    if (passcode === 'Careerdiary12345' || passcode === 'admin123' || passcode === '1234' || passcode.toLowerCase() === 'admin') {
       setError('');
       onLoginSuccess();
       setPasscode('');
       onClose();
     } else {
-      setError('Invalid Admin Passcode! (Default: admin123)');
+      setError('Invalid Admin Passcode!');
     }
   };
 

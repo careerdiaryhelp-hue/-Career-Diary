@@ -27,7 +27,7 @@ export default function Header({
           />
           <div className="logo-text">
             <span className="logo-title">CAREER DIARY</span>
-            <span className="logo-subtitle">CAREERDIARY.BLOGSPOT.COM • GOVT JOB PORTAL</span>
+            <span className="logo-subtitle">CAREERDIARY.IN • GOVT JOB PORTAL</span>
           </div>
         </a>
 

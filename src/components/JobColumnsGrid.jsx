@@ -10,15 +10,24 @@ export default function JobColumnsGrid({
   onNavigateCategory
 }) {
   const renderJobItem = (job, isSingle = false) => {
-    let badgeClass = 'tag-last';
-    let badgeText = job.badge || '';
-    if (badgeText === 'New!' || badgeText === 'START') {
-      badgeClass = 'tag-new';
-      badgeText = 'New';
-    } else if (badgeText === 'Out') {
-      badgeClass = 'tag-out';
-    } else if (badgeText === 'Link Active') {
-      badgeClass = 'tag-active';
+    const rawBadge = job.badge || '';
+    let badgeText = rawBadge;
+    let badgeClass = 'tag-amber';
+    const b = rawBadge.toLowerCase();
+
+    if (b.includes('out') || b.includes('green')) {
+      badgeClass = 'tag-out'; // Green
+    } else if (b.includes('new') || b.includes('start') || b.includes('red')) {
+      badgeClass = 'tag-new'; // Red
+      badgeText = rawBadge === 'New!' ? 'New' : rawBadge;
+    } else if (b.includes('active') || b.includes('link') || b.includes('admit') || b.includes('blue')) {
+      badgeClass = 'tag-active'; // Blue
+    } else if (b.includes('result') || b.includes('answer') || b.includes('purple')) {
+      badgeClass = 'tag-purple'; // Purple
+    } else if (b.includes('extended') || b.includes('teal')) {
+      badgeClass = 'tag-teal'; // Teal
+    } else if (b.includes('last') || b.includes('date')) {
+      badgeClass = 'tag-amber'; // Amber
     }
 
     const lastDate =

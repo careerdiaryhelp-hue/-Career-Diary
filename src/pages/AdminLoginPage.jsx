@@ -11,14 +11,14 @@ export default function AdminLoginPage({ onLoginSuccess, onCancel }) {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      if (passcode === 'admin123' || passcode === '1234' || passcode.toLowerCase() === 'admin') {
+      if (passcode === 'Careerdiary12345' || passcode === 'admin123' || passcode === '1234' || passcode.toLowerCase() === 'admin') {
         setError('');
         onLoginSuccess();
       } else {
         setError('Invalid Admin Passcode! Please try again.');
         setLoading(false);
       }
-    }, 600); // small delay for feel
+    }, 600);
   };
 
   return (
@@ -148,7 +148,7 @@ export default function AdminLoginPage({ onLoginSuccess, onCancel }) {
 
           {/* Hint */}
           <div style={{ marginTop: '20px', textAlign: 'center', color: '#475569', fontSize: '0.78rem' }}>
-            🔐 Default passcode: <strong style={{ color: '#64748b' }}>admin123</strong>
+            🔐 Admin passcode: <strong style={{ color: '#64748b' }}>Careerdiary12345</strong>
           </div>
         </div>
 

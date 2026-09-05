@@ -1,6 +1,6 @@
 # Career Diary - React + Vite Govt Job Portal
 
-Career Diary (careerdiary.blogspot.com / careerdiary1.blogspot.com) is a modern, responsive React + Vite Indian Government Job Recruitment Portal & Exam Updates Website.
+Career Diary (careerdiary.in) is a modern, responsive React + Vite Indian Government Job Recruitment Portal & Exam Updates Website.
 
 ## 🌟 Key Features
 
