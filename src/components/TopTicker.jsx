@@ -1,15 +1,39 @@
 import React, { useMemo } from 'react';
-import { Bell, Flame, ExternalLink } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
   const tickerJobs = jobs && jobs.length > 0 ? jobs.slice(0, 10) : [];
 
-  // Only use breaking news added & activated from Admin Dashboard (static list, no movement/duplication)
-  const displayBreakingNews = useMemo(() => {
+  // Active breaking news from Admin Dashboard
+  const activeBreakingNews = useMemo(() => {
     if (!breakingNews || breakingNews.length === 0) return [];
     return breakingNews.filter(n => n.active !== false);
   }, [breakingNews]);
+
+  // Divide into up to 3 marquee lines matching Sarkari Result layout
+  const marqueeRows = useMemo(() => {
+    if (!activeBreakingNews || activeBreakingNews.length === 0) return [];
+    const count = activeBreakingNews.length;
+    if (count <= 3) {
+      return [activeBreakingNews];
+    } else if (count <= 6) {
+      const half = Math.ceil(count / 2);
+      return [
+        activeBreakingNews.slice(0, half),
+        activeBreakingNews.slice(half)
+      ];
+    } else {
+      const r1 = Math.ceil(count / 3);
+      const remaining = count - r1;
+      const r2 = Math.ceil(remaining / 2);
+      return [
+        activeBreakingNews.slice(0, r1),
+        activeBreakingNews.slice(r1, r1 + r2),
+        activeBreakingNews.slice(r1 + r2)
+      ];
+    }
+  }, [activeBreakingNews]);
 
   const displayLatestJobs = useMemo(() => {
     if (!tickerJobs || tickerJobs.length === 0) return [];
@@ -37,54 +61,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
         </a>
       </div>
 
-      {/* 2. Breaking News Bar */}
-      {displayBreakingNews.length > 0 && (
-        <div className="breaking-news-bar">
-          <div className="container breaking-bar-inner">
-            <div className="breaking-label">
-              <span className="breaking-pulse-dot" />
-              BREAKING NEWS
-            </div>
-            <div className="breaking-ticker-wrapper">
-              <div className="breaking-ticker-content">
-                {displayBreakingNews.map((news, idx) => {
-                  const hasLink = Boolean(news.link && news.link.trim());
-                  return (
-                    <span key={`${news.id || 'bn'}-${idx}`} className="breaking-item">
-                      {idx > 0 && <span className="breaking-separator">✦</span>}
-                      {news.category && (
-                        <span className={`breaking-cat-tag cat-${news.category.toLowerCase().replace(/\s+/g, '-')}`}>
-                          {news.category}
-                        </span>
-                      )}
-                      {hasLink ? (
-                        <a
-                          href={news.link}
-                          target={news.link.startsWith('http') ? '_blank' : '_self'}
-                          rel="noopener noreferrer"
-                          onClick={(e) => {
-                            if ((news.link.startsWith('/') || !news.link.startsWith('http')) && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                              e.preventDefault();
-                              const slug = news.link.replace(/^\//, '');
-                              onSelectJob(slug);
-                            }
-                          }}
-                        >
-                          {news.message}
-                        </a>
-                      ) : (
-                        <span>{news.message}</span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Latest Update Bar */}
+      {/* 2. Latest Update Bar */}
       {displayLatestJobs.length > 0 && (
         <div className="top-bar">
           <div className="container top-bar-inner">
@@ -114,6 +91,81 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
           </div>
         </div>
       )}
+
+      {/* 3. Breaking News - Sarkari Result Style Multi-Line Moving Marquee (Niche) */}
+      <div className="sr-top-section">
+        <p className="sr-welcome-text">
+          Welcome to No. 1 Education Portal Official Career Diary 2026 CareerDiary.in | Trusted by Millions
+        </p>
+
+        <p className="sr-app-links">
+          <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer">
+            Career Diary WhatsApp Channel
+          </a>
+          <span className="sr-app-sep">||</span>
+          <a href="https://t.me/careerdiaryhelp" target="_blank" rel="noopener noreferrer">
+            Telegram Channel
+          </a>
+          <span className="sr-app-sep">||</span>
+          <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
+            Career Diary Android App
+          </a>
+          <span className="sr-app-sep">||</span>
+          <a href="https://instagram.com/careerdiary.in" target="_blank" rel="noopener noreferrer">
+            Follow Instagram
+          </a>
+        </p>
+
+        {marqueeRows.length > 0 && (
+          <div className="sr-marquee-container">
+            {marqueeRows.map((row, rowIdx) => (
+              <div key={`sr-row-${rowIdx}`} className="sr-marquee-row">
+                <marquee
+                  behavior="alternate"
+                  scrollamount="4"
+                  onMouseOver={(e) => e.currentTarget.stop()}
+                  onMouseOut={(e) => e.currentTarget.start()}
+                >
+                  {row.map((news, idx) => {
+                    const hasLink = Boolean(news.link && news.link.trim());
+                    return (
+                      <span key={`${news.id || 'bn'}-${rowIdx}-${idx}`} className="sr-marquee-item">
+                        {idx > 0 && <span className="sr-marquee-sep">||</span>}
+                        {news.category && (
+                          <span
+                            className={`breaking-cat-tag cat-${news.category.toLowerCase().replace(/\s+/g, '-')}`}
+                            style={{ marginRight: '6px', fontSize: '10px' }}
+                          >
+                            {news.category}
+                          </span>
+                        )}
+                        {hasLink ? (
+                          <a
+                            href={news.link}
+                            target={news.link.startsWith('http') ? '_blank' : '_self'}
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              if ((news.link.startsWith('/') || !news.link.startsWith('http')) && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                                e.preventDefault();
+                                const slug = news.link.replace(/^\//, '');
+                                onSelectJob(slug);
+                              }
+                            }}
+                          >
+                            <b>{news.message}</b>
+                          </a>
+                        ) : (
+                          <span><b>{news.message}</b></span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </marquee>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

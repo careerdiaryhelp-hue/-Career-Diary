@@ -1037,6 +1037,104 @@ body.dark-mode .job-item-link:hover {
   text-decoration: underline;
 }
 
+/* Sarkari Result Style Marquee & Welcome Section */
+.sr-top-section {
+  text-align: center;
+  padding: 14px 12px 12px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.sr-welcome-text {
+  color: #cf2e2e;
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.sr-app-links {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.sr-app-links a {
+  color: #0c1cae;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.sr-app-links a:hover {
+  color: #ab183d;
+  text-decoration: underline;
+}
+.sr-app-sep {
+  color: #ff0000;
+  font-weight: 800;
+  margin: 0 8px;
+}
+.sr-marquee-container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sr-marquee-row {
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+  height: 26px;
+  line-height: 26px;
+}
+.sr-marquee-row marquee {
+  width: 100%;
+  white-space: nowrap !important;
+  overflow: hidden;
+  height: 26px;
+  line-height: 26px;
+}
+.sr-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 4px;
+}
+.sr-marquee-item a {
+  color: #0c1cae;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.96rem;
+  transition: color 0.15s;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.sr-marquee-item a:hover {
+  color: #ab183d;
+  text-decoration: underline;
+}
+.sr-marquee-sep {
+  color: #64748b;
+  font-weight: 700;
+  margin: 0 12px;
+  font-size: 0.95rem;
+}
+@media (max-width: 768px) {
+  .sr-welcome-text {
+    font-size: 0.85rem;
+  }
+  .sr-app-links {
+    font-size: 0.8rem;
+  }
+  .sr-marquee-item a {
+    font-size: 0.82rem;
+  }
+  .sr-marquee-sep,
+  .sr-app-sep {
+    margin: 0 5px;
+  }
+}
+
 /* Breaking News Bar (Matching Reference) */
 .breaking-news-bar {
   background: #ffffff;
