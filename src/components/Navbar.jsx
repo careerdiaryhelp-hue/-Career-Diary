@@ -34,7 +34,7 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
                     }
                   }}
                 >
-                  <Icon className="w-4 h-4 inline-block" /> {item.label}
+                  <Icon size={16} className="nav-icon" /> {item.label}
                 </a>
               </li>
             );

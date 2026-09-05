@@ -33,6 +33,67 @@
 
       gtag('config', 'G-H3WLGYXSW0');
     </script>
+
+    <!-- Hide Google Translate top toolbar banner -->
+    <style>
+      body > iframe,
+      body > .skiptranslate,
+      iframe.skiptranslate,
+      .goog-te-banner-frame,
+      .goog-te-banner-frame.skiptranslate,
+      iframe.goog-te-banner-frame,
+      iframe[class*="goog-te-banner-frame"],
+      .VIpgJd-ZVi9I-OR9QNe-OR9QNe,
+      .VIpgJd-ZVi9I-bOHMur-kNsZd {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        z-index: -999999 !important;
+      }
+      body {
+        top: 0px !important;
+        position: static !important;
+      }
+      #goog-gt-tt,
+      .goog-te-balloon-frame {
+        display: none !important;
+      }
+      .goog-text-highlight {
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
+    </style>
+    <script>
+      (function() {
+        var fixTop = function() {
+          if (document.body && document.body.style.top && document.body.style.top !== '0px') {
+            document.body.style.top = '0px';
+          }
+          var iframes = document.querySelectorAll('body > iframe, body > .skiptranslate, iframe.skiptranslate, .goog-te-banner-frame');
+          for (var i = 0; i < iframes.length; i++) {
+            var el = iframes[i];
+            if (el && (!document.getElementById('root') || !document.getElementById('root').contains(el))) {
+              el.style.setProperty('display', 'none', 'important');
+              el.style.setProperty('visibility', 'hidden', 'important');
+              el.style.setProperty('height', '0px', 'important');
+              el.style.setProperty('width', '0px', 'important');
+            }
+          }
+        };
+        var obs = new MutationObserver(fixTop);
+        document.addEventListener('DOMContentLoaded', function() {
+          obs.observe(document.body, { childList: true, attributes: true, subtree: false });
+          fixTop();
+        });
+        window.addEventListener('load', fixTop);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
