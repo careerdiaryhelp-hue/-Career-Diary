@@ -84,7 +84,7 @@ body {
 .app-root {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
 }
 
@@ -99,6 +99,12 @@ a {
   margin: 0 auto;
   padding: 0 16px;
   box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 4px;
+  }
 }
 
 /* Button & UI Utilities */
@@ -1672,23 +1678,58 @@ body.dark-mode .job-item-link:hover {
   border: none;
 }
 
-/* 3x3 Grid Layout */
+/* 3x3 Grid Layout — Desktop: 3 columns, Mobile: horizontal scroll */
 .columns-3x3-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 24px;
 }
 
 @media (max-width: 1024px) {
   .columns-3x3-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
 }
 
+/* Mobile: horizontal scroll like resultbharat.com */
 @media (max-width: 640px) {
   .columns-3x3-grid {
-    grid-template-columns: 1fr;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px !important;
+    /* Hide scrollbar but allow scrolling */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .columns-3x3-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .columns-3x3-grid .column-card {
+    min-width: 78vw !important;
+    max-width: 78vw !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start;
+    height: auto !important;
+  }
+}
+
+/* Scroll hint label (optional mobile nudge) */
+@media (max-width: 640px) {
+  .columns-3x3-grid::after {
+    content: '';
+    min-width: 4px;
+    display: block;
+    flex-shrink: 0;
   }
 }
 
@@ -2356,41 +2397,59 @@ sup .badge-tag {
   display: inline-block;
 }
 
-/* Mobile Grid UI Fixes */
+/* Mobile Grid UI Fixes — horizontal scroll layout */
 @media (max-width: 640px) {
-  .columns-3x3-grid, .columns-4-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
+  /* Container allows horizontal overflow for scroll */
+  .container {
+    overflow: visible !important;
   }
-  
+
+  .main-content {
+    overflow: visible !important;
+  }
+
   .column-body, .col-darkred .column-body {
+    padding: 8px 10px !important;
+  }
+
+  .col-darkred .column-body ul {
+    padding: 0 0 0 12px !important;
+  }
+
+  .column-header, .col-darkred .column-header {
     padding: 10px 12px !important;
   }
-  
-  .col-darkred .column-body ul {
-    padding: 0 0 0 14px !important;
-  }
-  
-  .column-header, .col-darkred .column-header {
-    padding: 12px 16px !important;
-  }
-  
+
   .column-header h3, .col-darkred .column-header h3 {
-    font-size: 1.2rem !important;
+    font-size: 0.88rem !important;
     letter-spacing: 0px !important;
+    line-height: 1.25 !important;
   }
-  
+
   .job-item-link, .col-darkred .job-item-link {
-    font-size: 0.9rem !important;
-    padding: 10px 0 !important;
+    font-size: 0.8rem !important;
+    padding: 7px 0 !important;
     line-height: 1.4 !important;
-    word-break: normal;
+    word-break: break-word;
   }
-  
+
   .badge-tag {
-    font-size: 0.7rem !important;
-    padding: 2px 6px !important;
-    margin-left: 6px !important;
+    font-size: 0.62rem !important;
+    padding: 1px 5px !important;
+    margin-left: 3px !important;
+  }
+
+  .sarkari-quick-list li {
+    margin-bottom: 3px !important;
+  }
+
+  .col-view-more {
+    font-size: 0.8rem !important;
+    padding: 4px 8px !important;
+  }
+
+  .column-footer {
+    padding: 7px 10px !important;
   }
 }
 

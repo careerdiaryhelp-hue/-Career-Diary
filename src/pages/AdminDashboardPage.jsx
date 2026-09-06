@@ -8,7 +8,7 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon
+  Calendar, Link as LinkIcon, Menu
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -73,7 +73,11 @@ export default function AdminDashboardPage({
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Mobile responsive state
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+
   const [showMetadata, setShowMetadata] = useState(true);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   const [textColor, setTextColor] = useState('#000000');
@@ -142,6 +146,21 @@ export default function AdminDashboardPage({
   useEffect(() => {
     if (breakingNews && breakingNews.length > 0) setLocalBreakingNews(breakingNews);
   }, [breakingNews]);
+
+  // Handle window resize for mobile responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(true); // always open on desktop
+      } else {
+        setSidebarOpen(false); // close sidebar when switching to mobile
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // In-App Toast State (Zero browser alert popups)
   const [toast, setToast] = useState(null);
@@ -2365,7 +2384,7 @@ export default function AdminDashboardPage({
         borderRadius: '16px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
         border: '1px solid #f1f5f9',
-        padding: '28px 32px'
+        padding: isMobile ? '16px' : '28px 32px'
       }}>
         {/* Top Header Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -2768,7 +2787,7 @@ export default function AdminDashboardPage({
             </h3>
             <form onSubmit={handleSaveCategorySubmit}>
               {/* Row 1: Name, Slug, Order */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 120px', gap: '14px', marginBottom: '14px' }}>
                 <input
                   type="text"
                   placeholder="Name"
@@ -3014,7 +3033,7 @@ export default function AdminDashboardPage({
       </div>
 
       {/* Two-Column Form + Live Visual Editor */}
-      <div style={{ display: 'grid', gridTemplateColumns: isFullscreenPreview ? '1fr' : 'minmax(0, 1.1fr) minmax(0, 1fr)', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isFullscreenPreview ? '1fr' : (isMobile ? '1fr' : 'minmax(0, 1.1fr) minmax(0, 1fr)'), gap: '20px', alignItems: 'start' }}>
 
         {/* LEFT COLUMN: HTML Source & Metadata */}
         {!isFullscreenPreview && (
@@ -3028,7 +3047,7 @@ export default function AdminDashboardPage({
               </div>
 
               {/* Row 1: Category + Total Posts + Display Order */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1.5fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>CATEGORY</label>
                   <select
@@ -4309,7 +4328,7 @@ export default function AdminDashboardPage({
             </h3>
             <form onSubmit={handleSaveNewsSubmit}>
               {/* Row 1: Category & Message */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 3fr', gap: '14px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
                     CATEGORY
@@ -4342,7 +4361,7 @@ export default function AdminDashboardPage({
               </div>
 
               {/* Row 2: Action Link & Expiry Date */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
                     ACTION LINK (OPTIONAL)
@@ -4625,42 +4644,73 @@ export default function AdminDashboardPage({
       overflow: 'hidden'
     }}>
 
-      {/* Sidebar matching screenshot */}
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 998,
+          }}
+        />
+      )}
+
+      {/* Sidebar */}
       <div style={{
-        width: sidebarOpen ? '230px' : '64px',
+        // On mobile: fixed overlay; on desktop: normal sidebar
+        position: isMobile ? 'fixed' : 'relative',
+        left: isMobile ? (sidebarOpen ? '0' : '-260px') : 'auto',
+        top: isMobile ? '0' : 'auto',
+        zIndex: isMobile ? 999 : 'auto',
+        width: isMobile ? '240px' : (sidebarOpen ? '230px' : '64px'),
         height: '100vh',
         flexShrink: 0,
         background: '#0a0f1d',
         color: '#fff',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'width 0.25s ease',
-        overflow: 'hidden'
+        transition: isMobile ? 'left 0.28s cubic-bezier(0.4,0,0.2,1)' : 'width 0.25s ease',
+        overflow: 'hidden',
+        boxShadow: isMobile && sidebarOpen ? '4px 0 24px rgba(0,0,0,0.4)' : 'none',
       }}>
-        {/* Logo / Brand matching screenshot 2 */}
-        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <img
-            src="/image.png"
-            alt="Career Diary Logo"
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              objectFit: 'contain',
-              background: '#ffffff',
-              padding: '2px',
-              flexShrink: 0
-            }}
-          />
-          {sidebarOpen && (
-            <span style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.15rem', whiteSpace: 'nowrap', color: '#ffffff', letterSpacing: '-0.02em' }}>
-              Career Diary
-            </span>
+        {/* Logo / Brand */}
+        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img
+              src="/image.png"
+              alt="Career Diary Logo"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                objectFit: 'contain',
+                background: '#ffffff',
+                padding: '2px',
+                flexShrink: 0
+              }}
+            />
+            {(sidebarOpen || isMobile) && (
+              <span style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.05rem', whiteSpace: 'nowrap', color: '#ffffff', letterSpacing: '-0.02em' }}>
+                Career Diary
+              </span>
+            )}
+          </div>
+          {/* Close button on mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#94a3b8', padding: '6px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            >
+              <X size={18} />
+            </button>
           )}
         </div>
 
         {/* Nav Items */}
-        <nav style={{ flex: 1, padding: '12px 10px' }}>
+        <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           {navItems.map(({ id, label, icon: Icon }) => {
             const isActive = activeSection === id;
             return (
@@ -4672,13 +4722,15 @@ export default function AdminDashboardPage({
                   } else {
                     setActiveSection(id);
                   }
+                  // Close sidebar on mobile after nav
+                  if (isMobile) setSidebarOpen(false);
                 }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
                   width: '100%',
-                  padding: '11px 14px',
+                  padding: '12px 14px',
                   background: isActive ? 'rgba(37, 99, 235, 0.14)' : 'transparent',
                   border: isActive ? '1px solid rgba(59, 130, 246, 0.45)' : '1px solid transparent',
                   borderRadius: '8px',
@@ -4686,8 +4738,9 @@ export default function AdminDashboardPage({
                   marginBottom: '6px',
                   color: isActive ? '#60a5fa' : '#94a3b8',
                   fontWeight: isActive ? 600 : 500,
-                  fontSize: '0.92rem',
-                  transition: 'all 0.15s'
+                  fontSize: '0.95rem',
+                  transition: 'all 0.15s',
+                  textAlign: 'left',
                 }}
                 onMouseEnter={e => {
                   if (!isActive) {
@@ -4703,7 +4756,7 @@ export default function AdminDashboardPage({
                 }}
               >
                 <Icon size={19} style={{ flexShrink: 0, color: isActive ? '#60a5fa' : '#94a3b8' }} />
-                {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
+                {(sidebarOpen || isMobile) && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
               </button>
             );
           })}
@@ -4711,25 +4764,90 @@ export default function AdminDashboardPage({
 
         {/* Bottom Buttons */}
         <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <button onClick={onBack}
+          <button onClick={() => { onBack(); if (isMobile) setSidebarOpen(false); }}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px', fontSize: '0.88rem' }}>
             <Eye size={18} style={{ flexShrink: 0 }} />
-            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>View Website</span>}
+            {(sidebarOpen || isMobile) && <span style={{ whiteSpace: 'nowrap' }}>View Website</span>}
           </button>
-          <button onClick={onLogout}
+          <button onClick={() => { onLogout(); if (isMobile) setSidebarOpen(false); }}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#f87171', fontSize: '0.88rem' }}>
             <LogOut size={18} style={{ flexShrink: 0 }} />
-            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Logout</span>}
+            {(sidebarOpen || isMobile) && <span style={{ whiteSpace: 'nowrap' }}>Logout</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '24px 32px', background: '#f8fafc' }}>
-        {activeSection === 'dashboard' && renderDashboard()}
-        {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
-        {activeSection === 'new-post' && renderNewPost()}
-        {activeSection === 'breaking-news' && renderBreakingNews()}
+      <div style={{
+        flex: 1,
+        height: '100vh',
+        overflowY: 'auto',
+        // On mobile: no left padding eaten by sidebar
+        padding: isMobile ? '0' : '24px 32px',
+        background: '#f8fafc',
+        minWidth: 0,
+      }}>
+        {/* Mobile Top Bar */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '14px 16px',
+            background: '#0a0f1d',
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+          }}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                color: '#ffffff',
+                padding: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Menu size={20} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+              <img src="/image.png" alt="Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#fff', padding: '2px', objectFit: 'contain' }} />
+              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1rem', color: '#fff', letterSpacing: '-0.02em' }}>
+                Career Diary
+              </span>
+            </div>
+            <span style={{
+              background: 'rgba(37,99,235,0.2)',
+              color: '#60a5fa',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: '20px',
+              border: '1px solid rgba(59,130,246,0.3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              flexShrink: 0,
+            }}>
+              Admin
+            </span>
+          </div>
+        )}
+
+        {/* Page Content with mobile padding */}
+        <div style={{ padding: isMobile ? '16px' : '0' }}>
+          {activeSection === 'dashboard' && renderDashboard()}
+          {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
+          {activeSection === 'new-post' && renderNewPost()}
+          {activeSection === 'breaking-news' && renderBreakingNews()}
+        </div>
       </div>
 
       {/* Modern In-App Toast Notification (Zero browser alerts) */}
