@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ALL_COLUMNS, getJobsForCategory } from '../data/categoryHelpers.js';
 
@@ -9,6 +9,13 @@ export default function JobColumnsGrid({
   onSelectJob,
   onNavigateCategory
 }) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const renderJobItem = (job, isSingle = false) => {
     if (!job || !job.title) return null;
     const tl = job.title.toLowerCase();
@@ -246,8 +253,29 @@ export default function JobColumnsGrid({
     );
   }
 
-  // Case 3: Home Page (currentCategory === 'all' and no search)
-  // Render classic 3x3 Grid (9 columns, 3 per row)
+  // Case 3: Home Page — 3 columns top + 3 columns bottom, each row scrollable on mobile
+  const row1 = ALL_COLUMNS.slice(0, 3); // Result, Admit Card, Latest Job
+  const row2 = ALL_COLUMNS.slice(3, 6); // Answer Key, Syllabus, Admission
+
+  if (isMobile) {
+    // Mobile: Two separate horizontal scroll rows
+    return (
+      <main className="main-content">
+        <div className="container">
+          {/* Row 1: Result, Admit Card, Latest Job */}
+          <div className="mobile-scroll-row">
+            {row1.map((col) => renderColumnCard(col, getJobsForCategory(jobs, col.key)))}
+          </div>
+          {/* Row 2: Answer Key, Syllabus, Admission */}
+          <div className="mobile-scroll-row">
+            {row2.map((col) => renderColumnCard(col, getJobsForCategory(jobs, col.key)))}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Desktop: normal 3x3 grid
   return (
     <main className="main-content">
       <div className="container">

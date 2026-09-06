@@ -103,7 +103,7 @@ a {
 
 @media (max-width: 640px) {
   .container {
-    padding: 0 4px;
+    padding: 0 6px;
   }
 }
 
@@ -1678,7 +1678,7 @@ body.dark-mode .job-item-link:hover {
   border: none;
 }
 
-/* 3x3 Grid Layout — Desktop: 3 columns, Mobile: horizontal scroll */
+/* 3x3 Grid Layout — Desktop & Mobile: always 3 columns (3 top + 3 bottom) */
 .columns-3x3-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1693,44 +1693,85 @@ body.dark-mode .job-item-link:hover {
   }
 }
 
-/* Mobile: horizontal scroll like resultbharat.com */
+/* Mobile: 3 columns top row + 3 columns bottom row */
 @media (max-width: 640px) {
   .columns-3x3-grid {
-    display: flex !important;
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    gap: 8px !important;
-    margin-bottom: 16px !important;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 6px !important;
-    /* Hide scrollbar but allow scrolling */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .columns-3x3-grid::-webkit-scrollbar {
-    display: none;
-  }
-
-  .columns-3x3-grid .column-card {
-    min-width: 78vw !important;
-    max-width: 78vw !important;
-    flex-shrink: 0 !important;
-    scroll-snap-align: start;
-    height: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 5px !important;
+    margin-bottom: 14px !important;
   }
 }
 
-/* Scroll hint label (optional mobile nudge) */
-@media (max-width: 640px) {
-  .columns-3x3-grid::after {
-    content: '';
-    min-width: 4px;
-    display: block;
-    flex-shrink: 0;
-  }
+/* ── Mobile Horizontal Scroll Row ─────────────────────────── */
+/* Two scroll rows: Row1 = Result/Admit/Job, Row2 = AnsKey/Syllabus/Admission */
+.mobile-scroll-row {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 8px;
+  margin-bottom: 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0 2px 4px;
+}
+
+.mobile-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-scroll-row .column-card {
+  min-width: 78vw;
+  max-width: 78vw;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  height: auto;
+}
+
+/* Mobile card adjustments inside scroll rows */
+.mobile-scroll-row .column-header,
+.mobile-scroll-row .col-darkred .column-header {
+  padding: 10px 14px;
+}
+
+.mobile-scroll-row .column-header h3,
+.mobile-scroll-row .col-darkred .column-header h3 {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.mobile-scroll-row .column-body,
+.mobile-scroll-row .col-darkred .column-body {
+  padding: 10px 12px;
+}
+
+.mobile-scroll-row .col-darkred .column-body ul {
+  padding: 0 0 0 14px;
+}
+
+.mobile-scroll-row .job-item-link,
+.mobile-scroll-row .col-darkred .job-item-link {
+  font-size: 0.85rem;
+  padding: 8px 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.mobile-scroll-row .badge-tag {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+
+.mobile-scroll-row .column-footer {
+  padding: 8px 12px;
+}
+
+.mobile-scroll-row .col-view-more {
+  font-size: 0.82rem;
 }
 
 .column-card {
@@ -2397,59 +2438,51 @@ sup .badge-tag {
   display: inline-block;
 }
 
-/* Mobile Grid UI Fixes — horizontal scroll layout */
+/* Mobile Grid UI Fixes — 3 top + 3 bottom compact layout */
 @media (max-width: 640px) {
-  /* Container allows horizontal overflow for scroll */
-  .container {
-    overflow: visible !important;
-  }
-
-  .main-content {
-    overflow: visible !important;
-  }
-
   .column-body, .col-darkred .column-body {
-    padding: 8px 10px !important;
+    padding: 6px 7px !important;
   }
 
   .col-darkred .column-body ul {
-    padding: 0 0 0 12px !important;
+    padding: 0 0 0 10px !important;
   }
 
   .column-header, .col-darkred .column-header {
-    padding: 10px 12px !important;
+    padding: 7px 8px !important;
   }
 
   .column-header h3, .col-darkred .column-header h3 {
-    font-size: 0.88rem !important;
+    font-size: 0.75rem !important;
     letter-spacing: 0px !important;
-    line-height: 1.25 !important;
+    line-height: 1.2 !important;
   }
 
   .job-item-link, .col-darkred .job-item-link {
-    font-size: 0.8rem !important;
-    padding: 7px 0 !important;
-    line-height: 1.4 !important;
+    font-size: 0.72rem !important;
+    padding: 5px 0 !important;
+    line-height: 1.35 !important;
     word-break: break-word;
   }
 
   .badge-tag {
-    font-size: 0.62rem !important;
-    padding: 1px 5px !important;
-    margin-left: 3px !important;
+    font-size: 0.58rem !important;
+    padding: 1px 4px !important;
+    margin-left: 2px !important;
   }
 
   .sarkari-quick-list li {
-    margin-bottom: 3px !important;
+    margin-bottom: 2px !important;
   }
 
   .col-view-more {
-    font-size: 0.8rem !important;
-    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+    padding: 3px 6px !important;
   }
 
   .column-footer {
-    padding: 7px 10px !important;
+    padding: 6px 7px !important;
+    text-align: center !important;
   }
 }
 
