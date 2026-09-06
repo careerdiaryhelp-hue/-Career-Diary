@@ -1880,8 +1880,8 @@ body.dark-mode .job-item-link:hover {
 }
 @media (max-width: 768px) {
   .top-banners-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2px;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 2px !important;
   }
 }
 .banner-card {
@@ -2392,6 +2392,7 @@ sup .badge-tag {
   font-weight: bold;
 }
 
+
 .sr-rich-content h1,
 .sr-rich-content h2,
 .sr-rich-content h3,
@@ -2444,91 +2445,5 @@ sup .badge-tag {
   display: inline-block;
 }
 
-/* Mobile Grid UI Fixes — ultra-compact 3-col layout */
-@media (max-width: 640px) {
 
-  /* Column header */
-  .column-header,
-  .col-darkred .column-header,
-  .col-darkred.column-card .column-header {
-    padding: 6px 6px !important;
-  }
-
-  .column-header h3,
-  .col-darkred .column-header h3,
-  .col-darkred.column-card .column-header h3 {
-    font-size: 0.62rem !important;
-    letter-spacing: 0px !important;
-    line-height: 1.15 !important;
-  }
-
-  /* Column body */
-  .column-body,
-  .col-darkred .column-body,
-  .col-darkred.column-card .column-body {
-    padding: 4px 4px 4px 6px !important;
-    min-height: auto !important;
-  }
-
-  /* UL / bullet list */
-  .col-darkred .column-body ul,
-  .col-darkred ul.sarkari-quick-list,
-  .sarkari-quick-list {
-    padding: 0 0 0 10px !important;
-    margin: 0 !important;
-  }
-
-  /* List items */
-  .col-darkred .column-body li,
-  .sarkari-quick-list li {
-    margin-bottom: 3px !important;
-    line-height: 1.25 !important;
-    padding-left: 0 !important;
-  }
-
-  /* Job links text — wrap naturally, no truncation */
-  .job-item-link,
-  .col-darkred .job-item-link,
-  .col-darkred.column-card .job-item-link {
-    font-size: 0.58rem !important;
-    padding: 3px 0 !important;
-    line-height: 1.25 !important;
-    word-break: break-word !important;
-    display: block !important;
-    overflow-wrap: break-word !important;
-  }
-
-  /* Badge tags */
-  .badge-tag {
-    font-size: 0.45rem !important;
-    padding: 1px 3px !important;
-    margin-left: 1px !important;
-    border-radius: 2px !important;
-  }
-
-  /* View More button */
-  .col-view-more,
-  .col-darkred .col-view-more {
-    font-size: 0.58rem !important;
-    padding: 3px 4px !important;
-  }
-
-  /* Column footer */
-  .column-footer,
-  .col-darkred .column-footer {
-    padding: 4px 5px !important;
-    text-align: center !important;
-  }
-
-  /* Grid force 3 columns */
-  .columns-3x3-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 4px !important;
-  }
-
-  .column-card {
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-}
 
