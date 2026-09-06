@@ -401,23 +401,99 @@ body.dark-mode .icon-btn:hover {
   .header-left-spacer {
     display: none;
   }
+  .main-header {
+    padding: 8px 0 10px 0;
+  }
   .header-container {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
+    padding: 0 12px;
   }
   .brand-logo {
     justify-content: center;
+    gap: 10px;
+  }
+  .header-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+  .logo-title {
+    font-size: 1.35rem;
+    letter-spacing: 0.3px;
+  }
+  .logo-subtitle {
+    font-size: 0.62rem;
+    letter-spacing: 0.5px;
   }
   .header-actions {
     width: 100%;
+    max-width: 390px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
   }
   .search-box-wrapper {
-    width: 220px;
+    flex: 1;
+    min-width: 120px;
+    max-width: 220px;
+    width: auto;
+  }
+  .search-box-wrapper input {
+    height: 32px;
+    padding: 4px 24px 4px 28px;
+    font-size: 0.78rem;
+    border-radius: 16px;
+  }
+  .search-icon {
+    left: 9px;
+    width: 13px;
+    height: 13px;
+  }
+  .clear-search-btn {
+    right: 7px;
+  }
+  .google-translate-wrapper {
+    flex-shrink: 0;
+  }
+  .gt-lang-switcher {
+    padding: 2px 5px;
+    gap: 2px;
+    border-radius: 16px;
+    box-shadow: none;
+  }
+  .gt-icon {
+    width: 13px;
+    height: 13px;
+    margin-right: 1px;
+  }
+  .gt-lang-btn {
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 10px;
+  }
+  .gt-divider {
+    font-size: 0.7rem;
+    margin: 0 1px;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-actions {
+    gap: 6px;
+  }
+  .search-box-wrapper input {
+    height: 30px;
+    padding: 3px 22px 3px 26px;
+    font-size: 0.74rem;
+  }
+  .gt-lang-btn {
+    font-size: 0.68rem;
+    padding: 2px 5px;
   }
 }
 
