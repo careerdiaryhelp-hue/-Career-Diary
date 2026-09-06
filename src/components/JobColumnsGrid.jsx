@@ -253,29 +253,7 @@ export default function JobColumnsGrid({
     );
   }
 
-  // Case 3: Home Page — 3 columns top + 3 columns bottom, each row scrollable on mobile
-  const row1 = ALL_COLUMNS.slice(0, 3); // Result, Admit Card, Latest Job
-  const row2 = ALL_COLUMNS.slice(3, 6); // Answer Key, Syllabus, Admission
-
-  if (isMobile) {
-    // Mobile: Two separate horizontal scroll rows
-    return (
-      <main className="main-content">
-        <div className="container">
-          {/* Row 1: Result, Admit Card, Latest Job */}
-          <div className="mobile-scroll-row">
-            {row1.map((col) => renderColumnCard(col, getJobsForCategory(jobs, col.key)))}
-          </div>
-          {/* Row 2: Answer Key, Syllabus, Admission */}
-          <div className="mobile-scroll-row">
-            {row2.map((col) => renderColumnCard(col, getJobsForCategory(jobs, col.key)))}
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // Desktop: normal 3x3 grid
+  // Case 3: Home Page — 3 columns grid (same on mobile & desktop)
   return (
     <main className="main-content">
       <div className="container">
