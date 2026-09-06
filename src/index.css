@@ -689,14 +689,15 @@ body {
 
 @media (max-width: 900px) {
   .nav-links {
-    justify-content: flex-start;
-    padding: 0 4px;
-    -webkit-overflow-scrolling: touch;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 4px;
+    overflow-x: visible;
   }
   .nav-links a {
-    padding: 11px 14px;
-    font-size: 0.88rem;
-    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    gap: 4px;
   }
 }
 
