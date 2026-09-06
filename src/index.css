@@ -816,7 +816,7 @@ body {
 }
 @media (max-width: 640px) {
   .columns-4-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1687,7 +1687,7 @@ body.dark-mode .job-item-link:hover {
 
 @media (max-width: 640px) {
   .columns-3x3-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
