@@ -61,12 +61,31 @@ body.dark-mode {
   box-sizing: border-box;
 }
 
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-main);
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+#root,
+.app-root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 a {
@@ -75,9 +94,11 @@ a {
 }
 
 .container {
+  width: 100%;
   max-width: 1320px;
   margin: 0 auto;
   padding: 0 16px;
+  box-sizing: border-box;
 }
 
 /* Button & UI Utilities */
@@ -158,12 +179,19 @@ body.dark-mode .icon-btn:hover {
   font-size: 0.85rem;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .top-bar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
 }
 .ticker-label {
   background: var(--primary-color);
@@ -177,6 +205,7 @@ body.dark-mode .icon-btn:hover {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 .icon-pulse {
   animation: pulse 1.5s infinite;
@@ -191,6 +220,8 @@ body.dark-mode .icon-btn:hover {
   overflow: hidden;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 .ticker-content {
   display: inline-flex;
@@ -244,12 +275,18 @@ body.dark-mode .icon-btn:hover {
   padding: 12px 0;
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .header-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  width: 100%;
+  max-width: 1320px;
+  min-width: 0;
 }
 .header-left-spacer {
   flex: 1;
@@ -512,12 +549,17 @@ body {
   top: 0;
   z-index: 99;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .nav-container {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
+  max-width: 1320px;
+  min-width: 0;
 }
 .nav-links {
   display: flex;
@@ -1211,6 +1253,12 @@ body.dark-mode .job-item-link:hover {
    NEW UI OVERRIDES (ResultBharat Style)
    ========================================= */
 
+.header-tickers-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 /* Top Last Date Reminder Bar */
 .last-date-bar {
   background-color: #ffffff;
@@ -1221,6 +1269,10 @@ body.dark-mode .job-item-link:hover {
   font-size: 1rem;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .last-date-bar a {
   color: #ff0000;
@@ -1236,6 +1288,10 @@ body.dark-mode .job-item-link:hover {
   padding: 16px 12px 14px 12px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .sr-portal-title,
 .sr-main-title {
@@ -1284,8 +1340,10 @@ body.dark-mode .job-item-link:hover {
   border-radius: 0;
   margin: 10px auto 14px auto;
   max-width: 1280px;
+  width: 100%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  box-sizing: border-box;
 }
 .sr-marquee-box-header {
   background: #ff007f;
@@ -1295,6 +1353,8 @@ body.dark-mode .job-item-link:hover {
   justify-content: center;
   border-bottom: 2px solid #000000;
   position: relative;
+  width: 100%;
+  max-width: 100%;
 }
 .sr-marquee-pill {
   background: #ffffff;
@@ -1313,15 +1373,19 @@ body.dark-mode .job-item-link:hover {
 }
 .sr-marquee-container {
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 3px;
   padding: 8px 12px;
   background: #ffffff;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 #marquee1,
 .sr-marquee-row {
   width: 100%;
+  max-width: 100%;
   overflow: hidden;
   text-align: center;
   margin: 2px 0;
@@ -1330,6 +1394,7 @@ body.dark-mode .job-item-link:hover {
 #marquee1 marquee,
 .sr-marquee-row marquee {
   width: 100%;
+  max-width: 100%;
   white-space: nowrap !important;
   overflow: hidden;
   height: 26px !important;
@@ -1392,6 +1457,8 @@ body.dark-mode .job-item-link:hover {
   border-bottom: 1px solid #e5e7eb;
   overflow: hidden;
   height: 38px;
+  width: 100%;
+  max-width: 100%;
 }
 .breaking-bar-inner {
   display: flex;
@@ -1399,6 +1466,10 @@ body.dark-mode .job-item-link:hover {
   height: 100%;
   gap: 0;
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 .breaking-label {
   background: #dc2626;
@@ -1438,6 +1509,8 @@ body.dark-mode .job-item-link:hover {
 }
 .breaking-ticker-wrapper {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -1586,10 +1659,17 @@ body.dark-mode .job-item-link:hover {
   color: #000000;
   padding: 0;
   border-bottom: 2px solid #2e7d32;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .top-bar-inner {
   gap: 0;
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
 }
 .ticker-label {
   background: #2e7d32;
@@ -1599,6 +1679,7 @@ body.dark-mode .job-item-link:hover {
   font-size: 0.9rem;
   z-index: 2;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 .ticker-content a {
   color: #0d47a1;
@@ -1911,6 +1992,11 @@ sup .badge-tag {
   border: 1px solid #ccc;
   margin-top: 20px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .sr-main-title {
@@ -1936,16 +2022,21 @@ sup .badge-tag {
 
 /* Unified Table styling */
 .sr-table {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   border-collapse: collapse;
   margin-bottom: 20px;
   border: 2px solid #000;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .sr-table th, .sr-table td {
   border: 1px solid #000;
   padding: 8px 12px;
   text-align: left;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .sr-table-heading {
@@ -1963,17 +2054,26 @@ sup .badge-tag {
   line-height: 1.6;
   color: #111827;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .sr-rich-html-content table {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   border-collapse: collapse;
   margin: 18px 0;
   border: 2px solid #000;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .sr-rich-html-content th,
 .sr-rich-html-content td {
   border: 1px solid #000;
   padding: 8px 12px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .sr-rich-html-content th {
   background-color: #ff0080;

@@ -168,7 +168,7 @@ export default function JobDetailPage({ job, onBack }) {
   );
 
   return (
-    <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px' }}>
+    <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px', width: '100%', boxSizing: 'border-box' }}>
       {/* Back Button */}
       <div style={{ marginBottom: '12px' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
