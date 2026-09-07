@@ -23,15 +23,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
+// Helper to sanitize Firestore document IDs (no forward slashes, no spaces)
+export function cleanJobId(id) {
+  if (!id) return '';
+  return String(id)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 // Save or publish a job to Firestore
 export async function publishJobToFirestore(job) {
   try {
-    const jobRef = doc(db, 'jobs', job.id);
-    await setDoc(jobRef, {
+    const rawId = job.id || job.slug || job.title || '';
+    const safeId = cleanJobId(rawId);
+    if (!safeId) {
+      throw new Error('Invalid Job ID: Post title or slug must contain letters or numbers.');
+    }
+    const safeJob = {
       ...job,
+      id: safeId,
+      slug: safeId,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
-    return { success: true };
+    };
+    const jobRef = doc(db, 'jobs', safeId);
+    await setDoc(jobRef, safeJob, { merge: true });
+    return { success: true, cleanId: safeId };
   } catch (error) {
     console.error('Error publishing job to Firestore:', error);
     return { success: false, error };
@@ -41,7 +59,9 @@ export async function publishJobToFirestore(job) {
 // Delete a job from Firestore
 export async function deleteJobFromFirestore(jobId) {
   try {
-    const jobRef = doc(db, 'jobs', jobId);
+    const safeId = cleanJobId(jobId);
+    if (!safeId) return { success: false, error: 'Invalid Job ID' };
+    const jobRef = doc(db, 'jobs', safeId);
     await deleteDoc(jobRef);
     return { success: true };
   } catch (error) {

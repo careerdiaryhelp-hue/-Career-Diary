@@ -11,6 +11,15 @@ import {
   Calendar, Link as LinkIcon, Menu
 } from 'lucide-react';
 
+const cleanSlug = (str) => {
+  if (!str) return '';
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 const CATEGORIES = [
   { value: '', label: 'Select Category' },
   { value: 'LATEST JOB', label: 'Latest Job', icon: Briefcase },
@@ -562,9 +571,7 @@ export default function AdminDashboardPage({
     showToast(`🧹 Removed ${deletedCount} duplicate post(s)! Kept 1 clean copy for each.`, 'success');
   };
 
-  const slugPreview = form.slug.trim() || (form.title
-    ? form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    : '');
+  const slugPreview = cleanSlug(form.slug || form.title);
 
   // ── WYSIWYG Command Execution ──
   const execCmd = (cmd, val = null) => {
@@ -1695,7 +1702,7 @@ export default function AdminDashboardPage({
             vacancies: wpParsed.vacancies || prev.vacancies,
             description: wpParsed.description || prev.description,
             content: wpParsed.content || prev.content,
-            slug: wpParsed.slug || prev.slug,
+            slug: cleanSlug(wpParsed.slug || prev.slug),
             seoTitle: wpParsed.seoTitle || prev.seoTitle,
             seoDescription: wpParsed.seoDescription || prev.seoDescription,
             importantDates: { ...(prev.importantDates || {}), ...wpParsed.importantDates },
@@ -1835,7 +1842,7 @@ export default function AdminDashboardPage({
         seoKeywords: p.seo_keywords || prev.seoKeywords,
         seoDescription: cleanStr(p.seo_description || importedShort || prev.seoDescription),
         organization: cleanStr(p.organization || prev.organization),
-        slug: p.slug || (importedTitle ? importedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : prev.slug),
+        slug: cleanSlug(p.slug || importedTitle || prev.slug),
         applyUrl: extractedApply || prev.applyUrl,
         notificationUrl: extractedNotif || prev.notificationUrl,
         officialUrl: extractedOfficial || prev.officialUrl,
@@ -1902,7 +1909,7 @@ export default function AdminDashboardPage({
             vacancies: parsed.vacancies || prev.vacancies,
             description: parsed.description || prev.description,
             content: parsed.content || prev.content,
-            slug: parsed.slug || prev.slug,
+            slug: cleanSlug(parsed.slug || prev.slug),
             seoTitle: parsed.seoTitle || prev.seoTitle,
             seoDescription: parsed.seoDescription || prev.seoDescription,
             importantDates: { ...(prev.importantDates || {}), ...parsed.importantDates },
@@ -2097,7 +2104,7 @@ export default function AdminDashboardPage({
       return;
     }
 
-    const baseSlug = form.slug.trim() || form.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const baseSlug = cleanSlug(form.slug || form.title);
     const normalizeStr = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const cleanFormTitle = normalizeStr(form.title);
 
@@ -2107,18 +2114,19 @@ export default function AdminDashboardPage({
     // 3) Exact title matches an existing job (case-insensitive)
     // 4) Normalized clean title matches an existing job (ignoring punctuation/spaces)
     const existingJob = jobs.find(j => 
-      (editingJobId && j.id === editingJobId) ||
-      (baseSlug && j.id && j.id.toLowerCase() === baseSlug.toLowerCase()) ||
+      (editingJobId && (j.id === editingJobId || cleanSlug(j.id) === cleanSlug(editingJobId))) ||
+      (baseSlug && cleanSlug(j.id) === baseSlug) ||
       (form.title && j.title && j.title.trim().toLowerCase() === form.title.trim().toLowerCase()) ||
       (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
     );
 
     const isUpdate = Boolean(existingJob);
-    const finalSlug = existingJob ? existingJob.id : baseSlug;
+    const finalSlug = cleanSlug(existingJob?.id || baseSlug);
 
     const newJob = {
       ...(existingJob || {}),
       id: finalSlug,
+      slug: finalSlug,
       title: form.title.trim(),
       status: 'Published',
       category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
@@ -2234,22 +2242,23 @@ export default function AdminDashboardPage({
     const editorHtml = visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content;
     const isUpdate = Boolean(editingJobId);
 
-    const baseSlug = form.slug.trim() || form.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const baseSlug = cleanSlug(form.slug || form.title);
     const normalizeStr = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const cleanFormTitle = normalizeStr(form.title);
 
     const existingJob = jobs.find(j => 
-      (editingJobId && j.id === editingJobId) ||
-      (baseSlug && j.id && j.id.toLowerCase() === baseSlug.toLowerCase()) ||
+      (editingJobId && (j.id === editingJobId || cleanSlug(j.id) === cleanSlug(editingJobId))) ||
+      (baseSlug && cleanSlug(j.id) === baseSlug) ||
       (form.title && j.title && j.title.trim().toLowerCase() === form.title.trim().toLowerCase()) ||
       (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
     );
 
-    const finalSlug = existingJob ? existingJob.id : (baseSlug || `draft-${Date.now()}`);
+    const finalSlug = cleanSlug(existingJob?.id || baseSlug) || `draft-${Date.now()}`;
 
     const draftJob = {
       ...(existingJob || {}),
       id: finalSlug,
+      slug: finalSlug,
       title: form.title.trim(),
       status: 'Draft',
       category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
@@ -3109,7 +3118,7 @@ export default function AdminDashboardPage({
                 <input
                   type="text"
                   value={slugPreview}
-                  onChange={e => set('slug', e.target.value)}
+                  onChange={e => set('slug', cleanSlug(e.target.value))}
                   placeholder="e.g. upsc-geo-scientist-recruitment-2027"
                   style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.88rem', background: '#f8fafc', color: '#475569' }}
                 />

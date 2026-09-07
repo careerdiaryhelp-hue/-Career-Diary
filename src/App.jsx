@@ -25,7 +25,8 @@ import LastDateJobsPage from './pages/LastDateJobsPage';
 import {
   publishJobToFirestore,
   deleteJobFromFirestore,
-  subscribeToFirestoreJobs
+  subscribeToFirestoreJobs,
+  cleanJobId
 } from './firebase';
 
 import {
@@ -76,7 +77,17 @@ export default function App() {
       if (adminPosts) {
         const parsed = JSON.parse(adminPosts);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.filter(p => !p.title?.toLowerCase().includes('top online form') && !p.id?.includes('top-online-form'));
+          const cleaned = parsed.map(p => {
+            const safeId = cleanJobId(p.id || p.slug || p.title || '');
+            return {
+              ...p,
+              id: safeId || p.id,
+              slug: safeId || p.slug || p.id
+            };
+          }).filter(p => p.id && !p.title?.toLowerCase().includes('top online form') && !p.id?.includes('top-online-form'));
+          try {
+            localStorage.setItem('career_diary_admin_posts', JSON.stringify(cleaned));
+          } catch (_) {}
           return [...cleaned, ...INITIAL_JOBS];
         }
       }
@@ -405,23 +416,35 @@ export default function App() {
   }, [isAdminRoute, isAdmin]);
 
   const handleAddJob = async (newJob) => {
-    // 1. Instant local optimistic update
-    const updated = [newJob, ...jobs.filter(j => j.id !== newJob.id)];
+    // Sanitize job ID to prevent invalid Firestore document reference with '/'
+    const rawId = newJob.id || newJob.slug || newJob.title || '';
+    const safeId = cleanJobId(rawId);
+    const sanitizedJob = {
+      ...newJob,
+      id: safeId,
+      slug: safeId
+    };
+
+    // 1. Instant local optimistic update (cleanly remove any old un-sanitized ID too)
+    const updated = [sanitizedJob, ...jobs.filter(j => j.id !== safeId && j.id !== newJob.id)];
     setJobs(updated);
     try {
       const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
-      localStorage.setItem('career_diary_admin_posts', JSON.stringify([newJob, ...stored.filter(j => j.id !== newJob.id)]));
+      localStorage.setItem('career_diary_admin_posts', JSON.stringify([
+        sanitizedJob,
+        ...stored.filter(j => j.id !== safeId && j.id !== newJob.id)
+      ]));
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
     }
 
     // 2. Publish to Firebase Firestore (LIVE for all visitors worldwide!)
     try {
-      const res = await publishJobToFirestore(newJob);
+      const res = await publishJobToFirestore(sanitizedJob);
       if (res && res.error) {
         throw res.error;
       }
-      return { success: true };
+      return { success: true, cleanId: safeId };
     } catch (err) {
       console.error('Firestore publish error:', err);
       return { success: false, error: err };
@@ -429,17 +452,18 @@ export default function App() {
   };
 
   const handleDeleteJob = async (id) => {
-    setJobs(jobs.filter(j => j.id !== id));
+    const safeId = cleanJobId(id);
+    setJobs(jobs.filter(j => j.id !== id && j.id !== safeId));
     try {
       const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
-      localStorage.setItem('career_diary_admin_posts', JSON.stringify(stored.filter(j => j.id !== id)));
+      localStorage.setItem('career_diary_admin_posts', JSON.stringify(stored.filter(j => j.id !== id && j.id !== safeId)));
     } catch (e) {
       console.warn('Failed to delete from localStorage', e);
     }
 
     // Delete from Firebase Firestore
     try {
-      await deleteJobFromFirestore(id);
+      await deleteJobFromFirestore(safeId || id);
     } catch (err) {
       console.error('Firestore delete error:', err);
     }
