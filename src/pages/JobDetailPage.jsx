@@ -135,8 +135,8 @@ export default function JobDetailPage({ job, onBack }) {
   const shortInfo = job.uniqueDescription || job.description || `${job.organization || 'The organization'} has released the official notification for ${job.title}. Eligible candidates can apply online before the last date. Read the notification carefully before submitting the form.`;
 
   // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
-  const sanitizedContent = React.useMemo(() => {
-    if (!job.content) return '';
+  const sanitizedContent = (() => {
+    if (!job?.content) return '';
     // 1. Replace competitor portal hrefs with https://careerdiary.in/ (excluding direct file downloads like .pdf, .jpg)
     let out = job.content.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
       const lower = match.toLowerCase();
@@ -157,7 +157,7 @@ export default function JobDetailPage({ job, onBack }) {
     });
 
     return out;
-  }, [job.content]);
+  })();
 
   // Check if job.content already has its own embedded Important Links table to avoid duplicates
   const hasEmbeddedLinks = Boolean(

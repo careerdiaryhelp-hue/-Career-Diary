@@ -38,14 +38,41 @@ function proxyPlugin() {
             }
           }
 
-          // 2. Check if the domain has a WordPress REST API for this post slug
+          // 2. Check if the domain has a WordPress REST API for this post slug or post ID
           const segments = targetObj.pathname.split('/').filter(Boolean);
           const lastSeg = segments[segments.length - 1];
+          const pParam = targetObj.searchParams.get('p') || targetObj.searchParams.get('id');
+
+          if (pParam) {
+            try {
+              const wpApiUrl = `${targetObj.origin}/wp-json/wp/v2/posts/${encodeURIComponent(pParam)}`;
+              const wpCtrl = new AbortController();
+              const wpTimeout = setTimeout(() => wpCtrl.abort(), 12000);
+              const wpRes = await fetch(wpApiUrl, {
+                signal: wpCtrl.signal,
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+              });
+              clearTimeout(wpTimeout);
+              if (wpRes.ok) {
+                const wpData = await wpRes.json();
+                const post = Array.isArray(wpData) ? wpData[0] : wpData;
+                if (post && (post.acf || post.title || post.content)) {
+                  res.setHeader('Content-Type', 'application/json');
+                  res.setHeader('Access-Control-Allow-Origin', '*');
+                  res.end(JSON.stringify({ success: true, type: 'wordpress_acf', data: post }));
+                  return;
+                }
+              }
+            } catch (e) {}
+          }
+
           if (lastSeg && !lastSeg.includes('.') && !lastSeg.startsWith('wp-')) {
             try {
               const wpApiUrl = `${targetObj.origin}/wp-json/wp/v2/posts?slug=${encodeURIComponent(lastSeg)}`;
               const wpCtrl = new AbortController();
-              const wpTimeout = setTimeout(() => wpCtrl.abort(), 2500);
+              const wpTimeout = setTimeout(() => wpCtrl.abort(), 12000);
               const wpRes = await fetch(wpApiUrl, {
                 signal: wpCtrl.signal,
                 headers: {

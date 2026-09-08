@@ -82,6 +82,7 @@ export default function AdminDashboardPage({
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   // Mobile responsive state
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -1015,7 +1016,11 @@ export default function AdminDashboardPage({
     if (insertModal.type === 'import') {
       setInsertModal(prev => ({ ...prev, isOpen: false }));
       setImportUrl(val);
-      setTimeout(() => executeImport(val), 60);
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        setTimeout(() => handleImportData(val), 60);
+      } else {
+        setTimeout(() => executeImport(val), 60);
+      }
       return;
     }
 
@@ -1081,6 +1086,26 @@ export default function AdminDashboardPage({
       .trim();
   };
 
+  // Clean vacancy details and remove competitor promotional blocks
+  const cleanVacancyDetails = (html) => {
+    if (!html || typeof html !== 'string') return '';
+    let cleaned = html
+      // Remove WhatsApp / Telegram channel promotional tables and links
+      .replace(/<table[^>]*>[\s\S]*?(?:Join\s+Our\s+(?:WhatsApp|Telegram)\s+Channel|t\.me|whatsapp\.com)[\s\S]*?<\/table>/gi, '')
+      .replace(/<table[^>]*>[\s\S]*?You\s+May\s+Also\s+Check[\s\S]*?<\/table>/gi, '')
+      .replace(/<p[^>]*>[\s\S]*?You\s+May\s+Also\s+Check[\s\S]*?<\/p>/gi, '')
+      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
+      .replace(/sarkari\s*result/gi, 'Career Diary');
+
+    // Improve table layout with clean borders
+    cleaned = cleaned.replace(/<table([^>]*)>/gi, () => `<table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">`);
+    cleaned = cleaned.replace(/<td([^>]*)>/gi, () => `<td style="border: 1px solid #000; padding: 8px 12px;">`);
+    cleaned = cleaned.replace(/<th([^>]*)>/gi, () => `<th style="border: 1px solid #000; padding: 10px; background-color: #008000; color: #fff; text-align: center; font-weight: bold;">`);
+
+    return cleanStr(cleaned);
+  };
+
   // Helper to parse WordPress REST API post with ACF (e.g. from sarkariresult.com.cm)
   const parseWordPressPost = (post) => {
     if (!post || typeof post !== 'object') return null;
@@ -1111,7 +1136,37 @@ export default function AdminDashboardPage({
     // 4. Total Posts
     const totalPosts = clean(acf.total_post || '');
 
-    // 5. Helper to parse <li> into key/value pairs
+    // 5. Category Detection
+    let category = 'LATEST JOB';
+    const yoastSections = post.yoast_head_json?.articleSection || [];
+    const tl = title.toLowerCase();
+    if (tl.includes('answer key') || tl.includes('ans key') || tl.includes('response sheet')) {
+      category = 'ANSWER KEY';
+    } else if (tl.includes('admit card') || tl.includes('hall ticket') || tl.includes('call letter') || tl.includes('exam city') || tl.includes('city details')) {
+      category = 'ADMIT CARD';
+    } else if (tl.includes('result') || tl.includes('score card') || tl.includes('cut off') || tl.includes('merit list') || tl.includes('marks')) {
+      category = 'RESULT';
+    } else if (tl.includes('admission') || tl.includes('entrance')) {
+      category = 'ADMISSION';
+    } else if (tl.includes('syllabus') || tl.includes('exam pattern')) {
+      category = 'SYLLABUS';
+    } else if (tl.includes('certificate') || tl.includes('document verification')) {
+      category = 'DOCUMENTS';
+    } else if (yoastSections.some(s => s.toLowerCase().includes('admit'))) {
+      category = 'ADMIT CARD';
+    } else if (yoastSections.some(s => s.toLowerCase().includes('result'))) {
+      category = 'RESULT';
+    } else if (yoastSections.some(s => s.toLowerCase().includes('answer key'))) {
+      category = 'ANSWER KEY';
+    } else if (yoastSections.some(s => s.toLowerCase().includes('admission'))) {
+      category = 'ADMISSION';
+    } else if (yoastSections.some(s => s.toLowerCase().includes('syllabus'))) {
+      category = 'SYLLABUS';
+    } else {
+      category = 'LATEST JOB';
+    }
+
+    // 6. Helper to parse <li> into key/value pairs
     const parseList = (html) => {
       const res = {};
       if (!html) return res;
@@ -1133,20 +1188,30 @@ export default function AdminDashboardPage({
     const fees = parseList(acf.application_fee || '');
     const age = parseList(acf.age_limits_details || '');
 
-    // 6. Parse links from table or html
+    // 7. Parse links from table or html (support multiple links in a single row)
     const links = {};
     const trRegex = /<tr>([\s\S]*?)<\/tr>/gi;
     let trMatch;
     while ((trMatch = trRegex.exec(acf.important_links || '')) !== null) {
       const row = trMatch[1];
-      const linkMatch = row.match(/href="([^"]+)"/i);
+      const aRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+      let aMatch;
+      const aList = [];
+      while ((aMatch = aRegex.exec(row)) !== null) {
+        aList.push({ href: aMatch[1].trim(), text: clean(aMatch[2].replace(/<[^>]+>/g, '')) });
+      }
+
       const textMatch = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
       if (textMatch && textMatch.length >= 1) {
         const label = clean(textMatch[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
-        let href = linkMatch ? linkMatch[1].trim() : '';
-        if (label && href && href.startsWith('http')) {
+        const ll = label.toLowerCase();
+        // Skip competitor promotional channels
+        if (ll.includes('telegram') || ll.includes('whatsapp') || ll.includes('mobile app') || ll.includes('android app') || ll.includes('ios app')) {
+          continue;
+        }
+
+        const sanitizeCompetitorUrl = (href) => {
           const hl = href.toLowerCase();
-          const ll = label.toLowerCase();
           if (
             ll.includes('career diary') ||
             ll.includes('careerdiary') ||
@@ -1157,10 +1222,25 @@ export default function AdminDashboardPage({
             hl.includes('bigbooster')
           ) {
             if (!hl.endsWith('.pdf') && !hl.endsWith('.jpg') && !hl.endsWith('.png') && !hl.endsWith('.jpeg')) {
-              href = 'https://careerdiary.in/';
+              return 'https://careerdiary.in/';
             }
           }
-          links[label] = href;
+          return href;
+        };
+
+        if (aList.length === 1) {
+          let href = aList[0].href;
+          if (label && href && href.startsWith('http')) {
+            links[label] = sanitizeCompetitorUrl(href);
+          }
+        } else if (aList.length > 1) {
+          aList.forEach(item => {
+            let href = item.href;
+            if (href && href.startsWith('http')) {
+              const fullLabel = item.text ? `${label} (${item.text})` : label;
+              links[fullLabel] = sanitizeCompetitorUrl(href);
+            }
+          });
         }
       }
     }
@@ -1172,19 +1252,19 @@ export default function AdminDashboardPage({
 
     Object.entries(links).forEach(([k, u]) => {
       const kl = k.toLowerCase();
-      if (!applyUrl && (kl.includes('apply') || kl.includes('online'))) applyUrl = u;
+      if (!applyUrl && (kl.includes('apply') || kl.includes('preference') || kl.includes('registration') || kl.includes('online'))) applyUrl = u;
       if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advt') || kl.includes('brochure'))) notificationUrl = u;
-      if (!officialUrl && (kl.includes('official') || kl.includes('website') || kl.includes('portal'))) officialUrl = u;
+      if (!officialUrl && (kl.includes('official website') || kl.includes('official portal') || (kl.includes('website') && !kl.includes('notif')) || (kl.includes('official') && !kl.includes('notif') && !kl.includes('pdf')))) officialUrl = u;
     });
 
     // Dates detection
     let appStart = '';
-    let lastDate = '';
+    let lastDate = clean(acf.last_date || '');
     let examDate = '';
     Object.entries(dates).forEach(([k, v]) => {
       const kl = k.toLowerCase();
       if (!appStart && (kl.includes('start') || kl.includes('begin'))) appStart = v;
-      if (!lastDate && (kl.includes('last') || kl.includes('end') || kl.includes('closing'))) lastDate = v;
+      if (!lastDate && (kl.includes('last') || kl.includes('end') || kl.includes('closing') || kl.includes('preference'))) lastDate = v;
       if (!examDate && kl.includes('exam')) examDate = v;
     });
 
@@ -1205,6 +1285,8 @@ export default function AdminDashboardPage({
       if (!minAge && kl.includes('min')) minAge = v;
       if (!maxAge && kl.includes('max')) maxAge = v;
     });
+
+    const cleanedVacancyHtml = cleanVacancyDetails(acf.vacancy_details || '');
 
     // Generate standardized Career Diary Rich HTML Content for Visual Preview
     const contentHtml = `
@@ -1227,7 +1309,6 @@ export default function AdminDashboardPage({
           </tr>
           ${appStart ? `<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Application Start Date</td><td style="border: 1px solid #000; padding: 8px 12px;">${appStart}</td></tr>` : ''}
           ${lastDate ? `<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Last Date for Apply</td><td style="border: 1px solid #000; padding: 8px 12px; color: #ff0000; font-weight: bold;">${lastDate}</td></tr>` : ''}
-
         </tbody>
       </table>
 
@@ -1272,9 +1353,9 @@ export default function AdminDashboardPage({
         </tbody>
       </table>` : ''}
 
-      ${acf.vacancy_details ? `
+      ${cleanedVacancyHtml ? `
       <div style="margin: 16px 0;">
-        ${clean(acf.vacancy_details)}
+        ${cleanedVacancyHtml}
       </div>` : ''}
 
       ${Object.keys(links).length > 0 ? `
@@ -1285,23 +1366,14 @@ export default function AdminDashboardPage({
           </tr>
         </thead>
         <tbody>
-          ${Object.entries(links).map(([k, u]) => {
-            const kl = k.toLowerCase();
-            const ul = (u || '').toLowerCase();
-            let finalUrl = u;
-            if (kl.includes('career diary') || kl.includes('careerdiary') || kl.includes('sarkari result') || ul.includes('sarkariresult') || ul.includes('resultbharat') || ul.includes('rojgarresult') || ul.includes('bigbooster')) {
-              if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
-                finalUrl = 'https://careerdiary.in/';
-              }
-            }
-            return `
+          ${Object.entries(links).map(([k, u]) => `
             <tr>
               <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${k}</td>
               <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-                <a href="${finalUrl}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+                <a href="${u}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
               </td>
             </tr>
-          `;}).join('')}
+          `).join('')}
         </tbody>
       </table>` : ''}
     `.trim();
@@ -1309,6 +1381,7 @@ export default function AdminDashboardPage({
     return {
       title,
       organization: org,
+      category,
       totalPosts,
       vacancies: totalPosts,
       description: shortText,
@@ -1381,18 +1454,19 @@ export default function AdminDashboardPage({
 
     // 4. Vacancy / Total Posts
     const cleanBody = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-    const postMatch = cleanBody.match(/Total\s*:?\s*([0-9,]+|\-)\s*Post/i) || cleanBody.match(/(\d[\d,]*\s*(?:Posts?|पद|Vacanc(?:y|ies)))/i);
+    const postMatch = cleanBody.match(/Total\s*:?\s*([0-9,]+|-)\s*Post/i) || cleanBody.match(/(\d[\d,]*\s*(?:Posts?|पद|Vacanc(?:y|ies)))/i);
     const totalPosts = postMatch ? postMatch[1] || postMatch[0] : '';
 
     // 5. Category detection
-    let category = 'LATEST_JOBS';
+    let category = 'LATEST JOB';
     const urlLower = (pageUrl || '').toLowerCase();
     const titleLower = title.toLowerCase();
-    if (urlLower.includes('admit') || titleLower.includes('admit card')) category = 'ADMIT_CARD';
-    else if (urlLower.includes('result') || titleLower.includes('result')) category = 'RESULT';
-    else if (urlLower.includes('answer') || titleLower.includes('answer key')) category = 'ANSWER_KEY';
+    if (urlLower.includes('admit') || titleLower.includes('admit card') || titleLower.includes('hall ticket')) category = 'ADMIT CARD';
+    else if (urlLower.includes('result') || titleLower.includes('result') || titleLower.includes('score card') || titleLower.includes('cutoff')) category = 'RESULT';
+    else if (urlLower.includes('answer') || titleLower.includes('answer key')) category = 'ANSWER KEY';
     else if (urlLower.includes('syllabus') || titleLower.includes('syllabus')) category = 'SYLLABUS';
     else if (urlLower.includes('admission') || titleLower.includes('admission')) category = 'ADMISSION';
+    else category = 'LATEST JOB';
 
     // 6. Dates, Fees, Age
     const dates = {};
@@ -1698,6 +1772,7 @@ export default function AdminDashboardPage({
             ...prev,
             title: wpParsed.title || prev.title,
             organization: wpParsed.organization || prev.organization,
+            category: wpParsed.category || prev.category,
             totalPosts: wpParsed.totalPosts || prev.totalPosts,
             vacancies: wpParsed.vacancies || prev.vacancies,
             description: wpParsed.description || prev.description,
@@ -1960,135 +2035,245 @@ export default function AdminDashboardPage({
     return false;
   };
 
-  const handleImportData = async () => {
-    if (!importUrl.trim()) {
+  const handleImportData = async (urlOverride = '') => {
+    const raw = (typeof urlOverride === 'string' && urlOverride.trim()) ? urlOverride.trim() : importUrl.trim();
+    if (!raw) {
       showToast('Please paste a URL, JSON snippet, or HTML to import.', 'info');
       return;
     }
-    const raw = importUrl.trim();
 
     if (executeImport(raw)) return;
 
     // 4. If user pasted a URL
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      setIsImporting(true);
       showToast('⏳ Fetching post data from URL...', 'info');
 
-      // Step 1: If user directly entered a WordPress REST API endpoint
-      if (raw.includes('/wp-json/wp/v2/posts')) {
-        try {
-          const corsProxy = `https://proxy.cors.sh/${raw}`;
-          const ctrl = new AbortController();
-          const to = setTimeout(() => ctrl.abort(), 6000);
-          const res = await fetch(corsProxy, { signal: ctrl.signal });
-          clearTimeout(to);
-          if (res.ok) {
-            const data = await res.json();
-            const post = Array.isArray(data) ? data[0] : data;
-            if (executeImport(post, raw)) return;
-          }
-        } catch (e) {
-          console.warn('Direct WP endpoint fetch failed:', e);
-        }
+      let targetObj;
+      try {
+        targetObj = new URL(raw);
+      } catch (e) {
+        setIsImporting(false);
+        showToast('Invalid URL format', 'error');
+        return;
       }
 
-      // Step 2: If URL has a slug segment, try fetching WordPress REST API endpoint via proxy.cors.sh
+      const segments = targetObj.pathname.split('/').filter(Boolean);
+      const lastSeg = segments[segments.length - 1];
+      const pParam = targetObj.searchParams.get('p') || targetObj.searchParams.get('id');
+
+      const tryProcessWpJson = (data) => {
+        if (!data) return false;
+        const post = Array.isArray(data) ? data[0] : data;
+        if (post && (post.acf || post.title || post.content || post.long_post_title)) {
+          return executeImport(post, raw);
+        }
+        return false;
+      };
+
       try {
-        const targetObj = new URL(raw);
-        const segments = targetObj.pathname.split('/').filter(Boolean);
-        const lastSeg = segments[segments.length - 1];
+        // Step 1: Direct WordPress REST API fetch (Fastest & CORS supported natively by WP)
+        if (raw.includes('/wp-json/wp/v2/posts')) {
+          try {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 6000);
+            const res = await fetch(raw, { signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+            clearTimeout(to);
+            if (res.ok) {
+              const data = await res.json();
+              if (tryProcessWpJson(data)) {
+                setIsImporting(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Direct WP endpoint fetch failed:', e);
+          }
+        }
+
         if (lastSeg && !lastSeg.includes('.') && !lastSeg.startsWith('wp-')) {
-          const wpUrl = `https://proxy.cors.sh/${targetObj.origin}/wp-json/wp/v2/posts?slug=${encodeURIComponent(lastSeg)}`;
+          const directWpUrl = `${targetObj.origin}/wp-json/wp/v2/posts?slug=${encodeURIComponent(lastSeg)}`;
+          try {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 6000);
+            const res = await fetch(directWpUrl, { signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+            clearTimeout(to);
+            if (res.ok) {
+              const data = await res.json();
+              if (tryProcessWpJson(data)) {
+                setIsImporting(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Direct WP slug fetch failed:', e);
+          }
+        }
+
+        if (pParam) {
+          const directWpIdUrl = `${targetObj.origin}/wp-json/wp/v2/posts/${encodeURIComponent(pParam)}`;
+          try {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 6000);
+            const res = await fetch(directWpIdUrl, { signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+            clearTimeout(to);
+            if (res.ok) {
+              const data = await res.json();
+              if (tryProcessWpJson(data)) {
+                setIsImporting(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Direct WP ID fetch failed:', e);
+          }
+        }
+
+        // Step 2: Fetch via internal /api/proxy (Vite dev server or serverless backend)
+        try {
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}&_t=${Date.now()}`;
           const ctrl = new AbortController();
-          const to = setTimeout(() => ctrl.abort(), 5000);
-          const res = await fetch(wpUrl, { signal: ctrl.signal });
-          clearTimeout(to);
+          const timeoutId = setTimeout(() => ctrl.abort(), 12000);
+          const res = await fetch(proxyUrl, { signal: ctrl.signal });
+          clearTimeout(timeoutId);
+
           if (res.ok) {
             const contentType = res.headers.get('content-type') || '';
             if (contentType.includes('application/json')) {
-              const data = await res.json();
-              if (Array.isArray(data) && data.length > 0) {
-                if (executeImport(data[0], raw)) return;
-              } else if (data && !Array.isArray(data) && (data.acf || data.title)) {
-                if (executeImport(data, raw)) return;
+              const result = await res.json();
+              if (result && result.success) {
+                if (result.type === 'wordpress_acf' || result.type === 'json') {
+                  if (executeImport(result.data, raw)) {
+                    setIsImporting(false);
+                    return;
+                  }
+                } else if (result.type === 'html') {
+                  if (executeImport(result.html, raw)) {
+                    setIsImporting(false);
+                    return;
+                  }
+                }
+              } else if (result && (result.acf || result.title)) {
+                if (executeImport(result, raw)) {
+                  setIsImporting(false);
+                  return;
+                }
+              }
+            } else {
+              const htmlText = await res.text();
+              if (executeImport(htmlText, raw)) {
+                setIsImporting(false);
+                return;
               }
             }
           }
+        } catch (e) {
+          console.warn('Internal /api/proxy fetch failed:', e);
         }
-      } catch (e) {
-        console.warn('WP REST API check failed:', e);
-      }
 
-      // Step 3: Universal fetch of the target URL via proxy.cors.sh (Works for Result Bharat, Sarkari Result, etc.)
-      try {
-        const corsProxy = `https://proxy.cors.sh/${raw}`;
-        const ctrl = new AbortController();
-        const to = setTimeout(() => ctrl.abort(), 7000);
-        const res = await fetch(corsProxy, { signal: ctrl.signal });
-        clearTimeout(to);
-        if (res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await res.json();
-            if (executeImport(data, raw)) return;
-          } else {
-            const htmlText = await res.text();
-            if (executeImport(htmlText, raw)) return;
-          }
-        }
-      } catch (e) {
-        console.warn('proxy.cors.sh universal fetch failed:', e);
-      }
+        // Step 3: Fallback to reliable public proxies for WP endpoint
+        if (lastSeg && !lastSeg.includes('.') && !lastSeg.startsWith('wp-')) {
+          const directWpUrl = `${targetObj.origin}/wp-json/wp/v2/posts?slug=${encodeURIComponent(lastSeg)}`;
+          const publicProxies = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(directWpUrl)}`,
+            `https://corsproxy.io/?url=${encodeURIComponent(directWpUrl)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directWpUrl)}`,
+          ];
 
-      // Step 4: Fetch via /api/proxy (local dev Vite proxy or serverless function)
-      try {
-        const proxyUrl = `/api/proxy?url=${encodeURIComponent(raw)}&_t=${Date.now()}`;
-        const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 4000);
-        const res = await fetch(proxyUrl, { signal: ctrl.signal });
-        clearTimeout(timeoutId);
-
-        const contentType = res.headers.get('content-type') || '';
-        if (res.ok && contentType.includes('application/json')) {
-          const result = await res.json();
-          if (result && result.success) {
-            if (result.type === 'wordpress_acf' || result.type === 'json') {
-              if (executeImport(result.data, raw)) return;
-            } else if (result.type === 'html') {
-              if (executeImport(result.html, raw)) return;
+          for (const pUrl of publicProxies) {
+            try {
+              const ctrl = new AbortController();
+              const to = setTimeout(() => ctrl.abort(), 6000);
+              const res = await fetch(pUrl, { signal: ctrl.signal });
+              clearTimeout(to);
+              if (res.ok) {
+                const data = await res.json();
+                if (tryProcessWpJson(data)) {
+                  setIsImporting(false);
+                  return;
+                }
+              }
+            } catch (e) {
+              // continue next
             }
           }
         }
-      } catch (e) {
-        console.warn('Local/Live /api/proxy fetch error:', e);
-      }
 
-      // Step 5: Direct fetch if allowed by remote server CORS
-      try {
-        const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 3000);
-        const res = await fetch(raw, { signal: ctrl.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await res.json();
-            if (executeImport(data, raw)) return;
-          } else {
-            const htmlText = await res.text();
-            if (executeImport(htmlText, raw)) return;
+        // Step 4: Fallback to reliable public proxies for raw HTML
+        const publicHtmlProxies = [
+          `https://corsproxy.io/?url=${encodeURIComponent(raw)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(raw)}`,
+        ];
+
+        for (const pUrl of publicHtmlProxies) {
+          try {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 8000);
+            const res = await fetch(pUrl, { signal: ctrl.signal });
+            clearTimeout(to);
+            if (res.ok) {
+              const text = await res.text();
+              if (text && text.includes('<') && text.includes('>')) {
+                if (executeImport(text, raw)) {
+                  setIsImporting(false);
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            // continue next
           }
         }
-      } catch (e) {
-        console.warn('Direct fetch blocked by CORS:', e);
+
+        // Step 5: Try allorigins get JSON wrapper
+        try {
+          const allOriginsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(raw)}`;
+          const ctrl = new AbortController();
+          const to = setTimeout(() => ctrl.abort(), 8000);
+          const res = await fetch(allOriginsUrl, { signal: ctrl.signal });
+          clearTimeout(to);
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.contents) {
+              if (executeImport(json.contents, raw)) {
+                setIsImporting(false);
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('allorigins get error:', e);
+        }
+
+        // Step 6: Direct HTML fetch if allowed by remote server CORS
+        try {
+          const ctrl = new AbortController();
+          const timeoutId = setTimeout(() => ctrl.abort(), 3000);
+          const res = await fetch(raw, { signal: ctrl.signal });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const htmlText = await res.text();
+            if (executeImport(htmlText, raw)) {
+              setIsImporting(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Direct fetch blocked by CORS:', e);
+        }
+
+      } finally {
+        setIsImporting(false);
       }
 
-      // Step 6: Fallback to in-app dialog if all automatic fetches failed
-      showToast('⚠️ Direct URL fetch was blocked. Paste HTML or JSON below to import instantly:', 'info');
+      // Step 7: Fallback to in-app dialog if all automatic fetches failed
+      showToast('⚠️ Direct URL fetch was restricted. Paste HTML or JSON below to import instantly:', 'info');
       setInsertModal({
         isOpen: true,
         type: 'import',
         title: 'Paste & Import Post Content',
-        label: 'External URL fetch was restricted by CORS. Paste the post HTML or JSON snippet below to auto-fill all fields:',
+        label: 'External URL fetch was restricted. Paste the post HTML or JSON snippet below to auto-fill all fields:',
         placeholder: 'Paste post HTML table code or JSON snippet here...',
         value: '',
       });
@@ -3032,12 +3217,15 @@ export default function AdminDashboardPage({
           placeholder="Paste sarkariresult.com.cm, bigbooster or post URL here..."
           value={importUrl}
           onChange={e => setImportUrl(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleImportData(); } }}
+          disabled={isImporting}
           style={{ flex: 1, minWidth: '240px', padding: '8px 14px', border: '1px solid #93c5fd', borderRadius: '8px', fontSize: '0.88rem', outline: 'none', background: '#fff' }}
         />
         <button
-          onClick={handleImportData}
-          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem' }}>
-          <Download size={14} /> Import Data
+          onClick={() => handleImportData()}
+          disabled={isImporting}
+          style={{ background: isImporting ? '#60a5fa' : '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: isImporting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem' }}>
+          <Download size={14} /> {isImporting ? 'Importing...' : 'Import Data'}
         </button>
       </div>
 
