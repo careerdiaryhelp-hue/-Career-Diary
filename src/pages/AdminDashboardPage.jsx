@@ -8,7 +8,7 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu, Pin
+  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles
 } from 'lucide-react';
 
 const cleanSlug = (str) => {
@@ -38,6 +38,10 @@ const EMPTY_FORM = {
   totalPosts: '',
   displayOrder: 0,
   featured: false,
+  isFeatured: false,
+  isLatestUpdate: false,
+  featuredOrder: 0,
+  latestOrder: 0,
   slug: '',
   lastDate: '',
   appStart: '',
@@ -147,6 +151,20 @@ export default function AdminDashboardPage({
     priority: 0,
     active: true
   });
+
+  // Search state for Latest Updates and Featured Posts manager sections
+  const [latestSearchQuery, setLatestSearchQuery] = useState('');
+  const [featuredSearchQuery, setFeaturedSearchQuery] = useState('');
+
+  // Quick custom ticker item creation state
+  const [customTickerTitle, setCustomTickerTitle] = useState('');
+  const [customTickerLink, setCustomTickerLink] = useState('');
+  const [customTickerCategory, setCustomTickerCategory] = useState('LATEST JOB');
+
+  // Quick custom featured card creation state
+  const [customFeaturedTitle, setCustomFeaturedTitle] = useState('');
+  const [customFeaturedLink, setCustomFeaturedLink] = useState('');
+  const [customFeaturedSlot, setCustomFeaturedSlot] = useState(0);
 
   // Sync external props if provided
   useEffect(() => {
@@ -489,7 +507,11 @@ export default function AdminDashboardPage({
       vacancies: job.vacancies || job.totalPosts || '',
       totalPosts: job.totalPosts || job.vacancies || '',
       displayOrder: job.displayOrder ?? 0,
-      featured: Boolean(job.featured),
+      featured: Boolean(job.featured || job.isFeatured),
+      isFeatured: Boolean(job.featured || job.isFeatured),
+      isLatestUpdate: Boolean(job.isLatestUpdate || job.isLatest),
+      featuredOrder: job.featuredOrder ?? job.displayOrder ?? 0,
+      latestOrder: job.latestOrder ?? 0,
       slug: job.id || '',
       lastDate: job.lastDate || job.appLast || '',
       appStart: job.appStart || '',
@@ -521,6 +543,114 @@ export default function AdminDashboardPage({
     }
     setActiveSection('new-post');
     showToast(`✏️ Loaded "${job.title}" for editing.`, 'info');
+  };
+
+  // Helper actions for Latest Updates & Featured Posts management
+  const handleToggleLatestUpdate = (job) => {
+    if (!job) return;
+    const isCurrentlyLatest = Boolean(job.isLatestUpdate || job.isLatest);
+    const updatedJob = {
+      ...job,
+      isLatestUpdate: !isCurrentlyLatest,
+      isLatest: !isCurrentlyLatest,
+      latestOrder: job.latestOrder ?? 0,
+      updatedAt: new Date().toISOString(),
+    };
+    onAddJob(updatedJob);
+    showToast(
+      !isCurrentlyLatest
+        ? '✦ Post added to Latest Update ticker!'
+        : 'Removed post from Latest Update ticker.',
+      !isCurrentlyLatest ? 'success' : 'info'
+    );
+  };
+
+  const handleToggleFeatured = (job) => {
+    if (!job) return;
+    const isCurrentlyFeatured = Boolean(job.isFeatured || job.isTopCard || job.featured);
+    const updatedJob = {
+      ...job,
+      featured: !isCurrentlyFeatured,
+      isFeatured: !isCurrentlyFeatured,
+      isTopCard: !isCurrentlyFeatured,
+      featuredOrder: job.featuredOrder ?? 0,
+      updatedAt: new Date().toISOString(),
+    };
+    onAddJob(updatedJob);
+    showToast(
+      !isCurrentlyFeatured
+        ? '★ Post featured in Top Cards grid!'
+        : 'Removed post from Featured Top Cards grid.',
+      !isCurrentlyFeatured ? 'success' : 'info'
+    );
+  };
+
+  const handleDirectEditPost = (job) => {
+    handleEditJob(job);
+    setActiveSection('new-post');
+  };
+
+  const handleAddCustomTickerItem = (e) => {
+    e?.preventDefault();
+    if (!customTickerTitle.trim()) {
+      showToast('⚠️ Please enter a title for the custom ticker item!', 'error');
+      return;
+    }
+    const rawLink = customTickerLink.trim();
+    let slug = cleanSlug(rawLink || customTickerTitle);
+    if (!slug) slug = `ticker-${Date.now()}`;
+
+    const newTickerJob = {
+      id: slug,
+      slug: slug,
+      title: customTickerTitle.trim(),
+      link: rawLink || `/${slug}`,
+      url: rawLink || `/${slug}`,
+      category: customTickerCategory || 'LATEST JOB',
+      status: 'Published',
+      isLatestUpdate: true,
+      isLatest: true,
+      latestOrder: 0,
+      postDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      updatedAt: new Date().toISOString(),
+    };
+
+    onAddJob(newTickerJob);
+    setCustomTickerTitle('');
+    setCustomTickerLink('');
+    showToast(`✦ Ticker item "${customTickerTitle.slice(0, 30)}..." added to Latest Update!`, 'success');
+  };
+
+  const handleAddCustomFeaturedCard = (e) => {
+    e?.preventDefault();
+    if (!customFeaturedTitle.trim()) {
+      showToast('⚠️ Please enter a title for the featured card!', 'error');
+      return;
+    }
+    const rawLink = customFeaturedLink.trim();
+    let slug = cleanSlug(rawLink || customFeaturedTitle);
+    if (!slug) slug = `featured-${Date.now()}`;
+
+    const newFeaturedJob = {
+      id: slug,
+      slug: slug,
+      title: customFeaturedTitle.trim(),
+      link: rawLink || `/${slug}`,
+      url: rawLink || `/${slug}`,
+      category: 'LATEST JOB',
+      status: 'Published',
+      featured: true,
+      isFeatured: true,
+      isTopCard: true,
+      featuredOrder: Number(customFeaturedSlot),
+      postDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      updatedAt: new Date().toISOString(),
+    };
+
+    onAddJob(newFeaturedJob);
+    setCustomFeaturedTitle('');
+    setCustomFeaturedLink('');
+    showToast(`★ Featured Card "${customFeaturedTitle.slice(0, 25)}..." assigned to Card Slot #${Number(customFeaturedSlot) + 1}!`, 'success');
   };
 
   const handleTogglePin = async (job) => {
@@ -2335,7 +2465,13 @@ export default function AdminDashboardPage({
       vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
       totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
       displayOrder: Number(form.displayOrder) || (existingJob?.displayOrder ?? 0),
-      featured: Boolean(form.featured),
+      featured: Boolean(form.featured || form.isFeatured),
+      isFeatured: Boolean(form.featured || form.isFeatured),
+      isTopCard: Boolean(form.featured || form.isFeatured),
+      isLatestUpdate: Boolean(form.isLatestUpdate),
+      isLatest: Boolean(form.isLatestUpdate),
+      featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
+      latestOrder: Number(form.latestOrder) || (existingJob?.latestOrder ?? 0),
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
       appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
       appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
@@ -2467,7 +2603,13 @@ export default function AdminDashboardPage({
       vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
       totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
       displayOrder: Number(form.displayOrder) || (existingJob?.displayOrder ?? 0),
-      featured: Boolean(form.featured),
+      featured: Boolean(form.featured || form.isFeatured),
+      isFeatured: Boolean(form.featured || form.isFeatured),
+      isTopCard: Boolean(form.featured || form.isFeatured),
+      isLatestUpdate: Boolean(form.isLatestUpdate),
+      isLatest: Boolean(form.isLatestUpdate),
+      featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
+      latestOrder: Number(form.latestOrder) || (existingJob?.latestOrder ?? 0),
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
       appLast: form.lastDate.trim() || (existingJob?.appLast ?? ''),
       appStart: form.appStart.trim() || (existingJob?.appStart ?? ''),
@@ -2570,6 +2712,8 @@ export default function AdminDashboardPage({
     { id: 'categories', label: 'Categories', icon: Layers },
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
+    { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
+    { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
   ];
 
   // ── Render Sections ──────────────────────────────────────
@@ -3356,22 +3500,44 @@ export default function AdminDashboardPage({
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                {/* Row 1: Featured Checkbox */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155', userSelect: 'none' }}>
-                    <input
-                      type="checkbox"
-                      checked={form.featured}
-                      onChange={e => set('featured', e.target.checked)}
-                      style={{ width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
-                    />
-                    <span>Featured in Top Cards</span>
-                  </label>
-                  {form.featured && (
-                    <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                      ★ Featured Active
-                    </span>
-                  )}
+                {/* Row 1: Featured & Latest Update Checkboxes */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={form.featured || form.isFeatured}
+                        onChange={e => {
+                          set('featured', e.target.checked);
+                          set('isFeatured', e.target.checked);
+                        }}
+                        style={{ width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
+                      />
+                      <span>Featured in Homepage Top Cards</span>
+                    </label>
+                    {(form.featured || form.isFeatured) && (
+                      <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                        ★ Featured Card Active
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={form.isLatestUpdate}
+                        onChange={e => set('isLatestUpdate', e.target.checked)}
+                        style={{ width: '17px', height: '17px', accentColor: '#d97706', cursor: 'pointer' }}
+                      />
+                      <span>Include in Top Ticker (Latest Updates)</span>
+                    </label>
+                    {form.isLatestUpdate && (
+                      <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                        ✦ Ticker Active
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ height: '1px', background: '#e2e8f0' }} />
@@ -4865,6 +5031,562 @@ export default function AdminDashboardPage({
     );
   };
 
+  // ── Render Latest Updates Section ─────────────────────────
+  const renderLatestUpdates = () => {
+    const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
+    const latestList = explicitLatest.length > 0
+      ? explicitLatest
+      : jobs.filter(j => j.status !== 'Draft' && !j.title?.toLowerCase().includes('top online form')).slice(0, 10);
+    const sortedLatest = [...latestList].sort((a, b) => (a.latestOrder ?? 0) - (b.latestOrder ?? 0));
+
+    const searchFilteredJobs = jobs.filter(j => {
+      if (!latestSearchQuery) return true;
+      const q = latestSearchQuery.toLowerCase();
+      return (
+        j.title?.toLowerCase().includes(q) ||
+        j.category?.toLowerCase().includes(q) ||
+        j.id?.toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header Title Card */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          padding: isMobile ? '16px' : '24px 28px',
+          marginBottom: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ background: '#fef3c7', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center' }}>
+                <Bell size={22} style={{ color: '#d97706' }} />
+              </div>
+              <div>
+                <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Latest Updates Manager (लेटेस्ट अपडेट)
+                </h1>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
+                  Manage and edit posts featured in the top header scrolling ticker bar on Career Diary.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              background: '#ecfdf5',
+              color: '#047857',
+              border: '1px solid #a7f3d0',
+              borderRadius: '20px',
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 700
+            }}>
+              ✦ {sortedLatest.length} Active Ticker Posts
+            </span>
+          </div>
+        </div>
+
+        {/* Live Preview Ticker Bar */}
+        <div style={{
+          background: '#1e293b',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            background: '#3b82f6',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '0.72rem',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            flexShrink: 0
+          }}>
+            <Bell size={13} /> LATEST UPDATE TICKER PREVIEW
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: '#f8fafc', fontSize: '0.85rem', fontWeight: 600 }}>
+            {sortedLatest.length > 0 ? (
+              sortedLatest.map((job, idx) => (
+                <span key={job.id} style={{ marginRight: '24px' }}>
+                  <span style={{ color: '#fbbf24', marginRight: '6px' }}>✦</span>
+                  <span>{job.title}</span>
+                </span>
+              ))
+            ) : (
+              <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                No posts manually flagged as Latest Update. Showing top published jobs as default fallback.
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Section 1: Add Custom Ticker Item / Quick Link Card */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #cbd5e1',
+          padding: '20px 24px',
+          marginBottom: '24px'
+        }}>
+          <h3 style={{ margin: '0 0 14px 0', fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} style={{ color: '#d97706' }} /> Add Custom Ticker Item / Quick Link (✦)
+          </h3>
+          <form onSubmit={handleAddCustomTickerItem} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 2fr 1fr auto', gap: '12px', alignItems: 'end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>TICKER TITLE *</label>
+              <input
+                type="text"
+                placeholder="e.g. SSC CPO SI CAPF Recruitment 2026"
+                value={customTickerTitle}
+                onChange={(e) => setCustomTickerTitle(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>TARGET LINK / URL (OPTIONAL)</label>
+              <input
+                type="text"
+                placeholder="e.g. https://careerdiary.in/2026-ssc-cpo-si-sep26 or /slug"
+                value={customTickerLink}
+                onChange={(e) => setCustomTickerLink(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>CATEGORY</label>
+              <select
+                value={customTickerCategory}
+                onChange={(e) => setCustomTickerCategory(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem', background: '#fff' }}
+              >
+                <option value="LATEST JOB">LATEST JOB</option>
+                <option value="ADMIT CARD">ADMIT CARD</option>
+                <option value="RESULT">RESULT</option>
+                <option value="ADMISSION">ADMISSION</option>
+                <option value="SYLLABUS">SYLLABUS</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                background: '#d97706',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '9px 18px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              + Add Ticker Item
+            </button>
+          </form>
+        </div>
+
+        {/* Section 2: Currently Featured Latest Update Posts Table */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #cbd5e1',
+          marginBottom: '28px',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bell size={18} style={{ color: '#2563eb' }} />
+              Active Ticker Posts ({sortedLatest.length})
+            </h3>
+            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Edit target link URL directly below</span>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>STATUS</th>
+                  <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>POST TITLE & TARGET LINK</th>
+                  <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>CATEGORY</th>
+                  <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', textAlign: 'center' }}>ORDER</th>
+                  <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', textAlign: 'center' }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedLatest.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
+                      No posts currently assigned to Latest Update ticker. Toggle any post below to feature it!
+                    </td>
+                  </tr>
+                ) : (
+                  sortedLatest.map((job, idx) => (
+                    <tr key={job.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <button
+                          onClick={() => handleToggleLatestUpdate(job)}
+                          style={{
+                            background: '#dcfce7',
+                            color: '#15803d',
+                            border: '1px solid #86efac',
+                            borderRadius: '20px',
+                            padding: '4px 10px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}>
+                          ✓ Active in Ticker
+                        </button>
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', marginBottom: '4px' }}>{job.title}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <LinkIcon size={12} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                          <input
+                            type="text"
+                            placeholder="Target link (e.g. https://... or /slug)"
+                            value={job.link || job.url || `/${job.id}`}
+                            onChange={(e) => {
+                              const newLink = e.target.value;
+                              onAddJob({ ...job, link: newLink, url: newLink });
+                            }}
+                            style={{ width: '100%', maxWidth: '380px', padding: '3px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.78rem', color: '#2563eb' }}
+                          />
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          {job.category || 'LATEST JOB'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          value={job.latestOrder ?? idx}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            onAddJob({ ...job, latestOrder: val });
+                          }}
+                          style={{ width: '60px', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.82rem', textAlign: 'center' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleToggleLatestUpdate(job)}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#991b1b',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Render Featured Posts Section ──────────────────────────
+  const renderFeaturedPosts = () => {
+    const explicitFeatured = jobs.filter(j => Boolean(j.isFeatured || j.isTopCard || j.featured));
+    const featuredList = explicitFeatured.length > 0
+      ? explicitFeatured
+      : jobs.filter(j => j.status !== 'Draft').slice(0, 8);
+    
+    // Exact 8 color themes matching HighlightsGrid.jsx
+    const slotColors = [
+      { name: 'Red-Orange (BPSC TRE)', bg: '#ff3300', text: '#ffffff' },
+      { name: 'Forest Green (UP Scholarship)', bg: '#006b00', text: '#ffffff' },
+      { name: 'Magenta Pink (India Post GDS)', bg: '#ef35bf', text: '#ffffff' },
+      { name: 'Vivid Blue (CTET)', bg: '#1e7fe8', text: '#ffffff' },
+      { name: 'Olive (RRB JE)', bg: '#8d9200', text: '#ffffff' },
+      { name: 'Deep Blue (Bihar STET)', bg: '#1a2fc8', text: '#ffffff' },
+      { name: 'Orange (Anganwadi)', bg: '#ff6a00', text: '#ffffff' },
+      { name: 'Maroon (UPSSSC PET)', bg: '#a80000', text: '#ffffff' },
+    ];
+
+    // Map 8 slots (Fill all 8 slots matching live website grid!)
+    const publishedJobs = jobs.filter(j => j.status !== 'Draft');
+    const slots = Array.from({ length: 8 }).map((_, idx) => {
+      let assigned = featuredList.find(j => Number(j.featuredOrder) === idx);
+      if (!assigned && featuredList[idx]) {
+        assigned = featuredList[idx];
+      }
+      if (!assigned) {
+        assigned = publishedJobs[idx] || null;
+      }
+      return {
+        slotIndex: idx,
+        colorInfo: slotColors[idx],
+        job: assigned
+      };
+    });
+
+    const searchFilteredJobs = jobs.filter(j => {
+      if (!featuredSearchQuery) return true;
+      const q = featuredSearchQuery.toLowerCase();
+      return (
+        j.title?.toLowerCase().includes(q) ||
+        j.category?.toLowerCase().includes(q) ||
+        j.id?.toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Top Title Banner */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          padding: isMobile ? '16px' : '24px 28px',
+          marginBottom: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ background: '#eff6ff', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center' }}>
+                <Star size={22} style={{ color: '#2563eb' }} />
+              </div>
+              <div>
+                <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Featured Posts / Top Cards Manager (Featured पोस्ट)
+                </h1>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
+                  Edit and assign posts to the 8 prominent Top Highlight Cards on Career Diary homepage.
+                </p>
+              </div>
+            </div>
+          </div>
+          <span style={{
+            background: '#dbeafe',
+            color: '#1d4ed8',
+            border: '1px solid #93c5fd',
+            borderRadius: '20px',
+            padding: '6px 14px',
+            fontSize: '0.82rem',
+            fontWeight: 700
+          }}>
+            ★ 8 Top Banner Cards Active
+          </span>
+        </div>
+
+        {/* Visual 8 Top Cards Slot Manager (FIRST) */}
+        <div style={{ marginBottom: '28px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} style={{ color: '#d97706' }} /> Homepage 8 Top Cards Grid (Interactive Slots)
+          </h3>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+            gap: '14px'
+          }}>
+            {slots.map(({ slotIndex, colorInfo, job }) => (
+              <div key={slotIndex} style={{
+                background: colorInfo.bg,
+                color: colorInfo.text,
+                borderRadius: '12px',
+                padding: '16px',
+                minHeight: '140px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ background: 'rgba(255,255,255,0.25)', color: '#fff', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                    Card Slot #{slotIndex + 1}
+                  </span>
+                  <span style={{ fontSize: '0.68rem', opacity: 0.85, fontWeight: 600 }}>{colorInfo.name.split(' ')[0]}</span>
+                </div>
+
+                <div style={{ fontWeight: 800, fontSize: '0.92rem', lineHeight: '1.3', flex: 1, margin: '8px 0', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                  {job ? job.title : '— Empty Card Slot —'}
+                </div>
+
+                {/* Dropdown to change post for this slot */}
+                <div style={{ marginBottom: '10px' }}>
+                  <select
+                    value={job ? job.id : ''}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) {
+                        if (job) onAddJob({ ...job, featured: false, isFeatured: false, featuredOrder: null });
+                        return;
+                      }
+                      const selectedJob = jobs.find(j => j.id === selectedId);
+                      if (selectedJob) {
+                        onAddJob({
+                          ...selectedJob,
+                          featured: true,
+                          isFeatured: true,
+                          isTopCard: true,
+                          featuredOrder: slotIndex
+                        });
+                        showToast(`★ Assigned to Card Slot #${slotIndex + 1}!`, 'success');
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: 'rgba(255,255,255,0.95)',
+                      color: '#0f172a',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    <option value="">-- Change Post for Slot #{slotIndex + 1} --</option>
+                    {jobs.map(j => (
+                      <option key={j.id} value={j.id}>{j.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {job ? (
+                    <button
+                      onClick={() => handleToggleFeatured(job)}
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        borderRadius: '6px',
+                        padding: '5px 12px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}>
+                      Remove
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', opacity: 0.9, fontStyle: 'italic' }}>
+                      Select a post from dropdown above
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section 2: Add New Featured Card / Post Form Card (BELOW 8 CARDS) */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #cbd5e1',
+          padding: '20px 24px',
+          marginBottom: '24px'
+        }}>
+          <h3 style={{ margin: '0 0 14px 0', fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} style={{ color: '#2563eb' }} /> Add New Featured Card / Custom Link (★)
+          </h3>
+          <form onSubmit={handleAddCustomFeaturedCard} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 2fr 1fr auto', gap: '12px', alignItems: 'end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>CARD TITLE *</label>
+              <input
+                type="text"
+                placeholder="e.g. SSC CPO SI CAPF Recruitment 2026"
+                value={customFeaturedTitle}
+                onChange={(e) => setCustomFeaturedTitle(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>TARGET LINK / URL (OPTIONAL)</label>
+              <input
+                type="text"
+                placeholder="e.g. https://careerdiary.in/2026-ssc-cpo-si-sep26 or /slug"
+                value={customFeaturedLink}
+                onChange={(e) => setCustomFeaturedLink(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>TARGET CARD SLOT</label>
+              <select
+                value={customFeaturedSlot}
+                onChange={(e) => setCustomFeaturedSlot(Number(e.target.value))}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem', background: '#fff' }}
+              >
+                {slotColors.map((sc, i) => (
+                  <option key={i} value={i}>Slot #{i + 1} ({sc.name.split(' ')[0]})</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '9px 18px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              + Add / Feature Card
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // ── Layout ────────────────────────────────────────────────
   return (
     <div style={{
@@ -4896,10 +5618,10 @@ export default function AdminDashboardPage({
       <div style={{
         // On mobile: fixed overlay; on desktop: normal sidebar
         position: isMobile ? 'fixed' : 'relative',
-        left: isMobile ? (sidebarOpen ? '0' : '-260px') : 'auto',
+        left: isMobile ? (sidebarOpen ? '0' : '-270px') : 'auto',
         top: isMobile ? '0' : 'auto',
         zIndex: isMobile ? 999 : 'auto',
-        width: isMobile ? '240px' : (sidebarOpen ? '230px' : '64px'),
+        width: isMobile ? '260px' : (sidebarOpen ? '250px' : '64px'),
         height: '100vh',
         flexShrink: 0,
         background: '#0a0f1d',
@@ -5081,6 +5803,8 @@ export default function AdminDashboardPage({
           {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
           {activeSection === 'new-post' && renderNewPost()}
           {activeSection === 'breaking-news' && renderBreakingNews()}
+          {activeSection === 'latest-updates' && renderLatestUpdates()}
+          {activeSection === 'featured-posts' && renderFeaturedPosts()}
         </div>
       </div>
 

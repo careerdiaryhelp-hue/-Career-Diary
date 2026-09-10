@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 export default function HighlightsGrid({
-  jobs,
+  jobs = [],
   onSelectJob
 }) {
-  const topItems = jobs.slice(0, 8);
+  const topItems = useMemo(() => {
+    if (!jobs || jobs.length === 0) return [];
+
+    const featuredJobs = jobs.filter(j => Boolean(j.isFeatured || j.isTopCard || j.featured));
+
+    if (featuredJobs.length > 0) {
+      const sorted = [...featuredJobs].sort((a, b) => {
+        const orderA = a.featuredOrder ?? a.displayOrder ?? 999;
+        const orderB = b.featuredOrder ?? b.displayOrder ?? 999;
+        return orderA - orderB;
+      });
+      return sorted.slice(0, 8);
+    }
+
+    return jobs.slice(0, 8);
+  }, [jobs]);
   
   const boxColors = [
     'bg-box-redorange',   // #ff3300 (BPSC TRE style)
@@ -46,3 +61,4 @@ export default function HighlightsGrid({
     </section>
   );
 }
+

@@ -3,7 +3,18 @@ import { Bell } from 'lucide-react';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-  const tickerJobs = jobs && jobs.length > 0 ? jobs.filter(j => !j.title?.toLowerCase().includes('top online form')).slice(0, 10) : [];
+  const tickerJobs = useMemo(() => {
+    if (!jobs || jobs.length === 0) return [];
+    const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
+    if (explicitLatest.length > 0) {
+      return [...explicitLatest].sort((a, b) => {
+        const orderA = a.latestOrder ?? a.displayOrder ?? 999;
+        const orderB = b.latestOrder ?? b.displayOrder ?? 999;
+        return orderA - orderB;
+      });
+    }
+    return jobs.filter(j => !j.title?.toLowerCase().includes('top online form')).slice(0, 10);
+  }, [jobs]);
 
   // Active breaking news from Admin Dashboard
   const activeBreakingNews = useMemo(() => {
@@ -71,22 +82,36 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
             </div>
             <div className="ticker-wrapper">
               <div className="ticker-content">
-                {displayLatestJobs.map((job, idx) => (
-                  <span key={`${job.id}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                    <span style={{ color: '#fbbf24', margin: '0 14px', fontSize: '0.8rem' }}>✦</span>
-                    <a
-                      href={`/${job.id}`}
-                      onClick={(e) => {
-                        if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                          e.preventDefault();
-                          onSelectJob(job.id);
-                        }
-                      }}
-                    >
-                      {job.title}
-                    </a>
-                  </span>
-                ))}
+                {displayLatestJobs.map((job, idx) => {
+                  const rawTarget = job.link || job.url || job.id || job.slug || '';
+                  let cleanSlug = rawTarget;
+                  if (cleanSlug.includes('careerdiary.in/')) {
+                    cleanSlug = cleanSlug.split('careerdiary.in/')[1];
+                  } else if (cleanSlug.startsWith('/')) {
+                    cleanSlug = cleanSlug.slice(1);
+                  }
+                  const href = rawTarget.startsWith('http') ? rawTarget : (rawTarget.startsWith('/') ? rawTarget : `/${rawTarget}`);
+                  const isExternal = rawTarget.startsWith('http') && !rawTarget.includes('careerdiary.in');
+
+                  return (
+                    <span key={`${job.id || idx}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                      <span style={{ color: '#fbbf24', margin: '0 14px', fontSize: '0.8rem' }}>✦</span>
+                      <a
+                        href={href}
+                        target={isExternal ? '_blank' : '_self'}
+                        rel={isExternal ? 'noopener noreferrer' : undefined}
+                        onClick={(e) => {
+                          if (!isExternal && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                            e.preventDefault();
+                            onSelectJob(cleanSlug);
+                          }
+                        }}
+                      >
+                        {job.title || job.message}
+                      </a>
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
