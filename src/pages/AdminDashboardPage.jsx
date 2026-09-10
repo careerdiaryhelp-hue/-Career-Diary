@@ -8,7 +8,7 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu
+  Calendar, Link as LinkIcon, Menu, Pin
 } from 'lucide-react';
 
 const cleanSlug = (str) => {
@@ -449,7 +449,7 @@ export default function AdminDashboardPage({
   const draftCount = useMemo(() => jobs.filter(j => j && (j.status === 'Draft' || j.status === 'draft')).length, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter(j => {
+    const filtered = jobs.filter(j => {
       if (!j || !j.title) return false;
       const isDraft = j.status === 'Draft' || j.status === 'draft';
       const matchStatus = statusFilter === 'all'
@@ -460,6 +460,12 @@ export default function AdminDashboardPage({
       const matchCat = filterCat === 'all' || (j.category || '').toUpperCase() === filterCat.toUpperCase();
       const matchSearch = !searchTerm || j.title.toLowerCase().includes(searchTerm.toLowerCase());
       return matchStatus && matchCat && matchSearch;
+    });
+
+    return filtered.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0; // maintain original order for others
     });
   }, [jobs, statusFilter, filterCat, searchTerm]);
 
@@ -515,6 +521,16 @@ export default function AdminDashboardPage({
     }
     setActiveSection('new-post');
     showToast(`✏️ Loaded "${job.title}" for editing.`, 'info');
+  };
+
+  const handleTogglePin = async (job) => {
+    if (!job) return;
+    const updatedJob = {
+      ...job,
+      pinned: !job.pinned
+    };
+    await onAddJob(updatedJob);
+    showToast(`📌 Post "${job.title}" ${updatedJob.pinned ? 'pinned to top' : 'unpinned'}.`, 'success');
   };
 
   const handleDuplicateJob = async (job) => {
@@ -2732,6 +2748,7 @@ export default function AdminDashboardPage({
                           onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                           onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
                         >
+                          {job.pinned && <Pin size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle', color: '#d97706' }} fill="currentColor" />}
                           {job.title}
                         </span>
                       </td>
@@ -2779,6 +2796,22 @@ export default function AdminDashboardPage({
                       {/* ACTIONS */}
                       <td style={{ padding: '14px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {/* Pin */}
+                          <button
+                            onClick={() => handleTogglePin(job)}
+                            title={job.pinned ? "Unpin Post" : "Pin to Top"}
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: job.pinned ? '#fef3c7' : '#f1f5f9',
+                              border: job.pinned ? '1px solid #fde68a' : '1px solid #e2e8f0',
+                              color: job.pinned ? '#d97706' : '#64748b',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.15s'
+                            }}
+                          >
+                            <Pin size={15} fill={job.pinned ? 'currentColor' : 'none'} />
+                          </button>
+
                           {/* Duplicate */}
                           <button
                             onClick={() => handleDuplicateJob(job)}
