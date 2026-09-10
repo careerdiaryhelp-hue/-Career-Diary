@@ -3787,6 +3787,9 @@ export default function AdminDashboardPage({
         {/* RIGHT COLUMN: Editable Visual Preview Pane */}
         <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
 
+          {/* Sticky Toolbar Container */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', paddingBottom: '10px', borderBottom: '1px solid #e2e8f0', marginBottom: '16px' }}>
+
           {/* Preview Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16a34a', fontWeight: 700, fontSize: '1rem' }}>
@@ -4307,6 +4310,7 @@ export default function AdminDashboardPage({
               </div>
             </div>
           </div>
+          </div> {/* End Sticky Toolbar Container */}
 
           {/* Paper Canvas Preview Area */}
           <div style={{
