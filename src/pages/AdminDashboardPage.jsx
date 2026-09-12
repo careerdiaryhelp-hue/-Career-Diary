@@ -525,9 +525,130 @@ export default function AdminDashboardPage({
     setActiveSection('new-post');
   };
 
+  const buildDefaultJobHtml = (job) => {
+    if (!job) return '';
+    if (job.content && typeof job.content === 'string' && job.content.trim().length > 30) {
+      return job.content;
+    }
+    if (job.htmlContent && typeof job.htmlContent === 'string' && job.htmlContent.trim().length > 30) {
+      return job.htmlContent;
+    }
+
+    const org = job.organization || 'Government Recruitment Board';
+    const title = job.title || job.postName || 'Recruitment Notice';
+    const vacancies = job.vacancies || job.totalPosts || 'Various Posts';
+    const appStart = job.appStart || job.importantDates?.applyStart || job.importantDates?.['Online Apply Start Date'] || job.importantDates?.['Application Start'] || 'As per notification';
+    const appLast = job.lastDate || job.appLast || job.importantDates?.lastDate || job.importantDates?.['Last Date For Apply'] || job.importantDates?.['Last Date to Apply'] || 'As per notification';
+    const feeLast = job.importantDates?.feeLastDate || job.importantDates?.['Last Date For Fee Payment'] || job.appLast || '';
+    const examDate = job.examDate || job.importantDates?.examDate || job.importantDates?.['Exam Date'] || 'As per schedule';
+    const feeGen = job.feeGen || job.applicationFee?.General || job.applicationFee?.['General / OBC / EWS'] || job.applicationFee?.['For General / OBC'] || '₹ 100/-';
+    const feeSc = job.feeSc || job.applicationFee?.['SC / ST'] || job.applicationFee?.['For SC/ ST/ Female'] || '₹ 0/-';
+    const minAge = job.minAge || job.ageLimit?.minimum || job.ageLimit?.['Minimum Age'] || '18 Years';
+    const maxAge = job.maxAge || job.ageLimit?.maximum || job.ageLimit?.['Maximum Age'] || '37 Years';
+    const qual = job.qualification || job.eligibility?.education || 'Candidates must check official notification for qualification criteria.';
+    
+    const applyUrl = job.applyUrl || job.importantLinks?.['Apply Online'] || job.importantLinks?.['Apply Online Link'] || '#';
+    const notifUrl = job.notificationUrl || job.importantLinks?.['Download Official Notification PDF'] || job.importantLinks?.['Download Notification'] || '#';
+    const officialUrl = job.officialUrl || job.importantLinks?.['Official Website'] || '#';
+
+    return `
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#ef35bf; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1.1rem; padding:12px;">
+        ${org} : ${title}<br>
+        <span style="font-size:0.9rem; font-weight:normal;">Short Details of Notification</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align:center; font-weight:bold; width:50%;">
+        <a href="${officialUrl}" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">${org} Official Website</a>
+      </td>
+      <td style="text-align:center; font-weight:bold;">
+        Total Vacancies: <span style="color:#008000;">${vacancies}</span>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#1e7fe8; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1rem; padding:10px;">Important Dates & Application Fee</td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top; width:50%; padding:12px;">
+        <div style="background-color:#f1f5f9; padding:6px; font-weight:bold; color:#0f172a; margin-bottom:8px; border-radius:4px;">Important Dates</div>
+        <ul style="margin:0; padding-left:18px; line-height:1.8;">
+          <li>⚫ <strong>Application Start :</strong> ${appStart}</li>
+          <li>⚫ <strong>Last Date to Apply :</strong> <span style="color:#ff0000; font-weight:bold;">${appLast}</span></li>
+          ${feeLast ? `<li>⚫ <strong>Fee Payment Last Date :</strong> ${feeLast}</li>` : ''}
+          <li>⚫ <strong>Exam Date :</strong> ${examDate}</li>
+        </ul>
+      </td>
+      <td style="vertical-align:top; width:50%; padding:12px;">
+        <div style="background-color:#f1f5f9; padding:6px; font-weight:bold; color:#0f172a; margin-bottom:8px; border-radius:4px;">Application Fee</div>
+        <ul style="margin:0; padding-left:18px; line-height:1.8;">
+          <li>⚫ <strong>General / OBC / EWS :</strong> ${feeGen}</li>
+          <li>⚫ <strong>SC / ST / PH :</strong> ${feeSc}</li>
+          <li>⚫ <strong>Payment Mode :</strong> Online (Debit/Credit Card, Net Banking, UPI)</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#006b00; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colSpan="2" style="font-size:1rem; padding:10px;">Age Limit & Qualification Details</td>
+    </tr>
+    <tr>
+      <td style="text-align:center; width:50%; padding:10px;"><strong>Minimum Age :</strong> ${minAge}</td>
+      <td style="text-align:center; width:50%; padding:10px;"><strong>Maximum Age :</strong> ${maxAge}</td>
+    </tr>
+    <tr>
+      <td colspan="2" style="padding:12px;"><strong>Educational Qualification :</strong> ${qual}</td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#a80000; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colSpan="2" style="font-size:1rem; padding:10px;">Some Useful Important Links</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; width:40%; text-align:center; padding:8px;">Apply Online</td>
+      <td style="text-align:center; padding:8px;"><a href="${applyUrl}" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:8px;">Download Official Notification</td>
+      <td style="text-align:center; padding:8px;"><a href="${notifUrl}" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:8px;">Official Website</td>
+      <td style="text-align:center; padding:8px;"><a href="${officialUrl}" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:8px;">Join Telegram Channel</td>
+      <td style="text-align:center; padding:8px;"><a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" style="color:#0088cc; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:8px;">Join WhatsApp Channel</td>
+      <td style="text-align:center; padding:8px;"><a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" style="color:#25d366; font-weight:bold;">Click Here</a></td>
+    </tr>
+  </tbody>
+</table>
+    `.trim();
+  };
+
   const handleEditJob = (job) => {
     if (!job) return;
     setEditingJobId(job.id);
+
+    const initialHtml = buildDefaultJobHtml(job);
+
     setForm({
       title: job.title || '',
       category: job.category || 'LATEST JOB',
@@ -548,7 +669,7 @@ export default function AdminDashboardPage({
       badge: job.badge || 'New!',
       bannerColor: job.bannerColor || 'pink',
       description: job.description || job.uniqueDescription || job.shortInfo || '',
-      content: job.content || job.htmlContent || '',
+      content: initialHtml,
       seoTitle: job.seoTitle || job.title || '',
       seoKeywords: job.seoKeywords || '',
       seoDescription: job.seoDescription || job.description || '',
@@ -568,7 +689,7 @@ export default function AdminDashboardPage({
     });
 
     if (visualEditorRef.current) {
-      visualEditorRef.current.innerHTML = job.content || job.htmlContent || '';
+      visualEditorRef.current.innerHTML = initialHtml;
     }
     setActiveSection('new-post');
     showToast(`✏️ Loaded "${job.title}" for editing.`, 'info');
