@@ -3000,6 +3000,7 @@ export default function AdminDashboardPage({
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '12px 10px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center', width: '45px' }}>#</th>
                 <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TITLE</th>
                 <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>STATUS</th>
                 <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>ORDER</th>
@@ -3011,13 +3012,13 @@ export default function AdminDashboardPage({
             <tbody>
               {filteredJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan={7} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
                     <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>No posts found</p>
                     <p style={{ margin: '6px 0 0', fontSize: '0.85rem' }}>Try clearing your search or filter, or create a new post.</p>
                   </td>
                 </tr>
               ) : (
-                filteredJobs.map(job => {
+                filteredJobs.map((job, idx) => {
                   const isDraft = job.status === 'Draft' || job.status === 'draft';
                   return (
                     <tr
@@ -3026,6 +3027,10 @@ export default function AdminDashboardPage({
                       onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
+                      {/* INDEX */}
+                      <td style={{ padding: '14px 10px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.82rem' }}>
+                        {idx + 1}
+                      </td>
                       {/* TITLE */}
                       <td style={{ padding: '14px 14px', maxWidth: '440px' }}>
                         <span
@@ -3448,10 +3453,13 @@ export default function AdminDashboardPage({
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '38%' }}>
+                <th style={{ padding: '14px 12px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '45px', textAlign: 'center' }}>
+                  #
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '36%' }}>
                   Name
                 </th>
-                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '42%' }}>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '40%' }}>
                   Slug
                 </th>
                 <th style={{ padding: '14px 16px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
@@ -3465,6 +3473,10 @@ export default function AdminDashboardPage({
             <tbody>
               {sortedCategories.map((cat, idx) => (
                 <tr key={cat.id || idx} style={{ borderBottom: idx === sortedCategories.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                  {/* INDEX */}
+                  <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.85rem', verticalAlign: 'top' }}>
+                    {idx + 1}
+                  </td>
                   <td style={{ padding: '16px 20px', verticalAlign: 'top' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#0f172a' }}>
                       {cat.name}
@@ -5064,10 +5076,13 @@ export default function AdminDashboardPage({
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ padding: '14px 12px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '45px', textAlign: 'center' }}>
+                  #
+                </th>
                 <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%' }}>
                   STATUS
                 </th>
-                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '55%' }}>
+                <th style={{ padding: '14px 20px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '50%' }}>
                   NEWS MESSAGE
                 </th>
                 <th style={{ padding: '14px 16px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', width: '10%', textAlign: 'center' }}>
@@ -5084,13 +5099,17 @@ export default function AdminDashboardPage({
             <tbody>
               {localBreakingNews.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
                     No breaking news alerts added yet. Click "+ Add News Alert" above.
                   </td>
                 </tr>
               ) : (
                 localBreakingNews.map((item, idx) => (
                   <tr key={item.id || idx} style={{ borderBottom: idx === localBreakingNews.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                    {/* INDEX */}
+                    <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.85rem', verticalAlign: 'middle' }}>
+                      {idx + 1}
+                    </td>
                     {/* Status Toggle Switch */}
                     <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
                       <div
@@ -5402,6 +5421,7 @@ export default function AdminDashboardPage({
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 10px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', textAlign: 'center', width: '45px' }}>#</th>
                   <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>STATUS</th>
                   <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>POST TITLE & TARGET LINK</th>
                   <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>CATEGORY</th>
@@ -5412,7 +5432,7 @@ export default function AdminDashboardPage({
               <tbody>
                 {sortedLatest.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
+                    <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
                       No posts currently assigned to Latest Update ticker. Toggle any post below to feature it!
                     </td>
                   </tr>
