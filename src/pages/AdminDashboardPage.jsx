@@ -483,7 +483,25 @@ export default function AdminDashboardPage({
     return filtered.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
-      return 0; // maintain original order for others
+
+      const getTime = (j) => {
+        if (j.updatedAt) {
+          const t = new Date(j.updatedAt).getTime();
+          if (!isNaN(t) && t > 0) return t;
+        }
+        if (j.postDate) {
+          const t = new Date(j.postDate).getTime();
+          if (!isNaN(t) && t > 0) return t;
+        }
+        return 0;
+      };
+
+      const timeA = getTime(a);
+      const timeB = getTime(b);
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return 0;
     });
   }, [jobs, statusFilter, filterCat, searchTerm]);
 

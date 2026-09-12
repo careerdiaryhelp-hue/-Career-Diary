@@ -67,6 +67,69 @@ const DEFAULT_BREAKING_NEWS = [
   { id: '8', category: 'Admission', message: 'BSEB Bihar D.El.Ed Common Application Form 2026', link: '/bseb-bihar-d-el-ed-common-application-form-2026', priority: 2, expiry: '12/31/2026, 11:59:00 PM', active: true },
 ];
 
+// Merge primary jobs (Firestore / local admin) with static fallback jobs, deduplicating by ID & title, and sorting by updatedAt / timestamp descending
+export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
+  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const seenIds = new Set();
+  const seenTitles = new Set();
+  const merged = [];
+
+  // 1. Process primary posts first (user edits & Firestore take highest priority)
+  for (const post of primaryPosts) {
+    if (!post || !post.title) continue;
+    const safeId = post.id || post.slug || cleanJobId(post.title);
+    const normTitle = normalize(post.title);
+
+    seenIds.add(safeId);
+    if (normTitle) seenTitles.add(normTitle);
+    merged.push({
+      ...post,
+      id: safeId,
+      slug: safeId
+    });
+  }
+
+  // 2. Add fallback posts if not already present by ID or normalized title
+  for (const post of fallbackPosts) {
+    if (!post || !post.title) continue;
+    const safeId = post.id || post.slug || cleanJobId(post.title);
+    const normTitle = normalize(post.title);
+
+    if (seenIds.has(safeId) || (normTitle && seenTitles.has(normTitle))) {
+      continue;
+    }
+
+    seenIds.add(safeId);
+    if (normTitle) seenTitles.add(normTitle);
+    merged.push(post);
+  }
+
+  // 3. Sort merged posts: pinned posts first, then by updatedAt / timestamp descending
+  return merged.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+
+    const getTime = (j) => {
+      if (j.updatedAt) {
+        const t = new Date(j.updatedAt).getTime();
+        if (!isNaN(t) && t > 0) return t;
+      }
+      if (j.postDate) {
+        const t = new Date(j.postDate).getTime();
+        if (!isNaN(t) && t > 0) return t;
+      }
+      return 0;
+    };
+
+    const timeA = getTime(a);
+    const timeB = getTime(b);
+    if (timeA !== timeB) {
+      return timeB - timeA;
+    }
+    return 0;
+  });
+}
+
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     try {
@@ -88,13 +151,13 @@ export default function App() {
           try {
             localStorage.setItem('career_diary_admin_posts', JSON.stringify(cleaned));
           } catch (_) {}
-          return [...cleaned, ...INITIAL_JOBS];
+          return mergeAndSortJobs(cleaned, INITIAL_JOBS);
         }
       }
     } catch (e) {
       console.warn('Error reading saved jobs', e);
     }
-    return INITIAL_JOBS;
+    return mergeAndSortJobs([], INITIAL_JOBS);
   });
 
   // Admin authentication state
@@ -395,11 +458,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
       if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        setJobs(() => {
-          const firestoreIds = new Set(firestorePosts.map((p) => p.id));
-          const remainingStatic = INITIAL_JOBS.filter((j) => !firestoreIds.has(j.id));
-          return [...firestorePosts, ...remainingStatic];
-        });
+        setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
       }
     });
 
@@ -422,17 +481,22 @@ export default function App() {
     const sanitizedJob = {
       ...newJob,
       id: safeId,
-      slug: safeId
+      slug: safeId,
+      updatedAt: newJob.updatedAt || new Date().toISOString()
     };
 
-    // 1. Instant local optimistic update (cleanly remove any old un-sanitized ID too)
-    const updated = [sanitizedJob, ...jobs.filter(j => j.id !== safeId && j.id !== newJob.id)];
-    setJobs(updated);
+    // 1. Instant local optimistic update with full sorting
+    setJobs((prevJobs) => {
+      const filtered = prevJobs.filter(j => j.id !== safeId && j.id !== newJob.id);
+      return mergeAndSortJobs([sanitizedJob, ...filtered], []);
+    });
+
     try {
       const stored = JSON.parse(localStorage.getItem('career_diary_admin_posts') || '[]');
+      const filteredStored = stored.filter(j => j.id !== safeId && j.id !== newJob.id);
       localStorage.setItem('career_diary_admin_posts', JSON.stringify([
         sanitizedJob,
-        ...stored.filter(j => j.id !== safeId && j.id !== newJob.id)
+        ...filteredStored
       ]));
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
