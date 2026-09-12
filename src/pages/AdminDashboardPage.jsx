@@ -21,7 +21,6 @@ const cleanSlug = (str) => {
 };
 
 const CATEGORIES = [
-  { value: '', label: 'Select Category' },
   { value: 'LATEST JOB', label: 'Latest Job', icon: Briefcase },
   { value: 'ADMIT CARD', label: 'Admit Card', icon: IdCard },
   { value: 'RESULT', label: 'Result', icon: CheckSquare },
@@ -482,7 +481,28 @@ export default function AdminDashboardPage({
         : statusFilter === 'draft'
           ? isDraft
           : !isDraft;
-      const matchCat = filterCat === 'all' || (j.category || '').toUpperCase() === filterCat.toUpperCase();
+      let matchCat = false;
+      if (filterCat === 'all') {
+        matchCat = true;
+      } else {
+        const jobCat = (j.category || '').toUpperCase().trim();
+        const targetCat = filterCat.toUpperCase().trim();
+        if (targetCat.includes('JOB')) {
+          matchCat = jobCat.includes('JOB');
+        } else if (targetCat.includes('ADMIT')) {
+          matchCat = jobCat.includes('ADMIT');
+        } else if (targetCat.includes('RESULT')) {
+          matchCat = jobCat.includes('RESULT');
+        } else if (targetCat.includes('ANSWER')) {
+          matchCat = jobCat.includes('ANSWER');
+        } else if (targetCat.includes('SYLLABUS')) {
+          matchCat = jobCat.includes('SYLLABUS');
+        } else if (targetCat.includes('ADMISSION')) {
+          matchCat = jobCat.includes('ADMISSION');
+        } else {
+          matchCat = jobCat === targetCat || jobCat.includes(targetCat) || targetCat.includes(jobCat);
+        }
+      }
       const matchSearch = !searchTerm || j.title.toLowerCase().includes(searchTerm.toLowerCase());
       return matchStatus && matchCat && matchSearch;
     });
