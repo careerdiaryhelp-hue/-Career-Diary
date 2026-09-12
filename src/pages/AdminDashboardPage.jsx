@@ -3326,6 +3326,22 @@ export default function AdminDashboardPage({
                             Edit
                           </button>
                           <button
+                            onClick={() => handleDuplicateJob(job)}
+                            style={{
+                              background: '#f0fdf4',
+                              color: '#166534',
+                              border: '1px solid #bbf7d0',
+                              borderRadius: '6px',
+                              padding: '6px 12px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              marginRight: '6px'
+                            }}
+                          >
+                            Copy
+                          </button>
+                          <button
                             onClick={() => {
                               if (window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
                                 onDeleteJob(job.id);
