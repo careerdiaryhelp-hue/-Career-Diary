@@ -83,10 +83,17 @@ export default function AdminDashboardPage({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState('20'); // '10' | '15' | '20' | '50' | '100' | '200' | '500' | 'all'
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+
+  // Reset pagination to page 1 whenever search, filter, or itemsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCat, statusFilter, itemsPerPage]);
 
   // Mobile responsive state
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -2866,345 +2873,475 @@ export default function AdminDashboardPage({
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
   ];
 
-  // ── Render Sections ──────────────────────────────────────
-  const renderDashboard = () => (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Duplicate warning & one-click cleanup banner */}
-      {duplicateGroups.length > 0 && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontSize: '0.88rem', fontWeight: 600 }}>
-            <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
-            <span>Found {duplicateGroups.length} duplicate post group(s) in your list. Click to clean duplicates.</span>
-          </div>
-          <button onClick={handleCleanDuplicates} style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
-            Clean Duplicates (Keep 1 Copy)
-          </button>
-        </div>
-      )}
+  // ── Dashboard Overview Section ──
+  const renderDashboard = () => {
+    const publishedCount = jobs.filter(j => j.status !== 'Draft' && j.status !== 'draft').length;
+    const draftCount = jobs.filter(j => j.status === 'Draft' || j.status === 'draft').length;
 
-      {/* Main White Card matching screenshot */}
+    // Pagination calculations
+    const totalItems = filteredJobs.length;
+    const pageSize = itemsPerPage === 'all' ? (totalItems || 1) : Number(itemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    const validCurrentPage = Math.min(currentPage, totalPages);
+    const startIndex = (validCurrentPage - 1) * pageSize;
+    const endIndex = itemsPerPage === 'all' ? totalItems : Math.min(startIndex + pageSize, totalItems);
+    const paginatedJobs = itemsPerPage === 'all' ? filteredJobs : filteredJobs.slice(startIndex, endIndex);
+
+    const renderPaginationControls = () => (
       <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        padding: '12px 18px',
         background: '#ffffff',
-        borderRadius: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
-        border: '1px solid #f1f5f9',
-        padding: isMobile ? '16px' : '28px 32px'
+        borderRadius: '12px',
+        border: '1px solid #cbd5e1',
+        margin: '16px 0',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
       }}>
-        {/* Top Header Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-              Post Dashboard
-            </h1>
-            <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
-              Career Diary Content Management Panel
-            </p>
-          </div>
-          <button
-            onClick={handleStartNewPost}
-            style={{
-              background: '#10b981',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 22px',
-              fontWeight: 600,
-              fontSize: '0.92rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
-              transition: 'all 0.15s ease'
+        {/* Rows Per Page Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            Rows per page:
+          </span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(e.target.value);
+              setCurrentPage(1);
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#059669'}
-            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              background: '#fff',
+              cursor: 'pointer',
+              outline: 'none'
+            }}
           >
-            <Plus size={18} strokeWidth={2.5} /> Create Post
-          </button>
+            <option value="10">10 per page</option>
+            <option value="15">15 per page</option>
+            <option value="20">20 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="200">200 per page</option>
+            <option value="500">500 per page</option>
+            <option value="all">Show All ({totalItems})</option>
+          </select>
+
+          <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 600, marginLeft: '6px' }}>
+            Showing <strong>{totalItems > 0 ? startIndex + 1 : 0}–{endIndex}</strong> of <strong>{totalItems}</strong> posts
+          </span>
         </div>
 
-        {/* Filter and Search Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          {/* Status Tabs (All, Published, Drafts) */}
-          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
-            {[
-              { id: 'all', label: `All Posts (${jobs.length})` },
-              { id: 'published', label: `Published (${publishedCount})` },
-              { id: 'draft', label: `Drafts (${draftCount})` },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setStatusFilter(tab.id)}
-                style={{
-                  background: statusFilter === tab.id ? '#ffffff' : 'transparent',
-                  color: statusFilter === tab.id ? '#0f172a' : '#64748b',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '6px 14px',
-                  fontSize: '0.82rem',
-                  fontWeight: statusFilter === tab.id ? 700 : 600,
-                  cursor: 'pointer',
-                  boxShadow: statusFilter === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all 0.15s'
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+        {/* Page Navigation Buttons */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage(1)}
+              style={{
+                padding: '5px 10px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                background: validCurrentPage <= 1 ? '#f1f5f9' : '#ffffff',
+                color: validCurrentPage <= 1 ? '#94a3b8' : '#1e293b',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: validCurrentPage <= 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              « First
+            </button>
+
+            <button
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              style={{
+                padding: '5px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                background: validCurrentPage <= 1 ? '#f1f5f9' : '#ffffff',
+                color: validCurrentPage <= 1 ? '#94a3b8' : '#1e293b',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: validCurrentPage <= 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              ‹ Prev
+            </button>
+
+            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', padding: '0 8px' }}>
+              Page {validCurrentPage} of {totalPages}
+            </span>
+
+            <button
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              style={{
+                padding: '5px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                background: validCurrentPage >= totalPages ? '#f1f5f9' : '#ffffff',
+                color: validCurrentPage >= totalPages ? '#94a3b8' : '#1e293b',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: validCurrentPage >= totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Next ›
+            </button>
+
+            <button
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              style={{
+                padding: '5px 10px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                background: validCurrentPage >= totalPages ? '#f1f5f9' : '#ffffff',
+                color: validCurrentPage >= totalPages ? '#94a3b8' : '#1e293b',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: validCurrentPage >= totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Last »
+            </button>
+          </div>
+        )}
+      </div>
+    );
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Metric Cards (Matching Screenshot 1 & 2) */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)',
+          gap: '16px',
+          marginBottom: '28px'
+        }}>
+          {/* Card 1: Total Posts */}
+          <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL POSTS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '8px', fontFamily: 'Outfit, sans-serif' }}>{stats.total}</div>
+          </div>
+          {/* Card 2: Latest Jobs */}
+          <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>LATEST JOBS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '8px', fontFamily: 'Outfit, sans-serif' }}>{stats.jobs}</div>
+          </div>
+          {/* Card 3: Admit Cards */}
+          <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ADMIT CARDS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '8px', fontFamily: 'Outfit, sans-serif' }}>{stats.admitCards}</div>
+          </div>
+          {/* Card 4: Results */}
+          <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>RESULTS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '8px', fontFamily: 'Outfit, sans-serif' }}>{stats.results}</div>
+          </div>
+          {/* Card 5: Admissions */}
+          <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ADMISSIONS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '8px', fontFamily: 'Outfit, sans-serif' }}>{stats.admissions}</div>
+          </div>
+        </div>
+
+        {/* Clean Duplicates Alert Banner if duplicates found */}
+        {duplicateGroups.length > 0 && (
+          <div style={{
+            background: '#fff7ed', border: '1px solid #ffedd5', color: '#c2410c',
+            borderRadius: '12px', padding: '12px 18px', marginBottom: '20px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'
+          }}>
+            <span>Found {duplicateGroups.length} duplicate post group(s) in your list. Click to clean duplicates.</span>
+            <button
+              onClick={handleCleanDuplicates}
+              style={{
+                background: '#ea580c', color: '#ffffff', border: 'none', borderRadius: '6px',
+                padding: '6px 14px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              🧹 Clean All Duplicates
+            </button>
+          </div>
+        )}
+
+        {/* Main White Card matching screenshot */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #f1f5f9',
+          padding: isMobile ? '16px' : '28px 32px'
+        }}>
+          {/* Top Header Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                Post Dashboard
+              </h1>
+              <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
+                Career Diary Content Management Panel
+              </p>
+            </div>
+            <button
+              onClick={handleStartNewPost}
+              style={{
+                background: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 22px',
+                fontWeight: 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+              onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
+            >
+              <Plus size={18} strokeWidth={2.5} /> Create Post
+            </button>
           </div>
 
-          {/* Search & Category filter */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
-            <div style={{ position: 'relative', minWidth: '220px', maxWidth: '320px', width: '100%' }}>
-              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-              <input
-                type="text"
-                placeholder="Search posts by title..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+          {/* Filter and Search Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            {/* Status Tabs (All, Published, Drafts) */}
+            <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
+              {[
+                { id: 'all', label: `All Posts (${jobs.length})` },
+                { id: 'published', label: `Published (${publishedCount})` },
+                { id: 'draft', label: `Drafts (${draftCount})` },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setStatusFilter(tab.id)}
+                  style={{
+                    background: statusFilter === tab.id ? '#ffffff' : 'transparent',
+                    color: statusFilter === tab.id ? '#0f172a' : '#64748b',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: statusFilter === tab.id ? 700 : 600,
+                    cursor: 'pointer',
+                    boxShadow: statusFilter === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search & Category filter */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+              <div style={{ position: 'relative', minWidth: '220px', maxWidth: '320px', width: '100%' }}>
+                <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input
+                  type="text"
+                  placeholder="Search posts by title..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 34px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '0.86rem',
+                    outline: 'none',
+                    background: '#f8fafc',
+                    color: '#1e293b'
+                  }}
+                />
+              </div>
+              <select
+                value={filterCat}
+                onChange={e => setFilterCat(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 34px',
+                  padding: '8px 12px',
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
                   fontSize: '0.86rem',
                   outline: 'none',
                   background: '#f8fafc',
-                  color: '#1e293b'
+                  color: '#1e293b',
+                  cursor: 'pointer'
                 }}
-              />
+              >
+                <option value="all">All Categories</option>
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
             </div>
-            <select
-              value={filterCat}
-              onChange={e => setFilterCat(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '0.86rem',
-                outline: 'none',
-                background: '#f8fafc',
-                color: '#1e293b',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Categories</option>
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
           </div>
-        </div>
 
-        {/* Table matching the screenshot */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ padding: '12px 10px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center', width: '45px' }}>#</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TITLE</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>STATUS</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>ORDER</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>CATEGORY</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>DATE</th>
-                <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredJobs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
-                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>No posts found</p>
-                    <p style={{ margin: '6px 0 0', fontSize: '0.85rem' }}>Try clearing your search or filter, or create a new post.</p>
-                  </td>
+          {/* Top Pagination Bar */}
+          {renderPaginationControls()}
+
+          {/* Table matching the screenshot */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 10px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center', width: '45px' }}>#</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TITLE</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>STATUS</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>ORDER</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>CATEGORY</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>DATE</th>
+                  <th style={{ padding: '12px 14px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
-              ) : (
-                filteredJobs.map((job, idx) => {
-                  const isDraft = job.status === 'Draft' || job.status === 'draft';
-                  return (
-                    <tr
-                      key={job.id}
-                      style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      {/* INDEX */}
-                      <td style={{ padding: '14px 10px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.82rem' }}>
-                        {idx + 1}
-                      </td>
-                      {/* TITLE */}
-                      <td style={{ padding: '14px 14px', maxWidth: '440px' }}>
-                        <span
-                          onClick={() => handleEditJob(job)}
-                          style={{
-                            color: '#2563eb',
-                            fontWeight: 600,
-                            fontSize: '0.92rem',
-                            cursor: 'pointer',
-                            lineHeight: 1.45,
-                            display: 'inline',
-                          }}
-                          title="Click to edit post"
-                          onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                          onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                        >
-                          {job.pinned && <Pin size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle', color: '#d97706' }} fill="currentColor" />}
-                          {job.title}
-                        </span>
-                      </td>
-
-                      {/* STATUS */}
-                      <td style={{ padding: '14px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '3px 12px',
-                          borderRadius: '9999px',
-                          fontSize: '0.76rem',
-                          fontWeight: 700,
-                          background: isDraft ? '#fef3c7' : '#dcfce7',
-                          color: isDraft ? '#b45309' : '#15803d',
-                        }}>
-                          {isDraft ? 'Draft' : 'Published'}
-                        </span>
-                      </td>
-
-                      {/* ORDER */}
-                      <td style={{ padding: '14px 14px', textAlign: 'center' }}>
-                        <input
-                          type="number"
-                          value={job.displayOrder ?? 0}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            onAddJob({
-                              ...job,
-                              displayOrder: val,
-                              updatedAt: new Date().toISOString()
-                            });
-                          }}
-                          style={{
-                            width: '55px',
-                            padding: '4px 6px',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            fontSize: '0.82rem',
+              </thead>
+              <tbody>
+                {paginatedJobs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                      <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>No posts found</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.85rem' }}>Try clearing your search or filter, or create a new post.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedJobs.map((job, idx) => {
+                    const isDraft = job.status === 'Draft' || job.status === 'draft';
+                    return (
+                      <tr
+                        key={job.id}
+                        style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {/* INDEX */}
+                        <td style={{ padding: '14px 10px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.82rem' }}>
+                          {startIndex + idx + 1}
+                        </td>
+                        {/* TITLE */}
+                        <td style={{ padding: '14px 14px', maxWidth: '440px' }}>
+                          <div
+                            onClick={() => handleEditJob(job)}
+                            style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem', cursor: 'pointer', lineHeight: 1.3, marginBottom: '4px' }}
+                          >
+                            {job.title}
+                          </div>
+                          {job.slug && (
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              /{job.slug}
+                            </div>
+                          )}
+                        </td>
+                        {/* STATUS */}
+                        <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
                             fontWeight: 700,
-                            textAlign: 'center',
-                            color: '#0f172a',
-                            background: '#ffffff'
-                          }}
-                        />
-                      </td>
-
-                      {/* CATEGORY */}
-                      <td style={{ padding: '14px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '3px 12px',
-                          borderRadius: '9999px',
-                          fontSize: '0.76rem',
-                          fontWeight: 700,
-                          background: '#eff6ff',
-                          color: '#2563eb',
-                        }}>
-                          {formatCategory(job.category)}
-                        </span>
-                      </td>
-
-                      {/* DATE */}
-                      <td style={{ padding: '14px 14px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem', whiteSpace: 'nowrap' }}>
-                        {formatDate(job)}
-                      </td>
-
-                      {/* ACTIONS */}
-                      <td style={{ padding: '14px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
-                          {/* Pin */}
-                          <button
-                            onClick={() => handleTogglePin(job)}
-                            title={job.pinned ? "Unpin Post" : "Pin to Top"}
-                            style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: job.pinned ? '#fef3c7' : '#f1f5f9',
-                              border: job.pinned ? '1px solid #fde68a' : '1px solid #e2e8f0',
-                              color: job.pinned ? '#d97706' : '#64748b',
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', transition: 'all 0.15s'
+                            background: isDraft ? '#fef3c7' : '#dcfce7',
+                            color: isDraft ? '#d97706' : '#166534'
+                          }}>
+                            {isDraft ? 'Draft' : 'Published'}
+                          </span>
+                        </td>
+                        {/* ORDER */}
+                        <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                          <input
+                            type="number"
+                            value={job.order ?? 0}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10) || 0;
+                              onAddJob({ ...job, order: val });
                             }}
-                          >
-                            <Pin size={15} fill={job.pinned ? 'currentColor' : 'none'} />
-                          </button>
-
-                          {/* Duplicate */}
-                          <button
-                            onClick={() => handleDuplicateJob(job)}
-                            title="Duplicate as Draft"
                             style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: '#eff6ff', border: '1px solid #c7d2fe',
-                              color: '#4f46e5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', transition: 'all 0.15s'
+                              width: '55px',
+                              padding: '4px 6px',
+                              textAlign: 'center',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              fontSize: '0.84rem',
+                              fontWeight: 700
                             }}
-                          >
-                            <Copy size={15} />
-                          </button>
-
-                          {/* Edit */}
+                          />
+                        </td>
+                        {/* CATEGORY */}
+                        <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: '#e0f2fe',
+                            color: '#0369a1'
+                          }}>
+                            {job.category || 'General'}
+                          </span>
+                        </td>
+                        {/* DATE */}
+                        <td style={{ padding: '14px 14px', textAlign: 'center', fontSize: '0.82rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                          {job.postDate || job.createdAt || 'N/A'}
+                        </td>
+                        {/* ACTIONS */}
+                        <td style={{ padding: '14px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button
                             onClick={() => handleEditJob(job)}
-                            title="Edit Post"
                             style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: '#fef3c7', border: '1px solid #fde68a',
-                              color: '#d97706', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', transition: 'all 0.15s'
+                              background: '#eff6ff',
+                              color: '#2563eb',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: '6px',
+                              padding: '6px 12px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              marginRight: '6px'
                             }}
                           >
-                            <Edit3 size={15} />
+                            Edit
                           </button>
-
-                          {/* View Live */}
-                          <button
-                            onClick={() => window.open('/' + job.id, '_blank')}
-                            title="View Live Post"
-                            style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: '#e0f2fe', border: '1px solid #bae6fd',
-                              color: '#0284c7', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', transition: 'all 0.15s'
-                            }}
-                          >
-                            <ExternalLink size={15} />
-                          </button>
-
-                          {/* Delete */}
                           <button
                             onClick={() => {
                               if (window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
                                 onDeleteJob(job.id);
-                                showToast(`🗑️ Deleted "${job.title}"`, 'info');
                               }
                             }}
-                            title="Delete Post"
                             style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: '#fee2e2', border: '1px solid #fecaca',
-                              color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', transition: 'all 0.15s'
+                              background: '#fef2f2',
+                              color: '#dc2626',
+                              border: '1px solid #fecaca',
+                              borderRadius: '6px',
+                              padding: '6px 12px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
                             }}
                           >
-                            <Trash2 size={15} />
+                            Delete
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bottom Pagination Bar */}
+          {renderPaginationControls()}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── Categories Management Section (Matching Screenshots 1 & 3) ──
   const handleEditCategory = (cat) => {
