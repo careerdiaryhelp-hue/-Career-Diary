@@ -491,8 +491,8 @@ export default function AdminDashboardPage({
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
 
-      const orderA = Number(a.displayOrder) || 0;
-      const orderB = Number(b.displayOrder) || 0;
+      const orderA = Number(a.displayOrder) || Number(a.order) || 0;
+      const orderB = Number(b.displayOrder) || Number(b.order) || 0;
 
       if (orderA > 0 && orderB > 0) {
         if (orderA !== orderB) return orderA - orderB;
@@ -3254,10 +3254,10 @@ export default function AdminDashboardPage({
                         <td style={{ padding: '14px 14px', textAlign: 'center' }}>
                           <input
                             type="number"
-                            value={job.order ?? 0}
+                            value={job.displayOrder ?? job.order ?? 0}
                             onChange={(e) => {
                               const val = parseInt(e.target.value, 10) || 0;
-                              onAddJob({ ...job, order: val });
+                              onAddJob({ ...job, displayOrder: val, order: val });
                             }}
                             style={{
                               width: '55px',

@@ -112,8 +112,8 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
 
-    const orderA = Number(a.displayOrder) || 0;
-    const orderB = Number(b.displayOrder) || 0;
+    const orderA = Number(a.displayOrder) || Number(a.order) || 0;
+    const orderB = Number(b.displayOrder) || Number(b.order) || 0;
 
     if (orderA > 0 && orderB > 0) {
       if (orderA !== orderB) return orderA - orderB;
