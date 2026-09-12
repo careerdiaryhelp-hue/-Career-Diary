@@ -484,6 +484,17 @@ export default function AdminDashboardPage({
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
 
+      const orderA = Number(a.displayOrder) || 0;
+      const orderB = Number(b.displayOrder) || 0;
+
+      if (orderA > 0 && orderB > 0) {
+        if (orderA !== orderB) return orderA - orderB;
+      } else if (orderA > 0 && orderB === 0) {
+        return -1;
+      } else if (orderA === 0 && orderB > 0) {
+        return 1;
+      }
+
       const getTime = (j) => {
         if (j.updatedAt) {
           const t = new Date(j.updatedAt).getTime();
@@ -2931,8 +2942,30 @@ export default function AdminDashboardPage({
                       </td>
 
                       {/* ORDER */}
-                      <td style={{ padding: '14px 14px', textAlign: 'center', color: '#64748b', fontSize: '0.88rem', fontWeight: 600 }}>
-                        {job.displayOrder ?? 0}
+                      <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          value={job.displayOrder ?? 0}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            onAddJob({
+                              ...job,
+                              displayOrder: val,
+                              updatedAt: new Date().toISOString()
+                            });
+                          }}
+                          style={{
+                            width: '55px',
+                            padding: '4px 6px',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '6px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            textAlign: 'center',
+                            color: '#0f172a',
+                            background: '#ffffff'
+                          }}
+                        />
                       </td>
 
                       {/* CATEGORY */}

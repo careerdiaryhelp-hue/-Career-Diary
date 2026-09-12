@@ -104,10 +104,24 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
     merged.push(post);
   }
 
-  // 3. Sort merged posts: pinned posts first, then by updatedAt / timestamp descending
+  // 3. Sort merged posts:
+  // - Pinned posts first
+  // - Posts with explicit displayOrder > 0 (sorted by displayOrder ascending: 1, 2, 3...)
+  // - Remaining posts sorted by updatedAt / timestamp descending (newest updated first)
   return merged.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
+
+    const orderA = Number(a.displayOrder) || 0;
+    const orderB = Number(b.displayOrder) || 0;
+
+    if (orderA > 0 && orderB > 0) {
+      if (orderA !== orderB) return orderA - orderB;
+    } else if (orderA > 0 && orderB === 0) {
+      return -1;
+    } else if (orderA === 0 && orderB > 0) {
+      return 1;
+    }
 
     const getTime = (j) => {
       if (j.updatedAt) {
