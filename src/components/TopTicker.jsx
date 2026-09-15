@@ -165,7 +165,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
             }} />
 
             {/* Left Content */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 1, flex: '1 1 auto', minWidth: '280px' }}>
               <div style={{
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                 color: '#ffffff',
@@ -230,7 +230,8 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
               gap: '6px',
               boxShadow: '0 4px 12px rgba(251, 191, 36, 0.4)',
               whiteSpace: 'nowrap',
-              zIndex: 1
+              zIndex: 1,
+              marginLeft: 'auto'
             }}>
               Read Today Current Affairs <ExternalLink style={{ width: '15px', height: '15px' }} />
             </div>
