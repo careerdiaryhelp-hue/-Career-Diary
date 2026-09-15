@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
-import AdSenseBanner from '../components/AdSenseBanner';
+import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 
 export default function ResultDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -69,8 +69,8 @@ export default function ResultDetailPage({ job, onBack }) {
           </div>
         </div>
 
-        {/* AdSense Block Ad #1 (Top) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+        {/* AdSense Block Ad #1: Display Ad */}
+        <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
         {/* Dates Box */}
         <div className="detail-boxes-grid" style={{ marginBottom: '24px' }}>
@@ -113,8 +113,8 @@ export default function ResultDetailPage({ job, onBack }) {
           </p>
         </div>
 
-        {/* AdSense Block Ad #2 (Middle) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+        {/* AdSense Block Ad #2: InPost Ad */}
+        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Direct Links Table */}
         <div style={{ marginBottom: '30px' }}>
@@ -165,8 +165,8 @@ export default function ResultDetailPage({ job, onBack }) {
           </table>
         </div>
 
-        {/* AdSense Block Ad #3 (Bottom) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+        {/* AdSense Block Ad #3: Multiplex Ad */}
+        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
 
         {/* Community Social Join */}
         <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>

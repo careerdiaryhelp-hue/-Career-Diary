@@ -10,21 +10,43 @@ export default function AdSenseBanner({
   label = 'ADVERTISEMENT'
 }) {
   const adRef = useRef(null);
+  const pushedRef = useRef(false);
 
   useEffect(() => {
-    try {
-      if (window.adsbygoogle) {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+    pushedRef.current = false;
+    let timer = null;
+
+    const tryPush = () => {
+      if (pushedRef.current) return;
+      if (adRef.current && adRef.current.getAttribute('data-adsbygoogle-status')) {
+        pushedRef.current = true;
+        return;
       }
-    } catch (e) {
-      console.error('AdSense error:', e);
+      try {
+        if (window.adsbygoogle) {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+          pushedRef.current = true;
+        }
+      } catch (e) {
+        // Safe catch if AdSense is loading or already pushed
+      }
+    };
+
+    tryPush();
+
+    if (!pushedRef.current) {
+      timer = setTimeout(tryPush, 500);
     }
-  }, []);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [slot, layout]);
 
   return (
-    <div style={{ margin: '20px 0', textAlign: 'center', width: '100%', boxSizing: 'border-box', overflow: 'hidden', ...style }}>
+    <div style={{ margin: '16px 0', textAlign: 'center', width: '100%', boxSizing: 'border-box', overflow: 'hidden', ...style }}>
       {label && (
-        <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', fontWeight: 600 }}>
+        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', fontWeight: 600 }}>
           {label}
         </div>
       )}

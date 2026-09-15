@@ -8,6 +8,7 @@ import JobColumnsGrid from './components/JobColumnsGrid';
 import PostJobModal from './components/PostJobModal';
 import AdminLoginPage from './pages/AdminLoginPage';
 import Footer from './components/Footer';
+import { DisplayAd, MultiplexAd } from './components/AdSenseBanner';
 
 // Dedicated Detail Pages
 import JobDetailPage from './pages/JobDetailPage';
@@ -674,6 +675,11 @@ export default function App() {
           </div>
         )}
 
+        {/* AdSense Block Ad #1: Display Ad (Slot 1202822135) */}
+        <div className="container" style={{ marginTop: '12px' }}>
+          <DisplayAd label="ADVERTISEMENT" />
+        </div>
+
         <JobColumnsGrid
           jobs={filteredJobs}
           currentCategory={currentCategory}
@@ -690,6 +696,11 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         />
+
+        {/* AdSense Block Ad #3: Multiplex Ad (Slot 3880243672) */}
+        <div className="container" style={{ marginBottom: '24px' }}>
+          <MultiplexAd label="RECOMMENDED FOR YOU" />
+        </div>
       </>
     );
   };

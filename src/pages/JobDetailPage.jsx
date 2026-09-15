@@ -208,11 +208,15 @@ export default function JobDetailPage({ job, onBack }) {
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {job.content ? (
-          <div
-            className="sr-rich-html-content"
-            style={{ marginBottom: '24px' }}
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          />
+          <>
+            <div
+              className="sr-rich-html-content"
+              style={{ marginBottom: '24px' }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            />
+            {/* AdSense Block Ad #2: In-Article / InPost Ad (Slot 7544533819) */}
+            <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+          </>
         ) : (
           <>
             {/* Main Info Table */}
