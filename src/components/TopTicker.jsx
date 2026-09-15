@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Newspaper, ExternalLink } from 'lucide-react';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
@@ -117,6 +117,126 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
           </div>
         </div>
       )}
+
+      {/* 2.5 Creative Banner: Today Current Affairs */}
+      <div style={{ margin: '14px 0 6px 0', padding: '0 12px' }}>
+        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
+          <a
+            href="https://sarkariguidejob.com/current-affairs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
+              border: '2px solid #fbbf24',
+              borderRadius: '12px',
+              padding: '12px 20px',
+              color: '#ffffff',
+              textDecoration: 'none',
+              boxShadow: '0 6px 20px rgba(67, 56, 202, 0.35)',
+              transition: 'all 0.25s ease-in-out',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 25px rgba(251, 191, 36, 0.45)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(67, 56, 202, 0.35)';
+            }}
+          >
+            {/* Background Glow */}
+            <div style={{
+              position: 'absolute',
+              right: '-20px',
+              top: '-20px',
+              width: '100px',
+              height: '100px',
+              background: 'rgba(251, 191, 36, 0.2)',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              filter: 'blur(12px)'
+            }} />
+
+            {/* Left Content */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 1 }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                minWidth: '44px',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.45)',
+                boxSizing: 'border-box'
+              }}>
+                <Newspaper style={{ width: '22px', height: '22px', display: 'block', flexShrink: 0 }} />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)'
+                  }}>
+                    🔥 TODAY LIVE
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: 600 }}>
+                    Daily Updates & Quiz
+                  </span>
+                </div>
+
+                <div style={{
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  marginTop: '4px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Today Current Affairs 2026 – Read Daily GK Notes & Live Updates
+                </div>
+              </div>
+            </div>
+
+            {/* Right Button */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+              color: '#0f172a',
+              fontWeight: 800,
+              fontSize: '0.88rem',
+              padding: '9px 18px',
+              borderRadius: '30px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(251, 191, 36, 0.4)',
+              whiteSpace: 'nowrap',
+              zIndex: 1
+            }}>
+              Read Today Current Affairs <ExternalLink style={{ width: '15px', height: '15px' }} />
+            </div>
+          </a>
+        </div>
+      </div>
 
       {/* 3. Portal Headline, Social Links & 3-Line Moving Marquee (Exact Sarkari Result Layout) */}
       <div className="container sr-top-section">
