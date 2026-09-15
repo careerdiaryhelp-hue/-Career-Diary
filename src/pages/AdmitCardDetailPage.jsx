@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, FileText, UserCheck, Info, Link, FileDown, Send, MessageCircle, AlertCircle } from 'lucide-react';
+import AdSenseBanner from '../components/AdSenseBanner';
 
 export default function AdmitCardDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -68,6 +69,9 @@ export default function AdmitCardDetailPage({ job, onBack }) {
           </div>
         </div>
 
+        {/* AdSense Block Ad #1 (Top) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+
         {/* Dates Box */}
         <div className="detail-boxes-grid" style={{ marginBottom: '24px' }}>
           <div className="detail-info-box">
@@ -108,6 +112,9 @@ export default function AdmitCardDetailPage({ job, onBack }) {
             {job.description || 'Download the official written examination hall ticket, check exam roll number, exam center address, shift timings, and reporting instructions.'}
           </p>
         </div>
+
+        {/* AdSense Block Ad #2 (Middle) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Direct Links Table */}
         <div style={{ marginBottom: '30px' }}>
@@ -157,6 +164,9 @@ export default function AdmitCardDetailPage({ job, onBack }) {
             </tbody>
           </table>
         </div>
+
+        {/* AdSense Block Ad #3 (Bottom) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Community Social Join */}
         <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>

@@ -11,6 +11,9 @@ import Footer from './components/Footer';
 
 // Dedicated Detail Pages
 import JobDetailPage from './pages/JobDetailPage';
+import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
+import ResultDetailPage from './pages/ResultDetailPage';
+import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 // Dedicated Category Listing Pages
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -622,6 +625,16 @@ export default function App() {
           </button>
         </div>
       );
+    }
+    const catUpper = (selectedJob.category || '').toUpperCase();
+    if (catUpper.includes('ADMIT CARD')) {
+      return <AdmitCardDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    }
+    if (catUpper.includes('RESULT') || catUpper.includes('ANSWER KEY')) {
+      return <ResultDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    }
+    if (catUpper.includes('ADMISSION')) {
+      return <AdmissionDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
     }
     return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };

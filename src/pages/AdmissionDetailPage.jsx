@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, MapPin } from 'lucide-react';
+import AdSenseBanner from '../components/AdSenseBanner';
 
 export default function AdmissionDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -69,6 +70,9 @@ export default function AdmissionDetailPage({ job, onBack }) {
           </div>
         </div>
 
+        {/* AdSense Block Ad #1 (Top) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+
         {/* 2 Column Details: Dates & Application Fees */}
         <div className="detail-boxes-grid" style={{ marginBottom: '24px' }}>
           <div className="detail-info-box">
@@ -127,6 +131,9 @@ export default function AdmissionDetailPage({ job, onBack }) {
           </p>
         </div>
 
+        {/* AdSense Block Ad #2 (Middle) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+
         {/* Direct Links Section */}
         <div style={{ marginBottom: '30px' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#e67e22', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -175,6 +182,9 @@ export default function AdmissionDetailPage({ job, onBack }) {
             </tbody>
           </table>
         </div>
+
+        {/* AdSense Block Ad #3 (Bottom) */}
+        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Join Social Media Community */}
         <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>

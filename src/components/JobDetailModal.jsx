@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin } from 'lucide-react';
+import AdSenseBanner from './AdSenseBanner';
 
 export default function JobDetailModal({ job, onClose }) {
   if (!job) return null;
@@ -57,6 +58,9 @@ export default function JobDetailModal({ job, onClose }) {
             </a>
           </div>
 
+          {/* AdSense Block Ad #1 (Top) */}
+          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '14px 0' }} />
+
           {/* Important Dates & Application Fee */}
           <div className="detail-boxes-grid">
             <div className="detail-info-box">
@@ -91,6 +95,9 @@ export default function JobDetailModal({ job, onClose }) {
               <strong>Educational Qualification:</strong> {job.qualification || job.eligibility?.education || job.eligibility?.qualification || 'Passed 10th / 12th / Graduation degree from recognized university.'}
             </p>
           </div>
+
+          {/* AdSense Block Ad #2 (Middle) */}
+          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
           {/* Detailed Overview */}
           <div style={{ marginBottom: '20px' }}>
@@ -169,6 +176,9 @@ export default function JobDetailModal({ job, onClose }) {
               </table>
             </div>
           )}
+
+          {/* AdSense Block Ad #3 (Bottom) */}
+          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
           {/* Social Alert Community Join Buttons */}
           <div className="action-links-grid" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
