@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
-import AdSenseBanner from '../components/AdSenseBanner';
+import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -203,8 +203,8 @@ export default function JobDetailPage({ job, onBack }) {
           </a>
         </div>
 
-        {/* AdSense Block Ad #1 (Top) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+        {/* AdSense Block Ad #1: Display Ad (Slot 1202822135) */}
+        <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {job.content ? (
@@ -380,8 +380,8 @@ export default function JobDetailPage({ job, onBack }) {
           </table>
         )}
 
-        {/* AdSense Block Ad #2 (Middle) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+        {/* AdSense Block Ad #2: In-Article / InPost Ad (Slot 7544533819) */}
+        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* How to Fill Form */}
         <table className="sr-table">
@@ -405,8 +405,8 @@ export default function JobDetailPage({ job, onBack }) {
           </>
         )}
 
-        {/* AdSense Block Ad #3 (Bottom) */}
-        <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+        {/* AdSense Block Ad #3: Multiplex Ad (Slot 3880243672) */}
+        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (

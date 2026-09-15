@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ALL_COLUMNS, getJobsForCategory } from '../data/categoryHelpers.js';
+import { InFeedAd } from './AdSenseBanner';
 
 export default function JobColumnsGrid({
   jobs = [],
@@ -262,6 +263,8 @@ export default function JobColumnsGrid({
             renderColumnCard(col, getJobsForCategory(jobs, col.key))
           )}
         </div>
+        {/* AdSense In-Feed Ad Unit (Slot 2542955740) */}
+        <InFeedAd label="ADVERTISEMENT" style={{ marginTop: '24px' }} />
       </div>
     </main>
   );

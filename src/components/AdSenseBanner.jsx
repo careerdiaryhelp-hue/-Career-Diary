@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function AdSenseBanner({ slot, format = 'auto', responsive = 'true', style = {}, label = 'ADVERTISEMENT' }) {
+export default function AdSenseBanner({
+  slot = '1202822135',
+  format = 'auto',
+  layout = null,
+  layoutKey = null,
+  responsive = 'true',
+  style = {},
+  label = 'ADVERTISEMENT'
+}) {
   const adRef = useRef(null);
 
   useEffect(() => {
@@ -23,12 +31,31 @@ export default function AdSenseBanner({ slot, format = 'auto', responsive = 'tru
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block', minHeight: '90px', width: '100%' }}
+        style={{ display: 'block', minHeight: layout === 'in-article' ? '120px' : '90px', width: '100%' }}
         data-ad-client="ca-pub-2108299943580613"
-        {...(slot ? { 'data-ad-slot': slot } : {})}
+        data-ad-slot={slot}
         data-ad-format={format}
+        {...(layout ? { 'data-ad-layout': layout } : {})}
+        {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
         data-full-width-responsive={responsive}
       />
     </div>
   );
+}
+
+// Dedicated helper presets with exact Slot IDs from Google AdSense account
+export function DisplayAd(props) {
+  return <AdSenseBanner slot="1202822135" format="auto" {...props} />;
+}
+
+export function InPostAd(props) {
+  return <AdSenseBanner slot="7544533819" format="fluid" layout="in-article" {...props} />;
+}
+
+export function InFeedAd(props) {
+  return <AdSenseBanner slot="2542955740" format="fluid" {...props} />;
+}
+
+export function MultiplexAd(props) {
+  return <AdSenseBanner slot="3880243672" format="autorelaxed" {...props} />;
 }
