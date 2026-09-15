@@ -626,16 +626,6 @@ export default function App() {
         </div>
       );
     }
-    const catUpper = (selectedJob.category || '').toUpperCase();
-    if (catUpper.includes('ADMIT CARD')) {
-      return <AdmitCardDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
-    }
-    if (catUpper.includes('RESULT') || catUpper.includes('ANSWER KEY')) {
-      return <ResultDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
-    }
-    if (catUpper.includes('ADMISSION')) {
-      return <AdmissionDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
-    }
     return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };
 
