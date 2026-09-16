@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function AdSenseBanner({
   slot = '1202822135',
@@ -10,7 +10,8 @@ export default function AdSenseBanner({
   label = 'ADVERTISEMENT'
 }) {
   const adRef = useRef(null);
-  const isPushed = useRef(false);
+  const wrapperRef = useRef(null);
+  const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
 
   const isLocalhost =
     typeof window !== 'undefined' &&
@@ -22,51 +23,44 @@ export default function AdSenseBanner({
     if (isLocalhost) return;
 
     let isMounted = true;
-    let timerId = null;
+    const el = adRef.current;
+    if (!el) return;
 
-    const pushAd = () => {
+    // MutationObserver to detect AdSense status changes (filled vs unfilled)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
+          const status = el.getAttribute('data-ad-status');
+          if (isMounted) {
+            setAdStatus(status || 'filled');
+          }
+        }
+      });
+    });
+
+    observer.observe(el, { attributes: true });
+
+    // Execute AdSense push
+    const tryPush = () => {
       if (!isMounted || !adRef.current) return;
-
-      const el = adRef.current;
-
-      // Check if already initialized by AdSense script or pushed by us
-      if (
-        isPushed.current ||
-        el.getAttribute('data-adsbygoogle-status') ||
-        el.getAttribute('data-ad-status') ||
-        el.dataset.adPushed === 'true' ||
-        el.children.length > 0
-      ) {
-        return;
-      }
-
-      // Check if element is attached and has non-zero layout width
-      if (el.offsetWidth === 0 && el.offsetHeight === 0) {
-        // Element not yet visible in DOM, retry after 200ms
-        timerId = setTimeout(pushAd, 200);
-        return;
-      }
+      if (el.getAttribute('data-adsbygoogle-status')) return;
 
       try {
         if (window.adsbygoogle) {
-          el.dataset.adPushed = 'true';
-          isPushed.current = true;
           (window.adsbygoogle = window.adsbygoogle || []).push({});
-        } else {
-          // Script not loaded yet, retry
-          timerId = setTimeout(pushAd, 300);
         }
       } catch (err) {
-        // Suppress benign AdSense push errors
+        // Safe catch
       }
     };
 
-    // Delay push slightly (100ms) so DOM layout computation completes cleanly
-    timerId = setTimeout(pushAd, 100);
+    // Small delay to ensure DOM layout is computed
+    const timer = setTimeout(tryPush, 100);
 
     return () => {
       isMounted = false;
-      if (timerId) clearTimeout(timerId);
+      clearTimeout(timer);
+      observer.disconnect();
     };
   }, [slot, layout, layoutKey, isLocalhost]);
 
@@ -76,7 +70,7 @@ export default function AdSenseBanner({
         className="adsense-banner-wrapper localhost-preview"
         style={{
           margin: '16px 0',
-          padding: '12px',
+          padding: '10px',
           textAlign: 'center',
           backgroundColor: '#f8fafc',
           border: '1px dashed #cbd5e1',
@@ -91,8 +85,14 @@ export default function AdSenseBanner({
     );
   }
 
+  // Hide wrapper completely if AdSense marks it as unfilled
+  if (adStatus === 'unfilled') {
+    return null;
+  }
+
   return (
     <div
+      ref={wrapperRef}
       className="adsense-banner-wrapper"
       style={{
         margin: '16px 0',
@@ -100,11 +100,10 @@ export default function AdSenseBanner({
         width: '100%',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        minHeight: layout === 'in-article' ? '120px' : '90px',
         ...style
       }}
     >
-      {label && (
+      {label && adStatus === 'filled' && (
         <div
           style={{
             fontSize: '0.65rem',
@@ -121,7 +120,7 @@ export default function AdSenseBanner({
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block', width: '100%', minHeight: layout === 'in-article' ? '120px' : '90px' }}
+        style={{ display: 'block', width: '100%' }}
         data-ad-client="ca-pub-2108299943580613"
         data-ad-slot={slot}
         data-ad-format={format}
@@ -149,5 +148,6 @@ export function MultiplexAd(props) {
 export function InPostAd(props) {
   return <AdSenseBanner slot="7544533819" format="fluid" layout="in-article" {...props} />;
 }
+
 
 
