@@ -10,50 +10,118 @@ export default function AdSenseBanner({
   label = 'ADVERTISEMENT'
 }) {
   const adRef = useRef(null);
-  const pushedRef = useRef(false);
+  const isPushed = useRef(false);
+
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.includes('192.168.'));
 
   useEffect(() => {
-    pushedRef.current = false;
-    let timer = null;
+    if (isLocalhost) return;
 
-    const tryPush = () => {
-      if (pushedRef.current) return;
-      if (adRef.current && adRef.current.getAttribute('data-adsbygoogle-status')) {
-        pushedRef.current = true;
+    let isMounted = true;
+    let timerId = null;
+
+    const pushAd = () => {
+      if (!isMounted || !adRef.current) return;
+
+      const el = adRef.current;
+
+      // Check if already initialized by AdSense script or pushed by us
+      if (
+        isPushed.current ||
+        el.getAttribute('data-adsbygoogle-status') ||
+        el.getAttribute('data-ad-status') ||
+        el.dataset.adPushed === 'true' ||
+        el.children.length > 0
+      ) {
         return;
       }
+
+      // Check if element is attached and has non-zero layout width
+      if (el.offsetWidth === 0 && el.offsetHeight === 0) {
+        // Element not yet visible in DOM, retry after 200ms
+        timerId = setTimeout(pushAd, 200);
+        return;
+      }
+
       try {
         if (window.adsbygoogle) {
+          el.dataset.adPushed = 'true';
+          isPushed.current = true;
           (window.adsbygoogle = window.adsbygoogle || []).push({});
-          pushedRef.current = true;
+        } else {
+          // Script not loaded yet, retry
+          timerId = setTimeout(pushAd, 300);
         }
-      } catch (e) {
-        // Safe catch if AdSense is loading or already pushed
+      } catch (err) {
+        // Suppress benign AdSense push errors
       }
     };
 
-    tryPush();
-
-    if (!pushedRef.current) {
-      timer = setTimeout(tryPush, 500);
-    }
+    // Delay push slightly (100ms) so DOM layout computation completes cleanly
+    timerId = setTimeout(pushAd, 100);
 
     return () => {
-      if (timer) clearTimeout(timer);
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
     };
-  }, [slot, layout]);
+  }, [slot, layout, layoutKey, isLocalhost]);
+
+  if (isLocalhost) {
+    return (
+      <div
+        className="adsense-banner-wrapper localhost-preview"
+        style={{
+          margin: '16px 0',
+          padding: '12px',
+          textAlign: 'center',
+          backgroundColor: '#f8fafc',
+          border: '1px dashed #cbd5e1',
+          borderRadius: '6px',
+          color: '#64748b',
+          fontSize: '0.8rem',
+          ...style
+        }}
+      >
+        📢 [AdSense Slot {slot} - Active on Production Domain]
+      </div>
+    );
+  }
 
   return (
-    <div style={{ margin: '16px 0', textAlign: 'center', width: '100%', boxSizing: 'border-box', overflow: 'hidden', ...style }}>
+    <div
+      className="adsense-banner-wrapper"
+      style={{
+        margin: '16px 0',
+        textAlign: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        minHeight: layout === 'in-article' ? '120px' : '90px',
+        ...style
+      }}
+    >
       {label && (
-        <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', fontWeight: 600 }}>
+        <div
+          style={{
+            fontSize: '0.65rem',
+            color: '#94a3b8',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginBottom: '4px',
+            fontWeight: 600
+          }}
+        >
           {label}
         </div>
       )}
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block', minHeight: layout === 'in-article' ? '120px' : '90px', width: '100%' }}
+        style={{ display: 'block', width: '100%', minHeight: layout === 'in-article' ? '120px' : '90px' }}
         data-ad-client="ca-pub-2108299943580613"
         data-ad-slot={slot}
         data-ad-format={format}
@@ -65,13 +133,9 @@ export default function AdSenseBanner({
   );
 }
 
-// Dedicated helper presets with exact Slot IDs from Google AdSense account
+// Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202822135" format="auto" {...props} />;
-}
-
-export function InPostAd(props) {
-  return <AdSenseBanner slot="7544533819" format="fluid" layout="in-article" {...props} />;
+  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
 }
 
 export function InFeedAd(props) {
@@ -81,3 +145,9 @@ export function InFeedAd(props) {
 export function MultiplexAd(props) {
   return <AdSenseBanner slot="3880243672" format="autorelaxed" {...props} />;
 }
+
+export function InPostAd(props) {
+  return <AdSenseBanner slot="7544533819" format="fluid" layout="in-article" {...props} />;
+}
+
+

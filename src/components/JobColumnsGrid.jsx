@@ -108,7 +108,16 @@ export default function JobColumnsGrid({
             <div className="empty-state">No active updates.</div>
           ) : (
             <ul className={`sarkari-quick-list ${isSingle ? 'category-items-list' : ''}`}>
-              {displayedJobs.map((job) => renderJobItem(job, isSingle))}
+              {displayedJobs.map((job, idx) => (
+                <React.Fragment key={job.id || idx}>
+                  {renderJobItem(job, isSingle)}
+                  {(isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : idx === 4) && (
+                    <li className="in-column-ad-item" style={{ listStyle: 'none', margin: '8px 0', padding: 0 }}>
+                      <InFeedAd label="" style={{ margin: '4px 0' }} />
+                    </li>
+                  )}
+                </React.Fragment>
+              ))}
             </ul>
           )}
         </div>

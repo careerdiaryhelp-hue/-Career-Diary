@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
+import AutoFAQSection from '../components/AutoFAQSection';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -208,15 +209,11 @@ export default function JobDetailPage({ job, onBack }) {
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {job.content ? (
-          <>
-            <div
-              className="sr-rich-html-content"
-              style={{ marginBottom: '24px' }}
-              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-            />
-            {/* AdSense Block Ad #2: In-Article / InPost Ad (Slot 7544533819) */}
-            <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
-          </>
+          <div
+            className="sr-rich-html-content"
+            style={{ marginBottom: '24px' }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          />
         ) : (
           <>
             {/* Main Info Table */}
@@ -384,9 +381,6 @@ export default function JobDetailPage({ job, onBack }) {
           </table>
         )}
 
-        {/* AdSense Block Ad #2: In-Article / InPost Ad (Slot 7544533819) */}
-        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
-
         {/* How to Fill Form */}
         <table className="sr-table">
           <tbody>
@@ -409,8 +403,8 @@ export default function JobDetailPage({ job, onBack }) {
           </>
         )}
 
-        {/* AdSense Block Ad #3: Multiplex Ad (Slot 3880243672) */}
-        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
+        {/* AdSense Block Ad #2: In-Article / InPost Ad (Placed below Total Posts / Vacancy Details & ABOVE Important Links) */}
+        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
@@ -449,6 +443,12 @@ export default function JobDetailPage({ job, onBack }) {
             </tbody>
           </table>
         )}
+
+        {/* Dynamic FAQ Section with Google Rich Snippets */}
+        <AutoFAQSection job={job} category="job" />
+
+        {/* AdSense Block Ad #3: Multiplex Ad (Placed BELOW Important Links & FAQs) */}
+        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
 
         {/* Expert Tip if available */}
         {job.expertTip && (

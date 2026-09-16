@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
+import AutoFAQSection from '../components/AutoFAQSection';
 
 export default function ResultDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -164,6 +165,9 @@ export default function ResultDetailPage({ job, onBack }) {
             </tbody>
           </table>
         </div>
+
+        {/* Dynamic FAQ Section with Google Rich Snippets */}
+        <AutoFAQSection job={job} category="result" />
 
         {/* AdSense Block Ad #3: Multiplex Ad */}
         <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />

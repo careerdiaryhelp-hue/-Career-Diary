@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, MapPin } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
+import AutoFAQSection from '../components/AutoFAQSection';
 
 export default function AdmissionDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -182,6 +183,9 @@ export default function AdmissionDetailPage({ job, onBack }) {
             </tbody>
           </table>
         </div>
+
+        {/* Dynamic FAQ Section with Google Rich Snippets */}
+        <AutoFAQSection job={job} category="admission" />
 
         {/* AdSense Block Ad #3: Multiplex Ad */}
         <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
