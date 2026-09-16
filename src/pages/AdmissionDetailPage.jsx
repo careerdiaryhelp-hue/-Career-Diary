@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, MapPin } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
+import SEOHead from '../components/SEOHead';
 
 export default function AdmissionDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -28,6 +29,14 @@ export default function AdmissionDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
+      {/* Dynamic SEO Meta, Titles & Schema */}
+      <SEOHead
+        title={`${job.title} – Admission Form 2026, Counseling & Prospectus PDF | Career Diary`}
+        description={`Apply online for ${job.title} Admission 2026. Check eligibility, counseling dates, seat matrix, fee structure and direct registration link on Career Diary.`}
+        canonicalUrl={`https://careerdiary.in/${job.id}`}
+        job={job}
+        category="Admission"
+      />
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -125,12 +134,60 @@ export default function AdmissionDetailPage({ job, onBack }) {
         {/* Admission Description */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-heading)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Info className="w-5 h-5" style={{ color: '#e67e22' }} /> Course Details & Information
+            <Info className="w-5 h-5" style={{ color: '#e67e22' }} /> Course Details &amp; Information
           </h3>
           <p style={{ fontSize: '0.96rem', lineHeight: '1.7', color: 'var(--text-main)' }}>
-            {job.description || 'Complete details on course duration, college seat distribution, counseling choice filling, entrance examination pattern, and fee structure.'}
+            {job.description || `Complete official guidelines regarding ${job.title} online registration, counseling choice locking, college seat matrix allotment, entrance test syllabus, and annual course fee details.`}
           </p>
         </div>
+
+        {/* How To Apply Admission Online */}
+        <table className="sr-table" style={{ marginBottom: '24px' }}>
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">How To Register &amp; Apply For {job.title} Online 2026</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ paddingLeft: '20px', lineHeight: '1.8', margin: 0 }}>
+                  <li>Visit the official portal of {job.organization || 'the University / Board'}.</li>
+                  <li>Click on the Online Admission 2026 / Counseling Portal link.</li>
+                  <li>Alternatively, click on the direct 'Apply Online' link given in the Admission Portal Links table below.</li>
+                  <li>Complete basic registration by entering Candidate Name, Email ID, Mobile Number, and Password.</li>
+                  <li>Fill academic qualifications, upload photo &amp; signature, and select preferred college choices.</li>
+                  <li>Pay the application / counseling fee online via Debit Card, Net Banking, or UPI.</li>
+                  <li>Submit the final application form and download the confirmation slip for counseling verification.</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Social Channel Join Table (SarkariResult Style) */}
+        <table className="sr-table" style={{ margin: '16px 0' }}>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
+                Join Our Telegram Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
+                Join Our WhatsApp Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {/* AdSense Block Ad #2: InPost Ad */}
         <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />

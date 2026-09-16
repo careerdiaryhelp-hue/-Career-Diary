@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
+import SEOHead from '../components/SEOHead';
 
 export default function ResultDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -28,6 +29,14 @@ export default function ResultDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
+      {/* Dynamic SEO Meta, Titles & Schema */}
+      <SEOHead
+        title={`${job.title} – Result Out, Merit List PDF & Cut Off Marks | Career Diary`}
+        description={`Check ${job.title} Result 2026 online. Download qualifying merit list PDF, subject-wise score card, category cut off marks and direct link on Career Diary.`}
+        canonicalUrl={`https://careerdiary.in/${job.id}`}
+        job={job}
+        category="Result"
+      />
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -107,12 +116,80 @@ export default function ResultDetailPage({ job, onBack }) {
         {/* Overview */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-heading)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Info className="w-5 h-5" style={{ color: '#8e44ad' }} /> Result & Answer Key Details
+            <Info className="w-5 h-5" style={{ color: '#8e44ad' }} /> Result &amp; Answer Key Details
           </h3>
           <p style={{ fontSize: '0.96rem', lineHeight: '1.7', color: 'var(--text-main)' }}>
-            {job.description || 'Check your examination result, roll number selection list PDF, cut off marks breakdown, and tentative answer key objection portal.'}
+            {job.description || `The official examination result, score card, and tentative answer key for ${job.title} has been declared. Candidates can check their roll number in the merit selection list PDF or view subject-wise marks by logging into the official portal.`}
           </p>
         </div>
+
+        {/* How To Check & Download Result */}
+        <table className="sr-table" style={{ marginBottom: '24px' }}>
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">How To Check &amp; Download {job.title} Result 2026</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ paddingLeft: '20px', lineHeight: '1.8', margin: 0 }}>
+                  <li>Visit the official website of {job.organization || 'the exam board'}.</li>
+                  <li>Go to the Results / Latest Notices tab on the home page.</li>
+                  <li>Click on the link titled &quot;Check Result / Merit List PDF for {job.title}&quot;.</li>
+                  <li>Alternatively, click on the direct link provided in the Important Links table on Career Diary.</li>
+                  <li>If prompted, enter your Roll Number, Registration ID, and Date of Birth (DOB).</li>
+                  <li>The result / scorecard / qualifying merit list PDF will appear on screen.</li>
+                  <li>Use Ctrl+F to search your Roll Number or Name in the merit list PDF.</li>
+                  <li>Download and save your official scorecard PDF for document verification (DV).</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Mode Of Selection */}
+        <table className="sr-table" style={{ marginBottom: '24px' }}>
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">Mode Of Selection &amp; Next Stage</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                  <li>Written Examination / CBT Result Declaration</li>
+                  <li>Category-wise Cut Off Marks Verification</li>
+                  <li>Document Verification (DV) &amp; Original Certificate Check</li>
+                  <li>Final Selection List Publication</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Social Channel Join Table (SarkariResult Style) */}
+        <table className="sr-table" style={{ margin: '16px 0' }}>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
+                Join Our Telegram Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
+                Join Our WhatsApp Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {/* AdSense Block Ad #2: InPost Ad */}
         <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />

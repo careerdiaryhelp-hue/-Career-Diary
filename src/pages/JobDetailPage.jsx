@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
+import SEOHead from '../components/SEOHead';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -171,6 +172,15 @@ export default function JobDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px', width: '100%', boxSizing: 'border-box' }}>
+      {/* Dynamic SEO Meta, Titles & Google Jobs Schema */}
+      <SEOHead
+        title={`${job.title} – Notification, Eligibility & Apply Online | Career Diary`}
+        description={`${job.title} Notification 2026 out for ${job.organization || 'Govt Board'}. Check eligibility, total posts, last date to apply online, and direct application link on Career Diary.`}
+        canonicalUrl={`https://careerdiary.in/${job.id}`}
+        job={job}
+        category="Latest Jobs"
+      />
+
       {/* Back Button */}
       <div style={{ marginBottom: '12px' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -334,67 +344,81 @@ export default function JobDetailPage({ job, onBack }) {
           </tbody>
         </table>
 
-        {/* Mode of Selection */}
-        {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 && (
-          <table className="sr-table">
-            <tbody>
-              <tr>
-                <td className="sr-table-subheading">Mode of Selection</td>
-              </tr>
-              <tr>
-                <td>
-                  <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
-                    {job.selectionProcess.map((step, idx) => (
-                      <li key={idx}>{step}</li>
-                    ))}
-                  </ol>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        )}
+        {/* Mode of Selection Table */}
+        <table className="sr-table">
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">Mode Of Selection</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                  {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 ? (
+                    job.selectionProcess.map((step, idx) => <li key={idx}>{step}</li>)
+                  ) : (
+                    <>
+                      <li>Shortlisting based on Application / Eligibility</li>
+                      <li>Written Examination / Computer Based Test (CBT)</li>
+                      <li>Skill Test / Physical Efficiency Test (PET) (if applicable)</li>
+                      <li>Document Verification (DV)</li>
+                      <li>Medical Examination</li>
+                    </>
+                  )}
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {/* Vacancy Details Table */}
-        {vacancyDetails.length > 0 && (
-          <table className="sr-table sr-vacancy-table">
-            <thead>
-              <tr>
-                <th colSpan={3} className="sr-table-heading">
-                  {job.title} : Vacancy Details
-                </th>
-              </tr>
-              <tr>
-                <th>Post Name</th>
-                <th>Total Posts</th>
-                <th>Eligibility Criteria</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vacancyDetails.map((v, idx) => (
+        <table className="sr-table sr-vacancy-table">
+          <thead>
+            <tr>
+              <th colSpan={3} className="sr-table-heading">
+                {job.title} : Vacancy Details
+              </th>
+            </tr>
+            <tr>
+              <th>Post Name</th>
+              <th>No. Of Post</th>
+              <th>Eligibility Criteria</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vacancyDetails.length > 0 ? (
+              vacancyDetails.map((v, idx) => (
                 <tr key={idx}>
-                  <td>{v['Post Name'] || v.postName || v.Post || v.name || '-'}</td>
-                  <td><strong>{v.Total || v.total || v.vacancies || '-'}</strong></td>
-                  <td>{v.Eligibility || v.eligibility || job.qualification || 'As per rules'}</td>
+                  <td>{v['Post Name'] || v.postName || v.Post || v.name || job.postName || job.title}</td>
+                  <td><strong>{v.Total || v.total || v.vacancies || job.vacancies || 'Check Notification'}</strong></td>
+                  <td>{v.Eligibility || v.eligibility || job.qualification || 'As per notification rules'}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ))
+            ) : (
+              <tr>
+                <td>{job.postName || job.title}</td>
+                <td><strong>{job.vacancies || job.totalPosts || 'Various Posts'}</strong></td>
+                <td>{job.qualification || job.eligibility?.education || 'Candidates should have passed 10th / 12th / Graduate from a recognized Board/University in India. Read official notification for complete details.'}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
         {/* How to Fill Form */}
         <table className="sr-table">
           <tbody>
             <tr>
-              <td className="sr-table-subheading">How To Fill {job.title} Online Form</td>
+              <td className="sr-table-subheading">How To Check &amp; Apply For {job.title} Online Form</td>
             </tr>
             <tr>
               <td>
                 <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                  <li>Interested candidates can submit their application online before the last date.</li>
-                  <li>Use the &quot;Click Here&quot; link provided below under Important Links section to apply directly.</li>
-                  <li>Alternatively, visit the official website of the organization to complete the process online.</li>
-                  <li>Make sure to complete the application before the deadline: <strong style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'check notification'}</strong>.</li>
-                  <li><strong>Note –</strong> छात्रों से अनुरोध है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से पढ़ें। (Last Date, Age Limit &amp; Education Qualification)</li>
+                  <li>Candidates can submit their online application form before the last date: <strong style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'As per notification schedule'}</strong>.</li>
+                  <li>Read the official notification carefully before starting the application form.</li>
+                  <li>Keep ready all basic documents like photo, signature, ID proof, and educational certificates.</li>
+                  <li>Use the &quot;Apply Online&quot; link provided below under the Important Links section to proceed directly.</li>
+                  <li>Verify all column details in the preview option before submitting the form.</li>
+                  <li>Pay the required application fee online (if applicable) and take a final printout of your submitted form for future reference.</li>
+                  <li><strong>Note –</strong> छात्रों से अनुरोध है कि फॉर्म भरने से पहले Official Notification ध्यानपूर्वक पढ़ें।</li>
                 </ol>
               </td>
             </tr>
@@ -402,6 +426,32 @@ export default function JobDetailPage({ job, onBack }) {
         </table>
           </>
         )}
+
+        {/* Social Channel Join Table (SarkariResult Style) */}
+        <table className="sr-table" style={{ margin: '16px 0' }}>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
+                Join Our Telegram Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
+                Join Our WhatsApp Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {/* AdSense Block Ad #2: In-Article / InPost Ad (Placed below Total Posts / Vacancy Details & ABOVE Important Links) */}
         <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />

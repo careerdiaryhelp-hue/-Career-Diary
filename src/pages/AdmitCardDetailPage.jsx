@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, FileText, UserCheck, Info, Link, FileDown, Send, MessageCircle, AlertCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
+import SEOHead from '../components/SEOHead';
 
 export default function AdmitCardDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -28,6 +29,14 @@ export default function AdmitCardDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
+      {/* Dynamic SEO Meta, Titles & Schema */}
+      <SEOHead
+        title={`${job.title} – Download Admit Card, Hall Ticket & Exam Date | Career Diary`}
+        description={`Download ${job.title} Admit Card 2026. Check examination date, shift timings, exam city slip notice and direct link to download call letter on Career Diary.`}
+        canonicalUrl={`https://careerdiary.in/${job.id}`}
+        job={job}
+        category="Admit Card"
+      />
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -110,9 +119,77 @@ export default function AdmitCardDetailPage({ job, onBack }) {
             <Info className="w-5 h-5" style={{ color: '#0088cc' }} /> Admit Card Release Summary
           </h3>
           <p style={{ fontSize: '0.96rem', lineHeight: '1.7', color: 'var(--text-main)' }}>
-            {job.description || 'Download the official written examination hall ticket, check exam roll number, exam center address, shift timings, and reporting instructions.'}
+            {job.description || `The written examination hall ticket and call letter for ${job.title} has been officially released. Candidates can download their admit card online using their Registration Number, Application Number, or Date of Birth (DOB). Check exam center location, shift timings, and reporting instructions carefully.`}
           </p>
         </div>
+
+        {/* How To Check & Download Admit Card Step-by-Step */}
+        <table className="sr-table" style={{ marginBottom: '24px' }}>
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">How To Check &amp; Download {job.title} Admit Card 2026</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ paddingLeft: '20px', lineHeight: '1.8', margin: 0 }}>
+                  <li>Visit the official website of {job.organization || 'the examination board'}.</li>
+                  <li>Navigate to the Latest News / Notices / Candidate Portal section on the homepage.</li>
+                  <li>Click on the link titled &quot;Download Admit Card / Hall Ticket for {job.title}&quot;.</li>
+                  <li>Alternatively, click on the direct link provided under the &quot;Admit Card Direct Links&quot; section on Career Diary.</li>
+                  <li>Enter your Registration Number, Application ID, and Date of Birth (DOB) / Password.</li>
+                  <li>Click on the Submit / Login button to view your Admit Card on screen.</li>
+                  <li>Verify your Name, Roll Number, Exam Date, Shift Time, and Examination Center Address.</li>
+                  <li>Download and save the PDF file, then print a clear hard copy for the exam day.</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Mode Of Selection */}
+        <table className="sr-table" style={{ marginBottom: '24px' }}>
+          <tbody>
+            <tr>
+              <td className="sr-table-subheading">Mode Of Selection</td>
+            </tr>
+            <tr>
+              <td>
+                <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                  <li>Written Examination / Computer Based Test (CBT)</li>
+                  <li>Skill Test / Physical Efficiency Test (PET) (if applicable)</li>
+                  <li>Document Verification (DV)</li>
+                  <li>Medical Examination</li>
+                </ol>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Social Channel Join Table (SarkariResult Style) */}
+        <table className="sr-table" style={{ margin: '16px 0' }}>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
+                Join Our Telegram Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
+                Join Our WhatsApp Channel
+              </td>
+              <td style={{ textAlign: 'center' }}>
+                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
+                  Follow Now
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {/* AdSense Block Ad #2: InPost Ad */}
         <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
