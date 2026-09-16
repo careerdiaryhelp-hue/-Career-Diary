@@ -3,6 +3,7 @@ import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import SEOHead from '../components/SEOHead';
+import PostFooterSection from '../components/PostFooterSection';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -453,9 +454,6 @@ export default function JobDetailPage({ job, onBack }) {
           </tbody>
         </table>
 
-        {/* AdSense Block Ad #2: In-Article / InPost Ad (Placed below Total Posts / Vacancy Details & ABOVE Important Links) */}
-        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
-
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
           <table className="sr-table sr-links-table">
@@ -494,11 +492,8 @@ export default function JobDetailPage({ job, onBack }) {
           </table>
         )}
 
-        {/* Dynamic FAQ Section with Google Rich Snippets */}
-        <AutoFAQSection job={job} category="job" />
-
-        {/* AdSense Block Ad #3: Multiplex Ad (Placed BELOW Important Links & FAQs) */}
-        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
+        {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
+        <PostFooterSection job={job} category="job" />
 
         {/* Expert Tip if available */}
         {job.expertTip && (

@@ -3,6 +3,7 @@ import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link,
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import SEOHead from '../components/SEOHead';
+import PostFooterSection from '../components/PostFooterSection';
 
 export default function ResultDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -165,35 +166,6 @@ export default function ResultDetailPage({ job, onBack }) {
           </tbody>
         </table>
 
-        {/* Social Channel Join Table (SarkariResult Style) */}
-        <table className="sr-table" style={{ margin: '16px 0' }}>
-          <tbody>
-            <tr>
-              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
-                Join Our Telegram Channel
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
-                  Follow Now
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
-                Join Our WhatsApp Channel
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
-                  Follow Now
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* AdSense Block Ad #2: InPost Ad */}
-        <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
-
         {/* Direct Links Table */}
         <div style={{ marginBottom: '30px' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#8e44ad', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -243,26 +215,8 @@ export default function ResultDetailPage({ job, onBack }) {
           </table>
         </div>
 
-        {/* Dynamic FAQ Section with Google Rich Snippets */}
-        <AutoFAQSection job={job} category="result" />
-
-        {/* AdSense Block Ad #3: Multiplex Ad */}
-        <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
-
-        {/* Community Social Join */}
-        <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-          <h4 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '8px', color: 'var(--text-heading)' }}>
-            Get Instant Result & Answer Key Alerts on Telegram & WhatsApp
-          </h4>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '12px' }}>
-            <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn" style={{ backgroundColor: '#0088cc', color: '#fff' }}>
-              <Send className="w-4 h-4 inline mr-1" /> Join Telegram Channel
-            </a>
-            <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn" style={{ backgroundColor: '#25D366', color: '#fff' }}>
-              <MessageCircle className="w-4 h-4 inline mr-1" /> Join WhatsApp Channel
-            </a>
-          </div>
-        </div>
+        {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
+        <PostFooterSection job={job} category="result" />
 
       </div>
     </div>

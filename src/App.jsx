@@ -627,6 +627,15 @@ export default function App() {
         </div>
       );
     }
+    if (isAdmitCard(selectedJob)) {
+      return <AdmitCardDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    }
+    if (isResult(selectedJob) || isAnswerKey(selectedJob)) {
+      return <ResultDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    }
+    if (isAdmission(selectedJob)) {
+      return <AdmissionDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    }
     return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };
 
