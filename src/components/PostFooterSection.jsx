@@ -26,19 +26,19 @@ const InstagramIcon = () => (
 
 const XTwitterIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="#0f172a">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
 const FacebookIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="#1877f2">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
   </svg>
 );
 
 const YoutubeIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="#ff0000">
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
   </svg>
 );
 
@@ -47,14 +47,46 @@ export default function PostFooterSection({ job, category = 'job' }) {
 
   return (
     <div className="post-footer-master-container" style={{ marginTop: '30px', width: '100%', boxSizing: 'border-box' }}>
-      
+
       {/* 1. Legal Disclaimer */}
       <div style={{ fontSize: '0.85rem', lineHeight: '1.6', color: '#334155', marginBottom: '20px', padding: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
         <strong style={{ color: '#dc2626' }}>Disclaimer:</strong> Information regarding any exam form , latest jobs,results/marks,Admit Card,Admission ,answer key are published on this website are provided just for the immediate information of the examinees and should not be considered as a legal document. While every effort has been made by Career Diary team to ensure the accuracy of the information provided which includes official links, we are not responsible for any inadvertent errors that may appear in the examination results/marks, answer key or time table/admission dates. Additionally, we disclaim any liability for any loss or damage caused by any shortcomings, defects, or inaccuracies in the information available on this website. In case of any correction is needed feel free to contact us through contact us page.
       </div>
 
-      {/* 2. Join Us On Social Media Platforms (Pink Header 6-Grid Box) */}
-      <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px', backgroundColor: '#ffffff' }}>
+      {/* 2. Join Our Channel Table (2 Rows) */}
+      <table className="sr-table" style={{ margin: '16px 0', width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1' }}>
+        <tbody>
+          <tr>
+            <td style={{ fontWeight: 'bold', color: '#0088cc', width: '65%', padding: '12px 16px', borderBottom: '1px solid #cbd5e1' }}>
+              Join Our Telegram Channel
+            </td>
+            <td style={{ textAlign: 'center', padding: '12px 16px', borderBottom: '1px solid #cbd5e1' }}>
+              <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none' }}>
+                Follow Now
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style={{ fontWeight: 'bold', color: '#25d366', padding: '12px 16px' }}>
+              Join Our WhatsApp Channel
+            </td>
+            <td style={{ textAlign: 'center', padding: '12px 16px' }}>
+              <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none' }}>
+                Follow Now
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 3. InPost / InArticle Ad Banner */}
+      <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+
+      {/* 4. Dynamic FAQ Section */}
+      <AutoFAQSection job={job} category={category} />
+
+      {/* 5. Join Us On Social Media Platforms (Pink Header 6-Grid Box - Moved Below FAQ) */}
+      <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', margin: '24px 0 20px 0', backgroundColor: '#ffffff' }}>
         <div style={{ backgroundColor: '#e91e63', color: '#ffffff', textAlign: 'center', fontWeight: '700', fontSize: '1.15rem', padding: '12px 16px', letterSpacing: '0.5px' }}>
           Join Us On Social Media Platforms
         </div>
@@ -117,7 +149,7 @@ export default function PostFooterSection({ job, category = 'job' }) {
           </tbody>
         </table>
 
-        {/* 3. Motivation & Self Study Guidelines */}
+        {/* Motivation & Self Study Guidelines */}
         <div style={{ padding: '16px', fontSize: '0.92rem', lineHeight: '1.8', color: '#1e293b', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
             <span>👉 <strong>Go to home</strong> ..................................................................................</span>
@@ -145,39 +177,7 @@ export default function PostFooterSection({ job, category = 'job' }) {
         ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
       </div>
 
-      {/* 4. Join Our Channel Table (2 Rows) */}
-      <table className="sr-table" style={{ margin: '16px 0', width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1' }}>
-        <tbody>
-          <tr>
-            <td style={{ fontWeight: 'bold', color: '#0088cc', width: '65%', padding: '12px 16px', borderBottom: '1px solid #cbd5e1' }}>
-              Join Our Telegram Channel
-            </td>
-            <td style={{ textAlign: 'center', padding: '12px 16px', borderBottom: '1px solid #cbd5e1' }}>
-              <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none' }}>
-                Follow Now
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <td style={{ fontWeight: 'bold', color: '#25d366', padding: '12px 16px' }}>
-              Join Our WhatsApp Channel
-            </td>
-            <td style={{ textAlign: 'center', padding: '12px 16px' }}>
-              <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none' }}>
-                Follow Now
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 5. InPost / InArticle Ad Banner */}
-      <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
-
-      {/* 6. Dynamic FAQ Section */}
-      <AutoFAQSection job={job} category={category} />
-
-      {/* 7. Bottom Multiplex Ad */}
+      {/* 6. Bottom Multiplex Ad */}
       <MultiplexAd label="RECOMMENDED FOR YOU" style={{ margin: '20px 0' }} />
 
     </div>

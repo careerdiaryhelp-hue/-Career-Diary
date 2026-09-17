@@ -4,6 +4,7 @@ import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/A
 import AutoFAQSection from '../components/AutoFAQSection';
 import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
+import { isAdmitCard, isResult, isAnswerKey, isAdmission } from '../data/categoryHelpers';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -171,21 +172,41 @@ export default function JobDetailPage({ job, onBack }) {
      job.content.includes('sr-links-table'))
   );
 
+  const isAdmit = isAdmitCard(job);
+  const isRes = isResult(job) || isAnswerKey(job);
+  const isAdm = isAdmission(job);
+
+  const pageCategory = isAdmit
+    ? 'Admit Card'
+    : isRes
+    ? 'Result'
+    : isAdm
+    ? 'Admission'
+    : job.category || 'Latest Jobs';
+
+  const faqCategory = isAdmit
+    ? 'admit'
+    : isRes
+    ? 'result'
+    : isAdm
+    ? 'admission'
+    : 'job';
+
   return (
     <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px', width: '100%', boxSizing: 'border-box' }}>
       {/* Dynamic SEO Meta, Titles & Google Jobs Schema */}
       <SEOHead
-        title={`${job.title} – Notification, Eligibility & Apply Online | Career Diary`}
-        description={`${job.title} Notification 2026 out for ${job.organization || 'Govt Board'}. Check eligibility, total posts, last date to apply online, and direct application link on Career Diary.`}
+        title={`${job.title} – ${isAdmit ? 'Download Admit Card, Hall Ticket & Exam Date' : isRes ? 'Check Result, Cut Off & Merit List' : 'Notification, Eligibility & Apply Online'} | Career Diary`}
+        description={`${job.title} 2026. Check details, dates, eligibility and direct official links on Career Diary.`}
         canonicalUrl={`https://careerdiary.in/${job.id}`}
         job={job}
-        category="Latest Jobs"
+        category={pageCategory}
       />
 
       {/* Back Button */}
       <div style={{ marginBottom: '12px' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <ArrowLeft className="w-4 h-4" /> Back to All Jobs
+          <ArrowLeft className="w-4 h-4" /> Back to All Posts
         </button>
       </div>
 
@@ -428,31 +449,6 @@ export default function JobDetailPage({ job, onBack }) {
           </>
         )}
 
-        {/* Social Channel Join Table (SarkariResult Style) */}
-        <table className="sr-table" style={{ margin: '16px 0' }}>
-          <tbody>
-            <tr>
-              <td style={{ fontWeight: 'bold', color: '#0088cc', width: '60%', verticalAlign: 'middle' }}>
-                Join Our Telegram Channel
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#0088cc', color: '#fff', fontWeight: 'bold' }}>
-                  Follow Now
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 'bold', color: '#25d366', verticalAlign: 'middle' }}>
-                Join Our WhatsApp Channel
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold' }}>
-                  Follow Now
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
@@ -493,7 +489,7 @@ export default function JobDetailPage({ job, onBack }) {
         )}
 
         {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
-        <PostFooterSection job={job} category="job" />
+        <PostFooterSection job={job} category={faqCategory} />
 
         {/* Expert Tip if available */}
         {job.expertTip && (

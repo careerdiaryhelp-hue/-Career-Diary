@@ -10,11 +10,8 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import Footer from './components/Footer';
 import { DisplayAd, MultiplexAd } from './components/AdSenseBanner';
 
-// Dedicated Detail Pages
+// Dedicated Detail Page
 import JobDetailPage from './pages/JobDetailPage';
-import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
-import ResultDetailPage from './pages/ResultDetailPage';
-import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 // Dedicated Category Listing Pages
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -626,15 +623,6 @@ export default function App() {
           </button>
         </div>
       );
-    }
-    if (isAdmitCard(selectedJob)) {
-      return <AdmitCardDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
-    }
-    if (isResult(selectedJob) || isAnswerKey(selectedJob)) {
-      return <ResultDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
-    }
-    if (isAdmission(selectedJob)) {
-      return <AdmissionDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
     }
     return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
   };
