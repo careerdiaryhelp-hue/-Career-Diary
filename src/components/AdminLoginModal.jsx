@@ -9,15 +9,10 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Admin passcode: Careerdiary12345
-    if (passcode === 'Careerdiary12345' || passcode === 'admin123' || passcode === '1234' || passcode.toLowerCase() === 'admin') {
-      setError('');
-      onLoginSuccess();
-      setPasscode('');
-      onClose();
-    } else {
-      setError('Invalid Admin Passcode!');
-    }
+    setError('');
+    onLoginSuccess();
+    setPasscode('');
+    onClose();
   };
 
   return (
@@ -40,23 +35,7 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
           )}
 
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Key className="w-4 h-4" /> Admin Passcode
-            </label>
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Enter passcode (e.g. admin123)"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              autoFocus
-              required
-            />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-              Default Passcode: <strong>admin123</strong>
-            </span>
-          </div>
+
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button type="submit" className="btn btn-primary btn-block">
