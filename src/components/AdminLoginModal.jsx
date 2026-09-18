@@ -9,10 +9,15 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-    onLoginSuccess();
-    setPasscode('');
-    onClose();
+    // Admin passcode: Careerdiary12345
+    if (passcode === 'Careerdiary@2210') {
+      setError('');
+      onLoginSuccess();
+      setPasscode('');
+      onClose();
+    } else {
+      setError('Invalid Admin Passcode!');
+    }
   };
 
   return (
@@ -35,7 +40,21 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
           )}
 
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Key className="w-4 h-4" /> Admin Passcode
+            </label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter passcode"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              autoFocus
+              required
+            />
 
+          </div>
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button type="submit" className="btn btn-primary btn-block">

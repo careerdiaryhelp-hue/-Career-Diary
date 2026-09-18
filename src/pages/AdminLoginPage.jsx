@@ -11,8 +11,13 @@ export default function AdminLoginPage({ onLoginSuccess, onCancel }) {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      setError('');
-      onLoginSuccess();
+      if (passcode === 'Careerdiary@2210') {
+        setError('');
+        onLoginSuccess();
+      } else {
+        setError('Invalid Admin Passcode! Please try again.');
+        setLoading(false);
+      }
     }, 600);
   };
 
@@ -93,6 +98,35 @@ export default function AdminLoginPage({ onLoginSuccess, onCancel }) {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
+                <Key size={14} /> Admin Passcode
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Enter passcode..."
+                  value={passcode}
+                  onChange={(e) => { setPasscode(e.target.value); setError(''); }}
+                  autoFocus
+                  required
+                  style={{
+                    width: '100%', padding: '13px 44px 13px 16px',
+                    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '10px', color: '#fff', fontSize: '0.95rem',
+                    outline: 'none', boxSizing: 'border-box',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#d81b60'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
             {/* Buttons */}
             <button type="submit" disabled={loading}
               style={{
