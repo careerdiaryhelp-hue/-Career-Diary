@@ -31,6 +31,7 @@ const CATEGORIES = [
 
 const EMPTY_FORM = {
   title: '',
+  postDate: '',
   category: 'LATEST JOB',
   organization: '',
   vacancies: '',
@@ -3827,6 +3828,18 @@ export default function AdminDashboardPage({
                   placeholder="Full Post Title"
                   value={form.title}
                   onChange={e => set('title', e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.92rem', fontWeight: 600 }}
+                />
+              </div>
+
+              {/* Post Date */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>POST DATE (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 10 September 2026"
+                  value={form.postDate || ''}
+                  onChange={e => set('postDate', e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.92rem', fontWeight: 600 }}
                 />
               </div>
