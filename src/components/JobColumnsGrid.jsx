@@ -7,6 +7,7 @@ export default function JobColumnsGrid({
   jobs = [],
   currentCategory = 'all',
   searchQuery = '',
+  isLoading = false,
   onSelectJob,
   onNavigateCategory
 }) {
@@ -101,7 +102,23 @@ export default function JobColumnsGrid({
         </div>
         <div className="column-body">
           {displayedJobs.length === 0 ? (
-            <div className="empty-state">No active updates.</div>
+            isLoading ? (
+              <div className="empty-state" style={{ padding: '20px' }}>
+                <style>
+                  {`
+                    @keyframes skeleton-pulse {
+                      0%, 100% { opacity: 1; }
+                      50% { opacity: .5; }
+                    }
+                  `}
+                </style>
+                <div style={{ height: '24px', backgroundColor: '#e2e8f0', borderRadius: '4px', marginBottom: '12px', animation: 'skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+                <div style={{ height: '24px', backgroundColor: '#e2e8f0', borderRadius: '4px', marginBottom: '12px', width: '80%', animation: 'skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+                <div style={{ height: '24px', backgroundColor: '#e2e8f0', borderRadius: '4px', marginBottom: '12px', width: '90%', animation: 'skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+              </div>
+            ) : (
+              <div className="empty-state">No active updates.</div>
+            )
           ) : (
             <ul className={`sarkari-quick-list ${isSingle ? 'category-items-list' : ''}`}>
               {displayedJobs.map((job, idx) => (

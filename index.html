@@ -1,103 +1,115 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1080, user-scalable=yes, maximum-scale=5.0" />
-    <link rel="icon" type="image/png" href="/image.png" />
-    <link rel="apple-touch-icon" href="/image.png" />
-    <title>CAREER DIARY • GOVT JOB PORTAL | CareerDiary.in</title>
-    <meta name="description" content="Career Diary (careerdiary.in) - India's most trusted portal for Latest Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
-    
-    <!-- Open Graph / WhatsApp / Telegram Preview -->
-    <meta property="og:site_name" content="Career Diary" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="CAREER DIARY • GOVT JOB PORTAL" />
-    <meta property="og:description" content="Latest Indian Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
-    <meta property="og:url" content="https://careerdiary.in/" />
-    <meta property="og:image" content="https://careerdiary.in/image.png" />
 
-    <!-- Twitter Preview -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="CAREER DIARY • GOVT JOB PORTAL" />
-    <meta name="twitter:description" content="Latest Indian Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
-    <meta name="twitter:image" content="https://careerdiary.in/image.png" />
-    
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613" crossorigin="anonymous"></script>
-    
-    <!-- Google Analytics (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-H3WLGYXSW0"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, user-scalable=yes, maximum-scale=5.0" />
+  <link rel="icon" type="image/png" href="/image.png" />
+  <link rel="apple-touch-icon" href="/image.png" />
+  <title>CAREER DIARY • GOVT JOB PORTAL | CareerDiary.in</title>
+  <meta name="description"
+    content="Career Diary (careerdiary.in) - India's most trusted portal for Latest Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
+  <link rel="preconnect" href="https://firestore.googleapis.com" />
+  <link rel="preconnect" href="https://careerdiary-f2e0a.firebaseapp.com" />
 
-      gtag('config', 'G-H3WLGYXSW0');
-    </script>
+  <!-- Open Graph / WhatsApp / Telegram Preview -->
+  <meta property="og:site_name" content="Career Diary" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CAREER DIARY • GOVT JOB PORTAL" />
+  <meta property="og:description"
+    content="Latest Indian Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
+  <meta property="og:url" content="https://careerdiary.in/" />
+  <meta property="og:image" content="https://careerdiary.in/image.png" />
 
-    <!-- Hide Google Translate top toolbar banner -->
-    <style>
-      body > iframe,
-      body > .skiptranslate,
-      iframe.skiptranslate,
-      .goog-te-banner-frame,
-      .goog-te-banner-frame.skiptranslate,
-      iframe.goog-te-banner-frame,
-      iframe[class*="goog-te-banner-frame"],
-      .VIpgJd-ZVi9I-OR9QNe-OR9QNe,
-      .VIpgJd-ZVi9I-bOHMur-kNsZd {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        width: 0 !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        z-index: -999999 !important;
-      }
-      body {
-        top: 0px !important;
-        position: static !important;
-      }
-      #goog-gt-tt,
-      .goog-te-balloon-frame {
-        display: none !important;
-      }
-      .goog-text-highlight {
-        background-color: transparent !important;
-        box-shadow: none !important;
-      }
-    </style>
-    <script>
-      (function() {
-        var fixTop = function() {
-          if (document.body && document.body.style.top && document.body.style.top !== '0px') {
-            document.body.style.top = '0px';
+  <!-- Twitter Preview -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="CAREER DIARY • GOVT JOB PORTAL" />
+  <meta name="twitter:description"
+    content="Latest Indian Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
+  <meta name="twitter:image" content="https://careerdiary.in/image.png" />
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
+    crossorigin="anonymous"></script>
+
+  <!-- Google Analytics (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H3WLGYXSW0"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-H3WLGYXSW0');
+  </script>
+
+  <!-- Hide Google Translate top toolbar banner -->
+  <style>
+    body>iframe,
+    body>.skiptranslate,
+    iframe.skiptranslate,
+    .goog-te-banner-frame,
+    .goog-te-banner-frame.skiptranslate,
+    iframe.goog-te-banner-frame,
+    iframe[class*="goog-te-banner-frame"],
+    .VIpgJd-ZVi9I-OR9QNe-OR9QNe,
+    .VIpgJd-ZVi9I-bOHMur-kNsZd {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      position: fixed !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -999999 !important;
+    }
+
+    body {
+      top: 0px !important;
+      position: static !important;
+    }
+
+    #goog-gt-tt,
+    .goog-te-balloon-frame {
+      display: none !important;
+    }
+
+    .goog-text-highlight {
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+  </style>
+  <script>
+    (function () {
+      var fixTop = function () {
+        if (document.body && document.body.style.top && document.body.style.top !== '0px') {
+          document.body.style.top = '0px';
+        }
+        var iframes = document.querySelectorAll('body > iframe, body > .skiptranslate, iframe.skiptranslate, .goog-te-banner-frame');
+        for (var i = 0; i < iframes.length; i++) {
+          var el = iframes[i];
+          if (el && (!document.getElementById('root') || !document.getElementById('root').contains(el))) {
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+            el.style.setProperty('height', '0px', 'important');
+            el.style.setProperty('width', '0px', 'important');
           }
-          var iframes = document.querySelectorAll('body > iframe, body > .skiptranslate, iframe.skiptranslate, .goog-te-banner-frame');
-          for (var i = 0; i < iframes.length; i++) {
-            var el = iframes[i];
-            if (el && (!document.getElementById('root') || !document.getElementById('root').contains(el))) {
-              el.style.setProperty('display', 'none', 'important');
-              el.style.setProperty('visibility', 'hidden', 'important');
-              el.style.setProperty('height', '0px', 'important');
-              el.style.setProperty('width', '0px', 'important');
-            }
-          }
-        };
-        var obs = new MutationObserver(fixTop);
-        document.addEventListener('DOMContentLoaded', function() {
-          obs.observe(document.body, { childList: true, attributes: true, subtree: false });
-          fixTop();
-        });
-        window.addEventListener('load', fixTop);
-      })();
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+        }
+      };
+      var obs = new MutationObserver(fixTop);
+      document.addEventListener('DOMContentLoaded', function () {
+        obs.observe(document.body, { childList: true, attributes: true, subtree: false });
+        fixTop();
+      });
+      window.addEventListener('load', fixTop);
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

@@ -153,7 +153,9 @@ export default function App() {
 
       // We now cache the latest firestore fetch to prevent UI flashing
       const cachedFirestore = localStorage.getItem('career_diary_cached_firestore_jobs');
-      let baseJobs = INITIAL_JOBS;
+      
+      // If we don't have a cache, start empty so we don't flash India Post (INITIAL_JOBS) at the top!
+      let baseJobs = [];
       if (cachedFirestore) {
         try {
           const parsedCache = JSON.parse(cachedFirestore);
@@ -203,6 +205,9 @@ export default function App() {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [staticPage, setStaticPage] = useState(null);
+  const [isFirebaseLoaded, setIsFirebaseLoaded] = useState(() => {
+    return !!localStorage.getItem('career_diary_cached_firestore_jobs');
+  });
 
   // Dynamic Categories and Breaking News
   const [categories, setCategories] = useState(() => {
@@ -489,8 +494,9 @@ export default function App() {
         try {
           localStorage.setItem('career_diary_cached_firestore_jobs', JSON.stringify(firestorePosts));
         } catch(e) {}
-        setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
       }
+      setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
+      setIsFirebaseLoaded(true);
     });
 
     return () => {
@@ -697,6 +703,7 @@ export default function App() {
           jobs={filteredJobs}
           currentCategory={currentCategory}
           searchQuery={searchQuery}
+          isLoading={!isFirebaseLoaded}
           onSelectJob={(id) => navigateTo('/' + id)}
           onNavigateCategory={(cat, slug) => {
             if (slug) {
