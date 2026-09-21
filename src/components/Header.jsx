@@ -10,8 +10,7 @@ export default function Header({
   return (
     <header className="main-header">
       <div className="container header-container">
-        {/* Left balance spacer for centered desktop branding */}
-        <div className="header-left-spacer" />
+
 
         {/* Brand Logo - Centered in middle */}
         <a

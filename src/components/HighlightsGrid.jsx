@@ -8,6 +8,7 @@ export default function HighlightsGrid({
     if (!jobs || jobs.length === 0) return [];
 
     const featuredJobs = jobs.filter(j => Boolean(j.isFeatured || j.isTopCard || j.featured));
+    let selectedJobs = [];
 
     if (featuredJobs.length > 0) {
       const sorted = [...featuredJobs].sort((a, b) => {
@@ -15,43 +16,50 @@ export default function HighlightsGrid({
         const orderB = b.featuredOrder ?? b.displayOrder ?? 999;
         return orderA - orderB;
       });
-      return sorted.slice(0, 8);
+      selectedJobs = sorted.slice(0, 7);
+    } else {
+      selectedJobs = jobs.slice(0, 7);
     }
-
-    return jobs.slice(0, 8);
+    
+    // Inject "Top Online Form" precisely at index 3 (4th box) to match 8-box design
+    const finalGrid = [...selectedJobs];
+    finalGrid.splice(3, 0, {
+      id: 'top-online-forms',
+      title: 'Top Online Form\nJob List 2026',
+      link: '/top-online-form-list',
+      isStatic: true
+    });
+    
+    return finalGrid;
   }, [jobs]);
   
   const boxColors = [
-    'bg-box-redorange',   // #ff3300 (BPSC TRE style)
-    'bg-box-forestgreen', // #006b00 (UP Scholarship style)
-    'bg-box-magentapink', // #ef35bf (India Post GDS style)
-    'bg-box-vividblue',   // #1e7fe8 (CTET style)
-    'bg-box-olive',       // #8d9200 (RRB JE style)
-    'bg-box-deepblue',    // #1a2fc8 (Bihar STET style)
-    'bg-box-orange',      // #ff6a00 (Anganwadi style)
-    'bg-box-maroon'       // #a80000 (UPSSSC PET style)
+    'bg-box-redorange',   // #e31e5c
+    'bg-box-forestgreen', // #0056b3
+    'bg-box-magentapink', // #147f2c
+    'bg-box-purple',      // #d600ff (Top Form)
+    'bg-box-vividblue',   // #f2471c
+    'bg-box-olive',       // #007a75
+    'bg-box-deepblue',    // #a9000b
+    'bg-box-orange',      // #cc0052
   ];
 
   return (
     <section className="featured-highlights-section">
-      <div className="container" style={{ padding: '0 8px' }}>
+      <div className="container">
         <div className="top-banners-grid">
-          {topItems.length === 0 ? (
-            <div className="empty-state">No featured notifications available.</div>
-          ) : (
-            topItems.map((job, index) => (
-              <a
-                key={job.id}
-                href={`/${job.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`banner-card ${boxColors[index] || 'bg-box-pink'}`}
-                style={{ textDecoration: 'none', display: 'flex' }}
-              >
-                <div className="banner-title">{job.title}</div>
-              </a>
-            ))
-          )}
+          {topItems.map((item, index) => (
+            <a
+              key={item.id}
+              href={item.isStatic ? item.link : `/${item.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`banner-card ${boxColors[index % boxColors.length]}`}
+              style={{ textDecoration: 'none', display: 'flex' }}
+            >
+              <div className="banner-title" style={{ whiteSpace: 'pre-wrap' }}>{item.title}</div>
+            </a>
+          ))}
         </div>
       </div>
     </section>

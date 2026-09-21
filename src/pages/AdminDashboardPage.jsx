@@ -40,6 +40,7 @@ const EMPTY_FORM = {
   featured: false,
   isFeatured: false,
   isLatestUpdate: false,
+  isTopForm: false,
   featuredOrder: 0,
   latestOrder: 0,
   slug: '',
@@ -172,6 +173,10 @@ export default function AdminDashboardPage({
   const [customFeaturedTitle, setCustomFeaturedTitle] = useState('');
   const [customFeaturedLink, setCustomFeaturedLink] = useState('');
   const [customFeaturedSlot, setCustomFeaturedSlot] = useState(0);
+
+  // Quick custom top form creation state
+  const [customTopFormTitle, setCustomTopFormTitle] = useState('');
+  const [customTopFormLink, setCustomTopFormLink] = useState('');
 
   // Sync external props if provided
   useEffect(() => {
@@ -743,6 +748,22 @@ export default function AdminDashboardPage({
     );
   };
 
+  const handleToggleTopForm = (job) => {
+    if (!job) return;
+    const updatedJob = {
+      ...job,
+      isTopForm: !job.isTopForm,
+      updatedAt: new Date().toISOString(),
+    };
+    onAddJob(updatedJob);
+    showToast(
+      !job.isTopForm
+        ? '✦ Post added to Top Online Forms!'
+        : 'Removed post from Top Online Forms.',
+      !job.isTopForm ? 'success' : 'info'
+    );
+  };
+
   const handleToggleFeatured = (job) => {
     if (!job) return;
     const isCurrentlyFeatured = Boolean(job.isFeatured || job.isTopCard || job.featured);
@@ -829,6 +850,35 @@ export default function AdminDashboardPage({
     setCustomFeaturedTitle('');
     setCustomFeaturedLink('');
     showToast(`★ Featured Card "${customFeaturedTitle.slice(0, 25)}..." assigned to Card Slot #${Number(customFeaturedSlot) + 1}!`, 'success');
+  };
+
+  const handleAddCustomTopForm = (e) => {
+    e?.preventDefault();
+    if (!customTopFormTitle.trim()) {
+      showToast('⚠️ Please enter a title for the top form!', 'error');
+      return;
+    }
+    const rawLink = customTopFormLink.trim();
+    let slug = cleanSlug(rawLink || customTopFormTitle);
+    if (!slug) slug = `topform-${Date.now()}`;
+
+    const newTopFormJob = {
+      id: slug,
+      slug: slug,
+      title: customTopFormTitle.trim(),
+      link: rawLink || `/${slug}`,
+      url: rawLink || `/${slug}`,
+      category: 'LATEST JOB',
+      status: 'Published',
+      isTopForm: true,
+      postDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      updatedAt: new Date().toISOString(),
+    };
+
+    onAddJob(newTopFormJob);
+    setCustomTopFormTitle('');
+    setCustomTopFormLink('');
+    showToast(`✦ Top Form "${customTopFormTitle.slice(0, 25)}..." added successfully!`, 'success');
   };
 
   const handleTogglePin = async (job) => {
@@ -2646,6 +2696,7 @@ export default function AdminDashboardPage({
       featured: Boolean(form.featured || form.isFeatured),
       isFeatured: Boolean(form.featured || form.isFeatured),
       isTopCard: Boolean(form.featured || form.isFeatured),
+      isTopForm: Boolean(form.isTopForm),
       isLatestUpdate: Boolean(form.isLatestUpdate),
       isLatest: Boolean(form.isLatestUpdate),
       featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
@@ -2784,6 +2835,7 @@ export default function AdminDashboardPage({
       featured: Boolean(form.featured || form.isFeatured),
       isFeatured: Boolean(form.featured || form.isFeatured),
       isTopCard: Boolean(form.featured || form.isFeatured),
+      isTopForm: Boolean(form.isTopForm),
       isLatestUpdate: Boolean(form.isLatestUpdate),
       isLatest: Boolean(form.isLatestUpdate),
       featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
@@ -2892,6 +2944,7 @@ export default function AdminDashboardPage({
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
+    { id: 'top-online-forms', label: 'Top Online Forms', icon: FileText },
   ];
 
   // ── Dashboard Overview Section ──
@@ -3310,6 +3363,24 @@ export default function AdminDashboardPage({
                         </td>
                         {/* ACTIONS */}
                         <td style={{ padding: '14px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button
+                            onClick={() => handleToggleTopForm(job)}
+                            style={{
+                              background: job.isTopForm ? '#fee2e2' : '#f8fafc',
+                              color: job.isTopForm ? '#991b1b' : '#64748b',
+                              border: job.isTopForm ? '1px solid #fca5a5' : '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              marginRight: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            title={job.isTopForm ? "Remove from Top Forms" : "Add to Top Forms"}
+                          >
+                            {job.isTopForm ? '★ Top Form' : '☆ Top Form'}
+                          </button>
                           <button
                             onClick={() => handleEditJob(job)}
                             style={{
@@ -5962,6 +6033,220 @@ export default function AdminDashboardPage({
     );
   };
 
+  // ── Render Top Online Forms Section ──────────────────────
+  const renderTopOnlineForms = () => {
+    const explicitTopForms = jobs.filter(j => Boolean(j.isTopForm));
+    const searchFilteredForms = explicitTopForms.filter(j => {
+      if (!searchTerm) return true;
+      const q = searchTerm.toLowerCase();
+      return (j.title || '').toLowerCase().includes(q) || (j.organization || '').toLowerCase().includes(q);
+    });
+
+    return (
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+          border: '1px solid #e2e8f0',
+          marginBottom: '32px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
+            background: 'linear-gradient(90deg, #a80000, #ff6a00)'
+          }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ background: '#fee2e2', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center' }}>
+                <FileText size={22} style={{ color: '#a80000' }} />
+              </div>
+              <div>
+                <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Top Online Forms Manager
+                </h1>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
+                  Manage the grid of links shown on the Top Online Form page.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 1: Add Custom Top Form */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #cbd5e1',
+          marginBottom: '28px',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PlusSquare size={18} style={{ color: '#0f172a' }} /> Add Custom Top Form Link
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+              Create a quick link directly for the Top Online Forms page without drafting a full post.
+            </p>
+          </div>
+          <form onSubmit={handleAddCustomTopForm} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>FORM TITLE *</label>
+              <input
+                type="text"
+                placeholder="e.g. SSC CGL Apply Online 2026"
+                value={customTopFormTitle}
+                onChange={(e) => setCustomTopFormTitle(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>TARGET LINK / URL (OPTIONAL)</label>
+              <input
+                type="text"
+                placeholder="e.g. https://apply.example.com (Leave blank for generic link)"
+                value={customTopFormLink}
+                onChange={(e) => setCustomTopFormLink(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
+              />
+            </div>
+            <button
+              type="submit"
+              style={{
+                alignSelf: 'flex-start',
+                background: '#a80000',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Plus size={16} /> Add Top Form
+            </button>
+          </form>
+        </div>
+
+        {/* Section 2: Currently Active Top Forms */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #cbd5e1',
+          marginBottom: '28px',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ListOrdered size={18} style={{ color: '#0f172a' }} /> Currently Active Top Forms
+            </h3>
+            {/* Search Top Forms */}
+            <div style={{ position: 'relative', width: '250px' }}>
+              <input
+                type="text"
+                placeholder="Search active top forms..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '6px 12px 6px 32px',
+                  borderRadius: '20px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.85rem'
+                }}
+              />
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569' }}>Status</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569' }}>Title</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {searchFilteredForms.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
+                      No posts currently assigned to Top Online Forms. Use the form above or toggle posts from the Dashboard!
+                    </td>
+                  </tr>
+                ) : (
+                  searchFilteredForms.map((job) => (
+                    <tr key={job.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <button
+                          onClick={() => handleToggleTopForm(job)}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#991b1b',
+                            border: '1px solid #f87171',
+                            borderRadius: '20px',
+                            padding: '4px 12px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                          <X size={12} /> Remove
+                        </button>
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>{job.title}</div>
+                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontFamily: 'monospace' }}>/{job.slug || job.id}</div>
+                      </td>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setEditingJobId(job.id);
+                              loadJobForEditing(job);
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: '4px' }}
+                            title="Full Edit"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to completely delete "${job.title}"?`)) {
+                                onDeleteJob(job.id);
+                                showToast('Post deleted', 'success');
+                              }
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                            title="Delete Permanently"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ── Layout ────────────────────────────────────────────────
   return (
     <div style={{
@@ -6180,6 +6465,7 @@ export default function AdminDashboardPage({
           {activeSection === 'breaking-news' && renderBreakingNews()}
           {activeSection === 'latest-updates' && renderLatestUpdates()}
           {activeSection === 'featured-posts' && renderFeaturedPosts()}
+          {activeSection === 'top-online-forms' && renderTopOnlineForms()}
         </div>
       </div>
 

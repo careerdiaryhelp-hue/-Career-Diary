@@ -21,6 +21,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import ContactUsPage from './pages/ContactUsPage';
 import LastDateJobsPage from './pages/LastDateJobsPage';
+import TopOnlineFormsPage from './pages/TopOnlineFormsPage';
 
 // Firebase Cloud Firestore
 import {
@@ -312,6 +313,13 @@ export default function App() {
       document.title = 'Privacy Policy | Career Diary';
       return;
     }
+    if (cleanPath === 'top-online-form-list' || cleanPath === 'top-online-forms') {
+      setStaticPage('top-online-forms');
+      setSelectedJobId(null);
+      setCurrentCategory('all');
+      document.title = 'Top Online Form : Current Jobs/ Vacancy: 2026 | Career Diary';
+      return;
+    }
     if (cleanPath === 'terms-conditions' || cleanPath === 'terms') {
       setStaticPage('terms');
       setSelectedJobId(null);
@@ -586,7 +594,17 @@ export default function App() {
     }
   };
 
-  // Filtered jobs resolver (Drafts excluded from public visitors)
+  // Track Page Views for Google Analytics and ensure Ads register navigation
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('config', 'G-H3WLGYXSW0', {
+        page_path: path,
+      });
+    }
+  }, [selectedJobId, staticPage, isAdminRoute, currentCategory]);
+
+  // Derived filtered jobs for main contentr (Drafts excluded from public visitors)
   const filteredJobs = jobs.filter((job) => {
     if (!job || !job.title) return false;
     if (job.status === 'Draft' || job.status === 'draft') return false;
@@ -641,7 +659,7 @@ export default function App() {
         </div>
       );
     }
-    return <JobDetailPage job={selectedJob} onBack={handleBackToAllJobs} />;
+    return <JobDetailPage key={selectedJob.id} job={selectedJob} onBack={handleBackToAllJobs} />;
   };
 
   const goHome = () => {
@@ -652,6 +670,7 @@ export default function App() {
   // Helper to render main area when no item is selected
   const renderMainContent = () => {
     // Static pages
+    if (staticPage === 'top-online-forms') return <TopOnlineFormsPage jobs={publishedJobs} onBack={goHome} />;
     if (staticPage === 'privacy') return <PrivacyPolicyPage onBack={goHome} />;
     if (staticPage === 'terms') return <TermsPage onBack={goHome} />;
     if (staticPage === 'contact') return <ContactUsPage onBack={goHome} />;
@@ -759,6 +778,14 @@ export default function App() {
 
   return (
     <div className="app-root">
+      {/* Sidebar Ads for Desktop */}
+      <div className="side-ad-container side-ad-left">
+        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+      </div>
+      <div className="side-ad-container side-ad-right">
+        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+      </div>
+
       {/* Header with Search */}
       <Header
         searchQuery={searchQuery}
