@@ -148,8 +148,20 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 export default function App() {
   const [jobs, setJobs] = useState(() => {
     try {
-      // Clear legacy cache so users get the fresh real posts immediately
+      // Clear legacy cache
       localStorage.removeItem('career_diary_jobs');
+
+      // We now cache the latest firestore fetch to prevent UI flashing
+      const cachedFirestore = localStorage.getItem('career_diary_cached_firestore_jobs');
+      let baseJobs = INITIAL_JOBS;
+      if (cachedFirestore) {
+        try {
+          const parsedCache = JSON.parse(cachedFirestore);
+          if (Array.isArray(parsedCache) && parsedCache.length > 0) {
+            baseJobs = mergeAndSortJobs(parsedCache, INITIAL_JOBS);
+          }
+        } catch(e) {}
+      }
 
       const adminPosts = localStorage.getItem('career_diary_admin_posts');
       if (adminPosts) {
@@ -166,9 +178,10 @@ export default function App() {
           try {
             localStorage.setItem('career_diary_admin_posts', JSON.stringify(cleaned));
           } catch (_) {}
-          return mergeAndSortJobs(cleaned, INITIAL_JOBS);
+          return mergeAndSortJobs(cleaned, baseJobs);
         }
       }
+      return baseJobs === INITIAL_JOBS ? mergeAndSortJobs([], INITIAL_JOBS) : baseJobs;
     } catch (e) {
       console.warn('Error reading saved jobs', e);
     }
@@ -473,6 +486,9 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
       if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        try {
+          localStorage.setItem('career_diary_cached_firestore_jobs', JSON.stringify(firestorePosts));
+        } catch(e) {}
         setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
       }
     });
