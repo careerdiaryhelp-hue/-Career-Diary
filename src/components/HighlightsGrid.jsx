@@ -43,14 +43,10 @@ export default function HighlightsGrid({
               <a
                 key={job.id}
                 href={`/${job.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`banner-card ${boxColors[index] || 'bg-box-pink'}`}
                 style={{ textDecoration: 'none', display: 'flex' }}
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                    e.preventDefault();
-                    onSelectJob(job.id);
-                  }
-                }}
               >
                 <div className="banner-title">{job.title}</div>
               </a>

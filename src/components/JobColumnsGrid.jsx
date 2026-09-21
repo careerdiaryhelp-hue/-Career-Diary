@@ -53,13 +53,9 @@ export default function JobColumnsGrid({
       <li key={job.id}>
         <a
           href={`/${job.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="job-item-link"
-          onClick={(e) => {
-            if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-              e.preventDefault();
-              onSelectJob(job.id);
-            }
-          }}
         >
           {job.title}
           {badgeText && (

@@ -98,14 +98,8 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
                       <span style={{ color: '#fbbf24', margin: '0 14px', fontSize: '0.8rem' }}>✦</span>
                       <a
                         href={href}
-                        target={isExternal ? '_blank' : '_self'}
-                        rel={isExternal ? 'noopener noreferrer' : undefined}
-                        onClick={(e) => {
-                          if (!isExternal && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                            e.preventDefault();
-                            onSelectJob(cleanSlug);
-                          }
-                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         {job.title || job.message}
                       </a>
@@ -287,15 +281,8 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
                           {hasLink ? (
                             <a
                               href={news.link}
-                              target={news.link.startsWith('http') ? '_blank' : '_self'}
+                              target="_blank"
                               rel="noopener noreferrer"
-                              onClick={(e) => {
-                                if ((news.link.startsWith('/') || !news.link.startsWith('http')) && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
-                                  e.preventDefault();
-                                  const slug = news.link.replace(/^\//, '');
-                                  onSelectJob(slug);
-                                }
-                              }}
                             >
                               <b>{news.message}</b>
                             </a>
