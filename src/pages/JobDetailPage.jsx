@@ -161,6 +161,41 @@ export default function JobDetailPage({ job, onBack }) {
       return prefix + cleanedText + suffix;
     });
 
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
+    
+    const adHtml = isLocalhost ? `
+      <div style="margin-bottom: 16px; padding: 10px; background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; color: #64748b; font-size: 0.8rem; text-align: center;">
+        📢 [AdSense Slot 2542955740 - Active on Production Domain]
+      </div>
+    ` : `
+      <div class="in-article-ad" style="margin-bottom: 16px; text-align: center;">
+        <span style="font-size: 10px; color: #888; display:block; margin-bottom: 4px;">ADVERTISEMENT</span>
+        <ins class="adsbygoogle"
+             style="display:block; text-align:center;"
+             data-ad-layout="in-article"
+             data-ad-format="fluid"
+             data-ad-client="ca-pub-8291419998188091"
+             data-ad-slot="2542955740"></ins>
+      </div>
+    `;
+
+    const threeAdsHtml = `
+      <tr>
+        <td colSpan="4" style="padding: 16px 0; border: none;">
+          ${adHtml}${adHtml}${adHtml}
+        </td>
+      </tr>
+    `;
+
+    out = out.replace(/(<tr[^>]*>\s*<td[^>]*>.*(?:Join Our WhatsApp Channel|SOME USEFUL IMPORTANT LINKS|IMPORTANT LINKS).*<\/td>\s*<\/tr>|<h[1-6][^>]*>.*(?:SOME USEFUL IMPORTANT LINKS|IMPORTANT LINKS).*<\/h[1-6]>|<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>.*(?:Join Our WhatsApp Channel|SOME USEFUL IMPORTANT LINKS).*<\/td>)/i, (match) => {
+       const isTr = match.toLowerCase().startsWith('<tr');
+       if (isTr) {
+         return threeAdsHtml + match;
+       } else {
+         return `<div style="margin: 24px 0;">${adHtml}${adHtml}${adHtml}</div>` + match;
+       }
+    });
+
     return out;
   })();
 
@@ -175,6 +210,23 @@ export default function JobDetailPage({ job, onBack }) {
   const isAdmit = isAdmitCard(job);
   const isRes = isResult(job) || isAnswerKey(job);
   const isAdm = isAdmission(job);
+
+  React.useEffect(() => {
+    if (job?.content) {
+      const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
+      if (!isLocalhost) {
+        const uninitializedAds = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-ad-status])');
+        uninitializedAds.forEach((ad) => {
+          try {
+            ad.setAttribute('data-ad-status', 'filled');
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          } catch (e) {
+            console.error('AdSense injection error:', e);
+          }
+        });
+      }
+    }
+  }, [job]);
 
   const pageCategory = isAdmit
     ? 'Admit Card'
@@ -449,6 +501,14 @@ export default function JobDetailPage({ job, onBack }) {
           </>
         )}
 
+
+        {!hasEmbeddedLinks && (
+          <div style={{ margin: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <InPostAd label="ADVERTISEMENT" />
+            <InPostAd label="ADVERTISEMENT" />
+            <InPostAd label="ADVERTISEMENT" />
+          </div>
+        )}
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
