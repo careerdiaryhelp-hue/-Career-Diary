@@ -14,6 +14,17 @@
   ],
   "rewrites": [
     {
+      "source": "/([^/.]+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot|facebook|twitter|whatsapp|telegram|discord|linkedin|slack).*"
+        }
+      ],
+      "destination": "/api/og?path=$1"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
