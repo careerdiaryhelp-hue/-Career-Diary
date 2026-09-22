@@ -80,7 +80,13 @@ body {
   position: relative;
 }
 
-#root,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
 .app-root {
   width: 100%;
   max-width: 1000px;
