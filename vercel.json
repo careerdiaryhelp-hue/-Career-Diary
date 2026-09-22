@@ -19,7 +19,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|facebook|twitter|whatsapp|telegram|discord|linkedin|slack).*"
+          "value": ".*([bB]ot|[fF]acebook|[tT]witter|[wW]hats[aA]pp|[tT]elegram|[dD]iscord|[lL]inked[iI]n|[sS]lack).*"
         }
       ],
       "destination": "/api/og?path=$1"
