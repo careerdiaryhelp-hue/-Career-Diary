@@ -15,14 +15,7 @@
   "rewrites": [
     {
       "source": "/([^/.]+)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*([bB]ot|[fF]acebook|[tT]witter|[wW]hats[aA]pp|[tT]elegram|[dD]iscord|[lL]inked[iI]n|[sS]lack).*"
-        }
-      ],
-      "destination": "/api/og?path=$1"
+      "destination": "/api/ssr?path=$1"
     },
     {
       "source": "/((?!api/.*).*)",
