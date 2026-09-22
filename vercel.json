@@ -14,10 +14,6 @@
   ],
   "rewrites": [
     {
-      "source": "/([^/.]+)",
-      "destination": "/api/ssr?path=$1"
-    },
-    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
