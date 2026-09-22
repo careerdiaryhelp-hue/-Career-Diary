@@ -42,6 +42,7 @@ export default async function handler(req, res) {
       indexHtml = indexHtml.replace(/<meta property="og:title"\s+content=".*?"\s*\/>/s, `<meta property="og:title" content="${title}" />`);
       indexHtml = indexHtml.replace(/<meta name="twitter:title"\s+content=".*?"\s*\/>/s, `<meta name="twitter:title" content="${title}" />`);
       indexHtml = indexHtml.replace(/<meta property="og:description"\s+content=".*?"\s*\/>/s, `<meta property="og:description" content="${desc}" />`);
+      indexHtml = indexHtml.replace(/<meta property="og:url"\s+content=".*?"\s*\/>/s, `<meta property="og:url" content="https://careerdiary.in/${path}" />`);
       indexHtml = indexHtml.replace(/<meta name="twitter:description"\s+content=".*?"\s*\/>/s, `<meta name="twitter:description" content="${desc}" />`);
       indexHtml = indexHtml.replace(/<meta name="description"\s+content=".*?"\s*\/>/s, `<meta name="description" content="${desc}" />`);
     }
