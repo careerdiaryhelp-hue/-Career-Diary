@@ -3,7 +3,7 @@
 export const isAnswerKey = (j) => {
   if (!j) return false;
   const cat = (j.category || '').toUpperCase();
-  if (cat === 'ANSWER KEY' || cat === 'ANSKEY') return true;
+  if (cat.includes('ANSWER KEY') || cat === 'ANSKEY') return true;
   const title = (j.title || '').toLowerCase();
   return (
     title.includes('answer key') ||
@@ -16,9 +16,9 @@ export const isAnswerKey = (j) => {
 
 export const isResult = (j) => {
   if (!j) return false;
-  if (isAnswerKey(j)) return false;
   const cat = (j.category || '').toUpperCase();
-  if (cat === 'RESULT') return true;
+  if (cat === 'RESULT' || cat.includes('RESULT & ANSWER KEY')) return true;
+  if (isAnswerKey(j)) return false;
   const title = (j.title || '').toLowerCase();
   return (
     cat.includes('RESULT') ||

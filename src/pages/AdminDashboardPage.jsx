@@ -25,6 +25,7 @@ const CATEGORIES = [
   { value: 'ADMIT CARD', label: 'Admit Card', icon: IdCard },
   { value: 'RESULT', label: 'Result', icon: CheckSquare },
   { value: 'ANSWER KEY', label: 'Answer Key', icon: CheckSquare },
+  { value: 'RESULT & ANSWER KEY', label: 'Result & Answer Key', icon: CheckSquare },
   { value: 'SYLLABUS', label: 'Syllabus', icon: FileText },
   { value: 'ADMISSION', label: 'Admission', icon: GraduationCap },
 ];
@@ -2412,6 +2413,7 @@ export default function AdminDashboardPage({
     if (text.includes('<') && text.includes('>')) {
       try {
         const parsed = parseUniversalJobHtml(text, sourceUrl || importUrl);
+        console.log("parseUniversalJobHtml result:", parsed);
         if (parsed && (parsed.title || parsed.content)) {
           setForm(prev => ({
             ...prev,
@@ -2599,9 +2601,12 @@ export default function AdminDashboardPage({
               }
             } else {
               const htmlText = await res.text();
-              if (executeImport(htmlText, raw)) {
-                setIsImporting(false);
-                return;
+              // Prevent importing our own fallback index.html if proxy doesn't exist
+              if (!htmlText.includes('<title>CAREER DIARY') && !htmlText.includes('id="root"')) {
+                if (executeImport(htmlText, raw)) {
+                  setIsImporting(false);
+                  return;
+                }
               }
             }
           }
@@ -5729,6 +5734,8 @@ export default function AdminDashboardPage({
                 <option value="LATEST JOB">LATEST JOB</option>
                 <option value="ADMIT CARD">ADMIT CARD</option>
                 <option value="RESULT">RESULT</option>
+                <option value="ANSWER KEY">ANSWER KEY</option>
+                <option value="RESULT & ANSWER KEY">RESULT & ANSWER KEY</option>
                 <option value="ADMISSION">ADMISSION</option>
                 <option value="SYLLABUS">SYLLABUS</option>
               </select>
