@@ -1,0 +1,8 @@
+name = "career-diary-og"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+account_id = "de97bac9aa321f55fe0ba272b31ef68f"
+
+routes = [
+  { pattern = "careerdiary.in/*", zone_name = "careerdiary.in" }
+]
