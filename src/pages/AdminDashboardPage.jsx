@@ -40,6 +40,7 @@ const EMPTY_FORM = {
   featured: false,
   isFeatured: false,
   isLatestUpdate: false,
+  isBreakingNews: false,
   isTopForm: false,
   featuredOrder: 0,
   latestOrder: 0,
@@ -693,6 +694,7 @@ export default function AdminDashboardPage({
       featured: Boolean(job.featured || job.isFeatured),
       isFeatured: Boolean(job.featured || job.isFeatured),
       isLatestUpdate: Boolean(job.isLatestUpdate || job.isLatest),
+      isBreakingNews: Boolean(job.isBreakingNews),
       featuredOrder: job.featuredOrder ?? job.displayOrder ?? 0,
       latestOrder: job.latestOrder ?? 0,
       slug: job.id || '',
@@ -2699,6 +2701,7 @@ export default function AdminDashboardPage({
       isTopForm: Boolean(form.isTopForm),
       isLatestUpdate: Boolean(form.isLatestUpdate),
       isLatest: Boolean(form.isLatestUpdate),
+      isBreakingNews: Boolean(form.isBreakingNews),
       featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
       latestOrder: Number(form.latestOrder) || (existingJob?.latestOrder ?? 0),
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
@@ -2838,6 +2841,7 @@ export default function AdminDashboardPage({
       isTopForm: Boolean(form.isTopForm),
       isLatestUpdate: Boolean(form.isLatestUpdate),
       isLatest: Boolean(form.isLatestUpdate),
+      isBreakingNews: Boolean(form.isBreakingNews),
       featuredOrder: Number(form.featuredOrder) || (existingJob?.featuredOrder ?? 0),
       latestOrder: Number(form.latestOrder) || (existingJob?.latestOrder ?? 0),
       lastDate: form.lastDate.trim() || (existingJob?.lastDate ?? ''),
@@ -3973,6 +3977,23 @@ export default function AdminDashboardPage({
                     {form.isLatestUpdate && (
                       <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
                         ✦ Ticker Active
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: '#334155', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={form.isBreakingNews}
+                        onChange={e => set('isBreakingNews', e.target.checked)}
+                        style={{ width: '17px', height: '17px', accentColor: '#dc2626', cursor: 'pointer' }}
+                      />
+                      <span>Show in Breaking News</span>
+                    </label>
+                    {form.isBreakingNews && (
+                      <span style={{ fontSize: '0.72rem', background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                        🔴 Breaking News Active
                       </span>
                     )}
                   </div>

@@ -16,11 +16,22 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
     return jobs.filter(j => !j.title?.toLowerCase().includes('top online form')).slice(0, 10);
   }, [jobs]);
 
-  // Active breaking news from Admin Dashboard
+  // Active breaking news: combine manually added items + jobs with isBreakingNews flag
   const activeBreakingNews = useMemo(() => {
-    if (!breakingNews || breakingNews.length === 0) return [];
-    return breakingNews.filter(n => n.active !== false && !n.message?.toLowerCase().includes('top online form') && !n.title?.toLowerCase().includes('top online form'));
-  }, [breakingNews]);
+    const manual = (breakingNews || []).filter(n => n.active !== false && !n.message?.toLowerCase().includes('top online form') && !n.title?.toLowerCase().includes('top online form'));
+    const fromJobs = (jobs || [])
+      .filter(j => Boolean(j.isBreakingNews))
+      .map(j => ({
+        id: j.id,
+        message: j.title,
+        link: `/${j.id}`,
+        active: true,
+      }));
+    // Merge, avoiding duplicates by id
+    const manualIds = new Set(manual.map(n => n.id));
+    const merged = [...manual, ...fromJobs.filter(n => !manualIds.has(n.id))];
+    return merged;
+  }, [breakingNews, jobs]);
 
   // Divide into up to 3 marquee lines matching Sarkari Result layout
   const marqueeRows = useMemo(() => {
