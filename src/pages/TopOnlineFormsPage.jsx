@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 export default function TopOnlineFormsPage({ jobs = [] }) {
   // Filter only jobs that are marked as isTopForm
   const topForms = useMemo(() => {
-    return jobs.filter(j => Boolean(j.isTopForm));
+    return jobs.filter(j => Boolean(j.isTopForm) && !j.title?.toLowerCase().includes('top online form'));
   }, [jobs]);
 
   const boxColors = [

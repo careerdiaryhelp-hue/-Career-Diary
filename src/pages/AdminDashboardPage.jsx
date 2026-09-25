@@ -8,7 +8,7 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles
+  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns
 } from 'lucide-react';
 
 const cleanSlug = (str) => {
@@ -1303,6 +1303,68 @@ export default function AdminDashboardPage({
     setForm(prev => ({ ...prev, content: updated }));
     updateActiveTableInfo();
     showToast('🗑️ Column deleted successfully!', 'success');
+  };
+
+  const handleSplitRow = () => {
+    let table = activeTableElementRef.current;
+    let tr = activeRowElementRef.current;
+    if (!table) table = visualEditorRef.current?.querySelector('table');
+    if (!tr || !table) {
+      showToast('⚠️ Please click inside a row to split it.', 'info');
+      return;
+    }
+    
+    if (tr.cells.length === 1) {
+      const currentCell = tr.cells[0];
+      currentCell.removeAttribute('colspan');
+      const newCell = document.createElement(currentCell.tagName === 'TH' ? 'th' : 'td');
+      newCell.style.border = '1px solid #000';
+      newCell.style.padding = '8px 12px';
+      newCell.style.fontSize = '0.9rem';
+      newCell.innerHTML = '&nbsp;';
+      tr.appendChild(newCell);
+      
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      updateActiveTableInfo();
+      showToast('✅ Row split into 2 columns!', 'success');
+    } else {
+      showToast('⚠️ Row already has multiple columns.', 'info');
+    }
+  };
+
+  const handleMergeRow = () => {
+    let table = activeTableElementRef.current;
+    let tr = activeRowElementRef.current;
+    if (!table) table = visualEditorRef.current?.querySelector('table');
+    if (!tr || !table) {
+      showToast('⚠️ Please click inside a row to merge it.', 'info');
+      return;
+    }
+    
+    if (tr.cells.length > 1) {
+      const firstCell = tr.cells[0];
+      let maxCols = 1;
+      for (let i = 0; i < table.rows.length; i++) {
+        let cols = 0;
+        for (let j = 0; j < table.rows[i].cells.length; j++) {
+          cols += parseInt(table.rows[i].cells[j].getAttribute('colspan') || '1');
+        }
+        if (cols > maxCols) maxCols = cols;
+      }
+      
+      firstCell.setAttribute('colspan', Math.max(2, maxCols));
+      while (tr.cells.length > 1) {
+        tr.deleteCell(1);
+      }
+      
+      const updated = visualEditorRef.current.innerHTML;
+      setForm(prev => ({ ...prev, content: updated }));
+      updateActiveTableInfo();
+      showToast('✅ Row merged into 1 column!', 'success');
+    } else {
+      showToast('⚠️ Row is already 1 column.', 'info');
+    }
   };
 
   const handleDeleteTable = () => {
@@ -4696,6 +4758,22 @@ export default function AdminDashboardPage({
                   title="Delete Current Row"
                   style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
                   <Minus size={12} /> Delete Row
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleMergeRow}
+                  title="Merge row into 1 column"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#6366f1' }}>
+                  <Columns size={12} style={{ transform: 'rotate(90deg)' }} /> Merge
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleSplitRow}
+                  title="Split row into 2 columns"
+                  style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#6366f1' }}>
+                  <Columns size={12} /> Split
                 </button>
 
                 <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
