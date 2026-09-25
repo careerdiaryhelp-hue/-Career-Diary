@@ -28,9 +28,16 @@
     content="Latest Indian Govt Jobs, Admit Cards, Answer Keys, Results, Syllabus & Admission Notifications 2026." />
   <meta name="twitter:image" content="https://careerdiary.in/image.png" />
 
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
-    crossorigin="anonymous"></script>
+  <!-- Google AdSense (Conditionally Loaded for Non-Admin Routes) -->
+  <script>
+    if (!window.location.pathname.startsWith('/admin')) {
+      var adsScript = document.createElement('script');
+      adsScript.async = true;
+      adsScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613";
+      adsScript.crossOrigin = "anonymous";
+      document.head.appendChild(adsScript);
+    }
+  </script>
 
   <!-- Google Analytics (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H3WLGYXSW0"></script>

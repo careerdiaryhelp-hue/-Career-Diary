@@ -6280,6 +6280,15 @@ export default function AdminDashboardPage({
       fontFamily: 'Plus Jakarta Sans, sans-serif',
       overflow: 'hidden'
     }}>
+      <style>{`
+        .google-auto-placed, 
+        ins.adsbygoogle, 
+        iframe[name^="google_ads_iframe"] { 
+          display: none !important; 
+          height: 0 !important; 
+          visibility: hidden !important; 
+        }
+      `}</style>
 
       {/* Mobile overlay backdrop */}
       {isMobile && sidebarOpen && (
