@@ -40,13 +40,20 @@ export default function AdSenseBanner({
 
     observer.observe(el, { attributes: true });
 
+    let intersectionObserver = null;
+
     // Execute AdSense push
     const tryPush = () => {
       if (!isMounted || !adRef.current) return;
       if (el.getAttribute('data-adsbygoogle-status')) return;
+      if (el.dataset.adPushDone) return; // Prevent multiple pushes
+
+      // Prevent AdSense 400 Bad Request on hidden ad units (like desktop sidebars on mobile)
+      if (el.offsetWidth === 0 && el.offsetHeight === 0) return;
 
       try {
         if (window.adsbygoogle) {
+          el.dataset.adPushDone = 'true';
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         }
       } catch (err) {
@@ -54,13 +61,27 @@ export default function AdSenseBanner({
       }
     };
 
-    // Small delay to ensure DOM layout is computed
-    const timer = setTimeout(tryPush, 100);
+    // Use IntersectionObserver to wait for the ad to be visible (or near viewport) and not display:none
+    if (window.IntersectionObserver) {
+      intersectionObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          tryPush();
+        }
+      }, { rootMargin: '300px' });
+      
+      // Some layouts might start as display:none then become block on resize.
+      // We observe the wrapper to detect visibility changes reliably.
+      intersectionObserver.observe(wrapperRef.current || el);
+    } else {
+      setTimeout(tryPush, 500);
+    }
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
       observer.disconnect();
+      if (intersectionObserver) {
+        intersectionObserver.disconnect();
+      }
     };
   }, [slot, layout, layoutKey, isLocalhost]);
 
