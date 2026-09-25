@@ -41,6 +41,33 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
           </div>
         </div>
 
+        {/* Ad Space Top (Optional) */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div className="ad-placeholder" style={{ border: '1px dashed #ccc', padding: '10px', color: '#999' }}>
+            [AdSense Slot - Top]
+          </div>
+        </div>
+
+        {/* Grid of Forms */}
+        <div className="top-banners-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '30px' }}>
+          {topForms.length === 0 ? (
+            <div className="empty-state" style={{ gridColumn: 'span 4' }}>No top online forms available at the moment.</div>
+          ) : (
+            topForms.map((job, index) => (
+              <a
+                key={job.id}
+                href={`/${job.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`banner-card ${boxColors[index % boxColors.length]}`}
+                style={{ textDecoration: 'none', display: 'flex' }}
+              >
+                <div className="banner-title">{job.title}</div>
+              </a>
+            ))
+          )}
+        </div>
+
         {/* SEO Content Section */}
         <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f9f9f9', border: '1px solid #eee', borderRadius: '4px', lineHeight: '1.7', fontSize: '14px', color: '#333' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a1a1a', marginBottom: '10px', borderBottom: '1px solid #ddd', paddingBottom: '8px' }}>About Top Online Form 2026-27</h2>
@@ -135,33 +162,6 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
           <p style={{ marginBottom: '0' }}>
             Join our <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" style={{ color: '#25D366' }}>WhatsApp Channel</a> and <a href="https://t.me/careerdiary" style={{ color: '#0088cc' }}>Telegram Channel</a> to receive instant notifications about new job openings, admit cards, and results.
           </p>
-        </div>
-
-        {/* Ad Space Top (Optional) */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div className="ad-placeholder" style={{ border: '1px dashed #ccc', padding: '10px', color: '#999' }}>
-            [AdSense Slot - Top]
-          </div>
-        </div>
-
-        {/* Grid of Forms */}
-        <div className="top-banners-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          {topForms.length === 0 ? (
-            <div className="empty-state" style={{ gridColumn: 'span 4' }}>No top online forms available at the moment.</div>
-          ) : (
-            topForms.map((job, index) => (
-              <a
-                key={job.id}
-                href={`/${job.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`banner-card ${boxColors[index % boxColors.length]}`}
-                style={{ textDecoration: 'none', display: 'flex' }}
-              >
-                <div className="banner-title">{job.title}</div>
-              </a>
-            ))
-          )}
         </div>
 
         {/* Ad Space Bottom (Optional) */}
