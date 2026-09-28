@@ -256,130 +256,60 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return prefix + cleanedText + suffix;
     });
 
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
-    
-    const adHtml = isLocalhost ? `
-      <div style="margin-bottom: 16px; padding: 10px; background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; color: #64748b; font-size: 0.8rem; text-align: center;">
-        📢 [AdSense Slot 2542955740 - Active on Production Domain]
-      </div>
-    ` : `
-      <div class="in-article-ad" style="margin: 20px 0; text-align: center; clear: both;">
-        <span style="font-size: 10px; color: #888; display:block; margin-bottom: 4px;">ADVERTISEMENT</span>
-        <ins class="adsbygoogle"
-             style="display:block; text-align:center;"
-             data-ad-layout="in-article"
-             data-ad-format="fluid"
-             data-ad-client="ca-pub-2108299943580613"
-             data-ad-slot="7544533819"></ins>
-      </div>
-    `;
+    return out;
+  }, [job?.content]);
 
-    // Insert single In-Article ad in the true MIDDLE of the content (not at top)
-    const tableEndMatches = [...out.matchAll(/<\/table>/gi)];
+  // Cleanly split HTML content into two parts at the middle table/paragraph
+  // so the middle ad can be rendered as a true React <InPostAd /> component
+  const { contentPart1, contentPart2 } = React.useMemo(() => {
+    if (!sanitizedContent) return { contentPart1: '', contentPart2: '' };
+
+    const tableEndMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
     if (tableEndMatches.length >= 2) {
       const midTableIndex = Math.floor(tableEndMatches.length / 2);
       let count = 0;
-      out = out.replace(/<\/table>/gi, (match) => {
+      let splitPos = -1;
+      const regex = /<\/table>/gi;
+      let match;
+      while ((match = regex.exec(sanitizedContent)) !== null) {
         count++;
         if (count === midTableIndex) {
-          return match + adHtml;
+          splitPos = regex.lastIndex;
+          break;
         }
-        return match;
-      });
-    } else {
-      const pMatches = [...out.matchAll(/<\/p>/gi)];
-      if (pMatches.length >= 4) {
-        const midPIndex = Math.floor(pMatches.length / 2);
-        let pCount = 0;
-        out = out.replace(/<\/p>/gi, (match) => {
-          pCount++;
-          if (pCount === midPIndex) {
-            return match + adHtml;
-          }
-          return match;
-        });
-      } else if (out.length > 500) {
-        const midPoint = Math.floor(out.length / 2);
-        const nextBreak = out.indexOf('>', midPoint);
-        if (nextBreak !== -1) {
-          out = out.slice(0, nextBreak + 1) + adHtml + out.slice(nextBreak + 1);
-        } else {
-          out += adHtml;
-        }
+      }
+      if (splitPos !== -1) {
+        return {
+          contentPart1: sanitizedContent.slice(0, splitPos),
+          contentPart2: sanitizedContent.slice(splitPos)
+        };
       }
     }
 
-    return out;
-  })();
-
-  const contentLower = (job?.content || '').toLowerCase();
-  const hasHowToFill = contentLower.includes('how to fill') || contentLower.includes('how to apply') || contentLower.includes('how to check');
-  const hasSelectionMode = contentLower.includes('mode of selection') || contentLower.includes('selection process');
-  const hasFaqSection = contentLower.includes('important question') || contentLower.includes('frequently asked');
-  const hasAlsoCheck = contentLower.includes('you may also check');
-
-  // Check if job.content already has its own embedded Important Links table to avoid duplicates
-  const hasEmbeddedLinks = Boolean(
-    job.content &&
-    (job.content.toLowerCase().includes('important links') ||
-     job.content.includes('Click Here') ||
-     job.content.includes('sr-links-table'))
-  );
-
-  React.useEffect(() => {
-    if (!job?.content) return;
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
-    if (isLocalhost) return;
-
-    let isMounted = true;
-
-    const tryPushInArticleAds = () => {
-      if (!isMounted) return;
-      const uninitializedAds = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-ad-status])');
-      
-      uninitializedAds.forEach((ad) => {
-        // If container width is not yet computed (availableWidth=0), wait until layout is ready
-        if (!ad.offsetWidth || ad.offsetWidth === 0) {
-          if (window.ResizeObserver) {
-            const ro = new ResizeObserver((entries) => {
-              for (const entry of entries) {
-                if (entry.contentRect && entry.contentRect.width > 0 && !ad.getAttribute('data-ad-status')) {
-                  ro.disconnect();
-                  if (isMounted) {
-                    try {
-                      ad.setAttribute('data-ad-status', 'filled');
-                      (window.adsbygoogle = window.adsbygoogle || []).push({});
-                    } catch (e) {
-                      // Handled safely
-                    }
-                  }
-                }
-              }
-            });
-            ro.observe(ad.parentElement || ad);
-          } else {
-            setTimeout(tryPushInArticleAds, 400);
-          }
-          return;
+    const pEndMatches = [...sanitizedContent.matchAll(/<\/p>/gi)];
+    if (pEndMatches.length >= 4) {
+      const midPIndex = Math.floor(pEndMatches.length / 2);
+      let count = 0;
+      let splitPos = -1;
+      const regex = /<\/p>/gi;
+      let match;
+      while ((match = regex.exec(sanitizedContent)) !== null) {
+        count++;
+        if (count === midPIndex) {
+          splitPos = regex.lastIndex;
+          break;
         }
+      }
+      if (splitPos !== -1) {
+        return {
+          contentPart1: sanitizedContent.slice(0, splitPos),
+          contentPart2: sanitizedContent.slice(splitPos)
+        };
+      }
+    }
 
-        try {
-          ad.setAttribute('data-ad-status', 'filled');
-          (window.adsbygoogle = window.adsbygoogle || []).push({});
-        } catch (e) {
-          // Handled safely
-        }
-      });
-    };
-
-    // Wait for DOM layout to settle before trying push
-    const timer = setTimeout(tryPushInArticleAds, 250);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [job]);
+    return { contentPart1: sanitizedContent, contentPart2: '' };
+  }, [sanitizedContent]);
 
   const pageCategory = isAdmit
     ? 'Admit Card'
@@ -455,9 +385,21 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           <>
             <div
               className="sr-rich-html-content"
-              style={{ marginBottom: '24px' }}
-              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+              dangerouslySetInnerHTML={{ __html: contentPart1 }}
             />
+
+            {/* Middle In-Post Ad (Clean React Component) */}
+            {contentPart2 && (
+              <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+            )}
+
+            {contentPart2 && (
+              <div
+                className="sr-rich-html-content"
+                style={{ marginBottom: '24px' }}
+                dangerouslySetInnerHTML={{ __html: contentPart2 }}
+              />
+            )}
 
             {/* If content does not have You May Also Check */}
             {!hasAlsoCheck && youMayAlsoCheckJob && (

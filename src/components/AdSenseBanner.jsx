@@ -55,7 +55,8 @@ export default function AdSenseBanner({
       }
 
       // Skip push if element has width 0 (prevents TagError: No slot size for availableWidth=0)
-      if (!el.offsetWidth || el.offsetWidth === 0) {
+      const currentWidth = el.offsetWidth || (wrapperRef.current && wrapperRef.current.offsetWidth) || 0;
+      if (currentWidth === 0) {
         setTimeout(tryPush, 350);
         return;
       }
@@ -165,7 +166,7 @@ export default function AdSenseBanner({
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="1202822135" format="auto" responsive="false" {...props} />;
 }
 
 export function InFeedAd(props) {
