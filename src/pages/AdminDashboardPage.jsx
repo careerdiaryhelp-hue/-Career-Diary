@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { autoLinkSocialChannels, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
 import {
   LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
   LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud, Edit3,
@@ -65,7 +66,10 @@ const EMPTY_FORM = {
   maxAge: '37 Years',
   qualification: '',
   state: 'All India',
-  importantLinks: {},
+  importantLinks: {
+    'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+    'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP,
+  },
   importantDates: {},
   applicationFee: {},
   ageLimit: {},
@@ -684,7 +688,13 @@ export default function AdminDashboardPage({
     if (!job) return;
     setEditingJobId(job.id);
 
-    const initialHtml = buildDefaultJobHtml(job);
+    const initialHtml = autoLinkSocialChannels(job.content && job.content.trim() ? job.content : buildDefaultJobHtml(job));
+
+    const mergedLinks = {
+      ...(job.importantLinks || {}),
+      'Join Telegram Channel': job.importantLinks?.['Join Telegram Channel'] || CAREER_DIARY_TELEGRAM,
+      'Join WhatsApp Channel': job.importantLinks?.['Join WhatsApp Channel'] || CAREER_DIARY_WHATSAPP,
+    };
 
     setForm({
       title: job.title || '',
@@ -720,7 +730,7 @@ export default function AdminDashboardPage({
       maxAge: job.maxAge || job.ageLimit?.['Maximum Age'] || '',
       qualification: job.qualification || '',
       state: job.state || 'All India',
-      importantLinks: job.importantLinks || {},
+      importantLinks: mergedLinks,
       importantDates: job.importantDates || {},
       applicationFee: job.applicationFee || {},
       ageLimit: job.ageLimit || {},
@@ -1390,6 +1400,33 @@ export default function AdminDashboardPage({
     showToast('🗑️ Table deleted completely!', 'success');
   };
 
+  const handleAutoLinkChannels = () => {
+    let currentHtml = visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content;
+    if (!currentHtml || !currentHtml.trim()) {
+      showToast('⚠️ Editor is empty!', 'info');
+      return;
+    }
+    const updated = autoLinkSocialChannels(currentHtml);
+    if (visualEditorRef.current) {
+      visualEditorRef.current.innerHTML = updated;
+    }
+    setForm(prev => ({
+      ...prev,
+      content: updated,
+      importantLinks: {
+        ...(prev.importantLinks || {}),
+        'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+        'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+      },
+      important_links: {
+        ...(prev.important_links || {}),
+        'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+        'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+      }
+    }));
+    showToast('⚡ Official Telegram & WhatsApp channel links updated!', 'success');
+  };
+
   const handleEditorKeyDown = (e) => {
     if (e.key === 'Tab') {
       const sel = window.getSelection();
@@ -1686,6 +1723,10 @@ export default function AdminDashboardPage({
       }
     }
 
+    // Always inject Career Diary's official Telegram & WhatsApp channels
+    links['Join Telegram Channel'] = CAREER_DIARY_TELEGRAM;
+    links['Join WhatsApp Channel'] = CAREER_DIARY_WHATSAPP;
+
     // Quick URL detection
     let applyUrl = '';
     let notificationUrl = '';
@@ -1826,7 +1867,7 @@ export default function AdminDashboardPage({
       totalPosts,
       vacancies: totalPosts,
       description: shortText,
-      content: contentHtml,
+      content: autoLinkSocialChannels(contentHtml),
       slug: post.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
       seoTitle: title,
       seoDescription: shortText.slice(0, 160),
@@ -2002,6 +2043,10 @@ export default function AdminDashboardPage({
       }
     }
 
+    // Always inject Career Diary's official Telegram & WhatsApp channels
+    links['Join Telegram Channel'] = CAREER_DIARY_TELEGRAM;
+    links['Join WhatsApp Channel'] = CAREER_DIARY_WHATSAPP;
+
     // Auto-detect specific keys
     let applyUrl = '';
     let notificationUrl = '';
@@ -2039,13 +2084,14 @@ export default function AdminDashboardPage({
       if (!maxAge && kl.includes('max')) maxAge = v;
     });
 
-    // Standardized Career Diary table content
+    // Standardized Career Diary rich content
     const contentHtml = `
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
         <thead>
           <tr>
             <th colspan="2" style="background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 10px; font-size: 1.15rem;">
-              ${org} : ${title}
+              ${org} : ${title}<br />
+              <span style="font-size: 1rem; font-weight: normal;">Short Details</span>
             </th>
           </tr>
         </thead>
@@ -2053,6 +2099,10 @@ export default function AdminDashboardPage({
           <tr>
             <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 45%;">Organization Name</td>
             <td style="border: 1px solid #000; padding: 8px 12px;"><strong>${org}</strong></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Post Name</td>
+            <td style="border: 1px solid #000; padding: 8px 12px;">${title}</td>
           </tr>
           <tr>
             <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Total Vacancies</td>
@@ -2075,35 +2125,115 @@ export default function AdminDashboardPage({
           <tr>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
               <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(dates).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
+                ${Object.entries(dates).length > 0 ? Object.entries(dates).map(([k, v]) => `<li>⚫ <strong>${k} :</strong> ${v}</li>`).join('') : `
+                  <li>⚫ <strong>Online Apply Start Date :</strong> ${appStart || 'Declared / Announced'}</li>
+                  <li>⚫ <strong>Online Apply Last Date :</strong> <span style="color: #ff0000;">${lastDate || 'As per notification'}</span></li>
+                  <li>⚫ <strong>Exam Date :</strong> ${examDate || 'Notify Soon'}</li>
+                  <li>⚫ <strong>Admit Card :</strong> Before Exam</li>
+                `}
               </ul>
             </td>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
               <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(fees).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
+                ${Object.entries(fees).length > 0 ? Object.entries(fees).map(([k, v]) => `<li>⚫ <strong>${k} :</strong> ${v}</li>`).join('') : `
+                  <li>⚫ <strong>For General / OBC / EWS :</strong> ${feeGen || '₹ 500/-'}</li>
+                  <li>⚫ <strong>For SC / ST / PH :</strong> ${feeSc || '₹ 00/-'}</li>
+                `}
+                <li>⚫ <strong>Payment Mode (Online) :</strong> You can make the payment using Debit Card, Credit Card, Net Banking, UPI, IMPS, Mobile Wallet.</li>
               </ul>
             </td>
           </tr>
         </tbody>
       </table>
 
-      ${Object.keys(age).length > 0 ? `
+      ${Object.keys(age).length > 0 || minAge || maxAge ? `
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
         <thead>
           <tr>
-            <th style="background-color: #0056b3; color: #fff; text-align: center; font-weight: bold; padding: 8px;">Age Limit Details</th>
+            <th colspan="2" style="background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px;">Age Limit Details</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #000; padding: 10px;">
-              <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(age).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
-              </ul>
+            <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Minimum Age :</strong> ${minAge || '18 Years'}</td>
+            <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Maximum Age :</strong> ${maxAge || '37 Years'}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: 1px solid #000; padding: 8px 12px; text-align: center; color: #008000;">
+              Age Relaxation Extra as per ${org} Recruitment Rules.
             </td>
           </tr>
         </tbody>
       </table>` : ''}
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
+        <thead>
+          <tr>
+            <th colspan="3" style="background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 8px;">
+              ${title} : Vacancy Details &amp; Eligibility Criteria
+            </th>
+          </tr>
+          <tr style="background-color: #008000; color: #fff;">
+            <th style="padding: 6px; width: 35%;">Post Name</th>
+            <th style="padding: 6px; width: 20%;">Total Post</th>
+            <th style="padding: 6px; width: 45%;">Eligibility Criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">${title}</td>
+            <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;"><strong>${totalPosts || 'Various Posts'}</strong></td>
+            <td style="border: 1px solid #000; padding: 8px 12px;">Candidate must possess Bachelor Degree in any stream or relevant qualification from a recognized University/Institution in India. Read official notification for complete details.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
+        <thead>
+          <tr>
+            <th style="background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px;">
+              ${title} : Mode Of Selection
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #000; padding: 12px 18px;">
+              <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li>Merit List Basis on Marks / Written Examination (CBT)</li>
+                <li>Document Verification (DV) &amp; Skill/Language Test (if applicable)</li>
+                <li>Medical Examination</li>
+              </ol>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
+        <thead>
+          <tr>
+            <th style="background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px;">
+              How To Fill ${title} Online Form
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #000; padding: 12px 18px;">
+              <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li>Interested candidates who wish to apply for the ${org} post can submit their application online before <strong style="color: #ff0000;">${lastDate || 'the last date'}</strong>.</li>
+                <li>Use the direct link provided below under Important Links section to apply online.</li>
+                <li>Alternatively, visit the official website of ${org} to complete registration.</li>
+                <li>Read the official notification carefully before submitting your application.</li>
+                <li>Keep scanned copies of photograph, signature, ID proof, and certificates ready.</li>
+                <li>Verify all details in the preview page before final submission.</li>
+                <li>Pay the application fee (if applicable) and take a final printout of your submitted application form.</li>
+                <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+              </ol>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       ${Object.keys(links).length > 0 ? `
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
@@ -2117,7 +2247,11 @@ export default function AdminDashboardPage({
             let finalUrl = u;
             const kl = k.toLowerCase();
             const ul = (u || '').toLowerCase();
-            if (
+            if (kl.includes('telegram')) {
+              finalUrl = CAREER_DIARY_TELEGRAM;
+            } else if (kl.includes('whatsapp')) {
+              finalUrl = CAREER_DIARY_WHATSAPP;
+            } else if (
               kl.includes('career diary') ||
               kl.includes('careerdiary') ||
               kl.includes('sarkari result') ||
@@ -2138,8 +2272,50 @@ export default function AdminDashboardPage({
               </td>
             </tr>
           `;}).join('')}
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Check Career Diary</td>
+            <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
+              <a href="https://careerdiary.in/" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+            </td>
+          </tr>
         </tbody>
       </table>` : ''}
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
+        <thead>
+          <tr>
+            <th style="background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 8px; font-size: 1.1rem;">
+              ${title} : Important Question
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #000; padding: 14px 18px; line-height: 1.8;">
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: When will the online application for ${title} Start?</strong><br />
+                <strong>Answer:</strong> The online application for this recruitment starts on ${appStart || 'declared schedule'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the last date for online application for ${title}?</strong><br />
+                <strong>Answer:</strong> The last date for online application form is ${lastDate || 'as per notification'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the age limit for ${title}?</strong><br />
+                <strong>Answer:</strong> The minimum age is ${minAge || '18 Years'} and maximum age is ${maxAge || '37 Years'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the eligibility for ${title}?</strong><br />
+                <strong>Answer:</strong> Candidates must have passed the relevant exam from any recognized board/university in India. For full eligibility details, please check official notification.
+              </div>
+              <div>
+                <strong style="color: #b91c1c;">Question: What is the official website for ${org}?</strong><br />
+                <strong>Answer:</strong> The official website is ${officialUrl || 'https://careerdiary.in/'}.
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     `.trim();
 
     return {
@@ -2149,7 +2325,7 @@ export default function AdminDashboardPage({
       totalPosts,
       vacancies: totalPosts,
       description: shortInfo,
-      content: contentHtml,
+      content: autoLinkSocialChannels(contentHtml),
       slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
       seoTitle: title,
       seoDescription: shortInfo.slice(0, 160),
@@ -2311,6 +2487,10 @@ export default function AdminDashboardPage({
         });
       }
 
+      // Guarantee Career Diary official channels are present
+      extractedLinks['Join Telegram Channel'] = extractedLinks['Join Telegram Channel'] || CAREER_DIARY_TELEGRAM;
+      extractedLinks['Join WhatsApp Channel'] = extractedLinks['Join WhatsApp Channel'] || CAREER_DIARY_WHATSAPP;
+
       // Extract Dates
       const rawDates = p.importantDates || p.important_dates || {};
       let extractedDates = {};
@@ -2346,6 +2526,8 @@ export default function AdminDashboardPage({
       let extractedMinAge = p.minAge || p.min_age || rawAge.min || rawAge.minimum || '';
       let extractedMaxAge = p.maxAge || p.max_age || rawAge.max || rawAge.maximum || '';
 
+      const finalImportedContent = autoLinkSocialChannels(importedContent);
+
       setForm(prev => ({
         ...prev,
         title: importedTitle || prev.title,
@@ -2353,7 +2535,7 @@ export default function AdminDashboardPage({
         totalPosts: p.total_post || p.totalPosts || p.vacancies || prev.totalPosts,
         vacancies: p.total_post || p.totalPosts || p.vacancies || prev.vacancies,
         description: importedShort || prev.description,
-        content: importedContent || prev.content,
+        content: finalImportedContent || prev.content,
         seoTitle: cleanStr(p.seo_title || importedTitle || prev.seoTitle),
         seoKeywords: p.seo_keywords || prev.seoKeywords,
         seoDescription: cleanStr(p.seo_description || importedShort || prev.seoDescription),
@@ -2371,7 +2553,9 @@ export default function AdminDashboardPage({
         maxAge: extractedMaxAge || prev.maxAge,
         importantLinks: {
           ...(prev.importantLinks || {}),
-          ...extractedLinks
+          ...extractedLinks,
+          'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+          'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
         },
         importantDates: {
           ...(prev.importantDates || {}),
@@ -2388,8 +2572,8 @@ export default function AdminDashboardPage({
       }));
 
       setShowMetadata(true);
-      if (visualEditorRef.current && importedContent) {
-        visualEditorRef.current.innerHTML = importedContent;
+      if (visualEditorRef.current && finalImportedContent) {
+        visualEditorRef.current.innerHTML = finalImportedContent;
         
       }
       setImportUrl('');
@@ -2417,6 +2601,13 @@ export default function AdminDashboardPage({
         const parsed = parseUniversalJobHtml(text, sourceUrl || importUrl);
         console.log("parseUniversalJobHtml result:", parsed);
         if (parsed && (parsed.title || parsed.content)) {
+          const finalUniversalContent = autoLinkSocialChannels(parsed.content || '');
+          const finalUniversalLinks = {
+            ...(prev => prev.importantLinks || {}),
+            ...parsed.importantLinks,
+            'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+            'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+          };
           setForm(prev => ({
             ...prev,
             title: parsed.title || prev.title,
@@ -2425,14 +2616,19 @@ export default function AdminDashboardPage({
             totalPosts: parsed.totalPosts || prev.totalPosts,
             vacancies: parsed.vacancies || prev.vacancies,
             description: parsed.description || prev.description,
-            content: parsed.content || prev.content,
+            content: finalUniversalContent || prev.content,
             slug: cleanSlug(parsed.slug || prev.slug),
             seoTitle: parsed.seoTitle || prev.seoTitle,
             seoDescription: parsed.seoDescription || prev.seoDescription,
             importantDates: { ...(prev.importantDates || {}), ...parsed.importantDates },
             applicationFee: { ...(prev.applicationFee || {}), ...parsed.applicationFee },
             ageLimit: { ...(prev.ageLimit || {}), ...parsed.ageLimit },
-            importantLinks: { ...(prev.importantLinks || {}), ...parsed.importantLinks },
+            importantLinks: {
+              ...(prev.importantLinks || {}),
+              ...parsed.importantLinks,
+              'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+              'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+            },
             applyUrl: parsed.applyUrl || prev.applyUrl,
             notificationUrl: parsed.notificationUrl || prev.notificationUrl,
             officialUrl: parsed.officialUrl || prev.officialUrl,
@@ -2447,8 +2643,8 @@ export default function AdminDashboardPage({
 
           setShowMetadata(true);
 
-          if (visualEditorRef.current && parsed.content) {
-            visualEditorRef.current.innerHTML = parsed.content;
+          if (visualEditorRef.current && finalUniversalContent) {
+            visualEditorRef.current.innerHTML = finalUniversalContent;
           }
           setImportUrl('');
           const linksCount = Object.keys(parsed.importantLinks).length;
@@ -2781,8 +2977,8 @@ export default function AdminDashboardPage({
       description: form.description.trim() || (existingJob?.description ?? ''),
       uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
       shortInfo: form.description.trim() || (existingJob?.shortInfo ?? ''),
-      content: form.content.trim() || (existingJob?.content ?? ''),
-      htmlContent: form.content.trim() || (existingJob?.htmlContent ?? ''),
+      content: autoLinkSocialChannels((visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content) || (existingJob?.content ?? '')).trim(),
+      htmlContent: autoLinkSocialChannels((visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content) || (existingJob?.htmlContent ?? '')).trim(),
       seoTitle: form.seoTitle.trim() || form.title.trim(),
       seoKeywords: form.seoKeywords.trim() || (existingJob?.seoKeywords ?? ''),
       seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
@@ -2921,8 +3117,8 @@ export default function AdminDashboardPage({
       description: form.description.trim() || (existingJob?.description ?? ''),
       uniqueDescription: form.description.trim() || (existingJob?.uniqueDescription ?? ''),
       shortInfo: form.description.trim() || (existingJob?.shortInfo ?? ''),
-      content: editorHtml || form.content.trim() || '',
-      htmlContent: editorHtml || form.content.trim() || '',
+      content: autoLinkSocialChannels(editorHtml || form.content.trim() || '').trim(),
+      htmlContent: autoLinkSocialChannels(editorHtml || form.content.trim() || '').trim(),
       seoTitle: form.seoTitle.trim() || form.title.trim(),
       seoKeywords: form.seoKeywords.trim() || (existingJob?.seoKeywords ?? ''),
       seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
@@ -4702,6 +4898,9 @@ export default function AdminDashboardPage({
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteTable} title="Delete entire table" style={{ padding: '3px 7px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
                 <Trash2 size={11} /> Del Table
               </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleAutoLinkChannels} title="Auto-Link Official Telegram & WhatsApp Channels in Table" style={{ padding: '3px 7px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', fontWeight: 700, color: '#1d4ed8' }}>
+                <Sparkles size={11} style={{ color: '#2563eb' }} /> Auto Social Links
+              </button>
             </div>
           </div>
 
@@ -4820,6 +5019,14 @@ export default function AdminDashboardPage({
                   title="Delete entire table"
                   style={{ padding: '4px 10px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>
                   <Trash2 size={12} /> Delete Table
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={handleAutoLinkChannels}
+                  title="Auto-Link Official Telegram & WhatsApp Channels in Table"
+                  style={{ padding: '4px 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#1d4ed8' }}>
+                  <Sparkles size={12} style={{ color: '#2563eb' }} /> Auto Social Links
                 </button>
               </div>
             </div>
@@ -5057,6 +5264,27 @@ export default function AdminDashboardPage({
               }}
               onBlur={() => {
                 isVisualFocusedRef.current = false;
+                if (visualEditorRef.current) {
+                  const original = visualEditorRef.current.innerHTML;
+                  const sanitized = autoLinkSocialChannels(original);
+                  if (sanitized !== original) {
+                    visualEditorRef.current.innerHTML = sanitized;
+                    setForm(prev => ({ ...prev, content: sanitized }));
+                  }
+                }
+              }}
+              onPaste={() => {
+                setTimeout(() => {
+                  if (visualEditorRef.current) {
+                    const original = visualEditorRef.current.innerHTML;
+                    const sanitized = autoLinkSocialChannels(original);
+                    if (sanitized !== original) {
+                      visualEditorRef.current.innerHTML = sanitized;
+                      setForm(prev => ({ ...prev, content: sanitized }));
+                      showToast('🔗 Social channel links automatically updated!', 'info');
+                    }
+                  }
+                }, 100);
               }}
               onInput={handleVisualInput}
               onClick={updateActiveTableInfo}

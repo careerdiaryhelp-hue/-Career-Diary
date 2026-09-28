@@ -1,5 +1,84 @@
 export const jobsData = [
   {
+    "id": "canara-bank-apprentice-recruitment-2026",
+    "slug": "canara-bank-apprentice-recruitment-2026",
+    "title": "Canara Bank Apprentice Recruitment 2026",
+    "postName": "Canara Bank Apprentice Online Form 2026 (3500 Posts)",
+    "organization": "Canara Bank",
+    "category": "LATEST JOB",
+    "totalPosts": "3500 Posts",
+    "vacancies": "3500 Posts",
+    "postDate": "September 28, 2026 | 2:12 pm",
+    "featured": true,
+    "isFeatured": true,
+    "isTopCard": true,
+    "isLatest": true,
+    "isLatestUpdate": true,
+    "displayOrder": 0,
+    "bannerColor": "pink",
+    "state": "All India",
+    "lastDate": "17 October 2026",
+    "appStart": "01 October 2026",
+    "examDate": "Notify Soon",
+    "feeGen": "₹ 500/-",
+    "feeSc": "₹ 00/-",
+    "minAge": "20 Years",
+    "maxAge": "28 Years",
+    "qualification": "Candidate must possess a Bachelor’s Degree in any stream from a recognized university or institution with adequate knowledge of the local language of the state/region.",
+    "description": "Canara Bank, has released a notification on official website for the recruitment of Apprentice Posts. This recruitment is for 3500 positions. Canara Bank Application Form will start on 01 October 2026 & the candidates can apply till the 17 October 2026. Minimum age required is 20 Years & The Maximum Age Is 28 Years as on 01 September 2026. Candidates must check the complete details for Canara Bank Apprentice Recruitment 2026. Link are given below.",
+    "important_dates": {
+      "Online Apply Start Date": "01 October 2026",
+      "Online Apply Last Date": "17 October 2026",
+      "Last Date For Fee Payment": "17 October 2026",
+      "Exam Date": "Notify Soon",
+      "Admit Card": "Before Exam",
+      "Result Date": "Will Be Updated Here Soon"
+    },
+    "importantDates": {
+      "applyStart": "01 October 2026",
+      "lastDate": "17 October 2026",
+      "applyLastDate": "17 October 2026",
+      "feeLastDate": "17 October 2026",
+      "examDate": "Notify Soon",
+      "admitCard": "Before Exam",
+      "result": "Will Be Updated Here Soon"
+    },
+    "applicationFee": {
+      "For General, OBC, EWS": "₹ 500/-",
+      "For SC, ST, PH": "₹ 00/-",
+      "Payment Mode (Online)": "You can make the payment using the following methods: Debit Card, Credit Card, Internet Banking, IMPS, Cash Card / Mobile Wallet, UPI"
+    },
+    "ageLimit": {
+      "Minimum Age": "20 Years",
+      "Maximum Age": "28 Years",
+      "asOn": "01 September 2026",
+      "relaxation": "Canara Bank provides age relaxation for the Apprentice position as per their regulations."
+    },
+    "vacancyDetails": [
+      {
+        "Post Name": "Canara Bank Apprentice",
+        "Total": "3500 Posts",
+        "Eligibility": "Candidate must possess a Bachelor’s Degree in any stream from a recognized university or institution. In addition to the educational qualification, the candidate should have adequate knowledge of the local language of the state/region where the vacancy is located. Both conditions are mandatory to be considered eligible for the post."
+      }
+    ],
+    "selectionProcess": [
+      "Merit List Basis on Marks",
+      "DV & Local Language Test",
+      "Medical Examination"
+    ],
+    "applyUrl": "https://canarabank.bank.in/pages/Engagement-of-Graduate-Apprentice-in-Canara-Bank-under-Apprenticeship",
+    "notificationUrl": "https://www.canarabank.bank.in/documents/d/guest/apprenticeship-advertisement-2026-27",
+    "officialUrl": "https://canarabank.bank.in/pages/Engagement-of-Graduate-Apprentice-in-Canara-Bank-under-Apprenticeship",
+    "importantLinks": {
+      "Apply Online": "https://canarabank.bank.in/pages/Engagement-of-Graduate-Apprentice-in-Canara-Bank-under-Apprenticeship",
+      "Check Official Notification": "https://www.canarabank.bank.in/documents/d/guest/apprenticeship-advertisement-2026-27",
+      "Canara Bank Official Website": "https://canarabank.bank.in/pages/Engagement-of-Graduate-Apprentice-in-Canara-Bank-under-Apprenticeship",
+      "Check Career Diary": "https://careerdiary.in/",
+      "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u",
+      "Join Telegram Channel": "https://t.me/careerdiary"
+    }
+  },
+  {
     "id": "rrb-railway-ntpc-graduate-level-cen-06-2026",
     "notificationUrl": "https://whatsapp.com/channel/0029VaAbQf01NCrYADMLt00L",
     "featured": true,

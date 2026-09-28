@@ -661,6 +661,8 @@ export default function App() {
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
+  const publishedJobs = jobs.filter((j) => j && j.status !== 'Draft' && j.status !== 'draft');
+
   // Helper to render dedicated detail page based on category
   const renderDetailPage = () => {
     if (!selectedJob) return null;
@@ -675,7 +677,15 @@ export default function App() {
         </div>
       );
     }
-    return <JobDetailPage key={selectedJob.id} job={selectedJob} onBack={handleBackToAllJobs} />;
+    return (
+      <JobDetailPage
+        key={selectedJob.id}
+        job={selectedJob}
+        allJobs={publishedJobs}
+        onSelectJob={(id) => navigateTo('/' + id)}
+        onBack={handleBackToAllJobs}
+      />
+    );
   };
 
   const goHome = () => {
@@ -753,8 +763,6 @@ export default function App() {
       </>
     );
   };
-
-  const publishedJobs = jobs.filter(j => j && j.status !== 'Draft' && j.status !== 'draft');
 
   // Standalone Full-Page Admin Mode (Zero Public Header, Navbar, Tickers, Footer, Floating Buttons)
   if (isAdminRoute || (showAdminLogin && !isAdmin)) {

@@ -5,8 +5,9 @@ import AutoFAQSection from '../components/AutoFAQSection';
 import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
+import { autoLinkSocialChannels } from '../utils/linkUtils';
 
-export default function JobDetailPage({ job, onBack }) {
+export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }) {
   if (!job) return null;
 
   const getLinkUrl = (...keys) => {
@@ -132,18 +133,113 @@ export default function JobDetailPage({ job, onBack }) {
   // Final table links with social community channels deduplicated at the bottom
   const finalImportantLinks = [
     ...nonSocialLinks,
+    { label: 'Check Career Diary', url: 'https://careerdiary.in/' },
     { label: 'Join Telegram Channel', url: 'https://t.me/careerdiary' },
     { label: 'Join WhatsApp Channel', url: 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u' },
   ];
 
   const postDate = job.postDate || job.importantDates?.postDate || null;
-  const shortInfo = job.uniqueDescription || job.description || `${job.organization || 'The organization'} has released the official notification for ${job.title}. Eligible candidates can apply online before the last date. Read the notification carefully before submitting the form.`;
+  const isAdmit = isAdmitCard(job);
+  const isRes = isResult(job) || isAnswerKey(job);
+  const isAdm = isAdmission(job);
+
+  // Derive all published jobs for cross-linking (SEO & UX)
+  const allPublished = Array.isArray(allJobs) ? allJobs : [];
+  const relatedPosts = allPublished
+    .filter(j => j && j.id !== job.id && (j.category === job.category || (isAdmit && isAdmitCard(j)) || (isRes && isResult(j))))
+    .slice(0, 5);
+  const fallbackRelated = relatedPosts.length < 5
+    ? allPublished.filter(j => j && j.id !== job.id && !relatedPosts.some(r => r.id === j.id)).slice(0, 5 - relatedPosts.length)
+    : [];
+  const finalRelatedPosts = [...relatedPosts, ...fallbackRelated];
+
+  const latestPosts = allPublished
+    .filter(j => j && j.id !== job.id)
+    .slice(0, 5);
+
+  const youMayAlsoCheckJob = finalRelatedPosts[0] || latestPosts[0] || null;
+
+  // Rich Intro Variables
+  const introOrg = job.organization || 'Government Recruitment Board';
+  const introPost = job.postName || job.title;
+  const introTotal = job.totalPosts || job.vacancies || (vacancyDetails?.[0]?.Total) || null;
+  const introStart = importantDates.applyStart || importantDates['Online Apply Start Date'] || job.appStart || null;
+  const introLast = importantDates.lastDate || importantDates.applyLastDate || importantDates['Online Apply Last Date'] || job.appLast || job.lastDate || null;
+  const introMinAge = ageLimit.minimum || ageLimit.min || ageLimit['Minimum Age'] || job.minAge || '18 Years';
+  const introMaxAge = ageLimit.maximum || ageLimit.max || ageLimit['Maximum Age'] || job.maxAge || '37 Years';
+  const introAsOn = ageLimit.asOn || ageLimit['as on'] || ageLimit['As on'] || null;
+
+  const richIntroParagraph = (job.description && job.description.length > 160)
+    ? job.description
+    : `${introOrg}, has released a notification on official website for the recruitment of ${introPost} Posts.${introTotal ? ` This recruitment is for ${introTotal} positions.` : ''}${introStart ? ` ${introOrg} Application Form will start on ${introStart}` : ''}${introLast ? ` & the candidates can apply till the ${introLast}.` : '.'} Minimum age required is ${introMinAge} & The Maximum Age Is ${introMaxAge}${introAsOn ? ` as on ${introAsOn}` : ''}. Candidates must check the complete details for ${job.title} including eligibility criteria, category-wise vacancy details, application fee, age limits, and mode of selection. Links are given below.`;
+
+  const qualificationText = job.qualification || job.eligibility?.education || job.eligibility?.qualification || (vacancyDetails?.[0]?.Eligibility) || 'Candidate must possess required Educational Qualification from a recognized University or Institution in India.';
+
+  let importantQuestions = [];
+  if (isAdmit) {
+    importantQuestions = [
+      {
+        q: `When will the ${job.title} Admit Card be available?`,
+        a: `The admit card is available online before the examination. Candidates can download it using the direct link provided in the Important Links section on Career Diary.`
+      },
+      {
+        q: `What is the exam date for ${job.title}?`,
+        a: `The examination is scheduled as per the official timeline (${importantDates.examDate || job.examDate || introLast || 'Check Hall Ticket'}). Check your admit card for shift timings.`
+      },
+      {
+        q: `What documents are required at the ${introPost} examination center?`,
+        a: `Candidates must carry a clear printed copy of the Admit Card along with a valid Original Photo ID proof (Aadhaar Card, Voter ID, Driving License, or Passport) and recent passport photographs.`
+      },
+      {
+        q: `What is the official website for ${introOrg}?`,
+        a: `The official website for ${introOrg} is ${officialWebUrl}.`
+      }
+    ];
+  } else if (isRes) {
+    importantQuestions = [
+      {
+        q: `How to check the official result for ${job.title}?`,
+        a: `Visit Career Diary, click on 'Check Result / Score Card' in the Important Links table, and enter your Roll Number or Registration ID to view marks or download the Merit List PDF.`
+      },
+      {
+        q: `Where can I download the ${job.title} Cut Off marks & Merit List PDF?`,
+        a: `The category-wise cut-off marks and qualified candidate roll number PDF are available for direct download in the Important Links section above.`
+      },
+      {
+        q: `What is the official website for ${introOrg}?`,
+        a: `The official website for ${introOrg} is ${officialWebUrl}.`
+      }
+    ];
+  } else {
+    importantQuestions = [
+      {
+        q: `When will the online application for ${job.title} Start?`,
+        a: `The online application for this recruitment will start on ${introStart || 'Declared / Announced'}.`
+      },
+      {
+        q: `What is the last date for online application for ${job.title}?`,
+        a: `The last date for online application Form is ${introLast || 'As per notification schedule'}.`
+      },
+      {
+        q: `What is the age limit for ${job.title}?`,
+        a: `The age limit for ${job.title} is minimum ${introMinAge} and maximum ${introMaxAge}${introAsOn ? ` as on ${introAsOn}` : ''}. Age relaxation is applicable as per regulations.`
+      },
+      {
+        q: `What is the eligibility for ${job.title}?`,
+        a: `${qualificationText} For full eligibility details, please check the official notification.`
+      },
+      {
+        q: `What is the official website for ${introOrg}?`,
+        a: `The official website for ${introOrg} is ${officialWebUrl}.`
+      }
+    ];
+  }
 
   // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
   const sanitizedContent = (() => {
     if (!job?.content) return '';
-    // 1. Replace competitor portal hrefs with https://careerdiary.in/ (excluding direct file downloads like .pdf, .jpg)
-    let out = job.content.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
+    let out = autoLinkSocialChannels(job.content);
+    out = out.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
       const lower = match.toLowerCase();
       if (lower.includes('.pdf') || lower.includes('.jpg') || lower.includes('.png') || lower.includes('.jpeg')) {
         return match;
@@ -151,7 +247,6 @@ export default function JobDetailPage({ job, onBack }) {
       return 'href="https://careerdiary.in/"';
     });
 
-    // 2. Only replace brand names in text content outside tags, keeping URLs in attributes intact
     out = out.replace(/(>|^)([^<]*?)(<|$)/g, (match, prefix, text, suffix) => {
       const cleanedText = text
         .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
@@ -199,6 +294,12 @@ export default function JobDetailPage({ job, onBack }) {
     return out;
   })();
 
+  const contentLower = (job?.content || '').toLowerCase();
+  const hasHowToFill = contentLower.includes('how to fill') || contentLower.includes('how to apply') || contentLower.includes('how to check');
+  const hasSelectionMode = contentLower.includes('mode of selection') || contentLower.includes('selection process');
+  const hasFaqSection = contentLower.includes('important question') || contentLower.includes('frequently asked');
+  const hasAlsoCheck = contentLower.includes('you may also check');
+
   // Check if job.content already has its own embedded Important Links table to avoid duplicates
   const hasEmbeddedLinks = Boolean(
     job.content &&
@@ -206,10 +307,6 @@ export default function JobDetailPage({ job, onBack }) {
      job.content.includes('Click Here') ||
      job.content.includes('sr-links-table'))
   );
-
-  const isAdmit = isAdmitCard(job);
-  const isRes = isResult(job) || isAnswerKey(job);
-  const isAdm = isAdmission(job);
 
   React.useEffect(() => {
     if (job?.content) {
@@ -271,9 +368,15 @@ export default function JobDetailPage({ job, onBack }) {
           <div className="sr-post-date">Post Date: {postDate}</div>
         )}
 
-        {/* Short Information */}
-        <div className="sr-short-info">
-          <strong>Short Information :</strong> {shortInfo}
+        {/* Rich Intro Paragraph (Sarkari Result style) */}
+        <div style={{ fontSize: '1rem', lineHeight: '1.7', color: '#111827', margin: '14px 0 18px 0', padding: '14px 18px', backgroundColor: '#f8fafc', borderLeft: '4px solid #0088cc', borderRadius: '4px' }}>
+          <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>{introOrg}</a>, has released a notification on official website for the recruitment of <strong>{introPost}</strong>.
+          {introTotal ? ` This recruitment is for ${introTotal} positions.` : ''}
+          {introStart ? ` ${introOrg} Application Form will start on ${introStart}` : ''}
+          {introLast ? ` & the candidates can apply till the ${introLast}.` : '.'}
+          {introMinAge ? ` Minimum age required is ${introMinAge} & The Maximum Age Is ${introMaxAge}` : ''}
+          {introAsOn ? ` as on ${introAsOn}.` : '.'}
+          {' '}Candidates must check the complete details for <strong>{job.title}</strong>. Link are given below.
         </div>
 
         {/* Social Banners */}
@@ -293,214 +396,320 @@ export default function JobDetailPage({ job, onBack }) {
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {job.content ? (
-          <div
-            className="sr-rich-html-content"
-            style={{ marginBottom: '24px' }}
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          />
+          <>
+            <div
+              className="sr-rich-html-content"
+              style={{ marginBottom: '24px' }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            />
+
+            {/* If content does not have You May Also Check */}
+            {!hasAlsoCheck && youMayAlsoCheckJob && (
+              <div className="sr-you-may-check">
+                <span>You May Also Check : </span>
+                <a
+                  href={`https://careerdiary.in${getJobUrl(youMayAlsoCheckJob)}`}
+                  onClick={(e) => {
+                    if (onSelectJob) {
+                      e.preventDefault();
+                      onSelectJob(youMayAlsoCheckJob.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  {youMayAlsoCheckJob.title}
+                </a>
+              </div>
+            )}
+
+            {/* If content does not have Mode of Selection */}
+            {!hasSelectionMode && (
+              <table className="sr-table">
+                <tbody>
+                  <tr>
+                    <td className="sr-table-subheading">{job.title} : Mode Of Selection</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                        {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 ? (
+                          job.selectionProcess.map((step, idx) => <li key={idx}>{step}</li>)
+                        ) : (
+                          <>
+                            <li>Merit List Basis on Marks / Written Examination (CBT)</li>
+                            <li>DV &amp; Local Language Test / Skill Test (if applicable)</li>
+                            <li>Document Verification (DV)</li>
+                            <li>Medical Examination</li>
+                          </>
+                        )}
+                      </ol>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
+
+            {/* If content does not have How to Fill */}
+            {!hasHowToFill && (
+              <table className="sr-table">
+                <tbody>
+                  <tr>
+                    <td className="sr-table-subheading">How To Fill {job.title}</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                        <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                        <li>Use the &quot;Apply Online&quot; link provided below under important link section to apply directly.</li>
+                        <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
+                        <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                        <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                      </ol>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
+          </>
         ) : (
           <>
             {/* Main Info Table */}
             <table className="sr-table">
-          <tbody>
-            {/* Pink Heading Row */}
-            <tr>
-              <td colSpan={2} className="sr-table-heading">
-                {job.organization || 'Government Recruitment Board'} : {job.postName || job.title}<br />
-                <span style={{ fontSize: '1rem', fontWeight: 'normal' }}>Short Details</span>
-              </td>
-            </tr>
-
-            {/* Website / Important Info */}
-            <tr>
-              <td style={{ textAlign: 'center', fontWeight: 'bold', width: '50%' }}>
-                <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>
-                  {job.organization || 'Official Website'}
-                </a>
-              </td>
-              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                Post Name: {job.postName || job.title}
-              </td>
-            </tr>
-            {(job.vacancies || job.totalPosts) && (
-              <tr>
-                <td colSpan={2} style={{ textAlign: 'center', fontWeight: 'bold', color: '#008000' }}>
-                  Total Vacancies: {job.vacancies || job.totalPosts}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-
-        {/* Important Dates & Application Fee */}
-        <table className="sr-table">
-          <tbody>
-            <tr>
-              <td colSpan={2} className="sr-table-subheading">
-                Important Dates &amp; Application Fee
-              </td>
-            </tr>
-            <tr>
-              {/* Dates Column */}
-              <td style={{ verticalAlign: 'top', width: '50%', padding: 0 }}>
-                <div className="sr-dates-fees-header">Important Dates</div>
-                <ul className="sr-list">
-                  <li>⚫ <strong>Application Start :</strong> {importantDates.applyStart || job.appStart || 'As per notification'}</li>
-                  <li>⚫ <strong>Last Date to Apply :</strong> <span style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'As per notification'}</span></li>
-                  {(importantDates.feeLastDate || job.appLast) && (
-                    <li>⚫ <strong>Fee Payment Last Date :</strong> {importantDates.feeLastDate || job.appLast}</li>
-                  )}
-                  {importantDates.examDate && (
-                    <li>⚫ <strong>Exam Date :</strong> {importantDates.examDate}</li>
-                  )}
-                  {importantDates.admitCard && (
-                    <li>⚫ <strong>Admit Card :</strong> {importantDates.admitCard}</li>
-                  )}
-                  {importantDates.result && (
-                    <li>⚫ <strong>Result Date :</strong> {importantDates.result}</li>
-                  )}
-                  {Object.entries(importantDates)
-                    .filter(([k]) => !['applyStart', 'lastDate', 'applyLastDate', 'feeLastDate', 'examDate', 'admitCard', 'result', 'postDate'].includes(k))
-                    .map(([k, v]) => (
-                      <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
-                    ))}
-                </ul>
-              </td>
-
-              {/* Fees Column */}
-              <td style={{ verticalAlign: 'top', padding: 0 }}>
-                <div className="sr-dates-fees-header">Application Fee</div>
-                <ul className="sr-list">
-                  {applicationFee['General / OBC / EWS'] || job.feeGen ? (
-                    <li>⚫ <strong>General / OBC :</strong> {applicationFee['General / OBC / EWS'] || job.feeGen}</li>
-                  ) : (
-                    <li>⚫ <strong>General / OBC :</strong> As per notification</li>
-                  )}
-                  {applicationFee['SC / ST'] || job.feeSc ? (
-                    <li>⚫ <strong>SC / ST / PwD :</strong> {applicationFee['SC / ST'] || job.feeSc}</li>
-                  ) : null}
-                  {Object.entries(applicationFee)
-                    .filter(([k]) => !['General / OBC / EWS', 'SC / ST', 'paymentMode'].includes(k))
-                    .map(([k, v]) => (
-                      <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
-                    ))}
-                  <li>⚫ <strong>Payment Mode :</strong> {applicationFee.paymentMode || 'Online (Debit/Credit Card, Net Banking, UPI)'}</li>
-                </ul>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Age Limit & Qualification */}
-        <table className="sr-table">
-          <tbody>
-            <tr>
-              <td colSpan={2} className="sr-table-subheading">Age Limit &amp; Educational Qualification</td>
-            </tr>
-            <tr>
-              <td style={{ textAlign: 'center' }}>
-                <strong>Minimum Age :</strong> {ageLimit.minimum || ageLimit.min || job.minAge || '18 Years'}
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <strong>Maximum Age :</strong> {ageLimit.maximum || ageLimit.max || job.maxAge || '37 Years'}
-              </td>
-            </tr>
-            <tr>
-              <td colSpan={2} style={{ textAlign: 'center', color: '#008000' }}>
-                <strong>Age Relaxation :</strong> {ageLimit.relaxation || 'As per Govt. Rules (SC/ST 5 Yrs, OBC 3 Yrs, PwD 10 Yrs)'}
-              </td>
-            </tr>
-            <tr>
-              <td colSpan={2}>
-                <strong>Educational Qualification :</strong> {job.qualification || job.eligibility?.education || job.eligibility?.qualification || 'Candidates must have passed 10th / 12th / Diploma / Degree from a Recognized Board / University.'}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Mode of Selection Table */}
-        <table className="sr-table">
-          <tbody>
-            <tr>
-              <td className="sr-table-subheading">Mode Of Selection</td>
-            </tr>
-            <tr>
-              <td>
-                <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
-                  {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 ? (
-                    job.selectionProcess.map((step, idx) => <li key={idx}>{step}</li>)
-                  ) : (
-                    <>
-                      <li>Shortlisting based on Application / Eligibility</li>
-                      <li>Written Examination / Computer Based Test (CBT)</li>
-                      <li>Skill Test / Physical Efficiency Test (PET) (if applicable)</li>
-                      <li>Document Verification (DV)</li>
-                      <li>Medical Examination</li>
-                    </>
-                  )}
-                </ol>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Vacancy Details Table */}
-        <table className="sr-table sr-vacancy-table">
-          <thead>
-            <tr>
-              <th colSpan={3} className="sr-table-heading">
-                {job.title} : Vacancy Details
-              </th>
-            </tr>
-            <tr>
-              <th>Post Name</th>
-              <th>No. Of Post</th>
-              <th>Eligibility Criteria</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vacancyDetails.length > 0 ? (
-              vacancyDetails.map((v, idx) => (
-                <tr key={idx}>
-                  <td>{v['Post Name'] || v.postName || v.Post || v.name || job.postName || job.title}</td>
-                  <td><strong>{v.Total || v.total || v.vacancies || job.vacancies || 'Check Notification'}</strong></td>
-                  <td>{v.Eligibility || v.eligibility || job.qualification || 'As per notification rules'}</td>
+              <tbody>
+                {/* Pink Heading Row */}
+                <tr>
+                  <td colSpan={2} className="sr-table-heading">
+                    {job.organization || 'Government Recruitment Board'} : {job.postName || job.title}<br />
+                    <span style={{ fontSize: '1rem', fontWeight: 'normal' }}>Short Details</span>
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td>{job.postName || job.title}</td>
-                <td><strong>{job.vacancies || job.totalPosts || 'Various Posts'}</strong></td>
-                <td>{job.qualification || job.eligibility?.education || 'Candidates should have passed 10th / 12th / Graduate from a recognized Board/University in India. Read official notification for complete details.'}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
 
-        {/* How to Fill Form */}
-        <table className="sr-table">
-          <tbody>
-            <tr>
-              <td className="sr-table-subheading">How To Check &amp; Apply For {job.title} Online Form</td>
-            </tr>
-            <tr>
-              <td>
-                <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                  <li>Candidates can submit their online application form before the last date: <strong style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || job.appLast || job.lastDate || 'As per notification schedule'}</strong>.</li>
-                  <li>Read the official notification carefully before starting the application form.</li>
-                  <li>Keep ready all basic documents like photo, signature, ID proof, and educational certificates.</li>
-                  <li>Use the &quot;Apply Online&quot; link provided below under the Important Links section to proceed directly.</li>
-                  <li>Verify all column details in the preview option before submitting the form.</li>
-                  <li>Pay the required application fee online (if applicable) and take a final printout of your submitted form for future reference.</li>
-                  <li><strong>Note –</strong> छात्रों से अनुरोध है कि फॉर्म भरने से पहले Official Notification ध्यानपूर्वक पढ़ें।</li>
-                </ol>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                {/* Website / Important Info */}
+                <tr>
+                  <td style={{ textAlign: 'center', fontWeight: 'bold', width: '50%' }}>
+                    <a href={officialWebUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>
+                      {job.organization || 'Official Website'}
+                    </a>
+                  </td>
+                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                    Post Name: {job.postName || job.title}
+                  </td>
+                </tr>
+                {(job.vacancies || job.totalPosts) && (
+                  <tr>
+                    <td colSpan={2} style={{ textAlign: 'center', fontWeight: 'bold', color: '#008000' }}>
+                      Total Vacancies: {job.vacancies || job.totalPosts}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Important Dates & Application Fee Table */}
+            <table className="sr-table">
+              <tbody>
+                <tr>
+                  <td colSpan={2} className="sr-table-subheading">
+                    Important Dates &amp; Application Fee
+                  </td>
+                </tr>
+                <tr>
+                  {/* Dates Column */}
+                  <td style={{ verticalAlign: 'top', width: '50%', padding: 0 }}>
+                    <div className="sr-dates-fees-header">Important Dates</div>
+                    <ul className="sr-list">
+                      <li>⚫ <strong>Online Apply Start Date :</strong> {importantDates.applyStart || importantDates['Online Apply Start Date'] || job.appStart || 'As per notification'}</li>
+                      <li>⚫ <strong>Online Apply Last Date :</strong> <span style={{ color: '#ff0000' }}>{importantDates.lastDate || importantDates.applyLastDate || importantDates['Online Apply Last Date'] || job.appLast || job.lastDate || 'As per notification'}</span></li>
+                      <li>⚫ <strong>Last Date For Fee Payment :</strong> {importantDates.feeLastDate || importantDates['Last Date For Fee Payment'] || job.appLast || importantDates.lastDate || 'As per notification'}</li>
+                      <li>⚫ <strong>Exam Date :</strong> {importantDates.examDate || importantDates['Exam Date'] || 'Notify Soon'}</li>
+                      <li>⚫ <strong>Admit Card :</strong> {importantDates.admitCard || importantDates['Admit Card'] || 'Before Exam'}</li>
+                      <li>⚫ <strong>Result Date :</strong> {importantDates.result || importantDates['Result Date'] || 'Will Be Updated Here Soon'}</li>
+                      {Object.entries(importantDates)
+                        .filter(([k]) => !['applyStart', 'lastDate', 'applyLastDate', 'feeLastDate', 'examDate', 'admitCard', 'result', 'postDate', 'Online Apply Start Date', 'Online Apply Last Date', 'Last Date For Fee Payment', 'Exam Date', 'Admit Card', 'Result Date'].includes(k))
+                        .map(([k, v]) => (
+                          <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                        ))}
+                    </ul>
+                  </td>
+
+                  {/* Fees Column */}
+                  <td style={{ verticalAlign: 'top', padding: 0 }}>
+                    <div className="sr-dates-fees-header">Application Fee</div>
+                    <ul className="sr-list">
+                      <li>⚫ <strong>For General, OBC, EWS :</strong> {applicationFee['For General, OBC, EWS'] || applicationFee['General / OBC / EWS'] || applicationFee.general || job.feeGen || '₹ 500/-'}</li>
+                      <li>⚫ <strong>For SC, ST, PH :</strong> {applicationFee['For SC, ST, PH'] || applicationFee['SC / ST'] || applicationFee.sc || job.feeSc || '₹ 00/-'}</li>
+                      {Object.entries(applicationFee)
+                        .filter(([k]) => !['For General, OBC, EWS', 'General / OBC / EWS', 'For SC, ST, PH', 'SC / ST', 'paymentMode', 'Payment Mode (Online)', 'general', 'sc'].includes(k))
+                        .map(([k, v]) => (
+                          <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                        ))}
+                      <li>
+                        ⚫ <strong>Payment Mode (Online):</strong> You can make the payment using the following methods:
+                        <div style={{ marginTop: '4px', paddingLeft: '14px', color: '#334155' }}>
+                          Debit Card, Credit Card, Internet Banking, IMPS, Cash Card / Mobile Wallet, UPI
+                        </div>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Age Limits Table */}
+            <table className="sr-table">
+              <tbody>
+                <tr>
+                  <td colSpan={2} className="sr-table-subheading">{job.title} : Age Limits {introAsOn ? `As On ${introAsOn}` : ''}</td>
+                </tr>
+                <tr>
+                  <td style={{ textAlign: 'center', width: '50%' }}>
+                    <strong>Minimum Age :</strong> {introMinAge}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <strong>Maximum Age :</strong> {introMaxAge}
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={2} style={{ textAlign: 'center', color: '#008000' }}>
+                    {ageLimit.relaxation || `${introOrg} provides age relaxation for the Apprentice position as per regulations (SC/ST 5 Yrs, OBC 3 Yrs, PwD 10 Yrs).`}
+                  </td>
+                </tr>
+                {introTotal && (
+                  <tr>
+                    <td colSpan={2} style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '1.05rem', color: '#b91c1c' }}>
+                      Total Post: {introTotal}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Vacancy Details & Eligibility Criteria */}
+            <table className="sr-table sr-vacancy-table">
+              <thead>
+                <tr>
+                  <th colSpan={3} className="sr-table-heading">
+                    {job.title} : Vacancy Details &amp; Eligibility Criteria
+                  </th>
+                </tr>
+                <tr>
+                  <th style={{ width: '35%' }}>Post Name</th>
+                  <th style={{ width: '20%' }}>No. Of Post</th>
+                  <th style={{ width: '45%' }}>Eligibility Criteria</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vacancyDetails.length > 0 ? (
+                  vacancyDetails.map((v, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 'bold' }}>{v['Post Name'] || v.postName || v.Post || v.name || job.postName || job.title}</td>
+                      <td><strong>{v.Total || v.total || v.vacancies || job.vacancies || 'Check Notification'}</strong></td>
+                      <td style={{ textAlign: 'left', lineHeight: '1.6' }}>{v.Eligibility || v.eligibility || qualificationText}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td style={{ fontWeight: 'bold' }}>{job.postName || job.title}</td>
+                    <td><strong>{job.vacancies || job.totalPosts || '3500 Posts'}</strong></td>
+                    <td style={{ textAlign: 'left', lineHeight: '1.6' }}>{qualificationText}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* You May Also Check Banner */}
+            {youMayAlsoCheckJob && (
+              <div className="sr-you-may-check">
+                <span>You May Also Check : </span>
+                <a
+                  href={`https://careerdiary.in${getJobUrl(youMayAlsoCheckJob)}`}
+                  onClick={(e) => {
+                    if (onSelectJob) {
+                      e.preventDefault();
+                      onSelectJob(youMayAlsoCheckJob.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  {youMayAlsoCheckJob.title}
+                </a>
+              </div>
+            )}
+
+            {/* How to Fill Form Table */}
+            <table className="sr-table">
+              <tbody>
+                <tr>
+                  <td className="sr-table-subheading">How To Fill {job.title}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                      <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                      <li>Use the click here link provided below under important link section to apply directly.</li>
+                      <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
+                      <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                      <li>Keep ready all basic documents (Photograph, Signature, ID Proof, and Educational Qualification Marksheets).</li>
+                      <li>Verify all column details in the preview option before submitting the form.</li>
+                      <li>Pay the application fee (if applicable) and take a final printout of your submitted application form for future reference.</li>
+                      <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                    </ol>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Mode of Selection Table */}
+            <table className="sr-table">
+              <tbody>
+                <tr>
+                  <td className="sr-table-subheading">{job.title} : Mode Of Selection</td>
+                </tr>
+                <tr>
+                  <td>
+                    <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                      {job.selectionProcess && Array.isArray(job.selectionProcess) && job.selectionProcess.length > 0 ? (
+                        job.selectionProcess.map((step, idx) => <li key={idx}>{step}</li>)
+                      ) : (
+                        <>
+                          <li>Merit List Basis on Marks / Written Examination (CBT)</li>
+                          <li>DV &amp; Local Language Test / Skill Test (if applicable)</li>
+                          <li>Medical Examination</li>
+                        </>
+                      )}
+                    </ol>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Social Follow Channels Table */}
+            <table className="sr-table" style={{ margin: '16px 0' }}>
+              <tbody>
+                <tr>
+                  <td style={{ fontWeight: 'bold', color: '#25d366', width: '65%', padding: '10px 14px' }}>
+                    Join Our WhatsApp Channel
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '10px 14px' }}>
+                    <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" style={{ backgroundColor: '#25d366', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>
+                      Follow Now
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 'bold', color: '#e1306c', padding: '10px 14px' }}>
+                    Follow Our Instagram Channel
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '10px 14px' }}>
+                    <a href="https://instagram.com/careerdiary" target="_blank" rel="noopener noreferrer" style={{ backgroundColor: '#e1306c', color: '#fff', fontWeight: 'bold', padding: '6px 16px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>
+                      Follow Now
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </>
         )}
-
 
         <div style={{ margin: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <InPostAd label="ADVERTISEMENT" />
@@ -519,19 +728,27 @@ export default function JobDetailPage({ job, onBack }) {
 
               {finalImportantLinks.map((item, idx) => {
                 const isValidUrl = typeof item.url === 'string' && item.url.startsWith('http');
+                const isApplyLink = item.label.toLowerCase().includes('apply');
                 return (
                   <tr key={idx}>
                     <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{item.label}</td>
                     <td style={{ textAlign: 'center' }}>
                       {isValidUrl ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#0000ff', fontWeight: 'bold' }}
-                        >
-                          Click Here
-                        </a>
+                        <>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#0000ff', fontWeight: 'bold' }}
+                          >
+                            Click Here
+                          </a>
+                          {isApplyLink && introStart && (
+                            <div style={{ fontSize: '0.82rem', color: '#b91c1c', marginTop: '2px', fontWeight: 'bold' }}>
+                              Link Activate On {introStart}
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
                           {item.label.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
@@ -544,6 +761,90 @@ export default function JobDetailPage({ job, onBack }) {
             </tbody>
           </table>
         )}
+
+        {/* Important Questions Section (Sarkari Result Visual Q&A Table) */}
+        {!hasFaqSection && (
+          <table className="sr-table sr-faq-table" style={{ margin: '24px 0' }}>
+            <tbody>
+              <tr>
+                <td className="sr-table-heading" style={{ fontSize: '1.15rem' }}>
+                  {job.postName || job.title} : Important Question
+                </td>
+              </tr>
+              <tr>
+                <td style={{ padding: '16px 20px', lineHeight: '1.8', backgroundColor: '#ffffff' }}>
+                  {importantQuestions.map((f, idx) => (
+                    <div key={idx} style={{ marginBottom: idx === importantQuestions.length - 1 ? 0 : '16px', paddingBottom: idx === importantQuestions.length - 1 ? 0 : '12px', borderBottom: idx === importantQuestions.length - 1 ? 'none' : '1px dashed #cbd5e1' }}>
+                      <div style={{ fontWeight: 'bold', color: '#b91c1c', fontSize: '1.02rem', marginBottom: '4px' }}>
+                        Question: {f.q}
+                      </div>
+                      <div style={{ color: '#1e293b', fontSize: '0.95rem' }}>
+                        <strong>Answer:</strong> {f.a}
+                      </div>
+                    </div>
+                  ))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+
+        {/* Latest Posts & Related Posts Section */}
+        <div style={{ margin: '24px 0' }}>
+          {/* Latest Posts */}
+          {latestPosts.length > 0 && (
+            <div className="sr-posts-box">
+              <div className="sr-posts-box-header pink">
+                Latest Posts
+              </div>
+              <ul className="sr-posts-list">
+                {latestPosts.map((p) => (
+                  <li key={p.id}>
+                    👉 <a
+                      href={`https://careerdiary.in${getJobUrl(p)}`}
+                      onClick={(e) => {
+                        if (onSelectJob) {
+                          e.preventDefault();
+                          onSelectJob(p.id);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      {p.postName || p.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Related Posts */}
+          {finalRelatedPosts.length > 0 && (
+            <div className="sr-posts-box">
+              <div className="sr-posts-box-header green">
+                Related Posts
+              </div>
+              <ul className="sr-posts-list">
+                {finalRelatedPosts.map((p) => (
+                  <li key={p.id}>
+                    👉 <a
+                      href={`https://careerdiary.in${getJobUrl(p)}`}
+                      onClick={(e) => {
+                        if (onSelectJob) {
+                          e.preventDefault();
+                          onSelectJob(p.id);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      {p.postName || p.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
         {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
         <PostFooterSection job={job} category={faqCategory} />

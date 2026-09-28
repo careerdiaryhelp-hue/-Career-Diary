@@ -2369,6 +2369,67 @@ sup .badge-tag {
   color: #000;
 }
 
+.sr-you-may-check {
+  margin: 18px 0;
+  padding: 12px 16px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+.sr-you-may-check a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+.sr-you-may-check a:hover {
+  color: #b91c1c;
+}
+
+.sr-posts-box {
+  margin-bottom: 20px;
+  border: 2px solid #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.sr-posts-box-header {
+  color: #fff;
+  padding: 10px 16px;
+  font-weight: bold;
+  font-size: 1.15rem;
+  text-align: center;
+}
+.sr-posts-box-header.pink {
+  background-color: #ff0080;
+}
+.sr-posts-box-header.green {
+  background-color: #008000;
+}
+.sr-posts-list {
+  list-style: none;
+  margin: 0;
+  padding: 12px 18px;
+  background-color: #fff;
+  line-height: 2;
+}
+.sr-posts-list li {
+  border-bottom: 1px dashed #cbd5e1;
+  padding: 6px 0;
+  font-size: 0.98rem;
+}
+.sr-posts-list li:last-child {
+  border-bottom: none;
+}
+.sr-posts-list a {
+  color: #0000ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sr-posts-list a:hover {
+  text-decoration: underline;
+  color: #ff0000;
+}
+
 /* =========================================
    BIGBOOSTER RICH POST CONTENT STYLES
    ========================================= */
