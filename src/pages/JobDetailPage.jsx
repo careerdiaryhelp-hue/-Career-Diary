@@ -502,12 +502,10 @@ export default function JobDetailPage({ job, onBack }) {
         )}
 
 
-        {!hasEmbeddedLinks && (
-          <div style={{ margin: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <InPostAd label="ADVERTISEMENT" />
-            <MultiplexAd label="RECOMMENDED FOR YOU" />
-          </div>
-        )}
+        <div style={{ margin: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <InPostAd label="ADVERTISEMENT" />
+          <MultiplexAd label="RECOMMENDED FOR YOU" />
+        </div>
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (

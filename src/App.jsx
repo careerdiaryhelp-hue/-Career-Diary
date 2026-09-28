@@ -10,8 +10,11 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import Footer from './components/Footer';
 import { DisplayAd, MultiplexAd } from './components/AdSenseBanner';
 
-// Dedicated Detail Page
+// Dedicated Detail Pages
 import JobDetailPage from './pages/JobDetailPage';
+import AdmitCardDetailPage from './pages/AdmitCardDetailPage';
+import ResultDetailPage from './pages/ResultDetailPage';
+import AdmissionDetailPage from './pages/AdmissionDetailPage';
 
 // Dedicated Category Listing Pages
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -294,6 +297,13 @@ export default function App() {
     const cleanPath = rawPath.split('#')[0].split('?')[0].toLowerCase();
     const searchParams = new URLSearchParams(window.location.search);
     const qParam = searchParams.get('q');
+
+    // Trigger Google Analytics Page View on Route Change
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_path: window.location.pathname + window.location.search
+      });
+    }
 
     // Admin Route
     if (cleanPath === 'admin' || searchParams.get('admin') === 'true' || searchParams.get('admin') === 'secret') {
