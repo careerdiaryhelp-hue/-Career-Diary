@@ -934,38 +934,6 @@ export default function AdminDashboardPage({
     showToast(`📋 Post duplicated as Draft: "${duplicatedJob.title}"`, 'success');
   };
 
-  const handleQuickAddAnswerKey = async (job) => {
-    if (!job) return;
-    const currentSec = job.secondaryCategories || job.additionalCategories || [];
-    const isAlreadyAnswerKey = (job.category === 'ANSWER KEY') || currentSec.includes('ANSWER KEY');
-    
-    if (isAlreadyAnswerKey) {
-      if (job.category === 'ANSWER KEY') {
-        showToast(`ℹ️ "${job.title}" has primary category as Answer Key.`, 'info');
-        return;
-      }
-      const updatedSec = currentSec.filter(c => c !== 'ANSWER KEY');
-      const updatedJob = {
-        ...job,
-        secondaryCategories: updatedSec,
-        additionalCategories: updatedSec,
-        updatedAt: new Date().toISOString()
-      };
-      await onAddJob(updatedJob);
-      showToast(`Removed Answer Key category from "${job.title}".`, 'info');
-    } else {
-      const updatedSec = [...currentSec, 'ANSWER KEY'];
-      const updatedJob = {
-        ...job,
-        secondaryCategories: updatedSec,
-        additionalCategories: updatedSec,
-        updatedAt: new Date().toISOString()
-      };
-      await onAddJob(updatedJob);
-      showToast(`🎉 "${job.title}" is now visible in BOTH "${job.category}" and "ANSWER KEY"!`, 'success');
-    }
-  };
-
   // Group duplicate jobs by normalized title / slug
   const duplicateGroups = useMemo(() => {
     const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -3734,24 +3702,6 @@ export default function AdminDashboardPage({
                             }}
                           >
                             Edit
-                          </button>
-                          <button
-                            onClick={() => handleQuickAddAnswerKey(job)}
-                            style={{
-                              background: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '#fef3c7' : '#f8fafc',
-                              color: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '#92400e' : '#475569',
-                              border: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '1px solid #fde68a' : '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              padding: '6px 10px',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              marginRight: '6px',
-                              transition: 'all 0.15s'
-                            }}
-                            title="Toggle Answer Key category (दोनों जगह दिखेगा - Result & Answer Key)"
-                          >
-                            {((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '✓ Key' : '+ Key'}
                           </button>
                           <button
                             onClick={() => handleDuplicateJob(job)}
