@@ -262,11 +262,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   // Cleanly split HTML content into two parts at the middle table/paragraph
   // so the middle ad can be rendered as a true React <InPostAd /> component
   const { contentPart1, contentPart2 } = React.useMemo(() => {
-    if (!sanitizedContent) return { contentPart1: '', contentPart2: '' };
+    if (!sanitizedContent || typeof sanitizedContent !== 'string') {
+      return { contentPart1: '', contentPart2: '' };
+    }
 
-    const tableEndMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
-    if (tableEndMatches.length >= 2) {
-      const midTableIndex = Math.floor(tableEndMatches.length / 2);
+    const tableMatches = sanitizedContent.match(/<\/table>/gi);
+    if (tableMatches && tableMatches.length >= 2) {
+      const midTableIndex = Math.floor(tableMatches.length / 2);
       let count = 0;
       let splitPos = -1;
       const regex = /<\/table>/gi;
@@ -286,9 +288,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       }
     }
 
-    const pEndMatches = [...sanitizedContent.matchAll(/<\/p>/gi)];
-    if (pEndMatches.length >= 4) {
-      const midPIndex = Math.floor(pEndMatches.length / 2);
+    const pMatches = sanitizedContent.match(/<\/p>/gi);
+    if (pMatches && pMatches.length >= 4) {
+      const midPIndex = Math.floor(pMatches.length / 2);
       let count = 0;
       let splitPos = -1;
       const regex = /<\/p>/gi;

@@ -111,8 +111,12 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
       const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
       if (aMatch) {
         const href = aMatch[1].trim();
-        const aText = aMatch[2].replace(/<[^>]+>/g, '').trim();
-        const cellMatches = [...rowHtml.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)];
+        const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
+        const cellMatches = [];
+        let cMatch;
+        while ((cMatch = cellRegex.exec(rowHtml)) !== null) {
+          cellMatches.push(cMatch);
+        }
         let label = cellMatches.length >= 2 ? cellMatches[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : aText;
         if (!label) label = aText || 'Important Link';
 
