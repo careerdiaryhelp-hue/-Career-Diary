@@ -48,8 +48,11 @@ export default function AdSenseBanner({
       if (el.getAttribute('data-adsbygoogle-status')) return;
       if (el.dataset.adPushDone) return; // Prevent multiple pushes
 
-      // Prevent AdSense 400 Bad Request on hidden ad units (like desktop sidebars on mobile)
-      if (el.offsetWidth === 0 && el.offsetHeight === 0) return;
+      // Skip push if element is genuinely hidden (display: none)
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return;
+      }
 
       try {
         if (window.adsbygoogle) {
@@ -61,19 +64,21 @@ export default function AdSenseBanner({
       }
     };
 
-    // Use IntersectionObserver to wait for the ad to be visible (or near viewport) and not display:none
+    // Use IntersectionObserver to wait for the ad to be visible (or near viewport)
     if (window.IntersectionObserver) {
       intersectionObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          tryPush();
-        }
-      }, { rootMargin: '300px' });
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Add a small delay to ensure DOM is ready for ad injection
+            setTimeout(tryPush, 300);
+            intersectionObserver.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '800px 0px' }); // Larger rootMargin for earlier loading on mobile
       
-      // Some layouts might start as display:none then become block on resize.
-      // We observe the wrapper to detect visibility changes reliably.
       intersectionObserver.observe(wrapperRef.current || el);
     } else {
-      setTimeout(tryPush, 500);
+      setTimeout(tryPush, 1000);
     }
 
     return () => {
