@@ -236,7 +236,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   }
 
   // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
-  const sanitizedContent = (() => {
+  const sanitizedContent = React.useMemo(() => {
     if (!job?.content) return '';
     let out = autoLinkSocialChannels(job.content);
     out = out.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
