@@ -313,6 +313,20 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     return { contentPart1: sanitizedContent, contentPart2: '' };
   }, [sanitizedContent]);
 
+  const contentLower = (job?.content || '').toLowerCase();
+  const hasHowToFill = contentLower.includes('how to fill') || contentLower.includes('how to apply') || contentLower.includes('how to check');
+  const hasSelectionMode = contentLower.includes('mode of selection') || contentLower.includes('selection process');
+  const hasFaqSection = contentLower.includes('important question') || contentLower.includes('frequently asked');
+  const hasAlsoCheck = contentLower.includes('you may also check');
+
+  // Check if job.content already has its own embedded Important Links table to avoid duplicates
+  const hasEmbeddedLinks = Boolean(
+    job.content &&
+    (job.content.toLowerCase().includes('important links') ||
+     job.content.includes('Click Here') ||
+     job.content.includes('sr-links-table'))
+  );
+
   const pageCategory = isAdmit
     ? 'Admit Card'
     : isRes
