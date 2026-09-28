@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Bell, Newspaper, ExternalLink } from 'lucide-react';
+import { getJobUrl } from '../data/categoryHelpers.js';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
@@ -24,7 +25,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
       .map(j => ({
         id: j.id,
         message: j.title,
-        link: `/${j.id}`,
+        link: getJobUrl(j),
         active: true,
       }));
     // Merge, avoiding duplicates by id
@@ -95,14 +96,14 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
               <div className="ticker-content">
                 {displayLatestJobs.map((job, idx) => {
                   const rawTarget = job.link || job.url || job.id || job.slug || '';
-                  let cleanSlug = rawTarget;
-                  if (cleanSlug.includes('careerdiary.in/')) {
-                    cleanSlug = cleanSlug.split('careerdiary.in/')[1];
-                  } else if (cleanSlug.startsWith('/')) {
-                    cleanSlug = cleanSlug.slice(1);
-                  }
-                  const href = rawTarget.startsWith('http') ? rawTarget : (rawTarget.startsWith('/') ? rawTarget : `/${rawTarget}`);
                   const isExternal = rawTarget.startsWith('http') && !rawTarget.includes('careerdiary.in');
+                  
+                  let href;
+                  if (job.id && !job.link && !job.url) {
+                    href = getJobUrl(job);
+                  } else {
+                    href = rawTarget.startsWith('http') ? rawTarget : (rawTarget.startsWith('/') ? rawTarget : `/${rawTarget}`);
+                  }
 
                   return (
                     <span key={`${job.id || idx}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}>

@@ -121,3 +121,17 @@ export const ALL_COLUMNS = [
   { key: 'ADMISSION', title: 'Admission', slug: '/admission', colorClass: 'col-darkred', singleTitle: 'Admission Notifications 2026' },
 ];
 
+export const getJobUrl = (job) => {
+  if (!job || !job.id) return '/';
+  
+  // Use category classification to determine URL prefix
+  if (isResult(job)) return `/result/${job.id}`;
+  if (isAdmitCard(job)) return `/admitcard/${job.id}`;
+  if (isAnswerKey(job)) return `/answerkey/${job.id}`;
+  if (isAdmission(job)) return `/admission/${job.id}`;
+  if (isSyllabus(job)) return `/syllabus/${job.id}`;
+  if (isDocument(job) || isImportant(job)) return `/important/${job.id}`;
+  
+  // Default to job prefix
+  return `/job/${job.id}`;
+};

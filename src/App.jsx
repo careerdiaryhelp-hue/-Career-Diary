@@ -448,10 +448,16 @@ export default function App() {
       return;
     }
 
-    // Post slug match (e.g. /railway-rrb-group-d-... or /india-post-gds-recruitment-2026)
+    // Post slug match (e.g. /job/..., /result/..., /admitcard/...)
     let slug = cleanPath;
     if (slug.startsWith('post/')) slug = slug.substring(5);
     if (slug.startsWith('job/')) slug = slug.substring(4);
+    if (slug.startsWith('result/')) slug = slug.substring(7);
+    if (slug.startsWith('admitcard/')) slug = slug.substring(10);
+    if (slug.startsWith('answerkey/')) slug = slug.substring(10);
+    if (slug.startsWith('admission/')) slug = slug.substring(10);
+    if (slug.startsWith('syllabus/')) slug = slug.substring(9);
+    if (slug.startsWith('important/')) slug = slug.substring(10);
 
     let matched = jobs.find(j => j && j.id && j.id.toLowerCase() === slug);
     if (!matched) {

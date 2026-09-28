@@ -495,7 +495,9 @@ export default function AdminDashboardPage({
       } else {
         const jobCat = (j.category || '').toUpperCase().trim();
         const targetCat = filterCat.toUpperCase().trim();
-        if (targetCat.includes('JOB')) {
+        if (targetCat === 'RESULT & ANSWER KEY') {
+          matchCat = jobCat === 'RESULT & ANSWER KEY';
+        } else if (targetCat.includes('JOB')) {
           matchCat = jobCat.includes('JOB');
         } else if (targetCat.includes('ADMIT')) {
           matchCat = jobCat.includes('ADMIT');

@@ -4,7 +4,7 @@ import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/A
 import AutoFAQSection from '../components/AutoFAQSection';
 import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
-import { isAdmitCard, isResult, isAnswerKey, isAdmission } from '../data/categoryHelpers';
+import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
 
 export default function JobDetailPage({ job, onBack }) {
   if (!job) return null;
@@ -250,7 +250,7 @@ export default function JobDetailPage({ job, onBack }) {
       <SEOHead
         title={`${job.title} – ${isAdmit ? 'Download Admit Card, Hall Ticket & Exam Date' : isRes ? 'Check Result, Cut Off & Merit List' : 'Notification, Eligibility & Apply Online'} | Career Diary`}
         description={`${job.title} 2026. Check details, dates, eligibility and direct official links on Career Diary.`}
-        canonicalUrl={`https://careerdiary.in/${job.id}`}
+        canonicalUrl={`https://careerdiary.in${getJobUrl(job)}`}
         job={job}
         category={pageCategory}
       />

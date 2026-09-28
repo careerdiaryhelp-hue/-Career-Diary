@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { ALL_COLUMNS, getJobsForCategory } from '../data/categoryHelpers.js';
+import { ALL_COLUMNS, getJobsForCategory, getJobUrl } from '../data/categoryHelpers.js';
 import { InFeedAd } from './AdSenseBanner';
 
 export default function JobColumnsGrid({
@@ -52,7 +52,7 @@ export default function JobColumnsGrid({
     return (
       <li key={job.id}>
         <a
-          href={`/${job.id}`}
+          href={getJobUrl(job)}
           target="_blank"
           rel="noopener noreferrer"
           className="job-item-link"

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { getJobUrl } from '../data/categoryHelpers.js';
 
 export default function HighlightsGrid({
   jobs = [],
@@ -51,7 +52,7 @@ export default function HighlightsGrid({
           {topItems.map((item, index) => (
             <a
               key={item.id}
-              href={item.isStatic ? item.link : `/${item.id}`}
+              href={item.isStatic ? item.link : getJobUrl(item)}
               target="_blank"
               rel="noopener noreferrer"
               className={`banner-card ${boxColors[index % boxColors.length]}`}
