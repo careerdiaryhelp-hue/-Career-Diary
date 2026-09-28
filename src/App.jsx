@@ -42,7 +42,8 @@ import {
   isAdmission,
   isSyllabus,
   isDocument,
-  isImportant
+  isImportant,
+  getSecondaryCategories
 } from './data/categoryHelpers';
 
 const DEFAULT_CATEGORIES = [
@@ -640,7 +641,7 @@ export default function App() {
       else if (curCat === 'SYLLABUS') matchCategory = isSyllabus(job);
       else if (curCat === 'DOCUMENTS' || curCat === 'DOCUMENT' || curCat === 'CERTIFICATE VERIFICATION') matchCategory = isDocument(job);
       else if (curCat === 'IMPORTANT') matchCategory = isImportant(job);
-      else matchCategory = jobCat === curCat || jobCat.includes(curCat) || curCat.includes(jobCat);
+      else matchCategory = jobCat === curCat || jobCat.includes(curCat) || curCat.includes(jobCat) || getSecondaryCategories(job).some(s => s.includes(curCat) || curCat.includes(s));
     }
 
     const matchState =

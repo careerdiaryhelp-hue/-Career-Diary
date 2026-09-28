@@ -1,7 +1,22 @@
 // Centralized category classification helpers and column configurations for Career Diary
 
+export const getSecondaryCategories = (j) => {
+  if (!j) return [];
+  const sec = j.secondaryCategories || j.additionalCategories || [];
+  if (Array.isArray(sec)) {
+    return sec.map(s => String(s || '').toUpperCase().trim()).filter(Boolean);
+  }
+  if (typeof sec === 'string') {
+    return sec.split(',').map(s => s.toUpperCase().trim()).filter(Boolean);
+  }
+  return [];
+};
+
 export const isAnswerKey = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('ANSWER KEY') || sec.includes('ANSKEY')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat.includes('ANSWER KEY') || cat === 'ANSKEY') return true;
   const title = (j.title || '').toLowerCase();
@@ -16,9 +31,12 @@ export const isAnswerKey = (j) => {
 
 export const isResult = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('RESULT') || sec.includes('RESULTS')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'RESULT' || cat.includes('RESULT & ANSWER KEY')) return true;
-  if (isAnswerKey(j)) return false;
+  if (isAnswerKey(j) && !sec.includes('RESULT') && !sec.includes('RESULTS')) return false;
   const title = (j.title || '').toLowerCase();
   return (
     cat.includes('RESULT') ||
@@ -32,7 +50,10 @@ export const isResult = (j) => {
 
 export const isAdmitCard = (j) => {
   if (!j) return false;
-  if (isResult(j) || isAnswerKey(j)) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('ADMIT CARD') || sec.includes('ADMIT')) return true;
+  if ((isResult(j) || isAnswerKey(j)) && !sec.includes('ADMIT CARD') && !sec.includes('ADMIT')) return false;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'ADMIT CARD' || cat === 'ADMIT') return true;
   const title = (j.title || '').toLowerCase();
@@ -47,7 +68,10 @@ export const isAdmitCard = (j) => {
 
 export const isLatestJob = (j) => {
   if (!j) return false;
-  if (isAdmitCard(j) || isResult(j) || isAnswerKey(j)) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('LATEST JOB') || sec.includes('LATEST JOBS') || sec.includes('JOB')) return true;
+  if ((isAdmitCard(j) || isResult(j) || isAnswerKey(j)) && !sec.includes('LATEST JOB') && !sec.includes('LATEST JOBS') && !sec.includes('JOB')) return false;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'LATEST JOB' || cat === 'LATEST JOBS' || cat === 'JOB') return true;
   const title = (j.title || '').toLowerCase();
@@ -63,6 +87,9 @@ export const isLatestJob = (j) => {
 
 export const isAdmission = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('ADMISSION') || sec.includes('ADMISSIONS')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'ADMISSION' || cat === 'ADMISSIONS') return true;
   const title = (j.title || '').toLowerCase();
@@ -71,6 +98,9 @@ export const isAdmission = (j) => {
 
 export const isSyllabus = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('SYLLABUS')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'SYLLABUS') return true;
   const title = (j.title || '').toLowerCase();
@@ -79,6 +109,9 @@ export const isSyllabus = (j) => {
 
 export const isDocument = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('DOCUMENTS') || sec.includes('DOCUMENT') || sec.includes('CERTIFICATE VERIFICATION')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'DOCUMENTS' || cat === 'DOCUMENT' || cat === 'CERTIFICATE VERIFICATION') return true;
   const title = (j.title || '').toLowerCase();
@@ -93,6 +126,9 @@ export const isDocument = (j) => {
 
 export const isImportant = (j) => {
   if (!j) return false;
+  const sec = getSecondaryCategories(j);
+  if (sec.includes('IMPORTANT')) return true;
+
   const cat = (j.category || '').toUpperCase();
   if (cat === 'IMPORTANT') return true;
   const title = (j.title || '').toLowerCase();
@@ -109,7 +145,11 @@ export const getJobsForCategory = (allJobs = [], categoryKey = '') => {
   if (key === 'SYLLABUS') return allJobs.filter(isSyllabus);
   if (key === 'DOCUMENTS' || key === 'DOCUMENT' || key === 'CERTIFICATE VERIFICATION') return allJobs.filter(isDocument);
   if (key === 'IMPORTANT') return allJobs.filter(isImportant);
-  return allJobs.filter((j) => (j.category || '').toUpperCase().includes(key));
+  return allJobs.filter((j) => {
+    const main = (j.category || '').toUpperCase();
+    const sec = getSecondaryCategories(j);
+    return main.includes(key) || sec.some(s => s.includes(key));
+  });
 };
 
 export const ALL_COLUMNS = [

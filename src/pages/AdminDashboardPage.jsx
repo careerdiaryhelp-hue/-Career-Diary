@@ -35,6 +35,7 @@ const EMPTY_FORM = {
   title: '',
   postDate: '',
   category: 'LATEST JOB',
+  secondaryCategories: [],
   organization: '',
   vacancies: '',
   totalPosts: '',
@@ -707,6 +708,9 @@ export default function AdminDashboardPage({
     setForm({
       title: job.title || '',
       category: job.category || 'LATEST JOB',
+      secondaryCategories: Array.isArray(job.secondaryCategories)
+        ? job.secondaryCategories
+        : (Array.isArray(job.additionalCategories) ? job.additionalCategories : (job.category === 'RESULT & ANSWER KEY' ? ['RESULT', 'ANSWER KEY'] : [])),
       status: job.status || 'Published',
       organization: job.organization || '',
       vacancies: job.vacancies || job.totalPosts || '',
@@ -928,6 +932,38 @@ export default function AdminDashboardPage({
     };
     await onAddJob(duplicatedJob);
     showToast(`📋 Post duplicated as Draft: "${duplicatedJob.title}"`, 'success');
+  };
+
+  const handleQuickAddAnswerKey = async (job) => {
+    if (!job) return;
+    const currentSec = job.secondaryCategories || job.additionalCategories || [];
+    const isAlreadyAnswerKey = (job.category === 'ANSWER KEY') || currentSec.includes('ANSWER KEY');
+    
+    if (isAlreadyAnswerKey) {
+      if (job.category === 'ANSWER KEY') {
+        showToast(`ℹ️ "${job.title}" has primary category as Answer Key.`, 'info');
+        return;
+      }
+      const updatedSec = currentSec.filter(c => c !== 'ANSWER KEY');
+      const updatedJob = {
+        ...job,
+        secondaryCategories: updatedSec,
+        additionalCategories: updatedSec,
+        updatedAt: new Date().toISOString()
+      };
+      await onAddJob(updatedJob);
+      showToast(`Removed Answer Key category from "${job.title}".`, 'info');
+    } else {
+      const updatedSec = [...currentSec, 'ANSWER KEY'];
+      const updatedJob = {
+        ...job,
+        secondaryCategories: updatedSec,
+        additionalCategories: updatedSec,
+        updatedAt: new Date().toISOString()
+      };
+      await onAddJob(updatedJob);
+      showToast(`🎉 "${job.title}" is now visible in BOTH "${job.category}" and "ANSWER KEY"!`, 'success');
+    }
   };
 
   // Group duplicate jobs by normalized title / slug
@@ -2969,6 +3005,8 @@ export default function AdminDashboardPage({
       title: form.title.trim(),
       status: 'Published',
       category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
+      secondaryCategories: form.secondaryCategories || existingJob?.secondaryCategories || [],
+      additionalCategories: form.secondaryCategories || existingJob?.additionalCategories || [],
       organization: form.organization.trim() || (existingJob ? existingJob.organization : 'Career Diary Alert'),
       vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
       totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
@@ -3109,6 +3147,8 @@ export default function AdminDashboardPage({
       title: form.title.trim(),
       status: 'Draft',
       category: form.category || (existingJob ? existingJob.category : 'LATEST JOB'),
+      secondaryCategories: form.secondaryCategories || existingJob?.secondaryCategories || [],
+      additionalCategories: form.secondaryCategories || existingJob?.additionalCategories || [],
       organization: form.organization.trim() || (existingJob ? existingJob.organization : 'Career Diary Alert'),
       vacancies: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.vacancies : 'Various'),
       totalPosts: form.totalPosts.trim() || form.vacancies.trim() || (existingJob ? existingJob.totalPosts : 'Various'),
@@ -3634,10 +3674,26 @@ export default function AdminDashboardPage({
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             background: '#e0f2fe',
-                            color: '#0369a1'
+                            color: '#0369a1',
+                            display: 'inline-block'
                           }}>
                             {job.category || 'General'}
                           </span>
+                          {(job.secondaryCategories || job.additionalCategories || []).map((sec, sIdx) => (
+                            <span key={sIdx} style={{
+                              marginLeft: '4px',
+                              padding: '2px 7px',
+                              borderRadius: '6px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              background: '#dcfce7',
+                              color: '#15803d',
+                              display: 'inline-block',
+                              border: '1px solid #86efac'
+                            }}>
+                              +{sec}
+                            </span>
+                          ))}
                         </td>
                         {/* DATE */}
                         <td style={{ padding: '14px 14px', textAlign: 'center', fontSize: '0.82rem', color: '#64748b', whiteSpace: 'nowrap' }}>
@@ -3678,6 +3734,24 @@ export default function AdminDashboardPage({
                             }}
                           >
                             Edit
+                          </button>
+                          <button
+                            onClick={() => handleQuickAddAnswerKey(job)}
+                            style={{
+                              background: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '#fef3c7' : '#f8fafc',
+                              color: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '#92400e' : '#475569',
+                              border: ((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '1px solid #fde68a' : '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              marginRight: '6px',
+                              transition: 'all 0.15s'
+                            }}
+                            title="Toggle Answer Key category (दोनों जगह दिखेगा - Result & Answer Key)"
+                          >
+                            {((job.category === 'ANSWER KEY') || (job.secondaryCategories || []).includes('ANSWER KEY')) ? '✓ Key' : '+ Key'}
                           </button>
                           <button
                             onClick={() => handleDuplicateJob(job)}
@@ -4157,6 +4231,83 @@ export default function AdminDashboardPage({
                     onChange={e => set('displayOrder', e.target.value)}
                     style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem' }}
                   />
+                </div>
+              </div>
+
+              {/* Secondary / Multi-Category Selector */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                marginBottom: '14px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '4px' }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Layers size={13} style={{ color: '#4f46e5' }} />
+                    <span>ALSO DISPLAY IN (अन्य कैटेगरी में भी दिखाएं):</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    जैसे: Result + Answer Key दोनों जगह दिखे
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {[
+                    { value: 'RESULT', label: 'Result' },
+                    { value: 'ANSWER KEY', label: 'Answer Key' },
+                    { value: 'ADMIT CARD', label: 'Admit Card' },
+                    { value: 'LATEST JOB', label: 'Latest Job' },
+                    { value: 'ADMISSION', label: 'Admission' },
+                    { value: 'SYLLABUS', label: 'Syllabus' }
+                  ].map(cat => {
+                    const isPrimary = form.category === cat.value;
+                    const isSelected = isPrimary || (form.secondaryCategories || []).includes(cat.value);
+                    return (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => {
+                          if (isPrimary) return;
+                          const current = form.secondaryCategories || [];
+                          const updated = current.includes(cat.value)
+                            ? current.filter(c => c !== cat.value)
+                            : [...current, cat.value];
+                          set('secondaryCategories', updated);
+                        }}
+                        style={{
+                          padding: '5px 11px',
+                          borderRadius: '6px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          cursor: isPrimary ? 'default' : 'pointer',
+                          border: isPrimary
+                            ? '1.5px solid #4f46e5'
+                            : isSelected
+                            ? '1.5px solid #059669'
+                            : '1px solid #cbd5e1',
+                          background: isPrimary
+                            ? '#e0e7ff'
+                            : isSelected
+                            ? '#d1fae5'
+                            : '#ffffff',
+                          color: isPrimary
+                            ? '#4338ca'
+                            : isSelected
+                            ? '#065f46'
+                            : '#475569',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s'
+                        }}
+                        title={isPrimary ? 'Primary Category (Selected above)' : `Toggle ${cat.label}`}
+                      >
+                        {isPrimary ? '★ Primary: ' : (isSelected ? '✓ ' : '+ ')}
+                        {cat.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
