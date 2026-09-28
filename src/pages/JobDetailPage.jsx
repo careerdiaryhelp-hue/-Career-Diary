@@ -274,22 +274,40 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       </div>
     `;
 
-    const threeAdsHtml = `
-      <tr>
-        <td colSpan="4" style="padding: 16px 0; border: none;">
-          ${adHtml}${adHtml}${adHtml}
-        </td>
-      </tr>
-    `;
-
-    out = out.replace(/(<tr[^>]*>\s*<td[^>]*>.*(?:Join Our WhatsApp Channel|SOME USEFUL IMPORTANT LINKS|IMPORTANT LINKS).*<\/td>\s*<\/tr>|<h[1-6][^>]*>.*(?:SOME USEFUL IMPORTANT LINKS|IMPORTANT LINKS).*<\/h[1-6]>|<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>.*(?:Join Our WhatsApp Channel|SOME USEFUL IMPORTANT LINKS).*<\/td>)/i, (match) => {
-       const isTr = match.toLowerCase().startsWith('<tr');
-       if (isTr) {
-         return threeAdsHtml + match;
-       } else {
-         return `<div style="margin: 24px 0;">${adHtml}${adHtml}${adHtml}</div>` + match;
-       }
-    });
+    // Insert single In-Article ad in the true MIDDLE of the content (not at top)
+    const tableEndMatches = [...out.matchAll(/<\/table>/gi)];
+    if (tableEndMatches.length >= 2) {
+      const midTableIndex = Math.floor(tableEndMatches.length / 2);
+      let count = 0;
+      out = out.replace(/<\/table>/gi, (match) => {
+        count++;
+        if (count === midTableIndex) {
+          return match + adHtml;
+        }
+        return match;
+      });
+    } else {
+      const pMatches = [...out.matchAll(/<\/p>/gi)];
+      if (pMatches.length >= 4) {
+        const midPIndex = Math.floor(pMatches.length / 2);
+        let pCount = 0;
+        out = out.replace(/<\/p>/gi, (match) => {
+          pCount++;
+          if (pCount === midPIndex) {
+            return match + adHtml;
+          }
+          return match;
+        });
+      } else if (out.length > 500) {
+        const midPoint = Math.floor(out.length / 2);
+        const nextBreak = out.indexOf('>', midPoint);
+        if (nextBreak !== -1) {
+          out = out.slice(0, nextBreak + 1) + adHtml + out.slice(nextBreak + 1);
+        } else {
+          out += adHtml;
+        }
+      }
+    }
 
     return out;
   })();
@@ -584,6 +602,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
               </tbody>
             </table>
 
+            {/* Middle In-Post Ad for Standard Template */}
+            <InPostAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+
             {/* Vacancy Details & Eligibility Criteria */}
             <table className="sr-table sr-vacancy-table">
               <thead>
@@ -710,11 +731,6 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             </table>
           </>
         )}
-
-        <div style={{ margin: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <InPostAd label="ADVERTISEMENT" />
-          <MultiplexAd label="RECOMMENDED FOR YOU" />
-        </div>
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
