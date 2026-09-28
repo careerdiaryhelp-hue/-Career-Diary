@@ -131,7 +131,6 @@ export default function AdSenseBanner({
         textAlign: 'center',
         width: '100%',
         boxSizing: 'border-box',
-        overflow: 'hidden',
         ...style
       }}
     >
@@ -152,7 +151,7 @@ export default function AdSenseBanner({
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block', width: '100%' }}
+        style={{ display: 'block' }}
         data-ad-client="ca-pub-2108299943580613"
         data-ad-slot={slot}
         data-ad-format={format}

@@ -263,10 +263,10 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         📢 [AdSense Slot 2542955740 - Active on Production Domain]
       </div>
     ` : `
-      <div class="in-article-ad" style="margin: 20px 0; text-align: center; width: 100%; box-sizing: border-box; overflow: hidden; clear: both;">
+      <div class="in-article-ad" style="margin: 20px 0; text-align: center; clear: both;">
         <span style="font-size: 10px; color: #888; display:block; margin-bottom: 4px;">ADVERTISEMENT</span>
         <ins class="adsbygoogle"
-             style="display:block; text-align:center; min-width: 250px; width: 100%;"
+             style="display:block; text-align:center;"
              data-ad-layout="in-article"
              data-ad-format="fluid"
              data-ad-client="ca-pub-2108299943580613"
