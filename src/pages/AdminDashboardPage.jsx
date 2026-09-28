@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { autoLinkSocialChannels, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
+import { autoLinkSocialChannels, extractQuickUrlsFromContent, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
 import {
   LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
   LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud, Edit3,
@@ -690,11 +690,19 @@ export default function AdminDashboardPage({
 
     const initialHtml = autoLinkSocialChannels(job.content && job.content.trim() ? job.content : buildDefaultJobHtml(job));
 
+    const rawJobLinks = job.importantLinks || job.important_links || {};
+    const quickUrls = extractQuickUrlsFromContent(initialHtml, rawJobLinks);
+
     const mergedLinks = {
-      ...(job.importantLinks || {}),
-      'Join Telegram Channel': job.importantLinks?.['Join Telegram Channel'] || CAREER_DIARY_TELEGRAM,
-      'Join WhatsApp Channel': job.importantLinks?.['Join WhatsApp Channel'] || CAREER_DIARY_WHATSAPP,
+      ...rawJobLinks,
+      ...quickUrls.links,
+      'Join Telegram Channel': rawJobLinks['Join Telegram Channel'] || CAREER_DIARY_TELEGRAM,
+      'Join WhatsApp Channel': rawJobLinks['Join WhatsApp Channel'] || CAREER_DIARY_WHATSAPP,
     };
+
+    const finalApply = job.applyUrl || quickUrls.applyUrl || '';
+    const finalNotif = job.notificationUrl || quickUrls.notificationUrl || '';
+    const finalOfficial = job.officialUrl || quickUrls.officialUrl || '';
 
     setForm({
       title: job.title || '',
@@ -721,9 +729,9 @@ export default function AdminDashboardPage({
       seoTitle: job.seoTitle || job.title || '',
       seoKeywords: job.seoKeywords || '',
       seoDescription: job.seoDescription || job.description || '',
-      applyUrl: job.applyUrl || job.importantLinks?.['Apply Online'] || '',
-      notificationUrl: job.notificationUrl || job.importantLinks?.['Download Official Notification PDF'] || '',
-      officialUrl: job.officialUrl || job.importantLinks?.['Official Website'] || '',
+      applyUrl: finalApply,
+      notificationUrl: finalNotif,
+      officialUrl: finalOfficial,
       feeGen: job.feeGen || job.applicationFee?.General || '',
       feeSc: job.feeSc || job.applicationFee?.['SC / ST'] || '',
       minAge: job.minAge || job.ageLimit?.['Minimum Age'] || '',
@@ -1410,21 +1418,27 @@ export default function AdminDashboardPage({
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = updated;
     }
+    const quickUrls = extractQuickUrlsFromContent(updated, form.importantLinks);
     setForm(prev => ({
       ...prev,
       content: updated,
+      applyUrl: prev.applyUrl || quickUrls.applyUrl,
+      notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
+      officialUrl: prev.officialUrl || quickUrls.officialUrl,
       importantLinks: {
         ...(prev.importantLinks || {}),
+        ...quickUrls.links,
         'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
         'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
       },
       important_links: {
         ...(prev.important_links || {}),
+        ...quickUrls.links,
         'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
         'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
       }
     }));
-    showToast('⚡ Official Telegram & WhatsApp channel links updated!', 'success');
+    showToast('⚡ Telegram, WhatsApp & Direct Quick URLs auto-imported!', 'success');
   };
 
   const handleEditorKeyDown = (e) => {
@@ -2022,7 +2036,7 @@ export default function AdminDashboardPage({
         let hl = href.toLowerCase();
         if (
           !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
-          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('app') &&
+          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('android app') && !ll.includes('mobile app') &&
           (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari'))
         ) {
           if (
@@ -2047,16 +2061,12 @@ export default function AdminDashboardPage({
     links['Join Telegram Channel'] = CAREER_DIARY_TELEGRAM;
     links['Join WhatsApp Channel'] = CAREER_DIARY_WHATSAPP;
 
-    // Auto-detect specific keys
-    let applyUrl = '';
-    let notificationUrl = '';
-    let officialUrl = '';
-    Object.entries(links).forEach(([k, v]) => {
-      const kl = k.toLowerCase();
-      if (!applyUrl && (kl.includes('apply online') || kl.includes('online form') || kl.includes('registration') || kl.includes('apply'))) applyUrl = v;
-      if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('bulletin'))) notificationUrl = v;
-      if (!officialUrl && (kl.includes('website') || kl.includes('portal') || (kl.includes('official') && !kl.includes('notif') && !kl.includes('download')))) officialUrl = v;
-    });
+    // Auto-detect specific keys and direct quick URLs
+    const quickUrls = extractQuickUrlsFromContent(html, links);
+    let applyUrl = quickUrls.applyUrl;
+    let notificationUrl = quickUrls.notificationUrl;
+    let officialUrl = quickUrls.officialUrl;
+    Object.assign(links, quickUrls.links);
 
     let appStart = '';
     let lastDate = '';
@@ -2385,6 +2395,7 @@ export default function AdminDashboardPage({
       if (wpData) {
         const wpParsed = parseWordPressPost(wpData);
         if (wpParsed) {
+          const quickUrlsWp = extractQuickUrlsFromContent(wpParsed.content || '', wpParsed.importantLinks || {});
           setForm(prev => ({
             ...prev,
             title: wpParsed.title || prev.title,
@@ -2400,10 +2411,16 @@ export default function AdminDashboardPage({
             importantDates: { ...(prev.importantDates || {}), ...wpParsed.importantDates },
             applicationFee: { ...(prev.applicationFee || {}), ...wpParsed.applicationFee },
             ageLimit: { ...(prev.ageLimit || {}), ...wpParsed.ageLimit },
-            importantLinks: { ...(prev.importantLinks || {}), ...wpParsed.importantLinks },
-            applyUrl: wpParsed.applyUrl || prev.applyUrl,
-            notificationUrl: wpParsed.notificationUrl || prev.notificationUrl,
-            officialUrl: wpParsed.officialUrl || prev.officialUrl,
+            importantLinks: {
+              ...(prev.importantLinks || {}),
+              ...wpParsed.importantLinks,
+              ...quickUrlsWp.links,
+              'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+              'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+            },
+            applyUrl: wpParsed.applyUrl || quickUrlsWp.applyUrl || prev.applyUrl,
+            notificationUrl: wpParsed.notificationUrl || quickUrlsWp.notificationUrl || prev.notificationUrl,
+            officialUrl: wpParsed.officialUrl || quickUrlsWp.officialUrl || prev.officialUrl,
             appStart: wpParsed.appStart || prev.appStart,
             lastDate: wpParsed.lastDate || prev.lastDate,
             examDate: wpParsed.examDate || prev.examDate,
@@ -2602,12 +2619,7 @@ export default function AdminDashboardPage({
         console.log("parseUniversalJobHtml result:", parsed);
         if (parsed && (parsed.title || parsed.content)) {
           const finalUniversalContent = autoLinkSocialChannels(parsed.content || '');
-          const finalUniversalLinks = {
-            ...(prev => prev.importantLinks || {}),
-            ...parsed.importantLinks,
-            'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
-            'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-          };
+          const quickUrlsUni = extractQuickUrlsFromContent(finalUniversalContent, parsed.importantLinks || {});
           setForm(prev => ({
             ...prev,
             title: parsed.title || prev.title,
@@ -2626,12 +2638,13 @@ export default function AdminDashboardPage({
             importantLinks: {
               ...(prev.importantLinks || {}),
               ...parsed.importantLinks,
+              ...quickUrlsUni.links,
               'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
               'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
             },
-            applyUrl: parsed.applyUrl || prev.applyUrl,
-            notificationUrl: parsed.notificationUrl || prev.notificationUrl,
-            officialUrl: parsed.officialUrl || prev.officialUrl,
+            applyUrl: parsed.applyUrl || quickUrlsUni.applyUrl || prev.applyUrl,
+            notificationUrl: parsed.notificationUrl || quickUrlsUni.notificationUrl || prev.notificationUrl,
+            officialUrl: parsed.officialUrl || quickUrlsUni.officialUrl || prev.officialUrl,
             appStart: parsed.appStart || prev.appStart,
             lastDate: parsed.lastDate || prev.lastDate,
             examDate: parsed.examDate || prev.examDate,
@@ -4609,8 +4622,44 @@ export default function AdminDashboardPage({
 
                   {/* Section E: Direct Quick Links */}
                   <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '14px' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: '10px', textTransform: 'uppercase' }}>
-                      ⚡ DIRECT QUICK URLS
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                        ⚡ DIRECT QUICK URLS
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const html = visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content;
+                          const quickUrls = extractQuickUrlsFromContent(html, form.importantLinks);
+                          setForm(prev => ({
+                            ...prev,
+                            applyUrl: quickUrls.applyUrl || prev.applyUrl,
+                            notificationUrl: quickUrls.notificationUrl || prev.notificationUrl,
+                            officialUrl: quickUrls.officialUrl || prev.officialUrl,
+                            importantLinks: {
+                              ...(prev.importantLinks || {}),
+                              ...quickUrls.links
+                            }
+                          }));
+                          showToast('⚡ Direct Quick URLs extracted and imported!', 'success');
+                        }}
+                        style={{
+                          background: '#eff6ff',
+                          color: '#2563eb',
+                          border: '1px solid #bfdbfe',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        title="Auto-extract and import Direct URLs from content"
+                      >
+                        <Sparkles size={11} style={{ color: '#2563eb' }} /> Auto-Import URLs
+                      </button>
                     </div>
                     <div style={{ marginBottom: '10px' }}>
                       <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px' }}>APPLY ONLINE LINK</label>
@@ -5269,8 +5318,21 @@ export default function AdminDashboardPage({
                   const sanitized = autoLinkSocialChannels(original);
                   if (sanitized !== original) {
                     visualEditorRef.current.innerHTML = sanitized;
-                    setForm(prev => ({ ...prev, content: sanitized }));
                   }
+                  const quickUrls = extractQuickUrlsFromContent(sanitized, form.importantLinks);
+                  setForm(prev => ({
+                    ...prev,
+                    content: sanitized,
+                    applyUrl: prev.applyUrl || quickUrls.applyUrl,
+                    notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
+                    officialUrl: prev.officialUrl || quickUrls.officialUrl,
+                    importantLinks: {
+                      ...(prev.importantLinks || {}),
+                      ...quickUrls.links,
+                      'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+                      'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+                    }
+                  }));
                 }
               }}
               onPaste={() => {
@@ -5280,9 +5342,22 @@ export default function AdminDashboardPage({
                     const sanitized = autoLinkSocialChannels(original);
                     if (sanitized !== original) {
                       visualEditorRef.current.innerHTML = sanitized;
-                      setForm(prev => ({ ...prev, content: sanitized }));
-                      showToast('🔗 Social channel links automatically updated!', 'info');
                     }
+                    const quickUrls = extractQuickUrlsFromContent(sanitized, form.importantLinks);
+                    setForm(prev => ({
+                      ...prev,
+                      content: sanitized,
+                      applyUrl: prev.applyUrl || quickUrls.applyUrl,
+                      notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
+                      officialUrl: prev.officialUrl || quickUrls.officialUrl,
+                      importantLinks: {
+                        ...(prev.importantLinks || {}),
+                        ...quickUrls.links,
+                        'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+                        'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+                      }
+                    }));
+                    showToast('🔗 Content pasted: Social & Direct Quick URLs auto-imported!', 'info');
                   }
                 }, 100);
               }}

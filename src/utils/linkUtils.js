@@ -70,3 +70,103 @@ export const autoLinkSocialChannels = (html) => {
 
   return out;
 };
+
+/**
+ * Automatically extracts Direct Quick URLs (applyUrl, notificationUrl, officialUrl)
+ * and all custom links from HTML tables, existing link objects, or anchor tags.
+ */
+export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
+  let applyUrl = '';
+  let notificationUrl = '';
+  let officialUrl = '';
+  const links = { ...(currentLinks || {}) };
+
+  // 1. First inspect currentLinks object if provided
+  if (currentLinks && typeof currentLinks === 'object') {
+    Object.entries(currentLinks).forEach(([rawKey, val]) => {
+      const v = typeof val === 'string' ? val.trim() : (val?.url || val?.link || '');
+      if (!v || !v.startsWith('http')) return;
+      const k = (rawKey || '').toLowerCase();
+      const vl = v.toLowerCase();
+      if (vl.includes('t.me') || vl.includes('whatsapp') || vl.includes('careerdiary.in')) return;
+
+      if (!applyUrl && (k.includes('apply') || k.includes('registration') || k.includes('online form') || k.includes('login') || k.includes('otr') || k.includes('candidate'))) {
+        applyUrl = v;
+      }
+      if (!notificationUrl && (k.includes('notif') || k.includes('pdf') || k.includes('advt') || k.includes('notice') || k.includes('advertisement') || vl.endsWith('.pdf') || vl.includes('/notice/'))) {
+        notificationUrl = v;
+      }
+      if (!officialUrl && (k.includes('website') || k.includes('portal') || (k.includes('official') && !k.includes('notif')))) {
+        officialUrl = v;
+      }
+    });
+  }
+
+  // 2. Extract from HTML tables
+  if (html && typeof html === 'string') {
+    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let trMatch;
+    while ((trMatch = trRegex.exec(html)) !== null) {
+      const rowHtml = trMatch[1];
+      const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
+      if (aMatch) {
+        const href = aMatch[1].trim();
+        const aText = aMatch[2].replace(/<[^>]+>/g, '').trim();
+        const cellMatches = [...rowHtml.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)];
+        let label = cellMatches.length >= 2 ? cellMatches[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : aText;
+        if (!label) label = aText || 'Important Link';
+
+        const kl = label.toLowerCase();
+        const hl = href.toLowerCase();
+
+        if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
+          continue;
+        }
+
+        if (!links[label]) {
+          links[label] = href;
+        }
+
+        if (!applyUrl && (kl.includes('apply') || kl.includes('registration') || kl.includes('online form') || kl.includes('otr') || kl.includes('candidate') || hl.includes('apply') || hl.includes('registration') || hl.includes('/otr'))) {
+          applyUrl = href;
+        }
+        if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('notice') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
+          notificationUrl = href;
+        }
+        if (!officialUrl && (kl.includes('website') || kl.includes('portal') || (kl.includes('official') && !kl.includes('notif')))) {
+          officialUrl = href;
+        }
+      }
+    }
+
+    // 3. Fallback: inspect any standalone <a> tag if still missing
+    if (!applyUrl || !notificationUrl || !officialUrl) {
+      const aRegex = /<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+      let aMatch;
+      while ((aMatch = aRegex.exec(html)) !== null) {
+        const href = aMatch[1].trim();
+        const text = aMatch[2].replace(/<[^>]+>/g, '').trim().toLowerCase();
+        const hl = href.toLowerCase();
+        if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
+          continue;
+        }
+        if (!applyUrl && (text.includes('apply') || hl.includes('apply') || hl.includes('registration') || hl.includes('otr'))) {
+          applyUrl = href;
+        }
+        if (!notificationUrl && (text.includes('notif') || text.includes('advt') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
+          notificationUrl = href;
+        }
+        if (!officialUrl && (text.includes('official') || text.includes('website') || hl.includes('gov.in') || hl.includes('nic.in'))) {
+          officialUrl = href;
+        }
+      }
+    }
+  }
+
+  // Always ensure Telegram & WhatsApp in links
+  links['Join Telegram Channel'] = CAREER_DIARY_TELEGRAM;
+  links['Join WhatsApp Channel'] = CAREER_DIARY_WHATSAPP;
+
+  return { applyUrl, notificationUrl, officialUrl, links };
+};
+
