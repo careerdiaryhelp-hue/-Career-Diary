@@ -263,14 +263,14 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         📢 [AdSense Slot 2542955740 - Active on Production Domain]
       </div>
     ` : `
-      <div class="in-article-ad" style="margin-bottom: 16px; text-align: center;">
+      <div class="in-article-ad" style="margin: 20px 0; text-align: center; width: 100%; box-sizing: border-box; overflow: hidden; clear: both;">
         <span style="font-size: 10px; color: #888; display:block; margin-bottom: 4px;">ADVERTISEMENT</span>
         <ins class="adsbygoogle"
-             style="display:block; text-align:center;"
+             style="display:block; text-align:center; min-width: 250px; width: 100%;"
              data-ad-layout="in-article"
              data-ad-format="fluid"
-             data-ad-client="ca-pub-8291419998188091"
-             data-ad-slot="2542955740"></ins>
+             data-ad-client="ca-pub-2108299943580613"
+             data-ad-slot="7544533819"></ins>
       </div>
     `;
 
@@ -327,20 +327,58 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   );
 
   React.useEffect(() => {
-    if (job?.content) {
-      const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
-      if (!isLocalhost) {
-        const uninitializedAds = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-ad-status])');
-        uninitializedAds.forEach((ad) => {
-          try {
-            ad.setAttribute('data-ad-status', 'filled');
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
-          } catch (e) {
-            console.error('AdSense injection error:', e);
+    if (!job?.content) return;
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('192.168.'));
+    if (isLocalhost) return;
+
+    let isMounted = true;
+
+    const tryPushInArticleAds = () => {
+      if (!isMounted) return;
+      const uninitializedAds = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-ad-status])');
+      
+      uninitializedAds.forEach((ad) => {
+        // If container width is not yet computed (availableWidth=0), wait until layout is ready
+        if (!ad.offsetWidth || ad.offsetWidth === 0) {
+          if (window.ResizeObserver) {
+            const ro = new ResizeObserver((entries) => {
+              for (const entry of entries) {
+                if (entry.contentRect && entry.contentRect.width > 0 && !ad.getAttribute('data-ad-status')) {
+                  ro.disconnect();
+                  if (isMounted) {
+                    try {
+                      ad.setAttribute('data-ad-status', 'filled');
+                      (window.adsbygoogle = window.adsbygoogle || []).push({});
+                    } catch (e) {
+                      // Handled safely
+                    }
+                  }
+                }
+              }
+            });
+            ro.observe(ad.parentElement || ad);
+          } else {
+            setTimeout(tryPushInArticleAds, 400);
           }
-        });
-      }
-    }
+          return;
+        }
+
+        try {
+          ad.setAttribute('data-ad-status', 'filled');
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (e) {
+          // Handled safely
+        }
+      });
+    };
+
+    // Wait for DOM layout to settle before trying push
+    const timer = setTimeout(tryPushInArticleAds, 250);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [job]);
 
   const pageCategory = isAdmit

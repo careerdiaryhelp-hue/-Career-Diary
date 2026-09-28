@@ -54,6 +54,12 @@ export default function AdSenseBanner({
         return;
       }
 
+      // Skip push if element has width 0 (prevents TagError: No slot size for availableWidth=0)
+      if (!el.offsetWidth || el.offsetWidth === 0) {
+        setTimeout(tryPush, 350);
+        return;
+      }
+
       try {
         if (window.adsbygoogle) {
           el.dataset.adPushDone = 'true';
