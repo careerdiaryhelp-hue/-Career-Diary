@@ -111,6 +111,7 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
       const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
       if (aMatch) {
         const href = aMatch[1].trim();
+        const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
         const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
         const cellMatches = [];
         let cMatch;
