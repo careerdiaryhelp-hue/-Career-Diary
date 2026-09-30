@@ -228,6 +228,7 @@ export default function AdminDashboardPage({
     label: '',
     placeholder: '',
     value: '',
+    text: '',
   });
   const savedSelectionRef = useRef(null);
 
@@ -1195,6 +1196,12 @@ export default function AdminDashboardPage({
     }
     if (!tr) return;
 
+    const tableText = (table.textContent || '').toLowerCase();
+    const isLinksTable = tableText.includes('important link') || 
+                         tableText.includes('useful link') || 
+                         tableText.includes('some useful') || 
+                         tableText.includes('click here');
+
     const numCols = tr.cells.length || (table.rows[0]?.cells.length) || 2;
     const newTr = document.createElement('tr');
     for (let i = 0; i < numCols; i++) {
@@ -1202,7 +1209,12 @@ export default function AdminDashboardPage({
       td.style.border = '1px solid #000';
       td.style.padding = '8px 12px';
       td.style.fontSize = '0.9rem';
-      td.innerHTML = '&nbsp;';
+      if (isLinksTable && numCols === 2 && i === 1) {
+        td.style.textAlign = 'center';
+        td.innerHTML = '<a href="https://" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">Click Here</a>';
+      } else {
+        td.innerHTML = '&nbsp;';
+      }
       newTr.appendChild(td);
     }
 
@@ -1218,6 +1230,62 @@ export default function AdminDashboardPage({
     setForm(prev => ({ ...prev, content: updated }));
     updateActiveTableInfo();
     showToast(`✅ Row added ${position}!`, 'success');
+  };
+
+  const handleAddLinkRow = () => {
+    let table = activeTableElementRef.current;
+    if (!table) {
+      const tables = visualEditorRef.current?.querySelectorAll('table');
+      if (tables && tables.length > 0) {
+        for (const t of tables) {
+          const txt = (t.textContent || '').toLowerCase();
+          if (txt.includes('important link') || txt.includes('useful link') || txt.includes('some useful') || txt.includes('click here')) {
+            table = t;
+            break;
+          }
+        }
+        if (!table) table = tables[tables.length - 1];
+      }
+    }
+    if (!table) {
+      showToast('⚠️ Please click inside a table to add a link row.', 'info');
+      return;
+    }
+
+    const newTr = document.createElement('tr');
+    
+    // Cell 1: Label
+    const tdLabel = document.createElement('td');
+    tdLabel.style.border = '1px solid #000';
+    tdLabel.style.padding = '8px 12px';
+    tdLabel.style.fontSize = '0.9rem';
+    tdLabel.innerHTML = 'Result Out';
+    newTr.appendChild(tdLabel);
+
+    // Cell 2: Clickable Link
+    const tdLink = document.createElement('td');
+    tdLink.style.border = '1px solid #000';
+    tdLink.style.padding = '8px 12px';
+    tdLink.style.fontSize = '0.9rem';
+    tdLink.style.textAlign = 'center';
+    tdLink.innerHTML = '<a href="https://" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">Click Here</a>';
+    newTr.appendChild(tdLink);
+
+    let tr = activeRowElementRef.current;
+    if (tr && tr.parentNode) {
+      tr.parentNode.insertBefore(newTr, tr.nextSibling);
+    } else {
+      const tbody = table.querySelector('tbody') || table;
+      tbody.appendChild(newTr);
+    }
+
+    activeRowElementRef.current = newTr;
+    activeCellElementRef.current = tdLabel;
+
+    const updated = visualEditorRef.current.innerHTML;
+    setForm(prev => ({ ...prev, content: updated }));
+    updateActiveTableInfo();
+    showToast('🔗 New Link Row added! Title and "Click Here" are ready.', 'success');
   };
 
   const handleDeleteRow = () => {
@@ -1468,13 +1536,42 @@ export default function AdminDashboardPage({
 
   const handleOpenLinkModal = () => {
     saveSelection();
+    let initialText = '';
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      initialText = sel.toString().trim();
+    }
+    if (!initialText && activeCellElementRef.current) {
+      const a = activeCellElementRef.current.querySelector('a');
+      if (a) {
+        initialText = a.textContent.trim();
+      } else {
+        const txt = activeCellElementRef.current.textContent.trim();
+        if (txt && txt !== '\u00a0' && txt !== '&nbsp;') {
+          initialText = txt;
+        }
+      }
+    }
+    if (!initialText) {
+      initialText = 'Click Here';
+    }
+
+    let initialUrl = 'https://';
+    if (activeCellElementRef.current) {
+      const a = activeCellElementRef.current.querySelector('a');
+      if (a && a.href && a.href !== 'https://' && a.href !== 'http://') {
+        initialUrl = a.getAttribute('href') || a.href;
+      }
+    }
+
     setInsertModal({
       isOpen: true,
       type: 'link',
-      title: 'Insert Web Link',
+      title: 'Insert / Edit Web Link',
       label: 'Destination Web Address (URL):',
       placeholder: 'https://example.com',
-      value: 'https://',
+      value: initialUrl,
+      text: initialText,
     });
   };
 
@@ -1524,7 +1621,86 @@ export default function AdminDashboardPage({
       visualEditorRef.current.focus();
       restoreSelection();
       if (insertModal.type === 'link') {
-        document.execCommand('createLink', false, val);
+        const linkUrl = val;
+        const linkText = (insertModal.text || 'Click Here').trim();
+        const sel = window.getSelection();
+        const range = savedSelectionRef.current;
+
+        const createAnchor = (text, href) => {
+          const a = document.createElement('a');
+          a.href = href;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.style.color = '#0000ff';
+          a.style.fontWeight = 'bold';
+          a.style.textDecoration = 'underline';
+          a.textContent = text;
+          return a;
+        };
+
+        let handled = false;
+
+        if (range) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            let common = range.commonAncestorContainer;
+            if (common.nodeType === Node.TEXT_NODE) common = common.parentElement;
+            const existingA = common.closest ? common.closest('a') : null;
+
+            if (existingA) {
+              existingA.href = linkUrl;
+              existingA.textContent = linkText;
+              existingA.target = '_blank';
+              existingA.rel = 'noopener noreferrer';
+              existingA.style.color = '#0000ff';
+              existingA.style.fontWeight = 'bold';
+              existingA.style.textDecoration = 'underline';
+              handled = true;
+            } else if (!range.collapsed) {
+              range.deleteContents();
+              const a = createAnchor(linkText, linkUrl);
+              range.insertNode(a);
+              range.setStartAfter(a);
+              range.setEndAfter(a);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              handled = true;
+            } else {
+              const td = common.closest ? common.closest('td, th') : null;
+              if (td) {
+                const a = createAnchor(linkText, linkUrl);
+                if (!td.textContent.trim() || td.textContent.trim() === '\u00a0' || td.textContent.trim() === linkText) {
+                  td.innerHTML = '';
+                  td.appendChild(a);
+                } else {
+                  range.insertNode(a);
+                }
+                handled = true;
+              }
+            }
+          } catch (e) {
+            console.warn('Range insertion error, using fallback:', e);
+          }
+        }
+
+        if (!handled) {
+          if (activeCellElementRef.current) {
+            const td = activeCellElementRef.current;
+            const existingA = td.querySelector('a');
+            if (existingA) {
+              existingA.href = linkUrl;
+              existingA.textContent = linkText;
+              existingA.style.color = '#0000ff';
+              existingA.style.fontWeight = 'bold';
+            } else {
+              td.innerHTML = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">${linkText}</a>`;
+            }
+          } else {
+            document.execCommand('createLink', false, linkUrl);
+          }
+        }
       } else if (insertModal.type === 'image') {
         document.execCommand('insertImage', false, val);
       } else if (insertModal.type === 'video') {
@@ -5017,8 +5193,30 @@ export default function AdminDashboardPage({
             <span style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 2px' }} />
 
             {/* Inserts: Link, Image, Video, Table */}
-            <button type="button" onClick={handleOpenLinkModal} title="Insert Link" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Link2 size={14} /></button>
-            <button type="button" onClick={() => execCmd('unlink')} title="Unlink" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Unlink size={14} /></button>
+            <button
+              type="button"
+              onMouseDown={e => {
+                e.preventDefault();
+                saveSelection();
+              }}
+              onClick={handleOpenLinkModal}
+              title="Insert / Edit Web Link"
+              style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              <Link2 size={14} />
+            </button>
+            <button
+              type="button"
+              onMouseDown={e => {
+                e.preventDefault();
+                saveSelection();
+              }}
+              onClick={() => execCmd('unlink')}
+              title="Unlink"
+              style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              <Unlink size={14} />
+            </button>
             <button type="button" onClick={handleOpenImageModal} title="Insert Image" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Image size={14} /></button>
             <button type="button" onClick={handleOpenVideoModal} title="Insert Video" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}><Video size={14} /></button>
             <button type="button" onClick={handleInsertTable} title="Insert Sarkari Table" style={{ padding: '5px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', color: '#b91c1c' }}><Table size={14} /></button>
@@ -5035,6 +5233,9 @@ export default function AdminDashboardPage({
               </button>
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => handleAddRow('below')} title="Add Row Below" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#047857' }}>
                 <ArrowDown size={11} /> +Row
+              </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleAddLinkRow} title="Add New Row with 'Click Here' Link" style={{ padding: '3px 6px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>
+                <Link2 size={11} /> +Link Row
               </button>
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteRow} title="Delete Selected Row" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #fecaca', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#dc2626' }}>
                 <Minus size={11} /> -Row
@@ -5110,6 +5311,14 @@ export default function AdminDashboardPage({
                 <button
                   type="button"
                   onMouseDown={e => e.preventDefault()}
+                  onClick={handleAddLinkRow}
+                  title="Add New Row with 'Click Here' Link"
+                  style={{ padding: '4px 9px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700, color: '#15803d' }}>
+                  <Link2 size={12} /> + Link Row
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
                   onClick={handleDeleteRow}
                   title="Delete Current Row"
                   style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
@@ -5158,6 +5367,20 @@ export default function AdminDashboardPage({
                   title="Delete Current Column"
                   style={{ padding: '4px 8px', background: '#fff', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 600, color: '#dc2626' }}>
                   <Minus size={12} /> Delete Col
+                </button>
+
+                <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
+
+                <button
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    saveSelection();
+                    handleOpenLinkModal();
+                  }}
+                  title="Make Selected Text or Current Cell a Link"
+                  style={{ padding: '4px 9px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700, color: '#1d4ed8' }}>
+                  <Link2 size={12} /> Link Cell / Text
                 </button>
 
                 <span style={{ width: '1px', height: '16px', background: '#cbd5e1', margin: '0 4px' }} />
@@ -5463,9 +5686,40 @@ export default function AdminDashboardPage({
                 }, 100);
               }}
               onInput={handleVisualInput}
-              onClick={updateActiveTableInfo}
-              onKeyUp={updateActiveTableInfo}
-              onMouseUp={updateActiveTableInfo}
+              onClick={(e) => {
+                updateActiveTableInfo();
+                saveSelection();
+                // Smart auto-fill for 2-column links tables when clicking 2nd column
+                const target = e.target;
+                const td = target.closest ? target.closest('td') : null;
+                if (td && td.parentElement) {
+                  const tr = td.parentElement;
+                  const table = tr.closest ? tr.closest('table') : null;
+                  if (table && tr.cells.length === 2 && tr.cells[1] === td) {
+                    const tableText = (table.textContent || '').toLowerCase();
+                    const isLinksTable = tableText.includes('important link') || 
+                                         tableText.includes('useful link') || 
+                                         tableText.includes('some useful') || 
+                                         tableText.includes('click here');
+                    const col1Text = tr.cells[0].textContent.trim();
+                    const col2Text = td.textContent.trim();
+                    if (isLinksTable && col1Text && (!col2Text || col2Text === '\u00a0' || col2Text === '&nbsp;') && !td.querySelector('a')) {
+                      td.style.textAlign = 'center';
+                      td.innerHTML = '<a href="https://" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">Click Here</a>';
+                      const updated = visualEditorRef.current?.innerHTML;
+                      if (updated) setForm(prev => ({ ...prev, content: updated }));
+                    }
+                  }
+                }
+              }}
+              onKeyUp={() => {
+                updateActiveTableInfo();
+                saveSelection();
+              }}
+              onMouseUp={() => {
+                updateActiveTableInfo();
+                saveSelection();
+              }}
               onKeyDown={handleEditorKeyDown}
               className="sr-rich-html-content"
               style={{
@@ -7062,6 +7316,30 @@ export default function AdminDashboardPage({
 
             {/* Modal Body */}
             <div style={{ padding: '20px' }}>
+              {insertModal.type === 'link' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                    Link Text (दिखने वाला नाम - e.g. "Click Here" / "Out Now"):
+                  </label>
+                  <input
+                    type="text"
+                    value={insertModal.text || ''}
+                    onChange={e => setInsertModal(prev => ({ ...prev, text: e.target.value }))}
+                    placeholder="Click Here, Out Now, Download..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '0.92rem',
+                      outline: 'none',
+                      fontWeight: 600,
+                      color: '#0000ff'
+                    }}
+                  />
+                </div>
+              )}
+
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
                 {insertModal.label}
               </label>
@@ -7087,7 +7365,7 @@ export default function AdminDashboardPage({
               ) : (
                 <input
                   type="text"
-                  autoFocus
+                  autoFocus={insertModal.type !== 'link'}
                   value={insertModal.value}
                   onChange={e => setInsertModal(prev => ({ ...prev, value: e.target.value }))}
                   onKeyDown={e => {
