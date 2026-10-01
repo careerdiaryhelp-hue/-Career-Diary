@@ -1,26 +1,51 @@
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    const getOriginResponse = async (req) => {
+      if (env && env.ASSETS) {
+        return env.ASSETS.fetch(req);
+      }
+      return fetch(req);
+    };
 
     // Only process single-segment paths without dots (job slugs like /sbi-junior-associates-clerk-2026)
     const segments = path.split('/').filter(s => s.length > 0);
     if (segments.length !== 1 || segments[0].includes('.')) {
-      return fetch(request);
+      return getOriginResponse(request);
     }
 
     const jobSlug = segments[0];
 
-    // Skip known app routes — let them pass through to Vercel
-    const staticRoutes = ['admin', 'top-online-forms', 'top-offline-forms', 'state-jobs', 'admit-cards', 'results'];
+    // Skip known app routes
+    const staticRoutes = [
+      'admin',
+      'top-online-forms',
+      'top-offline-forms',
+      'state-jobs',
+      'admit-cards',
+      'results',
+      'admit-card',
+      'result',
+      'latest-jobs',
+      'latest-job',
+      'answer-key',
+      'syllabus',
+      'admission',
+      'privacy-policy',
+      'terms-conditions',
+      'contact-us',
+      'last-date-jobs'
+    ];
     if (staticRoutes.includes(jobSlug)) {
-      return fetch(request);
+      return getOriginResponse(request);
     }
 
     // Fetch Firestore job data and origin page in parallel
     const [firestoreResp, originResp] = await Promise.all([
       fetch(`https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${jobSlug}`),
-      fetch(request),
+      getOriginResponse(request),
     ]);
 
     // If Firestore fetch failed, return original page as-is
