@@ -175,3 +175,95 @@ export const getJobUrl = (job) => {
   // Default to job prefix
   return `/job/${job.id}`;
 };
+
+export const getJobBadgeInfo = (job) => {
+  if (!job) return { text: '', className: '' };
+
+  let raw = (job.badge || '').trim();
+
+  // If no explicit badge, infer from title or flags
+  if (!raw || raw.toLowerCase() === 'none') {
+    const title = (job.title || '').toLowerCase();
+
+    const hasAdmit = title.includes('admit card') || title.includes('hall ticket') || title.includes('call letter');
+    const hasExamDate = title.includes('exam date');
+    const hasExamCity = title.includes('exam city') || title.includes('city details') || title.includes('city intimation');
+    const hasAnsKey = title.includes('answer key') || title.includes('ans key') || title.includes('response sheet');
+    const hasOut = title.includes('out') || title.includes('declared') || title.includes('available');
+
+    if (hasAdmit && hasOut) {
+      raw = 'ADMIT CARD OUT';
+    } else if (hasExamDate && hasOut) {
+      raw = 'EXAM DATE OUT';
+    } else if (hasExamCity && (hasOut || title.includes('details'))) {
+      raw = 'EXAM CITY OUT';
+    } else if (hasAnsKey && hasOut) {
+      raw = 'ANSWER KEY OUT';
+    } else if (
+      title.includes('score card') ||
+      title.includes('result out') ||
+      title.includes('marks out') ||
+      title.includes('merit list out') ||
+      title.includes('cut off out') ||
+      title.includes('allotment result') ||
+      title.endsWith('out') ||
+      title.endsWith('out 🔥') ||
+      title.endsWith('out!')
+    ) {
+      raw = 'OUT';
+    } else if (title.includes('online start') || title.includes('form start') || title.includes('apply start') || title.endsWith('start')) {
+      raw = 'START';
+    } else if (job.isLatestUpdate || job.isLatest || job.isNew || job.isRecent) {
+      raw = 'NEW';
+    }
+  }
+
+  if (!raw || raw.toLowerCase() === 'none') {
+    return { text: '', className: '' };
+  }
+
+  let text = raw.toUpperCase().trim().replace(/!/g, '').trim();
+  const lower = raw.toLowerCase();
+
+  let className = 'tag-amber';
+
+  // Green Badges for all "OUT" statuses (matches live site design)
+  if (lower.includes('out') || lower.includes('green') || lower.includes('available')) {
+    className = 'tag-out'; // Green
+    if (lower === 'out' || lower === 'out 🔥') {
+      text = 'OUT';
+    } else if (lower.includes('admit') && lower.includes('out')) {
+      text = 'ADMIT CARD OUT';
+    } else if (lower.includes('exam date') && lower.includes('out')) {
+      text = 'EXAM DATE OUT';
+    } else if (lower.includes('exam city') || lower.includes('city out')) {
+      text = 'EXAM CITY OUT';
+    } else if (lower.includes('answer') && lower.includes('out')) {
+      text = 'ANSWER KEY OUT';
+    }
+  } else if (lower.includes('new') || lower.includes('fresh')) {
+    className = 'tag-new'; // Red/Salmon (#f87171 / #ef4444)
+    text = 'NEW';
+  } else if (lower.includes('start')) {
+    className = 'tag-new'; // Red/Salmon (#f87171)
+    text = 'START';
+  } else if (lower.includes('active') || lower.includes('link') || lower.includes('blue')) {
+    className = 'tag-active'; // Blue
+    text = 'LINK ACTIVE';
+  } else if (lower.includes('result') || lower.includes('purple')) {
+    className = 'tag-purple'; // Purple
+    text = 'RESULT';
+  } else if (lower.includes('answer') || lower.includes('key')) {
+    className = 'tag-purple'; // Purple
+    text = 'ANSWER KEY';
+  } else if (lower.includes('extended') || lower.includes('teal')) {
+    className = 'tag-teal'; // Teal
+    text = 'EXTENDED';
+  } else if (lower.includes('last') || lower.includes('date') || lower.includes('orange') || lower.includes('amber')) {
+    className = 'tag-amber'; // Amber
+    text = 'LAST DATE';
+  }
+
+  return { text, className };
+};
+

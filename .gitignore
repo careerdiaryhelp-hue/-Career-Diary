@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.next
+out
+backup_vite
+career-diary-next
 
 # Editor directories and files
 .vscode/*
