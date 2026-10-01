@@ -1,51 +1,64 @@
 export const resultsData = [
   {
     "id": "rssb-clerk-jr-ii-junior-assistant-2026",
-    "title": "Rajasthan RSSB Clerk Grade-II / Junior Assistant Result Out",
-    "organization": "Rajasthan Subordinate and Ministerial Services Selection Board (RSMSSB)",
-    "category": "RESULT / ANSWER KEY",
-    "uniqueDescription": "Rajasthan Staff Selection Board (RSSB / RSMSSB) has officially declared the Result and Score Card for Clerk Grade-II / Junior Assistant Combined Recruitment 2026. Candidates who appeared in the written examination can now check their cut-off marks and merit list online using their roll number.",
-    "postName": "Rajasthan RSSB Clerk Grade-II / Junior Assistant Result 2026",
-    "status": "Active Notification",
-    "updateType": "Official Update",
-    "postDate": "2026-09-25 10:00:00",
-    "badge": "OUT",
-    "expertTip": "Career Diary Advice: Check your marks and cut-off list carefully and keep your document verification documents ready.",
-    "totalPosts": "4197",
+    "slug": "rssb-clerk-jr-ii-junior-assistant-2026",
+    "title": "Rajasthan RSSB Clerk Grade-II / Junior Assistant 2026 Written Exam Result Out",
+    "organization": "Rajasthan Staff Selection Board (RSSB)",
+    "category": "RESULT",
+    "uniqueDescription": "Rajasthan Staff Selection Board (RSSB) has officially declared the Written Exam Result on 28 September 2026 for the Clerk Grade-II / Junior Assistant Joint Recruitment 2026 for 4197 vacancies. Candidates who appeared in the examination held on 05 July 2026 can now check their roll numbers in the provisional merit list and download cut-off marks PDF below.",
+    "postName": "Rajasthan RSSB Clerk Grade-II / Junior Assistant 2026 Written Exam Result",
+    "status": "Result Declared",
+    "updateType": "Official Result",
+    "postDate": "2026-09-28 14:00:00",
+    "updatedAt": "2026-09-28 14:00:00",
+    "expertTip": "Career Diary Advice: Check your roll number in the qualified list and start preparing for Phase-II Typing Test.",
+    "totalPosts": "4197 Post",
     "jobLocation": "Rajasthan",
     "eligibility": {
-      "education": "12th (Intermediate) with RSCIT or equivalent Computer Certificate.",
+      "education": "12th (Intermediate) Passed with RS-CIT or equivalent computer qualification.",
       "fresherEligible": true,
       "location": "Rajasthan"
     },
     "ageLimit": {
       "minimum": "18 Years",
       "maximum": "40 Years",
-      "relaxation": "Age relaxation applicable as per Rajasthan government rules."
+      "relaxation": "Age relaxation applicable as per Rajasthan government recruitment rules."
     },
     "applicationFee": {
       "General / OBC (Creamy Layer)": "₹ 600/-",
-      "OBC (NCL) / EWS / SC / ST": "₹ 400/-",
-      "paymentMode": "Online"
+      "EWS / OBC (Non-Creamy)": "₹ 400/-",
+      "SC / ST / Divyang": "₹ 400/-",
+      "paymentMode": "Online (Debit Card, Credit Card, Net Banking, UPI)"
     },
     "importantDates": {
-      "applicationStart": "13 February 2026",
-      "applicationEnd": "20 March 2026",
-      "examDate": "August 2026",
-      "resultDate": "September 2026"
+      "Notification Date": "13 February 2026",
+      "Exam Date": "05 July 2026",
+      "Answer Key Available": "15 July 2026",
+      "Written Result Date": "28 September 2026 (Out)",
+      "Phase-II Typing Test Date": "To be notified soon"
     },
-    "importantLinks": [
+    "selectionProcess": [
+      "Phase-I Written Examination",
+      "Phase-II Typing / Efficiency Test",
+      "Document Verification",
+      "Final Merit List"
+    ],
+    "vacancyDetails": [
       {
-        "title": "Download Result & Merit List",
-        "url": "https://rsmssb.rajasthan.gov.in",
-        "type": "primary"
+        "Post Name": "Clerk Grade-II (Secretariat & RPSC)",
+        "Total": "645"
       },
       {
-        "title": "Official Website",
-        "url": "https://rsmssb.rajasthan.gov.in",
-        "type": "secondary"
+        "Post Name": "Junior Assistant (Subordinate Departments)",
+        "Total": "3552"
       }
-    ]
+    ],
+    "importantLinks": {
+      "Download Written Exam Result (Roll Number List)": "https://rssb.rajasthan.gov.in/results",
+      "Download Cut-Off Marks PDF": "https://rssb.rajasthan.gov.in/results",
+      "Official Notification PDF": "https://rssb.rajasthan.gov.in/",
+      "RSSB Official Website": "https://rssb.rajasthan.gov.in/"
+    }
   },
   {
     "id": "railway-rrb-group-d-cen-09-2025-level-1-answer-key-2026-out",

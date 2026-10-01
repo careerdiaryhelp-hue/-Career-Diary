@@ -1,6 +1,7 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { ALL_COLUMNS, getJobsForCategory, getJobUrl } from '../data/categoryHelpers.js';
+import { ALL_COLUMNS, getJobsForCategory, getJobUrl, getJobBadgeInfo } from '../data/categoryHelpers.js';
 import { InFeedAd } from './AdSenseBanner';
 
 export default function JobColumnsGrid({
@@ -10,9 +11,10 @@ export default function JobColumnsGrid({
   onSelectJob,
   onNavigateCategory
 }) {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -22,42 +24,7 @@ export default function JobColumnsGrid({
     const tl = job.title.toLowerCase();
     if (tl.includes('top online form') || (job.id && job.id.includes('top-online-form'))) return null;
 
-    let rawBadge = job.badge || '';
-    if (!rawBadge) {
-      const titleLower = (job.title || '').toLowerCase();
-      if (titleLower.includes('admit card out') || titleLower.includes('hall ticket out')) {
-        rawBadge = 'ADMIT CARD OUT';
-      } else if (titleLower.includes('exam date out')) {
-        rawBadge = 'EXAM DATE OUT';
-      } else if (titleLower.includes('result out') || titleLower.includes('score card') || titleLower.includes('merit list out')) {
-        rawBadge = 'OUT';
-      } else if (titleLower.includes('answer key out')) {
-        rawBadge = 'ANSWER KEY OUT';
-      } else if (titleLower.includes('start') || titleLower.includes('apply online')) {
-        rawBadge = 'START';
-      } else if (job.isLatestUpdate || job.isNew) {
-        rawBadge = 'NEW';
-      }
-    }
-
-    let badgeText = rawBadge;
-    let badgeClass = 'tag-amber';
-    const b = rawBadge.toLowerCase();
-
-    if (b.includes('admit card out') || b.includes('exam date out') || b === 'out' || b.includes('result out') || b.includes('out') || b.includes('green')) {
-      badgeClass = 'tag-out'; // Green
-    } else if (b.includes('new') || b.includes('start') || b.includes('red')) {
-      badgeClass = 'tag-new'; // Red
-      badgeText = rawBadge === 'New!' ? 'NEW' : rawBadge.toUpperCase();
-    } else if (b.includes('active') || b.includes('link') || b.includes('admit') || b.includes('blue')) {
-      badgeClass = 'tag-active'; // Blue
-    } else if (b.includes('result') || b.includes('answer') || b.includes('purple')) {
-      badgeClass = 'tag-purple'; // Purple
-    } else if (b.includes('extended') || b.includes('teal')) {
-      badgeClass = 'tag-teal'; // Teal
-    } else if (b.includes('last') || b.includes('date')) {
-      badgeClass = 'tag-amber'; // Amber
-    }
+    const { text: badgeText, className: badgeClass } = getJobBadgeInfo(job);
 
     const lastDate =
       job.appLast ||

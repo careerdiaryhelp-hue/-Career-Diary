@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { X, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin } from 'lucide-react';
 import AdSenseBanner from './AdSenseBanner';

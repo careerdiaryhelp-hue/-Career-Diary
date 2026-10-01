@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Home, Briefcase, IdCard, CheckSquare, Key, FileText, GraduationCap } from 'lucide-react';
 
