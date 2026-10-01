@@ -47,5 +47,9 @@ export default async function SlugRoute({ params }) {
     getAllJobsServer(),
   ]);
 
+  if (!job) {
+    notFound();
+  }
+
   return <JobDetailWrapper job={job} allJobs={allJobs} slug={slug} />;
 }
