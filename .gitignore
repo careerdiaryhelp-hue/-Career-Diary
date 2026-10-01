@@ -16,6 +16,7 @@ dist-ssr
 !.open-next/.build
 !.open-next/.build/**
 !.open-next/worker.js
+.wrangler
 out
 backup_vite
 career-diary-next

@@ -1,14 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  getDocs,
-  getDoc
-} from 'firebase/firestore';
+// Safe Firebase Configuration & Firestore REST/Client Service
+// Avoids top-level Firebase JS SDK imports on the server to prevent Cloudflare Worker EvalError (protobufjs)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAMHGJCN8vrmPWZxD2zw-KsXr89DwZBKdM",
@@ -20,9 +11,17 @@ const firebaseConfig = {
   measurementId: "G-H3WLGYXSW0"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Client-side Firestore instance getter (loaded dynamically in browser)
+let _dbInstance = null;
+async function getClientDb() {
+  if (typeof window === 'undefined') return null;
+  if (_dbInstance) return _dbInstance;
+  const { initializeApp, getApps, getApp } = await import('firebase/app');
+  const { getFirestore } = await import('firebase/firestore');
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  _dbInstance = getFirestore(app);
+  return _dbInstance;
+}
 
 // Helper to sanitize Firestore document IDs (no forward slashes, no spaces)
 export function cleanJobId(id) {
@@ -34,7 +33,7 @@ export function cleanJobId(id) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Save or publish a job to Firestore
+// Save or publish a job to Firestore (client-side only)
 export async function publishJobToFirestore(job) {
   try {
     const rawId = job.id || job.slug || job.title || '';
@@ -48,6 +47,9 @@ export async function publishJobToFirestore(job) {
       slug: safeId,
       updatedAt: new Date().toISOString()
     };
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, setDoc } = await import('firebase/firestore');
     const jobRef = doc(db, 'jobs', safeId);
     await setDoc(jobRef, safeJob, { merge: true });
     return { success: true, cleanId: safeId };
@@ -57,11 +59,14 @@ export async function publishJobToFirestore(job) {
   }
 }
 
-// Delete a job from Firestore
+// Delete a job from Firestore (client-side only)
 export async function deleteJobFromFirestore(jobId) {
   try {
     const safeId = cleanJobId(jobId);
     if (!safeId) return { success: false, error: 'Invalid Job ID' };
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, deleteDoc } = await import('firebase/firestore');
     const jobRef = doc(db, 'jobs', safeId);
     await deleteDoc(jobRef);
     return { success: true };
@@ -71,25 +76,37 @@ export async function deleteJobFromFirestore(jobId) {
   }
 }
 
-// Real-time listener for Firestore jobs
+// Real-time listener for Firestore jobs (client-side only)
 export function subscribeToFirestoreJobs(onUpdate, onError) {
-  try {
-    const jobsCol = collection(db, 'jobs');
-    return onSnapshot(jobsCol, (snapshot) => {
-      const posts = [];
-      snapshot.forEach((d) => {
-        posts.push(d.data());
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  let active = true;
+
+  getClientDb().then(async (db) => {
+    if (!db || !active) return;
+    try {
+      const { collection, onSnapshot } = await import('firebase/firestore');
+      const jobsCol = collection(db, 'jobs');
+      unsubscribe = onSnapshot(jobsCol, (snapshot) => {
+        const posts = [];
+        snapshot.forEach((d) => {
+          posts.push(d.data());
+        });
+        onUpdate(posts);
+      }, (err) => {
+        console.warn('Firestore subscription error (fallback to local data):', err);
+        if (onError) onError(err);
       });
-      onUpdate(posts);
-    }, (err) => {
-      console.warn('Firestore subscription error (fallback to local data):', err);
-      if (onError) onError(err);
-    });
-  } catch (e) {
-    console.warn('Could not subscribe to Firestore:', e);
-    if (onError) onError(e);
-    return () => {};
-  }
+    } catch (e) {
+      console.warn('Could not subscribe to Firestore:', e);
+      if (onError) onError(e);
+    }
+  });
+
+  return () => {
+    active = false;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
 }
 
 function parseFirestoreValue(val) {
@@ -167,17 +184,21 @@ export async function fetchFirestoreJobsOnce() {
     if (memoryCache.data) return memoryCache.data;
     try {
       if (typeof window !== 'undefined') {
-        const jobsCol = collection(db, 'jobs');
-        const snapshot = await getDocs(jobsCol);
-        const posts = [];
-        snapshot.forEach((d) => {
-          posts.push({ id: d.id, ...d.data() });
-        });
-        memoryCache = {
-          data: posts,
-          timestamp: Date.now(),
-        };
-        return posts;
+        const db = await getClientDb();
+        if (db) {
+          const { collection, getDocs } = await import('firebase/firestore');
+          const jobsCol = collection(db, 'jobs');
+          const snapshot = await getDocs(jobsCol);
+          const posts = [];
+          snapshot.forEach((d) => {
+            posts.push({ id: d.id, ...d.data() });
+          });
+          memoryCache = {
+            data: posts,
+            timestamp: Date.now(),
+          };
+          return posts;
+        }
       }
     } catch (innerErr) {
       console.warn('Client SDK fetch also failed:', innerErr);
