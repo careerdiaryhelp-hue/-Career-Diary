@@ -50,10 +50,17 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 
     seenIds.add(safeId);
     if (normTitle) seenTitles.add(normTitle);
+    
+    let _ts = 0;
+    if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
+    if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
+    if (isNaN(_ts)) _ts = 0;
+
     merged.push({
       ...post,
       id: safeId,
-      slug: safeId
+      slug: safeId,
+      _ts
     });
   }
 
@@ -69,10 +76,18 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 
     seenIds.add(safeId);
     if (normTitle) seenTitles.add(normTitle);
-    merged.push(post);
+
+    let _ts = post._ts;
+    if (_ts === undefined) {
+      if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
+      if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
+      if (isNaN(_ts)) _ts = 0;
+    }
+
+    merged.push({ ...post, _ts });
   }
 
-  // 3. Sort merged posts
+  // 3. Sort merged posts using precomputed timestamps
   return merged.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
@@ -88,20 +103,8 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
       return 1;
     }
 
-    const getTime = (j) => {
-      if (j.updatedAt) {
-        const t = new Date(j.updatedAt).getTime();
-        if (!isNaN(t) && t > 0) return t;
-      }
-      if (j.postDate) {
-        const t = new Date(j.postDate).getTime();
-        if (!isNaN(t) && t > 0) return t;
-      }
-      return 0;
-    };
-
-    const timeA = getTime(a);
-    const timeB = getTime(b);
+    const timeA = a._ts || 0;
+    const timeB = b._ts || 0;
     if (timeA !== timeB) {
       return timeB - timeA;
     }
