@@ -132,7 +132,7 @@ export default function HomeClient({ initialJobs = [] }) {
 
       {/* 3. Top Tickers: Last Date Reminder, Latest Update, Current Affairs & Breaking News */}
       <TopTicker
-        news={breakingNews}
+        breakingNews={breakingNews}
         jobs={jobs}
         onSelectJob={(id) => {
           const j = jobs.find(x => x.id === id);
