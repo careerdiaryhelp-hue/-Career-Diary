@@ -51,17 +51,11 @@ export default function HomeClient({ initialJobs = [] }) {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [breakingNews, setBreakingNews] = useState(DEFAULT_BREAKING_NEWS);
 
-  // Subscribe to real-time Firestore jobs on client
+  // Subscribing to Firestore directly from client causes massive quota usage (429 errors).
+  // We now rely purely on `initialJobs` passed from Next.js server component which caches the data.
+  // The Admin panel still uses it for real-time updates.
   useEffect(() => {
-    const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
-      }
-    });
-
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
+    // Client-side realtime updates disabled for normal visitors to save Firestore quota
   }, []);
 
   const handleResetFilters = () => {

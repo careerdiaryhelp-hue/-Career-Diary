@@ -177,8 +177,8 @@ export async function fetchFirestoreJobsOnce() {
       // Add cf-specific cache options to leverage Cloudflare CDN Cache API if available
       const res = await fetch(url, { 
         signal: controller.signal, 
-        next: { revalidate: 60 },
-        cf: { cacheTtl: 60, cacheEverything: true }
+        next: { revalidate: 300 },
+        cf: { cacheTtl: 300, cacheEverything: true }
       });
       clearTimeout(timeoutId);
 
@@ -226,7 +226,7 @@ export async function fetchFirestoreJobById(docId) {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}`,
       { 
-        next: { revalidate: 60 },
+        next: { revalidate: 300 },
         cf: { cacheTtl: 300, cacheEverything: true }
       }
     );
