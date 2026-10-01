@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .next
+.open-next
 out
 backup_vite
 career-diary-next
