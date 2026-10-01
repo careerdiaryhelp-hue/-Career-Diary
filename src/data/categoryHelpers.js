@@ -191,13 +191,13 @@ export const getJobBadgeInfo = (job) => {
     const hasAnsKey = title.includes('answer key') || title.includes('ans key') || title.includes('response sheet');
     const hasOut = title.includes('out') || title.includes('declared') || title.includes('available');
 
-    if (hasAdmit && hasOut) {
+    if (hasAdmit) {
       raw = 'ADMIT CARD OUT';
-    } else if (hasExamDate && hasOut) {
+    } else if (hasExamDate) {
       raw = 'EXAM DATE OUT';
-    } else if (hasExamCity && (hasOut || title.includes('details'))) {
+    } else if (hasExamCity) {
       raw = 'EXAM CITY OUT';
-    } else if (hasAnsKey && hasOut) {
+    } else if (hasAnsKey) {
       raw = 'ANSWER KEY OUT';
     } else if (
       title.includes('score card') ||

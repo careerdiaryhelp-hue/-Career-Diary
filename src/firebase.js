@@ -173,8 +173,13 @@ export async function fetchFirestoreJobsOnce() {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs?pageSize=100&${MASK_QUERY}`;
-      const res = await fetch(url, { signal: controller.signal, next: { revalidate: 60 } });
+      const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs?pageSize=15&${MASK_QUERY}`;
+      // Add cf-specific cache options to leverage Cloudflare CDN Cache API if available
+      const res = await fetch(url, { 
+        signal: controller.signal, 
+        next: { revalidate: 60 },
+        cf: { cacheTtl: 60, cacheEverything: true }
+      });
       clearTimeout(timeoutId);
 
       if (res.status === 429 || res.status === 403) {
@@ -220,7 +225,10 @@ export async function fetchFirestoreJobById(docId) {
   try {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}`,
-      { next: { revalidate: 60 } }
+      { 
+        next: { revalidate: 60 },
+        cf: { cacheTtl: 300, cacheEverything: true }
+      }
     );
     if (!res.ok) return null;
     const data = await res.json();

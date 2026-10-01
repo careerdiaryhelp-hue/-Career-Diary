@@ -196,7 +196,18 @@ export async function getJobBySlug(slug) {
     if (match) return match;
   }
 
-  // 3. Fallback: If not in static posts, load Firestore
+  // 3. Fallback 1: Fuzzy match in full list (for older mismatched URLs)
+  const fullJobs = _cachedFullJobs || SORTED_STATIC_JOBS;
+  match = fullJobs.find(j => {
+    if (!j) return false;
+    const jId = String(j.id || '').toLowerCase().trim();
+    const jSlug = String(j.slug || '').toLowerCase().trim();
+    return (jId && (jId.includes(clean) || clean.includes(jId))) ||
+           (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
+  });
+  if (match) return match;
+
+  // 4. Fallback 2: If not in static posts, load Firestore
   try {
     await getAllJobsFullServer();
     if (_slugMap) {
