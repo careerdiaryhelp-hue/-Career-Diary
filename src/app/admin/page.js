@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminDashboardPage from '../../views/AdminDashboardPage';
 import AdminLoginPage from '../../views/AdminLoginPage';
-import { INITIAL_JOBS } from '../../data/initialJobs';
+import { getInitialJobs } from '../../data/initialJobs';
 import { mergeAndSortJobs } from '../../utils/jobsService';
 import {
   publishJobToFirestore,
@@ -36,7 +36,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const [jobs, setJobs] = useState(() => mergeAndSortJobs([], INITIAL_JOBS));
+  const [jobs, setJobs] = useState(() => mergeAndSortJobs([], getInitialJobs()));
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [breakingNews, setBreakingNews] = useState(DEFAULT_BREAKING_NEWS);
 
@@ -68,7 +68,7 @@ export default function AdminPage() {
     // Subscribe to Firestore jobs
     const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
       if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        setJobs(() => mergeAndSortJobs(firestorePosts, INITIAL_JOBS));
+        setJobs(() => mergeAndSortJobs(firestorePosts, getInitialJobs()));
       }
     });
 

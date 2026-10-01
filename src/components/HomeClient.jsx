@@ -12,7 +12,7 @@ import AgeCalcModal from './AgeCalcModal';
 import AdminLoginModal from './AdminLoginModal';
 import { DisplayAd } from './AdSenseBanner';
 import { mergeAndSortJobs } from '../utils/jobsService';
-import { INITIAL_JOBS } from '../data/initialJobs';
+import { getInitialJobs } from '../data/initialJobs';
 import { subscribeToFirestoreJobs, cleanJobId } from '../firebase';
 import {
   isResult,
@@ -41,7 +41,7 @@ const DEFAULT_BREAKING_NEWS = [
 export default function HomeClient({ initialJobs = [] }) {
   const [jobs, setJobs] = useState(() => {
     if (initialJobs && initialJobs.length > 0) return initialJobs;
-    return mergeAndSortJobs([], INITIAL_JOBS);
+    return mergeAndSortJobs([], getInitialJobs());
   });
 
   const [currentCategory, setCurrentCategory] = useState('all');

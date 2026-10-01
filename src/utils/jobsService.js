@@ -1,4 +1,4 @@
-import { INITIAL_JOBS } from '../data/initialJobs.js';
+import { getInitialJobs } from '../data/initialJobs.js';
 import { cleanJobId, fetchFirestoreJobsOnce, fetchFirestoreJobById } from '../firebase.js';
 
 export { cleanJobId };
@@ -116,10 +116,20 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   });
 }
 
-// Pre-sort static jobs once at module load to avoid re-sorting 3MB of jobs on every request
-const SORTED_STATIC_JOBS = mergeAndSortJobs([], INITIAL_JOBS);
-const SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
-const STATIC_SLUG_MAP = buildSlugMap(SORTED_STATIC_JOBS);
+// Lazy-initialized static data — deferred from module load to first access
+// to keep cold-start CPU time under Cloudflare Worker limits.
+let _staticJobsReady = false;
+let SORTED_STATIC_JOBS = null;
+let SORTED_STATIC_SUMMARY = null;
+let STATIC_SLUG_MAP = null;
+
+function ensureStaticData() {
+  if (_staticJobsReady) return;
+  SORTED_STATIC_JOBS = mergeAndSortJobs([], getInitialJobs());
+  SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
+  STATIC_SLUG_MAP = buildSlugMap(SORTED_STATIC_JOBS);
+  _staticJobsReady = true;
+}
 
 // In-memory cache for Cloudflare Worker instances
 let _cachedFullJobs = null;
@@ -144,6 +154,7 @@ function buildSlugMap(jobs) {
 
 // Fast cached getter for Full Jobs (includes content, cached for 60s)
 export async function getAllJobsFullServer() {
+  ensureStaticData();
   const now = Date.now();
   if (_cachedFullJobs && (now - _cachedTime < 60000)) {
     return _cachedFullJobs;
@@ -172,6 +183,7 @@ export async function getAllJobsFullServer() {
 // Server-side fetching helper for Next.js SSR / Static Generation
 // Returns lightweight summarized jobs to keep RSC payload under 100KB (instead of 3MB!)
 export async function getAllJobsServer() {
+  ensureStaticData();
   const now = Date.now();
   if (_cachedSummaryJobs && (now - _cachedTime < 60000)) {
     return _cachedSummaryJobs;
@@ -191,6 +203,7 @@ export async function getTopRecentJobsSummary(limit = 15) {
 // Ultra-fast O(1) slug lookup for single job post pages (<0.005ms CPU time)
 export async function getJobBySlug(slug) {
   if (!slug) return null;
+  ensureStaticData();
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
