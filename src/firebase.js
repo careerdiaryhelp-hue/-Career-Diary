@@ -173,9 +173,22 @@ export async function fetchFirestoreJobsOnce() {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs?pageSize=15&${MASK_QUERY}`;
+      const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents:runQuery`;
+      
+      const queryBody = {
+        structuredQuery: {
+          from: [{ collectionId: 'jobs' }],
+          orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
+          limit: 150,
+          select: { fields: FIRESTORE_LIST_FIELDS.map(f => ({ fieldPath: f })) }
+        }
+      };
+
       // Add cf-specific cache options to leverage Cloudflare CDN Cache API if available
       const res = await fetch(url, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(queryBody),
         signal: controller.signal, 
         next: { revalidate: 300 },
         cf: { cacheTtl: 300, cacheEverything: true }
@@ -193,10 +206,14 @@ export async function fetchFirestoreJobsOnce() {
         throw new Error(`Firestore REST error: ${res.statusText}`);
       }
       const data = await res.json();
-      if (!data.documents || !Array.isArray(data.documents)) {
+      if (!Array.isArray(data)) {
         return memoryCache.data || [];
       }
-      const parsed = data.documents.map(parseFirestoreDoc);
+      
+      const parsed = data
+        .filter(item => item && item.document)
+        .map(item => parseFirestoreDoc(item.document));
+        
       memoryCache = {
         data: parsed,
         timestamp: Date.now(),
