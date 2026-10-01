@@ -727,90 +727,171 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </>
         )}
 
-        {/* Important Links Table - Only rendered if content does not already embed links */}
-        {!hasEmbeddedLinks && (
-          <table className="sr-table sr-links-table">
-            <tbody>
-              <tr>
-                <td colSpan={2} className="sr-table-heading">
-                  Some Useful Important Links
-                </td>
-              </tr>
+        {/* Important Links Table - Only rendered if content does not already embed links, UNLESS it has Result/Cutoff links */}
+        {(!hasEmbeddedLinks || finalImportantLinks.some(l => {
+          const lbl = (l.label || '').toLowerCase();
+          return (lbl.includes('result') || lbl.includes('cutoff') || lbl.includes('cut off')) && !lbl.includes('answer');
+        })) && (() => {
+          const grouped = {};
+          for (const item of finalImportantLinks) {
+            let base = (item.label || '').trim();
+            let type = 'Click Here';
+            const lowerLabel = base.toLowerCase();
 
-              {(() => {
-                const grouped = {};
-                for (const item of finalImportantLinks) {
-                  const match = item.label.match(/^(.*?)\s*\((.*?)\)$/);
-                  if (match) {
-                    const base = match[1].trim();
-                    const type = match[2].trim();
-                    if (!grouped[base]) grouped[base] = [];
-                    grouped[base].push({ type, url: item.url, originalLabel: item.label });
-                  } else {
-                    if (!grouped[item.label]) grouped[item.label] = [];
-                    grouped[item.label].push({ type: 'Click Here', url: item.url, originalLabel: item.label });
-                  }
+            if ((lowerLabel.includes('result') || lowerLabel.includes('cutoff') || lowerLabel.includes('cut off')) && !lowerLabel.includes('answer')) {
+              const resMatch = (item.label || '').match(/^(.*?)\s*(Result|Cut\s*off)\s*(.*?)$/i);
+              if (resMatch) {
+                let potentialBase = resMatch[1].trim();
+                let coreType = resMatch[2].trim();
+                let suffix = resMatch[3].trim();
+                potentialBase = potentialBase.replace(/^(Download|Check)(?:\s+|$)/i, '').trim();
+                if (potentialBase === '') {
+                  base = 'Download Result / Cutoff';
+                  type = coreType;
+                } else {
+                  base = potentialBase;
+                  type = coreType;
                 }
-                
-                return Object.entries(grouped).map(([base, items], idx) => {
-                  const isValidUrl = typeof items[0].url === 'string' && items[0].url.startsWith('http');
-                  const isApplyLink = items.some(i => i.originalLabel.toLowerCase().includes('apply'));
-                  
-                  return (
-                    <tr key={idx}>
-                      <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{base}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        {items.length === 1 && items[0].type === 'Click Here' ? (
-                          isValidUrl ? (
-                            <>
-                              <a
-                                href={items[0].url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: '#0000ff', fontWeight: 'bold' }}
-                              >
-                                Click Here
-                              </a>
-                              {isApplyLink && introStart && (
-                                <div style={{ fontSize: '0.82rem', color: '#b91c1c', marginTop: '2px', fontWeight: 'bold' }}>
-                                  Link Activate On {introStart}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                              {items[0].originalLabel.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
-                            </span>
-                          )
-                        ) : (
-                          items.map((item, i) => (
-                            <span key={i}>
-                              {typeof item.url === 'string' && item.url.startsWith('http') ? (
-                                <a
-                                  href={item.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ color: '#0000ff', fontWeight: 'bold', display: 'inline-block', margin: '0 4px' }}
-                                >
-                                  {item.type}
-                                </a>
-                              ) : (
-                                <span style={{ color: '#d32f2f', fontWeight: 'bold', display: 'inline-block', margin: '0 4px' }}>
-                                  {item.type}
-                                </span>
-                              )}
-                              {i < items.length - 1 && ' | '}
-                            </span>
-                          ))
-                        )}
+                if (suffix) {
+                   const sufMatch = suffix.match(/^[-:()]*\s*(.*?)\s*[-:()]*$/);
+                   if (sufMatch) type += ' ' + sufMatch[1];
+                   else type += ' ' + suffix;
+                }
+              } else {
+                base = 'Download Result / Cutoff';
+                type = 'Result';
+              }
+            } else {
+              const KNOWN_BASES = ['Apply Online', 'Download Admit Card', 'Download Answer Key', 'Download Syllabus', 'Download Notification', 'Official Website'];
+              let matchedBase = null;
+              for (const kb of KNOWN_BASES) {
+                if (lowerLabel.startsWith(kb.toLowerCase())) {
+                  matchedBase = kb;
+                  let remainder = base.substring(kb.length).trim();
+                  remainder = remainder.replace(/^[-:()]+\s*|\s*[-:()]+$/g, '').trim();
+                  if (remainder) {
+                    type = remainder;
+                  }
+                  break;
+                }
+              }
+              
+              if (matchedBase) {
+                base = matchedBase;
+                if (type.toLowerCase() === 'link' || type.toLowerCase() === 'form' || type.toLowerCase() === 'online') {
+                  type = 'Click Here';
+                }
+              } else {
+                const match = base.match(/^(.*?)\s*(?:\((.*?)\)|-\s*(.*?)|:\s*(.*?)|(?:\b(Registration|Login|Link|Server \d+|Phase \d+|Notice|List|Form)\b))$/i);
+                if (match && (match[2] || match[3] || match[4] || match[5])) {
+                  base = match[1].trim();
+                  type = (match[2] || match[3] || match[4] || match[5]).trim();
+                  if (type.toLowerCase() === 'link') type = 'Click Here';
+                }
+              }
+            }
+
+            if (!grouped[base]) grouped[base] = [];
+            grouped[base].push({ type, url: item.url, originalLabel: item.label });
+          }
+
+          const singleItems = [];
+          const multiItems = [];
+          const resultItems = [];
+          for (const [base, items] of Object.entries(grouped)) {
+            const hasResultType = items.some(i => i.type.toLowerCase().includes('result') || i.type.toLowerCase().includes('cutoff') || i.type.toLowerCase().includes('cut off'));
+            if (hasResultType || base.toLowerCase().includes('result') || base.toLowerCase().includes('cutoff')) {
+               resultItems.push({ base, items });
+            } else if (items.length === 1 && items[0].type === 'Click Here') {
+              singleItems.push({ base, items });
+            } else {
+              multiItems.push({ base, items });
+            }
+          }
+
+          const allTypes = Array.from(new Set(multiItems.flatMap(x => x.items.map(i => i.type))));
+
+          return (
+            <>
+              {multiItems.length > 0 && (
+                <table className="sr-table sr-links-table" style={{ marginBottom: '16px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ backgroundColor: '#008000', color: '#fff', padding: '8px', textAlign: 'center', width: '40%' }}>Zone / Region Name</th>
+                      {allTypes.map((t, idx) => (
+                        <th key={idx} style={{ backgroundColor: '#008000', color: '#fff', padding: '8px', textAlign: 'center' }}>Check {t}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {multiItems.map((item, idx) => (
+                      <tr key={idx}>
+                        <td style={{ textAlign: 'center', fontWeight: '600', padding: '8px 12px' }}>{item.base}</td>
+                        {allTypes.map((t, tidx) => {
+                          const linkItem = item.items.find(i => i.type === t);
+                          if (linkItem) {
+                            const isValidUrl = typeof linkItem.url === 'string' && linkItem.url.startsWith('http');
+                            return (
+                              <td key={tidx} style={{ textAlign: 'center', padding: '8px 12px' }}>
+                                {isValidUrl ? (
+                                  <a href={linkItem.url} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>{t}</a>
+                                ) : (
+                                  <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{t}</span>
+                                )}
+                              </td>
+                            );
+                          }
+                          return <td key={tidx} style={{ textAlign: 'center', color: '#d32f2f', fontWeight: 'bold', padding: '8px 12px' }}>Soon</td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {singleItems.length > 0 && (
+                <table className="sr-table sr-links-table">
+                  <tbody>
+                    <tr>
+                      <td colSpan={2} className="sr-table-heading">
+                        Some Useful Important Links
                       </td>
                     </tr>
-                  );
-                });
-              })()}
-            </tbody>
-          </table>
-        )}
+                    {singleItems.map((item, idx) => {
+                      const linkItem = item.items[0];
+                      const isValidUrl = typeof linkItem.url === 'string' && linkItem.url.startsWith('http');
+                      const isApplyLink = linkItem.originalLabel.toLowerCase().includes('apply');
+                      
+                      return (
+                        <tr key={idx}>
+                          <td style={{ textAlign: 'center', width: '60%', fontWeight: '600', padding: '8px 12px' }}>{item.base}</td>
+                          <td style={{ textAlign: 'center', padding: '8px 12px' }}>
+                            {isValidUrl ? (
+                              <>
+                                <a href={linkItem.url} target="_blank" rel="noopener noreferrer" style={{ color: '#0000ff', fontWeight: 'bold' }}>
+                                  Click Here
+                                </a>
+                                {isApplyLink && introStart && (
+                                  <div style={{ fontSize: '0.82rem', color: '#b91c1c', marginTop: '2px', fontWeight: 'bold' }}>
+                                    Link Activate On {introStart}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                                {linkItem.originalLabel.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </>
+          );
+        })()}
 
         {/* Important Questions Section (Sarkari Result Visual Q&A Table) */}
         {!hasFaqSection && (
