@@ -108,38 +108,49 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
     let trMatch;
     while ((trMatch = trRegex.exec(html)) !== null) {
       const rowHtml = trMatch[1];
-      const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if (aMatch) {
-        const href = aMatch[1].trim();
-        const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
+      const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
+      if (aMatches.length > 0) {
         const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
         const cellMatches = [];
         let cMatch;
         while ((cMatch = cellRegex.exec(rowHtml)) !== null) {
           cellMatches.push(cMatch);
         }
-        let label = cellMatches.length >= 2 ? cellMatches[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : aText;
-        if (!label) label = aText || 'Important Link';
+        
+        let baseLabel = cellMatches.length >= 2 ? cellMatches[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        
+        for (const aMatch of aMatches) {
+          const href = aMatch[1].trim();
+          const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
+          
+          let label = baseLabel;
+          if (!label) {
+            label = aText || 'Important Link';
+          } else if (aMatches.length > 1 && aText) {
+            // Append the link's text if there are multiple links in this row to differentiate them
+            label = `${baseLabel} (${aText})`;
+          }
 
-        const kl = label.toLowerCase();
-        const hl = href.toLowerCase();
+          const kl = label.toLowerCase();
+          const hl = href.toLowerCase();
 
-        if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
-          continue;
-        }
+          if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
+            continue;
+          }
 
-        if (!links[label]) {
-          links[label] = href;
-        }
+          if (!links[label]) {
+            links[label] = href;
+          }
 
-        if (!applyUrl && (kl.includes('apply') || kl.includes('registration') || kl.includes('online form') || kl.includes('otr') || kl.includes('candidate') || hl.includes('apply') || hl.includes('registration') || hl.includes('/otr'))) {
-          applyUrl = href;
-        }
-        if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('notice') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
-          notificationUrl = href;
-        }
-        if (!officialUrl && (kl.includes('website') || kl.includes('portal') || (kl.includes('official') && !kl.includes('notif')))) {
-          officialUrl = href;
+          if (!applyUrl && (kl.includes('apply') || kl.includes('registration') || kl.includes('online form') || kl.includes('otr') || kl.includes('candidate') || hl.includes('apply') || hl.includes('registration') || hl.includes('/otr'))) {
+            applyUrl = href;
+          }
+          if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('notice') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
+            notificationUrl = href;
+          }
+          if (!officialUrl && (kl.includes('website') || kl.includes('portal') || (kl.includes('official') && !kl.includes('notif')))) {
+            officialUrl = href;
+          }
         }
       }
     }

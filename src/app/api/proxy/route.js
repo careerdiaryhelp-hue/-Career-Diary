@@ -49,6 +49,7 @@ export async function GET(request) {
     // Fallback if blocked
     if (!html || html.length < 500) {
       const publicProxies = [
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
         `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
         `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
       ];

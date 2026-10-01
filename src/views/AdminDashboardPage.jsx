@@ -2433,34 +2433,46 @@ export default function AdminDashboardPage({
     const links = {};
     for (const trm of trMatches) {
       const rowHtml = trm[1];
-      const aMatch = rowHtml.match(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if (aMatch) {
-        let href = aMatch[1];
-        const aText = aMatch[2].replace(/<[^>]+>/g, '').trim();
+      const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
+      if (aMatches.length > 0) {
         const cells = [...rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)];
-        let label = cells.length >= 2 ? cells[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : aText;
-        label = cleanStr(label);
-        const ll = label.toLowerCase();
-        let hl = href.toLowerCase();
-        if (
-          !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
-          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('android app') && !ll.includes('mobile app') &&
-          (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari'))
-        ) {
-          if (
-            ll.includes('career diary') ||
-            ll.includes('careerdiary') ||
-            ll.includes('sarkari result') ||
-            hl.includes('sarkariresult') ||
-            hl.includes('resultbharat') ||
-            hl.includes('rojgarresult') ||
-            hl.includes('bigbooster')
-          ) {
-            if (!hl.endsWith('.pdf') && !hl.endsWith('.jpg') && !hl.endsWith('.png') && !hl.endsWith('.jpeg')) {
-              href = 'https://careerdiary.in/';
-            }
+        let baseLabel = cells.length >= 2 ? cells[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        baseLabel = cleanStr(baseLabel);
+
+        for (const aMatch of aMatches) {
+          let href = aMatch[1].trim();
+          const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
+          
+          let label = baseLabel;
+          if (!label) {
+            label = aText || 'Important Link';
+          } else if (aMatches.length > 1 && aText) {
+            label = `${baseLabel} (${aText})`;
           }
-          if (label && href && !links[label]) links[label] = href;
+          label = cleanStr(label);
+
+          const ll = label.toLowerCase();
+          let hl = href.toLowerCase();
+          if (
+            !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
+            !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('android app') && !ll.includes('mobile app') &&
+            (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari') || ll.includes('cutoff') || ll.includes('cut off') || ll.includes('c utoff') || ll.includes('score'))
+          ) {
+            if (
+              ll.includes('career diary') ||
+              ll.includes('careerdiary') ||
+              ll.includes('sarkari result') ||
+              hl.includes('sarkariresult') ||
+              hl.includes('resultbharat') ||
+              hl.includes('rojgarresult') ||
+              hl.includes('bigbooster')
+            ) {
+              if (!hl.endsWith('.pdf') && !hl.endsWith('.jpg') && !hl.endsWith('.png') && !hl.endsWith('.jpeg')) {
+                href = 'https://careerdiary.in/';
+              }
+            }
+            if (label && href && !links[label]) links[label] = href;
+          }
         }
       }
     }
@@ -2707,35 +2719,65 @@ export default function AdminDashboardPage({
           </tr>
         </thead>
         <tbody>
-          ${Object.entries(links).map(([k, u]) => {
-            let finalUrl = u;
-            const kl = k.toLowerCase();
-            const ul = (u || '').toLowerCase();
-            if (kl.includes('telegram')) {
-              finalUrl = CAREER_DIARY_TELEGRAM;
-            } else if (kl.includes('whatsapp')) {
-              finalUrl = CAREER_DIARY_WHATSAPP;
-            } else if (
-              kl.includes('career diary') ||
-              kl.includes('careerdiary') ||
-              kl.includes('sarkari result') ||
-              ul.includes('sarkariresult') ||
-              ul.includes('resultbharat') ||
-              ul.includes('rojgarresult') ||
-              ul.includes('bigbooster')
-            ) {
-              if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
-                finalUrl = 'https://careerdiary.in/';
+          ${(() => {
+            const grouped = {};
+            for (const [k, u] of Object.entries(links)) {
+              let finalUrl = u;
+              const kl = k.toLowerCase();
+              const ul = (u || '').toLowerCase();
+              if (kl.includes('telegram')) {
+                finalUrl = CAREER_DIARY_TELEGRAM;
+              } else if (kl.includes('whatsapp')) {
+                finalUrl = CAREER_DIARY_WHATSAPP;
+              } else if (
+                kl.includes('career diary') ||
+                kl.includes('careerdiary') ||
+                kl.includes('sarkari result') ||
+                ul.includes('sarkariresult') ||
+                ul.includes('resultbharat') ||
+                ul.includes('rojgarresult') ||
+                ul.includes('bigbooster')
+              ) {
+                if (!ul.endsWith('.pdf') && !ul.endsWith('.jpg') && !ul.endsWith('.png') && !ul.endsWith('.jpeg')) {
+                  finalUrl = 'https://careerdiary.in/';
+                }
+              }
+
+              const match = k.match(/^(.*?)\s*\((.*?)\)$/);
+              if (match) {
+                const base = match[1].trim();
+                const type = match[2].trim();
+                if (!grouped[base]) grouped[base] = [];
+                grouped[base].push({ type, url: finalUrl, originalKey: k });
+              } else {
+                if (!grouped[k]) grouped[k] = [];
+                grouped[k].push({ type: 'Click Here', url: finalUrl, originalKey: k });
               }
             }
-            return `
-            <tr>
-              <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${k}</td>
-              <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-                <a href="${finalUrl}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
-              </td>
-            </tr>
-          `;}).join('')}
+
+            return Object.entries(grouped).map(([base, items]) => {
+              if (items.length === 1 && items[0].type === 'Click Here') {
+                return `
+                <tr>
+                  <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${base}</td>
+                  <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
+                    <a href="${items[0].url}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+                  </td>
+                </tr>
+                `;
+              } else {
+                const linksHtml = items.map(item => `<a href="${item.url}" target="_blank" style="color: #0000ff; font-weight: bold; display: inline-block; margin: 0 4px;">${item.type}</a>`).join(' | ');
+                return `
+                <tr>
+                  <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">${base}</td>
+                  <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
+                    ${linksHtml}
+                  </td>
+                </tr>
+                `;
+              }
+            }).join('');
+          })()}
           <tr>
             <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Check Career Diary</td>
             <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">

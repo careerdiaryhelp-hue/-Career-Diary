@@ -45,21 +45,25 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 1. Process primary posts first (user edits & Firestore take highest priority)
   for (const post of primaryPosts) {
     if (!post || !post.title) continue;
-    const safeId = post.id || post.slug || cleanJobId(post.title);
-    const normTitle = normalize(post.title);
+    const safeId = post._safeId || post.id || post.slug || cleanJobId(post.title);
+    const normTitle = post._normTitle || normalize(post.title);
 
     seenIds.add(safeId);
     if (normTitle) seenTitles.add(normTitle);
     
-    let _ts = 0;
-    if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
-    if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
-    if (isNaN(_ts)) _ts = 0;
+    let _ts = post._ts;
+    if (_ts === undefined) {
+      if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
+      if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
+      if (isNaN(_ts)) _ts = 0;
+    }
 
     merged.push({
       ...post,
       id: safeId,
       slug: safeId,
+      _safeId: safeId,
+      _normTitle: normTitle,
       _ts
     });
   }
@@ -67,8 +71,8 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 2. Add fallback posts if not already present by ID or normalized title
   for (const post of fallbackPosts) {
     if (!post || !post.title) continue;
-    const safeId = post.id || post.slug || cleanJobId(post.title);
-    const normTitle = normalize(post.title);
+    const safeId = post._safeId || post.id || post.slug || cleanJobId(post.title);
+    const normTitle = post._normTitle || normalize(post.title);
 
     if (seenIds.has(safeId) || (normTitle && seenTitles.has(normTitle))) {
       continue;
@@ -84,7 +88,7 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
       if (isNaN(_ts)) _ts = 0;
     }
 
-    merged.push({ ...post, _ts });
+    merged.push({ ...post, _ts, _safeId: safeId, _normTitle: normTitle });
   }
 
   // 3. Sort merged posts using precomputed timestamps
@@ -130,7 +134,8 @@ function buildSlugMap(jobs) {
     if (j.id) map.set(String(j.id).toLowerCase().trim(), j);
     if (j.slug) map.set(String(j.slug).toLowerCase().trim(), j);
     if (j.title) {
-      map.set(cleanJobId(j.title), j);
+      const clean = j._safeId || cleanJobId(j.title);
+      map.set(clean, j);
       map.set(String(j.title).toLowerCase().trim(), j);
     }
   }

@@ -15,21 +15,27 @@ export default function AdSenseBanner({
   const adRef = useRef(null);
   const wrapperRef = useRef(null);
   const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (pathname && pathname.startsWith('/admin')) {
     return null;
   }
 
   const isLocalhost =
+    isMounted &&
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname.includes('192.168.'));
 
   useEffect(() => {
-    if (isLocalhost) return;
+    if (!isMounted || isLocalhost) return;
 
-    let isMounted = true;
+    let isMountedEffect = true;
     const el = adRef.current;
     if (!el) return;
 
@@ -38,7 +44,7 @@ export default function AdSenseBanner({
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
           const status = el.getAttribute('data-ad-status');
-          if (isMounted) {
+          if (isMountedEffect) {
             setAdStatus(status || 'filled');
           }
         }
@@ -51,7 +57,7 @@ export default function AdSenseBanner({
 
     // Execute AdSense push
     const tryPush = () => {
-      if (!isMounted || !adRef.current) return;
+      if (!isMountedEffect || !adRef.current) return;
       if (el.getAttribute('data-adsbygoogle-status')) return;
       if (el.dataset.adPushDone) return; // Prevent multiple pushes
 
@@ -96,13 +102,13 @@ export default function AdSenseBanner({
     }
 
     return () => {
-      isMounted = false;
+      isMountedEffect = false;
       observer.disconnect();
       if (intersectionObserver) {
         intersectionObserver.disconnect();
       }
     };
-  }, [slot, layout, layoutKey, isLocalhost]);
+  }, [slot, layout, layoutKey, isLocalhost, isMounted]);
 
   if (isLocalhost) {
     return (

@@ -739,38 +739,77 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                 </td>
               </tr>
 
-              {finalImportantLinks.map((item, idx) => {
-                const isValidUrl = typeof item.url === 'string' && item.url.startsWith('http');
-                const isApplyLink = item.label.toLowerCase().includes('apply');
-                return (
-                  <tr key={idx}>
-                    <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{item.label}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      {isValidUrl ? (
-                        <>
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#0000ff', fontWeight: 'bold' }}
-                          >
-                            Click Here
-                          </a>
-                          {isApplyLink && introStart && (
-                            <div style={{ fontSize: '0.82rem', color: '#b91c1c', marginTop: '2px', fontWeight: 'bold' }}>
-                              Link Activate On {introStart}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                          {item.label.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {(() => {
+                const grouped = {};
+                for (const item of finalImportantLinks) {
+                  const match = item.label.match(/^(.*?)\s*\((.*?)\)$/);
+                  if (match) {
+                    const base = match[1].trim();
+                    const type = match[2].trim();
+                    if (!grouped[base]) grouped[base] = [];
+                    grouped[base].push({ type, url: item.url, originalLabel: item.label });
+                  } else {
+                    if (!grouped[item.label]) grouped[item.label] = [];
+                    grouped[item.label].push({ type: 'Click Here', url: item.url, originalLabel: item.label });
+                  }
+                }
+                
+                return Object.entries(grouped).map(([base, items], idx) => {
+                  const isValidUrl = typeof items[0].url === 'string' && items[0].url.startsWith('http');
+                  const isApplyLink = items.some(i => i.originalLabel.toLowerCase().includes('apply'));
+                  
+                  return (
+                    <tr key={idx}>
+                      <td style={{ textAlign: 'center', width: '60%', fontWeight: '600' }}>{base}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        {items.length === 1 && items[0].type === 'Click Here' ? (
+                          isValidUrl ? (
+                            <>
+                              <a
+                                href={items[0].url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#0000ff', fontWeight: 'bold' }}
+                              >
+                                Click Here
+                              </a>
+                              {isApplyLink && introStart && (
+                                <div style={{ fontSize: '0.82rem', color: '#b91c1c', marginTop: '2px', fontWeight: 'bold' }}>
+                                  Link Activate On {introStart}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                              {items[0].originalLabel.toLowerCase().includes('notif') ? 'Notification Coming Soon' : 'Link Active Soon'}
+                            </span>
+                          )
+                        ) : (
+                          items.map((item, i) => (
+                            <span key={i}>
+                              {typeof item.url === 'string' && item.url.startsWith('http') ? (
+                                <a
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#0000ff', fontWeight: 'bold', display: 'inline-block', margin: '0 4px' }}
+                                >
+                                  {item.type}
+                                </a>
+                              ) : (
+                                <span style={{ color: '#d32f2f', fontWeight: 'bold', display: 'inline-block', margin: '0 4px' }}>
+                                  {item.type}
+                                </span>
+                              )}
+                              {i < items.length - 1 && ' | '}
+                            </span>
+                          ))
+                        )}
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         )}
