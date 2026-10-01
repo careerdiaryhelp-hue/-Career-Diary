@@ -18,55 +18,41 @@ export const autoLinkSocialChannels = (html) => {
   if (!html || typeof html !== 'string') return '';
   let out = html;
 
-  // 1. Convert any table row containing Telegram where the second/link cell has "Click Here"
-  // or plain text or competitor link into an active clickable Career Diary Telegram link.
-  out = out.replace(
-    /(<tr[^>]*>\s*<(?:td|th)[^>]*>(?:(?!<\/(?:td|th)>)[\s\S])*?telegram(?:(?!<\/(?:td|th)>)[\s\S])*?<\/(?:td|th)>\s*<(?:td|th)[^>]*>)([\s\S]*?)(<\/(?:td|th)>)/gi,
-    (match, p1, p2, p3) => {
-      return `${p1}<a href="${CAREER_DIARY_TELEGRAM}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a>${p3}`;
-    }
-  );
-
-  // 2. Convert any table row containing WhatsApp where the second/link cell has "Click Here"
-  // or plain text or competitor link into an active clickable Career Diary WhatsApp link.
-  out = out.replace(
-    /(<tr[^>]*>\s*<(?:td|th)[^>]*>(?:(?!<\/(?:td|th)>)[\s\S])*?whatsapp(?:(?!<\/(?:td|th)>)[\s\S])*?<\/(?:td|th)>\s*<(?:td|th)[^>]*>)([\s\S]*?)(<\/(?:td|th)>)/gi,
-    (match, p1, p2, p3) => {
-      return `${p1}<a href="${CAREER_DIARY_WHATSAPP}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a>${p3}`;
-    }
-  );
-
-  // 3. If an Important Links table exists (SOME IMPORTANT LINKS, Some Useful Important Links, IMPORTANT LINKS)
-  // and is missing Telegram or WhatsApp rows, automatically insert them before </tbody> or </table>
-  out = out.replace(
-    /(<table[^>]*>[\s\S]*?(?:SOME IMPORTANT LINKS|Some Useful Important Links|IMPORTANT LINKS)[\s\S]*?)(<\/tbody>|<\/table>)/gi,
-    (match, tableBody, closing) => {
-      let extraRows = '';
-      if (!tableBody.toLowerCase().includes('telegram')) {
-        extraRows += `
-    <tr>
-      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Join Telegram Channel</td>
-      <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-        <a href="${CAREER_DIARY_TELEGRAM}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a>
-      </td>
-    </tr>`;
-      }
-      if (!tableBody.toLowerCase().includes('whatsapp')) {
-        extraRows += `
-    <tr>
-      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Join WhatsApp Channel</td>
-      <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-        <a href="${CAREER_DIARY_WHATSAPP}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a>
-      </td>
-    </tr>`;
-      }
-      return `${tableBody}${extraRows}\n  ${closing}`;
-    }
-  );
-
-  // 4. Redirect any competitor Telegram/WhatsApp hyperlinks to official Career Diary channels
+  // 1. Redirect any competitor Telegram/WhatsApp hyperlinks to official Career Diary channels
   out = out.replace(/href=["']https?:\/\/(?:t\.me|telegram\.me)\/(?!careerdiary)[^"']*["']/gi, `href="${CAREER_DIARY_TELEGRAM}"`);
   out = out.replace(/href=["']https?:\/\/(?:chat\.)?whatsapp\.com\/(?!channel\/0029Va4bvoj6rsQxfA1Pzx2u)[^"']*["']/gi, `href="${CAREER_DIARY_WHATSAPP}"`);
+
+  // 2. Find Important Links table and append social links if missing
+  const importantKeywords = ['SOME IMPORTANT LINKS', 'Some Useful Important Links', 'IMPORTANT LINKS'];
+  let foundKeyword = importantKeywords.find(k => out.includes(k));
+  
+  if (foundKeyword) {
+    const tableStartIndex = out.lastIndexOf('<table', out.indexOf(foundKeyword));
+    if (tableStartIndex !== -1) {
+      const tableEndIndex = out.indexOf('</table>', tableStartIndex);
+      if (tableEndIndex !== -1) {
+        const tableContent = out.substring(tableStartIndex, tableEndIndex);
+        const lowerTable = tableContent.toLowerCase();
+        let extraRows = '';
+        
+        if (!lowerTable.includes('telegram')) {
+          extraRows += `\n<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Join Telegram Channel</td><td style="border: 1px solid #000; padding: 8px 12px; text-align: center;"><a href="${CAREER_DIARY_TELEGRAM}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a></td></tr>`;
+        }
+        if (!lowerTable.includes('whatsapp')) {
+          extraRows += `\n<tr><td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;">Join WhatsApp Channel</td><td style="border: 1px solid #000; padding: 8px 12px; text-align: center;"><a href="${CAREER_DIARY_WHATSAPP}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold;">Click Here</a></td></tr>`;
+        }
+        
+        if (extraRows) {
+          const tbodyEndIndex = out.lastIndexOf('</tbody>', tableEndIndex);
+          if (tbodyEndIndex !== -1 && tbodyEndIndex > tableStartIndex) {
+            out = out.substring(0, tbodyEndIndex) + extraRows + '\n' + out.substring(tbodyEndIndex);
+          } else {
+            out = out.substring(0, tableEndIndex) + extraRows + '\n' + out.substring(tableEndIndex);
+          }
+        }
+      }
+    }
+  }
 
   return out;
 };

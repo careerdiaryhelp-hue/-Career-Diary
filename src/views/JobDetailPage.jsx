@@ -249,11 +249,10 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     });
 
     const competitorRegex = /sarkari\s*result(?:\.com(?:\.cm)?)?|result\s*bharat(?:\.com)?|rojgar\s*result(?:\.com)?|bigbooster(?:\.in)?/gi;
-    out = out.replace(/(>|^)([^<]+)(<|$)/g, (match, prefix, text, suffix) => {
+    out = out.replace(/>([^<]+)</g, (match, text) => {
       if (!competitorRegex.test(text)) return match;
       competitorRegex.lastIndex = 0;
-      const cleanedText = text.replace(competitorRegex, 'Career Diary');
-      return prefix + cleanedText + suffix;
+      return '>' + text.replace(competitorRegex, 'Career Diary') + '<';
     });
 
     return out;
