@@ -3339,6 +3339,7 @@ export default function AdminDashboardPage({
             `https://api.allorigins.win/raw?url=${encodeURIComponent(directWpUrl)}`,
             `https://corsproxy.io/?url=${encodeURIComponent(directWpUrl)}`,
             `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directWpUrl)}`,
+            `https://thingproxy.freeboard.io/fetch/${directWpUrl}`,
           ];
 
           for (const pUrl of publicProxies) {
@@ -3365,6 +3366,7 @@ export default function AdminDashboardPage({
           `https://corsproxy.io/?url=${encodeURIComponent(raw)}`,
           `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`,
           `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(raw)}`,
+          `https://thingproxy.freeboard.io/fetch/${raw}`,
         ];
 
         for (const pUrl of publicHtmlProxies) {

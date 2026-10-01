@@ -248,12 +248,11 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return 'href="https://careerdiary.in/"';
     });
 
-    out = out.replace(/(>|^)([^<]*?)(<|$)/g, (match, prefix, text, suffix) => {
-      const cleanedText = text
-        .replace(/sarkari\s*result(?:\.com(?:\.cm)?)?/gi, 'Career Diary')
-        .replace(/result\s*bharat(?:\.com)?/gi, 'Career Diary')
-        .replace(/rojgar\s*result(?:\.com)?/gi, 'Career Diary')
-        .replace(/bigbooster(?:\.in)?/gi, 'Career Diary');
+    const competitorRegex = /sarkari\s*result(?:\.com(?:\.cm)?)?|result\s*bharat(?:\.com)?|rojgar\s*result(?:\.com)?|bigbooster(?:\.in)?/gi;
+    out = out.replace(/(>|^)([^<]+)(<|$)/g, (match, prefix, text, suffix) => {
+      if (!competitorRegex.test(text)) return match;
+      competitorRegex.lastIndex = 0;
+      const cleanedText = text.replace(competitorRegex, 'Career Diary');
       return prefix + cleanedText + suffix;
     });
 
