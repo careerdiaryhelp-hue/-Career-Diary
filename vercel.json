@@ -11,5 +11,24 @@
       "destination": "https://careerdiary.in/:path*",
       "permanent": true
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Cloudflare-CDN-Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/([^/.]+)",
+      "destination": "/api/ssr?path=$1"
+    },
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
   ]
 }

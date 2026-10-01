@@ -1,4 +1,3 @@
-'use client';
 import React, { useState } from 'react';
 import { X, Calculator, RotateCw } from 'lucide-react';
 

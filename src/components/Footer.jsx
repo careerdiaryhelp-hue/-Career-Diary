@@ -1,8 +1,15 @@
-'use client';
 import React from 'react';
-import Link from 'next/link';
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
+  const handleLink = (e, path) => {
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      if (onNavigate) {
+        onNavigate(path);
+      }
+    }
+  };
+
   return (
     <footer className="main-footer">
       <div className="container footer-content">
@@ -47,22 +54,22 @@ export default function Footer() {
         <div className="footer-col">
           <h4>Quick Categories</h4>
           <ul>
-            <li><Link href="/latest-jobs">Latest Jobs 2025-2026</Link></li>
-            <li><Link href="/admit-card">Hall Ticket &amp; Admit Cards</Link></li>
-            <li><Link href="/results">Results &amp; Answer Key</Link></li>
-            <li><Link href="/syllabus">Exam Pattern &amp; Syllabus</Link></li>
-            <li><Link href="/admission">Admission Notifications</Link></li>
+            <li><a href="/latest-jobs" onClick={(e) => handleLink(e, '/latest-jobs')}>Latest Jobs 2025-2026</a></li>
+            <li><a href="/admit-card" onClick={(e) => handleLink(e, '/admit-card')}>Hall Ticket &amp; Admit Cards</a></li>
+            <li><a href="/results" onClick={(e) => handleLink(e, '/results')}>Results &amp; Answer Key</a></li>
+            <li><a href="/syllabus" onClick={(e) => handleLink(e, '/syllabus')}>Exam Pattern &amp; Syllabus</a></li>
+            <li><a href="/admission" onClick={(e) => handleLink(e, '/admission')}>Admission Notifications</a></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4>Popular Exam Alerts</h4>
           <ul>
-            <li><Link href="/?q=SSC">SSC CGL / CHSL / MTS</Link></li>
-            <li><Link href="/?q=RRB">RRB NTPC &amp; Group D</Link></li>
-            <li><Link href="/?q=Bihar+Police">Bihar Police &amp; BSSC</Link></li>
-            <li><Link href="/?q=BPSC">BPSC TRE 4.0 &amp; 71st CCE</Link></li>
-            <li><Link href="/?q=Bank">IBPS / SBI PO &amp; Clerk</Link></li>
+            <li><a href="/ssc" onClick={(e) => handleLink(e, '/ssc')}>SSC CGL / CHSL / MTS</a></li>
+            <li><a href="/rrb" onClick={(e) => handleLink(e, '/rrb')}>RRB NTPC &amp; Group D</a></li>
+            <li><a href="/bihar-police" onClick={(e) => handleLink(e, '/bihar-police')}>Bihar Police &amp; BSSC</a></li>
+            <li><a href="/bpsc" onClick={(e) => handleLink(e, '/bpsc')}>BPSC TRE 4.0 &amp; 71st CCE</a></li>
+            <li><a href="/bank" onClick={(e) => handleLink(e, '/bank')}>IBPS / SBI PO &amp; Clerk</a></li>
           </ul>
         </div>
       </div>
@@ -71,9 +78,9 @@ export default function Footer() {
         <div className="container footer-bottom-inner">
           <p>© 2025-2026 <strong>Career Diary Help</strong>. All Rights Reserved. Not affiliated with any official government organization.</p>
           <div className="footer-bottom-links">
-            <Link href="/privacy-policy">Privacy Policy</Link> |&nbsp;
-            <Link href="/terms">Terms &amp; Conditions</Link> |&nbsp;
-            <Link href="/contact-us">Contact Us</Link>
+            <a href="/privacy-policy" onClick={(e) => handleLink(e, '/privacy-policy')}>Privacy Policy</a> |&nbsp;
+            <a href="/terms-conditions" onClick={(e) => handleLink(e, '/terms-conditions')}>Terms &amp; Conditions</a> |&nbsp;
+            <a href="/contact-us" onClick={(e) => handleLink(e, '/contact-us')}>Contact Us</a>
           </div>
         </div>
       </div>

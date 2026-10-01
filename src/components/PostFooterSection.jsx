@@ -1,4 +1,3 @@
-'use client';
 import React from 'react';
 import { InPostAd, MultiplexAd } from './AdSenseBanner';
 import AutoFAQSection from './AutoFAQSection';

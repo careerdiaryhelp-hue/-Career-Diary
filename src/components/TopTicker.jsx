@@ -1,4 +1,3 @@
-'use client';
 import React, { useMemo } from 'react';
 import { Bell, Newspaper, ExternalLink } from 'lucide-react';
 import { getJobUrl } from '../data/categoryHelpers.js';

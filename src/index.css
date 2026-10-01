@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 :root {
   --primary-color: #d81b60;
   --primary-hover: #c2185b;
@@ -928,36 +930,24 @@ body.dark-mode .job-item-link:hover {
 /* Status Badges inside Job Items */
 .badge-tag {
   display: inline-block;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 1.5px 5.5px;
+  padding: 2px 6px;
   border-radius: 4px;
-  margin-left: 5px;
-  vertical-align: baseline;
+  margin-left: 6px;
+  vertical-align: middle;
   text-transform: uppercase;
-  color: #ffffff !important;
-  line-height: 1.2;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-}
-sup {
-  vertical-align: super;
-  font-size: 85%;
-  line-height: 0;
-}
-sup .badge-tag {
-  vertical-align: baseline;
-  padding: 1.5px 5px;
+  color: #ffffff;
 }
 .tag-new,
 .tag-red {
-  background-color: #f87171 !important; /* Soft Red / Salmon matching live site */
+  background-color: #dc2626 !important;
   color: #ffffff !important;
-  animation: blink 2s infinite ease-in-out;
+  animation: blink 1.8s infinite;
 }
 .tag-out,
 .tag-green {
-  background-color: #16a34a !important; /* Emerald / Green matching live site */
+  background-color: #16a34a !important; /* Green */
   color: #ffffff !important;
 }
 .tag-active,
@@ -968,7 +958,7 @@ sup .badge-tag {
 .tag-amber,
 .tag-orange,
 .tag-last {
-  background-color: #ea580c !important; /* Amber / Orange */
+  background-color: #d97706 !important; /* Amber / Orange */
   color: #ffffff !important;
 }
 .tag-purple {
@@ -2080,12 +2070,12 @@ sup .badge-tag {
 }
 
 .badge-tag {
-  font-size: 0.68rem;
-  margin-left: 4px;
+  font-size: 0.65rem;
+  margin-left: 2px;
 }
 sup .badge-tag {
-  vertical-align: baseline;
-  padding: 1.5px 5px;
+  vertical-align: super;
+  padding: 1px 4px;
 }
 
 /* Dedicated Single Category Page Layout */

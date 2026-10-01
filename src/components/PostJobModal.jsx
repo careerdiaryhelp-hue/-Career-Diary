@@ -1,4 +1,3 @@
-'use client';
 import React, { useState } from 'react';
 import { X, Edit3, UploadCloud } from 'lucide-react';
 
