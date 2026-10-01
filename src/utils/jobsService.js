@@ -112,6 +112,7 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 // Pre-sort static jobs once at module load to avoid re-sorting 3MB of jobs on every request
 const SORTED_STATIC_JOBS = mergeAndSortJobs([], INITIAL_JOBS);
 const SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
+const STATIC_SLUG_MAP = buildSlugMap(SORTED_STATIC_JOBS);
 
 // In-memory cache for Cloudflare Worker instances
 let _cachedFullJobs = null;
@@ -155,7 +156,7 @@ export async function getAllJobsFullServer() {
 
   _cachedFullJobs = SORTED_STATIC_JOBS;
   _cachedSummaryJobs = SORTED_STATIC_SUMMARY;
-  _slugMap = buildSlugMap(_cachedFullJobs);
+  _slugMap = STATIC_SLUG_MAP;
   _cachedTime = now;
   return _cachedFullJobs;
 }
@@ -167,42 +168,44 @@ export async function getAllJobsServer() {
   if (_cachedSummaryJobs && (now - _cachedTime < 60000)) {
     return _cachedSummaryJobs;
   }
-  await getAllJobsFullServer();
+  try {
+    await getAllJobsFullServer();
+  } catch (e) {}
   return _cachedSummaryJobs || SORTED_STATIC_SUMMARY;
 }
 
-// Ultra-fast O(1) slug lookup for single job post pages (<0.01ms CPU time)
+// Fast helper for detail pages to get only the top N recent jobs for related posts sidebar (3KB payload!)
+export async function getTopRecentJobsSummary(limit = 15) {
+  const jobs = await getAllJobsServer();
+  return jobs.slice(0, limit);
+}
+
+// Ultra-fast O(1) slug lookup for single job post pages (<0.005ms CPU time)
 export async function getJobBySlug(slug) {
   if (!slug) return null;
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
-  // Ensure cache is loaded
-  await getAllJobsFullServer();
+  // 1. FAST PATH: Check static bundled posts FIRST (instant memory lookup, 0.005ms, ZERO network)
+  let match = STATIC_SLUG_MAP.get(clean) || STATIC_SLUG_MAP.get(lowerSlug);
+  if (match) return match;
 
+  // 2. Check dynamic Firestore cache if already loaded
   if (_slugMap) {
-    const match = _slugMap.get(clean) || _slugMap.get(lowerSlug);
+    match = _slugMap.get(clean) || _slugMap.get(lowerSlug);
     if (match) return match;
   }
 
-  // Fallback 1: Look in full list
-  const fullJobs = _cachedFullJobs || SORTED_STATIC_JOBS;
-  let match = fullJobs.find(j => {
-    if (!j) return false;
-    const jId = String(j.id || '').toLowerCase().trim();
-    const jSlug = String(j.slug || '').toLowerCase().trim();
-    return (jId && (jId.includes(clean) || clean.includes(jId))) ||
-           (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
-  });
-  if (match) return match;
-
-  // Fallback 2: Check Firestore REST directly if post was newly published
+  // 3. Fallback: If not in static posts, load Firestore
   try {
+    await getAllJobsFullServer();
+    if (_slugMap) {
+      match = _slugMap.get(clean) || _slugMap.get(lowerSlug);
+      if (match) return match;
+    }
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc) return directDoc;
-  } catch (e) {
-    // ignore
-  }
+  } catch (e) {}
 
   return null;
 }

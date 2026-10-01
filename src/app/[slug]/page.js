@@ -1,4 +1,4 @@
-import { getJobBySlug, getAllJobsServer } from '../../utils/jobsService';
+import { getJobBySlug, getTopRecentJobsSummary } from '../../utils/jobsService';
 import JobDetailWrapper from '../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
 
@@ -44,7 +44,7 @@ export default async function SlugRoute({ params }) {
   const { slug } = await params;
   const [job, allJobs] = await Promise.all([
     getJobBySlug(slug),
-    getAllJobsServer(),
+    getTopRecentJobsSummary(15),
   ]);
 
   if (!job) {

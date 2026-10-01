@@ -154,7 +154,9 @@ const FIRESTORE_LIST_FIELDS = [
 ];
 const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&');
 
-// Fetch all jobs once (fast REST fetch with field masking and quota backoff)
+let pendingFetch = null;
+
+// Fetch all jobs once (fast REST fetch with field masking, quota backoff, and concurrency lock)
 export async function fetchFirestoreJobsOnce() {
   const now = Date.now();
   if (now < memoryCache.quotaExceededUntil) {
@@ -163,64 +165,52 @@ export async function fetchFirestoreJobsOnce() {
   if (memoryCache.data && (now - memoryCache.timestamp < 60000)) {
     return memoryCache.data;
   }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs?pageSize=100&${MASK_QUERY}`;
-    const res = await fetch(url, { signal: controller.signal, next: { revalidate: 60 } });
-    clearTimeout(timeoutId);
-
-    if (res.status === 429 || res.status === 403) {
-      // Firebase daily quota reached - back off for 30 minutes to prevent resource limits error
-      memoryCache.quotaExceededUntil = now + (30 * 60 * 1000);
-      console.warn('Firebase Firestore quota exceeded (429). Using static data fallback for 30m.');
-      return memoryCache.data || [];
-    }
-
-    if (!res.ok) {
-      throw new Error(`Firestore REST error: ${res.statusText}`);
-    }
-    const data = await res.json();
-    if (!data.documents || !Array.isArray(data.documents)) {
-      return memoryCache.data || [];
-    }
-    const parsed = data.documents.map(parseFirestoreDoc);
-    memoryCache = {
-      data: parsed,
-      timestamp: Date.now(),
-      quotaExceededUntil: 0,
-    };
-    return parsed;
-  } catch (e) {
-    const isRateLimit = String(e.message || '').includes('429') || String(e.message || '').includes('Too Many');
-    if (isRateLimit) {
-      memoryCache.quotaExceededUntil = now + (30 * 60 * 1000);
-    }
-    if (memoryCache.data) return memoryCache.data;
-    try {
-      if (typeof window !== 'undefined') {
-        const db = await getClientDb();
-        if (db) {
-          const { collection, getDocs } = await import('firebase/firestore');
-          const jobsCol = collection(db, 'jobs');
-          const snapshot = await getDocs(jobsCol);
-          const posts = [];
-          snapshot.forEach((d) => {
-            posts.push({ id: d.id, ...d.data() });
-          });
-          memoryCache = {
-            data: posts,
-            timestamp: Date.now(),
-          };
-          return posts;
-        }
-      }
-    } catch (innerErr) {
-      console.warn('Client SDK fetch also failed:', innerErr);
-    }
-    return [];
+  if (pendingFetch) {
+    return pendingFetch;
   }
+
+  pendingFetch = (async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs?pageSize=100&${MASK_QUERY}`;
+      const res = await fetch(url, { signal: controller.signal, next: { revalidate: 60 } });
+      clearTimeout(timeoutId);
+
+      if (res.status === 429 || res.status === 403) {
+        // Firebase daily quota reached - back off for 30 minutes to prevent resource limits error
+        memoryCache.quotaExceededUntil = Date.now() + (30 * 60 * 1000);
+        console.warn('Firebase Firestore quota exceeded (429). Using static data fallback for 30m.');
+        return memoryCache.data || [];
+      }
+
+      if (!res.ok) {
+        throw new Error(`Firestore REST error: ${res.statusText}`);
+      }
+      const data = await res.json();
+      if (!data.documents || !Array.isArray(data.documents)) {
+        return memoryCache.data || [];
+      }
+      const parsed = data.documents.map(parseFirestoreDoc);
+      memoryCache = {
+        data: parsed,
+        timestamp: Date.now(),
+        quotaExceededUntil: 0,
+      };
+      return parsed;
+    } catch (e) {
+      const isRateLimit = String(e.message || '').includes('429') || String(e.message || '').includes('Too Many');
+      if (isRateLimit) {
+        memoryCache.quotaExceededUntil = Date.now() + (30 * 60 * 1000);
+      }
+      if (memoryCache.data) return memoryCache.data;
+      return [];
+    } finally {
+      pendingFetch = null;
+    }
+  })();
+
+  return pendingFetch;
 }
 
 // Fetch a single document by ID from Firestore (includes full HTML content, ~30KB)
