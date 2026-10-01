@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function AdSenseBanner({
   slot = '1202822135',
@@ -10,9 +11,14 @@ export default function AdSenseBanner({
   style = {},
   label = 'ADVERTISEMENT'
 }) {
+  const pathname = usePathname();
   const adRef = useRef(null);
   const wrapperRef = useRef(null);
   const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
+
+  if (pathname && pathname.startsWith('/admin')) {
+    return null;
+  }
 
   const isLocalhost =
     typeof window !== 'undefined' &&
