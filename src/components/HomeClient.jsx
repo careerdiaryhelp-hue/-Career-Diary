@@ -27,18 +27,7 @@ import {
   getJobUrl
 } from '../data/categoryHelpers';
 
-const DEFAULT_BREAKING_NEWS = [
-  { id: '1', category: 'Result', message: 'Bihar BTSC Staff Nurse 2026 Result Out', link: '/bihar-btsc-staff-nurse-2026-result-out', priority: 1, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '2', category: 'Result', message: 'Railway RRB Group D CEN 09/2025 Level 1 Answer Key 2026 Out 🔥', link: '/railway-rrb-group-d-cen-09-2025-level-1-answer-key-2026-out', priority: 1, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '3', category: 'Admit Card', message: 'Railway RRB Group D Level 1 Admit Card 2026 Out', link: '/railway-rrb-group-d-level-1-admit-card-2026-out', priority: 1, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '4', category: 'Admit Card', message: 'Railway RRB ALP Recruitment 2026 CEN 01/2026 Application Status Out', link: '/railway-rrb-alp-recruitment-2026-cen-01-2026-application-status-o', priority: 1, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '5', category: 'Latest Job', message: 'India Post GDS Recruitment 2026', link: '/india-post-gds-recruitment-2026', priority: 0, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '6', category: 'Latest Job', message: 'BPSSC Bihar Police Range Officer of Forest Recruitment 2026 Online Start', link: '/bpssc-bihar-police-range-officer-of-forest-recruitment-2026-online-form-16-post', priority: 0, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '7', category: 'Admission', message: 'Simultala Awasiya Vidyalaya (SAV) Bihar Class 6 Admission Form 2026 Extended', link: '/simultala-awasiya-vidyalaya-sav-bihar-class-6-admission-form-2026', priority: 2, expiry: '12/31/2026, 11:59:00 PM', active: true },
-  { id: '8', category: 'Admission', message: 'BSEB Bihar D.El.Ed Common Application Form 2026', link: '/bseb-bihar-d-el-ed-common-application-form-2026', priority: 2, expiry: '12/31/2026, 11:59:00 PM', active: true },
-];
-
-export default function HomeClient({ initialJobs = [] }) {
+export default function HomeClient({ initialJobs = [], initialNews = [] }) {
   const [jobs, setJobs] = useState(() => {
     if (initialJobs && initialJobs.length > 0) return initialJobs;
     return [];
@@ -49,7 +38,7 @@ export default function HomeClient({ initialJobs = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [breakingNews, setBreakingNews] = useState(DEFAULT_BREAKING_NEWS);
+  const [breakingNews, setBreakingNews] = useState(initialNews);
 
   // Subscribing to Firestore directly from client causes massive quota usage (429 errors).
   // We now rely purely on `initialJobs` passed from Next.js server component which caches the data.

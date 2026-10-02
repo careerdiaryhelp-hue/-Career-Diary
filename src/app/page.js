@@ -1,4 +1,5 @@
 import { getAllJobsServer } from '../utils/jobsService';
+import { fetchBreakingNewsServer } from '../firebase';
 import HomeClient from '../components/HomeClient';
 
 export const revalidate = 60; // Revalidate every 60 seconds (ISR)
@@ -13,6 +14,7 @@ export const metadata = {
 
 export default async function HomePage() {
   const initialJobs = await getAllJobsServer();
+  const initialNews = await fetchBreakingNewsServer();
 
-  return <HomeClient initialJobs={initialJobs} />;
+  return <HomeClient initialJobs={initialJobs} initialNews={initialNews} />;
 }

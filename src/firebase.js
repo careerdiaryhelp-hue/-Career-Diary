@@ -76,6 +76,47 @@ export async function deleteJobFromFirestore(jobId) {
   }
 }
 
+// Real-time listener for Firestore Breaking News Settings (client-side only)
+export function subscribeToBreakingNews(onUpdate) {
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  getClientDb().then(async (db) => {
+    if (!db) return;
+    try {
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const newsRef = doc(db, 'settings', 'breakingNews');
+      unsubscribe = onSnapshot(newsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          onUpdate(data.items || []);
+        } else {
+          onUpdate([]);
+        }
+      });
+    } catch (e) {
+      console.warn('Could not subscribe to breaking news:', e);
+    }
+  });
+  return () => {
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
+// Save breaking news array to Firestore (client-side only)
+export async function saveBreakingNewsToFirestore(items) {
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, setDoc } = await import('firebase/firestore');
+    const newsRef = doc(db, 'settings', 'breakingNews');
+    await setDoc(newsRef, { items, updatedAt: new Date().toISOString() }, { merge: true });
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving breaking news:', error);
+    return { success: false, error };
+  }
+}
+
 // Real-time listener for Firestore jobs (client-side only)
 export function subscribeToFirestoreJobs(onUpdate, onError) {
   if (typeof window === 'undefined') return () => {};
@@ -252,6 +293,25 @@ export async function fetchFirestoreJobById(docId) {
     return parseFirestoreDoc(data);
   } catch (e) {
     return null;
+  }
+}
+
+// Fetch Breaking News array from Firestore REST (server-side support)
+export async function fetchBreakingNewsServer() {
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/settings/breakingNews`,
+      { 
+        next: { revalidate: 60 },
+        cf: { cacheTtl: 60, cacheEverything: true }
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const doc = parseFirestoreDoc(data);
+    return doc.items || [];
+  } catch (e) {
+    return [];
   }
 }
 

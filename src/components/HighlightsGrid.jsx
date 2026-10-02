@@ -10,29 +10,14 @@ export default function HighlightsGrid({
     if (!jobs || jobs.length === 0) return [];
 
     const featuredJobs = jobs.filter(j => Boolean(j.isFeatured || j.isTopCard || j.featured));
-    let selectedJobs = [];
-
-    if (featuredJobs.length > 0) {
-      const sorted = [...featuredJobs].sort((a, b) => {
-        const orderA = a.featuredOrder ?? a.displayOrder ?? 999;
-        const orderB = b.featuredOrder ?? b.displayOrder ?? 999;
-        return orderA - orderB;
-      });
-      selectedJobs = sorted.slice(0, 7);
-    } else {
-      selectedJobs = jobs.slice(0, 7);
-    }
     
-    // Inject "Top Online Form" precisely at index 3 (4th box) to match 8-box design
-    const finalGrid = [...selectedJobs];
-    finalGrid.splice(3, 0, {
-      id: 'top-online-forms',
-      title: 'Top Online Form\nJob List 2026',
-      link: '/top-online-form-list',
-      isStatic: true
+    const sorted = [...featuredJobs].sort((a, b) => {
+      const orderA = a.featuredOrder ?? a.displayOrder ?? 999;
+      const orderB = b.featuredOrder ?? b.displayOrder ?? 999;
+      return orderA - orderB;
     });
     
-    return finalGrid;
+    return sorted.slice(0, 8);
   }, [jobs]);
   
   const boxColors = [

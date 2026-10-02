@@ -8,14 +8,11 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
   const tickerJobs = useMemo(() => {
     if (!jobs || jobs.length === 0) return [];
     const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
-    if (explicitLatest.length > 0) {
-      return [...explicitLatest].sort((a, b) => {
-        const orderA = a.latestOrder ?? a.displayOrder ?? 999;
-        const orderB = b.latestOrder ?? b.displayOrder ?? 999;
-        return orderA - orderB;
-      });
-    }
-    return jobs.filter(j => !j.title?.toLowerCase().includes('top online form')).slice(0, 10);
+    return [...explicitLatest].sort((a, b) => {
+      const orderA = a.latestOrder ?? a.displayOrder ?? 999;
+      const orderB = b.latestOrder ?? b.displayOrder ?? 999;
+      return orderA - orderB;
+    });
   }, [jobs]);
 
   // Active breaking news: combine manually added items + jobs with isBreakingNews flag
