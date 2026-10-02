@@ -2,7 +2,7 @@ import { getJobBySlug, getTopRecentJobsSummary } from '../../utils/jobsService';
 import JobDetailWrapper from '../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 60;
+export const revalidate = 600;
 
 
 export async function generateMetadata({ params }) {
