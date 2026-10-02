@@ -6667,7 +6667,9 @@ export default function AdminDashboardPage({
   // ── Render Latest Updates Section ─────────────────────────
   const renderLatestUpdates = () => {
     const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
-    const latestList = explicitLatest;
+    const latestList = explicitLatest.length > 0
+      ? explicitLatest
+      : jobs.filter(j => j.status !== 'Draft' && !j.title?.toLowerCase().includes('top online form')).slice(0, 10);
     const sortedLatest = [...latestList].sort((a, b) => (a.latestOrder ?? 0) - (b.latestOrder ?? 0));
 
     const searchFilteredJobs = jobs.filter(j => {
@@ -6959,7 +6961,9 @@ export default function AdminDashboardPage({
   // ── Render Featured Posts Section ──────────────────────────
   const renderFeaturedPosts = () => {
     const explicitFeatured = jobs.filter(j => Boolean(j.isFeatured || j.isTopCard || j.featured));
-    const featuredList = explicitFeatured;
+    const featuredList = explicitFeatured.length > 0
+      ? explicitFeatured
+      : jobs.filter(j => j.status !== 'Draft').slice(0, 8);
     
     // Exact 8 color themes matching HighlightsGrid.jsx
     const slotColors = [
