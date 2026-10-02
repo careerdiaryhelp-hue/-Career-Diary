@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { autoLinkSocialChannels, extractQuickUrlsFromContent, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
+import { getJobUrl } from '../data/categoryHelpers.js';
 import {
   LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
   LogOut, Eye, BookmarkCheck, ChevronRight, X, Save, UploadCloud, Edit3,
