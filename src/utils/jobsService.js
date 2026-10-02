@@ -122,7 +122,16 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 }
 
 import { precomputedSummary } from '../data/precomputed_summary.js';
-import { postsMap } from '../data/posts/manifest.js';
+
+let FULL_JOBS_CACHE = null;
+
+async function getFullJobs() {
+  if (!FULL_JOBS_CACHE) {
+    const { precomputedFullJobs } = await import('../data/precomputed_full.js');
+    FULL_JOBS_CACHE = precomputedFullJobs;
+  }
+  return FULL_JOBS_CACHE;
+}
 
 // Server-side fetching helper for Next.js SSR / Static Generation
 // Returns lightweight precomputed summary instantly (<0.01ms CPU time, 0 network, no Cloudflare 1102 errors)
@@ -136,45 +145,38 @@ export async function getTopRecentJobsSummary(limit = 15) {
   return jobs.slice(0, limit);
 }
 
-// Ultra-fast chunked getter for a single job (loads ONLY ~3-6KB chunk instead of 1MB monolithic file)
 export async function getJobBySlug(slug) {
   if (!slug) return null;
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
-  // 1. Direct O(1) match via chunked loader map
-  let loader = postsMap[clean] || postsMap[lowerSlug];
+  const fullJobs = await getFullJobs();
 
-  // 2. If not found directly, look up in summary array (lightweight, instant)
-  if (!loader) {
-    const summaryMatch = precomputedSummary.find(j => {
-      if (!j) return false;
-      const jId = String(j.id || '').toLowerCase().trim();
-      const jSlug = String(j.slug || '').toLowerCase().trim();
-      const jTitle = String(j.title || '').toLowerCase().trim();
-      return (
-        jId === clean || jSlug === clean || jTitle === lowerSlug ||
-        (clean.length > 5 && (jId.includes(clean) || clean.includes(jId)))
-      );
-    });
+  let match = fullJobs.find(j => {
+    if (!j) return false;
+    if (j._safeId === clean) return true;
+    const jId = String(j.id || '').toLowerCase().trim();
+    if (jId === clean || jId === lowerSlug) return true;
+    const jSlug = String(j.slug || '').toLowerCase().trim();
+    if (jSlug === clean || jSlug === lowerSlug) return true;
+    const jTitle = String(j.title || '').toLowerCase().trim();
+    if (jTitle === lowerSlug) return true;
+    return false;
+  });
 
-    if (summaryMatch) {
-      const matchKey = cleanJobId(summaryMatch.slug || summaryMatch.id);
-      loader = postsMap[matchKey] || postsMap[summaryMatch.id];
-    }
-  }
+  if (match) return match;
 
-  // Load the isolated 3-6KB chunk (takes <0.05ms CPU time in Cloudflare Workers)
-  if (loader) {
-    try {
-      const mod = await loader();
-      return mod.job || mod.default || null;
-    } catch (e) {
-      console.error('Error loading chunked post:', e);
-    }
-  }
+  // Fallback 1: Fuzzy match in full list (for older mismatched URLs)
+  match = fullJobs.find(j => {
+    if (!j) return false;
+    const jId = String(j.id || '').toLowerCase().trim();
+    const jSlug = String(j.slug || '').toLowerCase().trim();
+    return (jId && (jId.includes(clean) || clean.includes(jId))) ||
+           (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
+  });
+  if (match) return match;
 
-  // Fallback: If not in static posts, query Firestore for dynamic new posts
+  // Fallback 2: If not in static posts, query Firestore for dynamic new posts
   try {
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc) return directDoc;
