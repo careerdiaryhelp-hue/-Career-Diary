@@ -126,9 +126,10 @@ export function subscribeToFirestoreJobs(onUpdate, onError) {
   getClientDb().then(async (db) => {
     if (!db || !active) return;
     try {
-      const { collection, onSnapshot } = await import('firebase/firestore');
+      const { collection, onSnapshot, query, orderBy, limit } = await import('firebase/firestore');
       const jobsCol = collection(db, 'jobs');
-      unsubscribe = onSnapshot(jobsCol, (snapshot) => {
+      const q = query(jobsCol, orderBy('updatedAt', 'desc'), limit(150));
+      unsubscribe = onSnapshot(q, (snapshot) => {
         const posts = [];
         snapshot.forEach((d) => {
           posts.push(d.data());
