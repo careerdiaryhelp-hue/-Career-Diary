@@ -2,6 +2,9 @@ import { getJobBySlug, getTopRecentJobsSummary } from '../../../utils/jobsServic
 import JobDetailWrapper from '../../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
 
+export const revalidate = 60;
+
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const job = await getJobBySlug(slug);

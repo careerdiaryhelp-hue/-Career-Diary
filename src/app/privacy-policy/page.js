@@ -3,6 +3,9 @@ import Header from '../../components/Header';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Privacy Policy | Career Diary',
   description: 'Privacy Policy of Career Diary (careerdiary.in). Learn how we handle cookies, Google AdSense, analytics, and your privacy.',

@@ -1,6 +1,9 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Answer Key 2026 – Download Official Keys & Response Sheets | Career Diary',
   description: 'Download official exam answer keys, response sheets and challenge links for various recruitment tests on Career Diary.',

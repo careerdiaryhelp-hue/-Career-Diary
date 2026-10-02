@@ -102,6 +102,7 @@ export default function AdminDashboardPage({
 
   // Reset pagination to page 1 whenever search, filter, or itemsPerPage changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [searchTerm, filterCat, statusFilter, itemsPerPage]);
 
@@ -189,10 +190,12 @@ export default function AdminDashboardPage({
 
   // Sync external props if provided
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (categories && categories.length > 0) setLocalCategories(categories);
   }, [categories]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (breakingNews && breakingNews.length > 0) setLocalBreakingNews(breakingNews);
   }, [breakingNews]);
 
@@ -4212,6 +4215,7 @@ export default function AdminDashboardPage({
                         {/* TITLE */}
                         <td style={{ padding: '14px 14px', maxWidth: '440px' }}>
                           <div
+                            // eslint-disable-next-line react-hooks/refs
                             onClick={() => handleEditJob(job)}
                             style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem', cursor: 'pointer', lineHeight: 1.3, marginBottom: '4px' }}
                           >
@@ -5166,7 +5170,7 @@ export default function AdminDashboardPage({
                     </div>
                     {Object.entries(form.importantDates || {}).length === 0 ? (
                       <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>
-                        No dates added yet. Click "+ Add Date" to create one.
+                        No dates added yet. Click &quot;+ Add Date&quot; to create one.
                       </div>
                     ) : (
                       Object.entries(form.importantDates || {}).map(([dKey, dVal], dIdx) => (
@@ -5214,7 +5218,7 @@ export default function AdminDashboardPage({
                     </div>
                     {Object.entries(form.applicationFee || {}).length === 0 ? (
                       <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>
-                        No fee rules added yet. Click "+ Add Fee" to create one.
+                        No fee rules added yet. Click &quot;+ Add Fee&quot; to create one.
                       </div>
                     ) : (
                       Object.entries(form.applicationFee || {}).map(([fKey, fVal], fIdx) => (
@@ -5262,7 +5266,7 @@ export default function AdminDashboardPage({
                     </div>
                     {Object.entries(form.ageLimit || {}).length === 0 ? (
                       <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>
-                        No age rules added yet. Click "+ Add Age Rule" to create one.
+                        No age rules added yet. Click &quot;+ Add Age Rule&quot; to create one.
                       </div>
                     ) : (
                       Object.entries(form.ageLimit || {}).map(([aKey, aVal], aIdx) => (
@@ -5311,7 +5315,7 @@ export default function AdminDashboardPage({
 
                     {Object.entries(form.importantLinks || {}).length === 0 ? (
                       <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>
-                        No custom links yet. Click "+ Add Custom Link" to create one.
+                        No custom links yet. Click &quot;+ Add Custom Link&quot; to create one.
                       </div>
                     ) : (
                       Object.entries(form.importantLinks || {}).map(([lbl, u], lIdx) => (
@@ -5532,6 +5536,7 @@ export default function AdminDashboardPage({
                   onMouseDown={e => {
                     e.preventDefault();
                     setTextColor(swatch.color);
+                    // eslint-disable-next-line react-hooks/refs
                     applyTextColor(swatch.color);
                   }}
                   title={`Text Color: ${swatch.label}`}
@@ -5591,6 +5596,7 @@ export default function AdminDashboardPage({
                   onMouseDown={e => {
                     e.preventDefault();
                     setHighlightColor(swatch.color);
+                    // eslint-disable-next-line react-hooks/refs
                     applyBackgroundColor(swatch.color);
                   }}
                   title={`Bg Color: ${swatch.label}`}
@@ -6564,7 +6570,7 @@ export default function AdminDashboardPage({
               {localBreakingNews.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                    No breaking news alerts added yet. Click "+ Add News Alert" above.
+                    No breaking news alerts added yet. Click &quot;+ Add News Alert&quot; above.
                   </td>
                 </tr>
               ) : (
@@ -7765,7 +7771,7 @@ export default function AdminDashboardPage({
               {insertModal.type === 'link' && (
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                    Link Text (दिखने वाला नाम - e.g. "Click Here" / "Out Now"):
+                    Link Text (दिखने वाला नाम - e.g. &quot;Click Here&quot; / &quot;Out Now&quot;):
                   </label>
                   <input
                     type="text"

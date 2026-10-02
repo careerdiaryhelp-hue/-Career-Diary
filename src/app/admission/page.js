@@ -1,6 +1,9 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Admissions 2026 – University, College & School Entrance Forms | Career Diary',
   description: 'Find all latest admission notices, entrance examination dates, counselling schedules and online application forms on Career Diary.',

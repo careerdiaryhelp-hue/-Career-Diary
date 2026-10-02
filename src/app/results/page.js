@@ -1,6 +1,9 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Results 2026 – Check Exam Results, Scorecards & Merit Lists | Career Diary',
   description: 'Check latest exam results, merit lists, scorecard download links and category-wise cut off marks on Career Diary.',

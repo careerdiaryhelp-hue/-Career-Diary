@@ -1,6 +1,9 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Exam Syllabus 2026 – Download Detailed Exam Pattern & Syllabus PDF | Career Diary',
   description: 'Download subject-wise exam syllabus, marking scheme and selection process PDF for all upcoming exams on Career Diary.',

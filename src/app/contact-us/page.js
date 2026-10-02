@@ -3,6 +3,9 @@ import Header from '../../components/Header';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Contact Us | Career Diary',
   description: 'Contact Career Diary for queries, feedback, advertising, or support.',

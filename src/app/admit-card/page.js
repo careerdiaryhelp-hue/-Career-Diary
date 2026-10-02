@@ -1,6 +1,9 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
+export const revalidate = 60;
+
+
 export const metadata = {
   title: 'Admit Cards 2026 – Download Hall Ticket, Call Letter & Exam Date | Career Diary',
   description: 'Download latest examination admit cards, hall tickets and check exam center city intimation slips on Career Diary.',
