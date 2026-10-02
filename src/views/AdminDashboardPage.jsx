@@ -3668,6 +3668,41 @@ export default function AdminDashboardPage({
     };
 
     const res = await onAddJob(newJob);
+
+    // Sync "Show in Breaking News" checkbox with Breaking News list & Firestore
+    if (newJob.isBreakingNews) {
+      const postNewsItem = {
+        id: `job-news-${newJob.id}`,
+        jobId: newJob.id,
+        category: newJob.category || 'Latest Job',
+        message: newJob.title,
+        link: getJobUrl(newJob),
+        priority: 1,
+        expiry: newJob.lastDate || '',
+        active: true,
+        isFromPost: true,
+        source: 'Post Checkbox'
+      };
+      setLocalBreakingNews(prev => {
+        const filtered = (prev || []).filter(n => n.id !== postNewsItem.id && n.jobId !== newJob.id);
+        const updated = [postNewsItem, ...filtered];
+        if (onSaveBreakingNews) onSaveBreakingNews(updated);
+        try {
+          localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      });
+    } else {
+      setLocalBreakingNews(prev => {
+        const updated = (prev || []).filter(n => n.id !== `job-news-${newJob.id}` && n.jobId !== newJob.id);
+        if (onSaveBreakingNews) onSaveBreakingNews(updated);
+        try {
+          localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      });
+    }
+
     if (res && res.success === false) {
       showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
     } else if (isUpdate) {
@@ -6209,20 +6244,35 @@ export default function AdminDashboardPage({
     setNewsForm({ category: 'Latest Job', message: '', link: '', expiry: '', priority: 0, active: true });
   };
 
-  const handleToggleNewsStatus = (newsId) => {
-    const updated = localBreakingNews.map(n => n.id === newsId ? { ...n, active: !n.active } : n);
+  const handleToggleNewsStatus = (newsId, jobId) => {
+    const targetJobId = jobId || (newsId && newsId.startsWith('job-news-') ? newsId.replace('job-news-', '') : null);
+    if (targetJobId) {
+      const targetJob = jobs.find(j => j.id === targetJobId);
+      if (targetJob) {
+        const updatedJob = { ...targetJob, isBreakingNews: !targetJob.isBreakingNews, updatedAt: new Date().toISOString() };
+        onAddJob(updatedJob);
+      }
+    }
+    const updated = localBreakingNews.map(n => (n.id === newsId || n.jobId === targetJobId) ? { ...n, active: !n.active } : n);
     setLocalBreakingNews(updated);
     if (onSaveBreakingNews) onSaveBreakingNews(updated);
     try {
       localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
     } catch (err) {}
-    const changed = updated.find(n => n.id === newsId);
-    showToast(`Alert is now ${changed?.active ? 'Active' : 'Inactive'}`, 'info');
+    showToast(`Alert status updated`, 'info');
   };
 
-  const handleDeleteNews = (newsId) => {
+  const handleDeleteNews = (newsId, jobId) => {
     if (window.confirm('Are you sure you want to delete this breaking news alert?')) {
-      const updated = localBreakingNews.filter(n => n.id !== newsId);
+      const targetJobId = jobId || (newsId && newsId.startsWith('job-news-') ? newsId.replace('job-news-', '') : null);
+      if (targetJobId) {
+        const targetJob = jobs.find(j => j.id === targetJobId);
+        if (targetJob) {
+          const updatedJob = { ...targetJob, isBreakingNews: false, updatedAt: new Date().toISOString() };
+          onAddJob(updatedJob);
+        }
+      }
+      const updated = localBreakingNews.filter(n => n.id !== newsId && n.jobId !== targetJobId);
       setLocalBreakingNews(updated);
       if (onSaveBreakingNews) onSaveBreakingNews(updated);
       try {
@@ -6233,7 +6283,31 @@ export default function AdminDashboardPage({
   };
 
   const renderBreakingNews = () => {
-    const activeNewsList = localBreakingNews.filter(n => n.active !== false);
+    // Combine manual breaking news alerts with any posts that have isBreakingNews: true
+    const jobsWithBreaking = (jobs || [])
+      .filter(j => Boolean(j.isBreakingNews) && j.status !== 'Draft')
+      .map(j => ({
+        id: `job-news-${j.id}`,
+        jobId: j.id,
+        category: j.category || 'Latest Job',
+        message: j.title,
+        link: getJobUrl(j),
+        priority: 1,
+        expiry: j.lastDate || '',
+        active: true,
+        isFromPost: true,
+        source: 'Post Checkbox'
+      }));
+
+    const manualIds = new Set(localBreakingNews.map(n => n.jobId || n.id));
+    const manualMessages = new Set(localBreakingNews.map(n => (n.message || '').trim().toLowerCase()));
+
+    const missingFromManual = jobsWithBreaking.filter(
+      item => !manualIds.has(item.jobId) && !manualIds.has(item.id) && !manualMessages.has(item.message.trim().toLowerCase())
+    );
+
+    const allBreakingNews = [...missingFromManual, ...localBreakingNews];
+    const activeNewsList = allBreakingNews.filter(n => n.active !== false);
 
     return (
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -6539,15 +6613,15 @@ export default function AdminDashboardPage({
               </tr>
             </thead>
             <tbody>
-              {localBreakingNews.length === 0 ? (
+              {allBreakingNews.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                    No breaking news alerts added yet. Click &quot;+ Add News Alert&quot; above.
+                    No breaking news alerts added yet. Click &quot;+ Add News Alert&quot; above or check &quot;Show in Breaking News&quot; when publishing a post.
                   </td>
                 </tr>
               ) : (
-                localBreakingNews.map((item, idx) => (
-                  <tr key={item.id || idx} style={{ borderBottom: idx === localBreakingNews.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                allBreakingNews.map((item, idx) => (
+                  <tr key={item.id || idx} style={{ borderBottom: idx === allBreakingNews.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
                     {/* INDEX */}
                     <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 700, color: '#94a3b8', fontSize: '0.85rem', verticalAlign: 'middle' }}>
                       {idx + 1}
@@ -6555,7 +6629,7 @@ export default function AdminDashboardPage({
                     {/* Status Toggle Switch */}
                     <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
                       <div
-                        onClick={() => handleToggleNewsStatus(item.id)}
+                        onClick={() => handleToggleNewsStatus(item.id, item.jobId)}
                         title={`Click to ${item.active ? 'Deactivate' : 'Activate'}`}
                         style={{
                           width: '36px',
@@ -6599,6 +6673,20 @@ export default function AdminDashboardPage({
                             {item.category}
                           </span>
                         )}
+                        {item.isFromPost && (
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: '#fee2e2',
+                            color: '#b91c1c',
+                            border: '1px solid #fca5a5',
+                            textTransform: 'uppercase'
+                          }}>
+                            From Post
+                          </span>
+                        )}
                         <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.4 }}>
                           {item.message}
                         </span>
@@ -6629,8 +6717,16 @@ export default function AdminDashboardPage({
                     <td style={{ padding: '16px 20px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                         <button
-                          onClick={() => handleEditNews(item)}
-                          title="Edit News Alert"
+                          onClick={() => {
+                            if (item.isFromPost && item.jobId) {
+                              const job = jobs.find(j => j.id === item.jobId);
+                              if (job) handleDirectEditPost(job);
+                              else handleEditNews(item);
+                            } else {
+                              handleEditNews(item);
+                            }
+                          }}
+                          title={item.isFromPost ? "Edit Linked Post" : "Edit News Alert"}
                           style={{
                             width: '32px', height: '32px', borderRadius: '6px',
                             background: '#eff6ff', border: '1px solid #bfdbfe',
@@ -6641,7 +6737,7 @@ export default function AdminDashboardPage({
                           <Edit3 size={15} />
                         </button>
                         <button
-                          onClick={() => handleDeleteNews(item.id)}
+                          onClick={() => handleDeleteNews(item.id, item.jobId)}
                           title="Delete News Alert"
                           style={{
                             width: '32px', height: '32px', borderRadius: '6px',
