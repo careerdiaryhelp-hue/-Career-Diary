@@ -2711,146 +2711,20 @@ export default function AdminDashboardPage({
                 }
               }
 
-              let base = k.trim();
-              let type = 'Click Here';
-              const lowerLabel = k.toLowerCase();
-
-              if ((lowerLabel.includes('result') || lowerLabel.includes('cutoff') || lowerLabel.includes('cut off')) && !lowerLabel.includes('answer')) {
-                const resMatch = k.match(/^(.*?)\s*(Result|Cut\s*off)\s*(.*?)$/i);
-                if (resMatch) {
-                  let potentialBase = resMatch[1].trim();
-                  let coreType = resMatch[2].trim();
-                  let suffix = resMatch[3].trim();
-                  potentialBase = potentialBase.replace(/^(Download|Check)(?:\s+|$)/i, '').trim();
-                  if (potentialBase === '') {
-                    base = 'Download Result / Cutoff';
-                    type = coreType;
-                  } else {
-                    base = potentialBase;
-                    type = coreType;
-                  }
-                  if (suffix) {
-                     const sufMatch = suffix.match(/^[-:()]*\s*(.*?)\s*[-:()]*$/);
-                     if (sufMatch) type += ' ' + sufMatch[1];
-                     else type += ' ' + suffix;
-                  }
-                } else {
-                  base = 'Download Result / Cutoff';
-                  type = 'Result';
-                }
+              const match = k.match(/^(.*?)\s*(?:\((.*?)\)|-\s*(.*?)|:\s*(.*?))$/);
+              if (match && (match[2] || match[3] || match[4])) {
+                const base = match[1].trim();
+                let type = (match[2] || match[3] || match[4]).trim();
+                if (type.toLowerCase() === 'link') type = 'Click Here';
+                if (!grouped[base]) grouped[base] = [];
+                grouped[base].push({ type, url: finalUrl, originalKey: k });
               } else {
-                const KNOWN_BASES = ['Apply Online', 'Download Admit Card', 'Download Answer Key', 'Download Syllabus', 'Download Notification', 'Official Website'];
-                let matchedBase = null;
-                for (const kb of KNOWN_BASES) {
-                  if (lowerLabel.startsWith(kb.toLowerCase())) {
-                    matchedBase = kb;
-                    let remainder = base.substring(kb.length).trim();
-                    remainder = remainder.replace(/^[-:()]+\s*|\s*[-:()]+$/g, '').trim();
-                    if (remainder) {
-                      type = remainder;
-                    }
-                    break;
-                  }
-                }
-                
-                if (matchedBase) {
-                  base = matchedBase;
-                  if (type.toLowerCase() === 'link' || type.toLowerCase() === 'form' || type.toLowerCase() === 'online') {
-                    type = 'Click Here';
-                  }
-                } else {
-                  const match = base.match(/^(.*?)\s*(?:\((.*?)\)|-\s*(.*?)|:\s*(.*?)|(?:\b(Registration|Login|Link|Server \d+|Phase \d+|Notice|List|Form)\b))$/i);
-                  if (match && (match[2] || match[3] || match[4] || match[5])) {
-                    base = match[1].trim();
-                    type = (match[2] || match[3] || match[4] || match[5]).trim();
-                    if (type.toLowerCase() === 'link') type = 'Click Here';
-                  }
-                }
-              }
-
-              if (!grouped[base]) grouped[base] = [];
-              grouped[base].push({ type, url: finalUrl, originalKey: k });
-            }
-
-            const singleItems = [];
-            const multiItems = [];
-            const resultItems = [];
-            for (const [base, items] of Object.entries(grouped)) {
-              const hasResultType = items.some(i => i.type.toLowerCase().includes('result') || i.type.toLowerCase().includes('cutoff') || i.type.toLowerCase().includes('cut off'));
-              if (hasResultType || base.toLowerCase().includes('result') || base.toLowerCase().includes('cutoff')) {
-                 resultItems.push({ base, items });
-              }
-              else if (items.length === 1 && items[0].type === 'Click Here') {
-                singleItems.push({ base, items });
-              } else {
-                multiItems.push({ base, items });
+                if (!grouped[k]) grouped[k] = [];
+                grouped[k].push({ type: 'Click Here', url: finalUrl, originalKey: k });
               }
             }
 
-            let finalHtml = '';
-            
-            if (resultItems.length > 0) {
-              const allResultTypes = Array.from(new Set(resultItems.flatMap(x => x.items.map(i => i.type))));
-              if (allResultTypes.length === 1) {
-                 if (allResultTypes[0].toLowerCase().includes('result')) allResultTypes.push('Cutoff');
-                 else if (allResultTypes[0].toLowerCase().includes('cutoff')) allResultTypes.unshift('Result');
-                 else allResultTypes.push('Cutoff');
-              }
-              finalHtml += `
-              <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
-                <thead>
-                  <tr style="background-color: #008000; color: #fff;">
-                    <th style="padding: 8px; text-align: center; width: 40%;">Exam Name / Links</th>
-                    ${allResultTypes.map(t => `<th style="padding: 8px; text-align: center;">${t}</th>`).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${resultItems.map(item => `
-                    <tr>
-                      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; text-align: center;">${item.base}</td>
-                      ${allResultTypes.map(t => {
-                        const link = item.items.find(i => i.type === t);
-                        if (link) {
-                          return `<td style="border: 1px solid #000; padding: 8px 12px; text-align: center;"><a href="${link.url}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a></td>`;
-                        }
-                        return `<td style="border: 1px solid #000; padding: 8px 12px; text-align: center; color: #d32f2f; font-weight: bold;">Soon</td>`;
-                      }).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>`;
-            }
-
-            // Render multiItems (grouped by Zone/Region) as a separate table
-            if (multiItems.length > 0) {
-              const allTypes = Array.from(new Set(multiItems.flatMap(x => x.items.map(i => i.type))));
-              finalHtml += `
-              <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
-                <thead>
-                  <tr style="background-color: #008000; color: #fff;">
-                    <th style="padding: 8px; text-align: center;">Zone / Region Name</th>
-                    ${allTypes.map(t => `<th style="padding: 8px; text-align: center;">Check ${t}</th>`).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${multiItems.map(item => `
-                    <tr>
-                      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 40%; text-align: center;">${item.base}</td>
-                      ${allTypes.map(t => {
-                        const link = item.items.find(i => i.type === t);
-                        if (link) {
-                          return `<td style="border: 1px solid #000; padding: 8px 12px; text-align: center;"><a href="${link.url}" target="_blank" style="color: #0000ff; font-weight: bold;">${t}</a></td>`;
-                        }
-                        return `<td style="border: 1px solid #000; padding: 8px 12px; text-align: center; color: #d32f2f; font-weight: bold;">Soon</td>`;
-                      }).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>`;
-            }
-
-            // Render singleItems as a separate table
-            finalHtml += `
+            return `
             <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
               <thead>
                 <tr>
@@ -2858,14 +2732,33 @@ export default function AdminDashboardPage({
                 </tr>
               </thead>
               <tbody>
-                ${singleItems.map(item => `
-                  <tr>
-                    <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%; text-align: center;">${item.base}</td>
-                    <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
-                      <a href="${item.items[0].url}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
-                    </td>
-                  </tr>
-                `).join('')}
+                ${Object.entries(grouped).map(([base, items]) => {
+                  if (items.length === 1 && items[0].type === 'Click Here') {
+                    return `
+                    <tr>
+                      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%; text-align: center;">${base}</td>
+                      <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
+                        <a href="${items[0].url}" target="_blank" style="color: #0000ff; font-weight: bold;">Click Here</a>
+                      </td>
+                    </tr>
+                    `;
+                  } else {
+                    const linksHtml = items.map(item => {
+                      if (typeof item.url === 'string' && item.url.startsWith('http')) {
+                        return `<a href="${item.url}" target="_blank" style="color: #0000ff; font-weight: bold; display: inline-block; margin: 0 4px;">${item.type}</a>`;
+                      }
+                      return `<span style="color: #d32f2f; font-weight: bold; display: inline-block; margin: 0 4px;">${item.type}</span>`;
+                    }).join(' | ');
+                    return `
+                    <tr>
+                      <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%; text-align: center;">${base}</td>
+                      <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
+                        ${linksHtml}
+                      </td>
+                    </tr>
+                    `;
+                  }
+                }).join('')}
                 <tr>
                   <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%; text-align: center;">Check Career Diary</td>
                   <td style="border: 1px solid #000; padding: 8px 12px; text-align: center;">
@@ -2874,8 +2767,6 @@ export default function AdminDashboardPage({
                 </tr>
               </tbody>
             </table>`;
-            
-            return finalHtml;
           })() : ''}
 
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
