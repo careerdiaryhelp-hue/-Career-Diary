@@ -54,8 +54,16 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       }
     });
 
+    // Also subscribe to Firestore jobs for real-time updates when posts are added/edited in admin
+    const unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
+      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
+      }
+    });
+
     return () => {
       if (typeof unsubNews === 'function') unsubNews();
+      if (typeof unsubJobs === 'function') unsubJobs();
     };
   }, [initialJobs]);
 

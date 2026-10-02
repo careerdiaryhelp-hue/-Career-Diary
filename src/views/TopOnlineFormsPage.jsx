@@ -1,11 +1,35 @@
 'use client';
 import React, { useMemo } from 'react';
 
+import { getJobUrl } from '../data/categoryHelpers.js';
+
 export default function TopOnlineFormsPage({ jobs = [] }) {
-  // Filter only jobs that are marked as isTopForm
+  // Filter jobs marked as isTopForm, or accept already-filtered top forms
   const topForms = useMemo(() => {
-    return jobs.filter(j => Boolean(j.isTopForm) && !j.title?.toLowerCase().includes('top online form'));
+    if (!jobs || jobs.length === 0) return [];
+    const explicit = jobs.filter(j => Boolean(j.isTopForm) && !j.title?.toLowerCase().includes('top online form'));
+    if (explicit.length > 0) return explicit;
+    
+    // If all jobs in array have isTopForm or were fetched by top-forms query
+    const valid = jobs.filter(j => !j.title?.toLowerCase().includes('top online form'));
+    if (valid.length > 0) return valid;
+    
+    return [];
   }, [jobs]);
+
+  const getFormUrl = (job) => {
+    if (!job) return '/';
+    if (job.link && (job.link.startsWith('http') || job.link.startsWith('/'))) return job.link;
+    if (job.url && (job.url.startsWith('http') || job.url.startsWith('/'))) return job.url;
+
+    const rawSlug = job.slug || job.id || '';
+    if (rawSlug) {
+      const clean = rawSlug.replace(/^https?-careerdiary-in-(job-)?/, '');
+      if (clean.startsWith('http')) return clean;
+      return `/${clean}`;
+    }
+    return getJobUrl(job);
+  };
 
   const boxColors = [
     'bg-box-redorange',   // #ff3300
@@ -50,22 +74,27 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
         </div>
 
         {/* Grid of Forms */}
-        <div className="top-banners-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '30px' }}>
+        <div className="top-banners-grid" style={{ marginBottom: '30px' }}>
           {topForms.length === 0 ? (
-            <div className="empty-state" style={{ gridColumn: 'span 4' }}>No top online forms available at the moment.</div>
+            <div className="empty-state" style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: '#64748b' }}>
+              Loading top online forms...
+            </div>
           ) : (
-            topForms.map((job, index) => (
-              <a
-                key={job.id}
-                href={`/${job.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`banner-card ${boxColors[index % boxColors.length]}`}
-                style={{ textDecoration: 'none', display: 'flex' }}
-              >
-                <div className="banner-title">{job.title}</div>
-              </a>
-            ))
+            topForms.map((job, index) => {
+              const href = getFormUrl(job);
+              return (
+                <a
+                  key={job.id || job.slug || index}
+                  href={href}
+                  target={href.startsWith('http') ? '_blank' : '_self'}
+                  rel="noopener noreferrer"
+                  className={`banner-card ${boxColors[index % boxColors.length]}`}
+                  style={{ textDecoration: 'none', display: 'flex' }}
+                >
+                  <div className="banner-title">{job.title}</div>
+                </a>
+              );
+            })
           )}
         </div>
 

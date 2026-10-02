@@ -1,8 +1,6 @@
 import { getAllJobsServer } from '../../utils/jobsService';
-import TopOnlineFormsPage from '../../views/TopOnlineFormsPage';
-import Header from '../../components/Header';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import { fetchTopOnlineFormsServer } from '../../firebase';
+import TopOnlineFormsClient from '../../components/TopOnlineFormsClient';
 
 export const dynamic = 'force-static';
 
@@ -15,16 +13,16 @@ export const metadata = {
 };
 
 export default async function TopOnlineFormsRoute() {
-  const allJobs = await getAllJobsServer();
-  const jobs = allJobs.filter(j => Boolean(j.isTopForm) && !j.title?.toLowerCase().includes('top online form'));
+  const [topForms, allJobs] = await Promise.all([
+    fetchTopOnlineFormsServer(),
+    getAllJobsServer(),
+  ]);
+
   return (
-    <div className="app-root">
-      <Header />
-      <Navbar />
-      <main className="main-content">
-        <TopOnlineFormsPage jobs={jobs} />
-      </main>
-      <Footer />
-    </div>
+    <TopOnlineFormsClient
+      initialJobs={topForms}
+      fallbackJobs={allJobs}
+    />
   );
 }
+

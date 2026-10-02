@@ -305,10 +305,32 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
                               target="_blank"
                               rel="noopener noreferrer"
                             >
+                              {news.category && (
+                                <span style={{
+                                  color: news.category.toLowerCase().includes('result') ? '#16a34a' : news.category.toLowerCase().includes('admit') ? '#2563eb' : '#dc2626',
+                                  fontWeight: 800,
+                                  marginRight: '6px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  [{news.category}]
+                                </span>
+                              )}
                               <b>{news.message}</b>
                             </a>
                           ) : (
-                            <span><b>{news.message}</b></span>
+                            <span>
+                              {news.category && (
+                                <span style={{
+                                  color: news.category.toLowerCase().includes('result') ? '#16a34a' : news.category.toLowerCase().includes('admit') ? '#2563eb' : '#dc2626',
+                                  fontWeight: 800,
+                                  marginRight: '6px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  [{news.category}]
+                                </span>
+                              )}
+                              <b>{news.message}</b>
+                            </span>
                           )}
                         </span>
                       );

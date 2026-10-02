@@ -69,7 +69,12 @@ export default function AdminPage() {
     });
 
     const unsubNews = subscribeToBreakingNews((newsData) => {
-      if (active) setBreakingNews(newsData);
+      if (active) {
+        setBreakingNews(newsData);
+        if (Array.isArray(newsData) && newsData.length > 0) {
+          saveBreakingNewsToFirestore(newsData);
+        }
+      }
     });
 
     return () => {

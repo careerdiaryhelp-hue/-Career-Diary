@@ -79,26 +79,44 @@ export async function deleteJobFromFirestore(jobId) {
 // Real-time listener for Firestore Breaking News Settings (client-side only)
 export function subscribeToBreakingNews(onUpdate) {
   if (typeof window === 'undefined') return () => {};
-  let unsubscribe = null;
+  let unsubPublic = null;
+  let unsubSettings = null;
+
   getClientDb().then(async (db) => {
     if (!db) return;
     try {
       const { doc, onSnapshot } = await import('firebase/firestore');
-      const newsRef = doc(db, 'settings', 'breakingNews');
-      unsubscribe = onSnapshot(newsRef, (snapshot) => {
+
+      // 1. Listen to public doc in jobs collection (accessible to all unauthenticated visitors)
+      const publicRef = doc(db, 'jobs', 'settings_breakingNews');
+      unsubPublic = onSnapshot(publicRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
-          onUpdate(data.items || []);
-        } else {
-          onUpdate([]);
+          if (Array.isArray(data.items) && data.items.length > 0) {
+            onUpdate(data.items);
+            return;
+          }
         }
-      });
+      }, () => {});
+
+      // 2. Also listen to settings/breakingNews (works for admin sessions)
+      const newsRef = doc(db, 'settings', 'breakingNews');
+      unsubSettings = onSnapshot(newsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.items) && data.items.length > 0) {
+            onUpdate(data.items);
+          }
+        }
+      }, () => {});
     } catch (e) {
       console.warn('Could not subscribe to breaking news:', e);
     }
   });
+
   return () => {
-    if (typeof unsubscribe === 'function') unsubscribe();
+    if (typeof unsubPublic === 'function') unsubPublic();
+    if (typeof unsubSettings === 'function') unsubSettings();
   };
 }
 
@@ -108,8 +126,28 @@ export async function saveBreakingNewsToFirestore(items) {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, setDoc } = await import('firebase/firestore');
-    const newsRef = doc(db, 'settings', 'breakingNews');
-    await setDoc(newsRef, { items, updatedAt: new Date().toISOString() }, { merge: true });
+
+    // Save to settings/breakingNews
+    try {
+      const newsRef = doc(db, 'settings', 'breakingNews');
+      await setDoc(newsRef, { items, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e) {
+      console.warn('Could not save to settings/breakingNews:', e);
+    }
+
+    // ALSO save to public jobs/settings_breakingNews so ALL visitors can read it
+    try {
+      const publicRef = doc(db, 'jobs', 'settings_breakingNews');
+      await setDoc(publicRef, { 
+        id: 'settings_breakingNews',
+        items, 
+        updatedAt: new Date().toISOString(),
+        isSystemDoc: true 
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Could not save to jobs/settings_breakingNews:', e);
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error saving breaking news:', error);
@@ -298,19 +336,95 @@ export async function fetchFirestoreJobById(docId) {
 // Fetch Breaking News array from Firestore REST (server-side support)
 export async function fetchBreakingNewsServer() {
   try {
+    // 1. Try public jobs/settings_breakingNews first
     const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/settings/breakingNews`,
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 120, cacheEverything: true }
+        cf: { cacheTtl: 60, cacheEverything: true }
       }
     );
+    if (res.ok) {
+      const data = await res.json();
+      const doc = parseFirestoreDoc(data);
+      if (Array.isArray(doc.items) && doc.items.length > 0) {
+        return doc.items;
+      }
+    }
+  } catch (e) {}
+
+  return [];
+}
+
+// Fetch jobs marked with isTopForm: true directly from Firestore REST
+export async function fetchTopOnlineFormsServer() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents:runQuery`;
+    const query = {
+      structuredQuery: {
+        from: [{ collectionId: 'jobs' }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'isTopForm' },
+            op: 'EQUAL',
+            value: { booleanValue: true }
+          }
+        },
+        limit: 50
+      }
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(query),
+      signal: controller.signal,
+      cf: { cacheTtl: 60, cacheEverything: true }
+    });
+    clearTimeout(timeoutId);
     if (!res.ok) return [];
     const data = await res.json();
-    const doc = parseFirestoreDoc(data);
-    return doc.items || [];
+    if (!Array.isArray(data)) return [];
+    return data
+      .filter(item => item && item.document)
+      .map(item => parseFirestoreDoc(item.document));
   } catch (e) {
+    console.warn('Error fetching top online forms from Firestore:', e);
     return [];
   }
 }
+
+// Real-time listener for Top Online Forms (client-side only)
+export function subscribeToTopForms(onUpdate) {
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  let active = true;
+
+  getClientDb().then(async (db) => {
+    if (!db || !active) return;
+    try {
+      const { collection, onSnapshot, query, where, limit } = await import('firebase/firestore');
+      const jobsCol = collection(db, 'jobs');
+      const q = query(jobsCol, where('isTopForm', '==', true), limit(50));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        const posts = [];
+        snapshot.forEach((d) => {
+          posts.push(d.data());
+        });
+        onUpdate(posts);
+      }, (err) => {
+        console.warn('Top forms snapshot error:', err);
+      });
+    } catch (e) {
+      console.warn('Could not subscribe to top forms:', e);
+    }
+  });
+
+  return () => {
+    active = false;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
 
 
