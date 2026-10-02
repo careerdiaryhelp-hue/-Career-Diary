@@ -50,7 +50,7 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 1. Process primary posts first (user edits & Firestore take highest priority)
   for (const post of primaryPosts) {
     if (!post || !post.title) continue;
-    const safeId = post._safeId || post.id || post.slug || cleanJobId(post.title);
+    const safeId = post._safeId || (post.id && cleanJobId(post.id)) || (post.slug && cleanJobId(post.slug)) || cleanJobId(post.title);
     const normTitle = post._normTitle || normalize(post.title);
 
     seenIds.add(safeId);
@@ -76,7 +76,7 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 2. Add fallback posts if not already present by ID or normalized title
   for (const post of fallbackPosts) {
     if (!post || !post.title) continue;
-    const safeId = post._safeId || post.id || post.slug || cleanJobId(post.title);
+    const safeId = post._safeId || (post.id && cleanJobId(post.id)) || (post.slug && cleanJobId(post.slug)) || cleanJobId(post.title);
     const normTitle = post._normTitle || normalize(post.title);
 
     if (seenIds.has(safeId) || (normTitle && seenTitles.has(normTitle))) {
@@ -127,14 +127,12 @@ import { precomputedFullJobs } from '../data/precomputed_full.js';
 let _staticJobsReady = false;
 let SORTED_STATIC_JOBS = null;
 let SORTED_STATIC_SUMMARY = null;
-let STATIC_SLUG_MAP = null;
 
 async function ensureStaticData() {
   if (_staticJobsReady) return;
   
   SORTED_STATIC_JOBS = precomputedFullJobs;
   SORTED_STATIC_SUMMARY = precomputedSummary;
-  STATIC_SLUG_MAP = buildSlugMap(SORTED_STATIC_JOBS);
   _staticJobsReady = true;
 }
 
@@ -142,22 +140,8 @@ async function ensureStaticData() {
 let _cachedFullJobs = null;
 let _cachedSummaryJobs = null;
 let _cachedTime = 0;
-let _slugMap = null;
 
-function buildSlugMap(jobs) {
-  const map = new Map();
-  for (const j of jobs) {
-    if (!j) continue;
-    if (j.id) map.set(String(j.id).toLowerCase().trim(), j);
-    if (j.slug) map.set(String(j.slug).toLowerCase().trim(), j);
-    if (j.title) {
-      const clean = j._safeId || cleanJobId(j.title);
-      map.set(clean, j);
-      map.set(String(j.title).toLowerCase().trim(), j);
-    }
-  }
-  return map;
-}
+// Maps removed to save CPU time. Linear .find is < 0.1ms.
 
 // Fast cached getter for Full Jobs (includes content, cached for 60s)
 export async function getAllJobsFullServer() {
@@ -172,7 +156,6 @@ export async function getAllJobsFullServer() {
     if (firestorePosts && firestorePosts.length > 0) {
       _cachedFullJobs = mergeAndSortJobs(firestorePosts, SORTED_STATIC_JOBS);
       _cachedSummaryJobs = _cachedFullJobs.map(summarizeJobForList);
-      _slugMap = buildSlugMap(_cachedFullJobs);
       _cachedTime = now;
       return _cachedFullJobs;
     }
@@ -182,7 +165,6 @@ export async function getAllJobsFullServer() {
 
   _cachedFullJobs = SORTED_STATIC_JOBS;
   _cachedSummaryJobs = SORTED_STATIC_SUMMARY;
-  _slugMap = STATIC_SLUG_MAP;
   _cachedTime = now;
   return _cachedFullJobs;
 }
@@ -207,25 +189,31 @@ export async function getTopRecentJobsSummary(limit = 15) {
   return jobs.slice(0, limit);
 }
 
-// Ultra-fast O(1) slug lookup for single job post pages (<0.005ms CPU time)
+// Fast O(N) lookup for single job post pages (<0.1ms CPU time, saves 20ms startup)
 export async function getJobBySlug(slug) {
   if (!slug) return null;
   await ensureStaticData();
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
-  // 1. FAST PATH: Check static bundled posts FIRST (instant memory lookup, 0.005ms, ZERO network)
-  let match = STATIC_SLUG_MAP.get(clean) || STATIC_SLUG_MAP.get(lowerSlug);
+  // Try static first to avoid Firestore if possible
+  const fullJobs = _cachedFullJobs || SORTED_STATIC_JOBS || [];
+  
+  let match = fullJobs.find(j => {
+    if (!j) return false;
+    if (j._safeId === clean) return true;
+    const jId = String(j.id || '').toLowerCase().trim();
+    if (jId === clean || jId === lowerSlug) return true;
+    const jSlug = String(j.slug || '').toLowerCase().trim();
+    if (jSlug === clean || jSlug === lowerSlug) return true;
+    const jTitle = String(j.title || '').toLowerCase().trim();
+    if (jTitle === lowerSlug) return true;
+    return false;
+  });
+  
   if (match) return match;
 
-  // 2. Check dynamic Firestore cache if already loaded
-  if (_slugMap) {
-    match = _slugMap.get(clean) || _slugMap.get(lowerSlug);
-    if (match) return match;
-  }
-
-  // 3. Fallback 1: Fuzzy match in full list (for older mismatched URLs)
-  const fullJobs = _cachedFullJobs || SORTED_STATIC_JOBS;
+  // Fallback 1: Fuzzy match in full list (for older mismatched URLs)
   match = fullJobs.find(j => {
     if (!j) return false;
     const jId = String(j.id || '').toLowerCase().trim();
@@ -235,13 +223,8 @@ export async function getJobBySlug(slug) {
   });
   if (match) return match;
 
-  // 4. Fallback 2: If not in static posts, load Firestore
+  // Fallback 2: If not in static posts, load Firestore
   try {
-    await getAllJobsFullServer();
-    if (_slugMap) {
-      match = _slugMap.get(clean) || _slugMap.get(lowerSlug);
-      if (match) return match;
-    }
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc) return directDoc;
   } catch (e) {}
