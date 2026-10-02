@@ -29,6 +29,17 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
     // Merge, avoiding duplicates by id
     const manualIds = new Set(manual.map(n => n.id));
     const merged = [...manual, ...fromJobs.filter(n => !manualIds.has(n.id))];
+
+    // Fallback: If no custom breaking news exists, use top 9 latest updates so Breaking News marquee is ALWAYS visible
+    if (merged.length === 0 && jobs && jobs.length > 0) {
+      return jobs.slice(0, 9).map(j => ({
+        id: j.id,
+        message: j.title,
+        link: getJobUrl(j),
+        active: true,
+      }));
+    }
+
     return merged;
   }, [breakingNews, jobs]);
 

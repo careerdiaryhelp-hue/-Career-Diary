@@ -13,7 +13,7 @@ import AdminLoginModal from './AdminLoginModal';
 import { DisplayAd } from './AdSenseBanner';
 import { mergeAndSortJobs } from '../utils/jobsService';
 import { getInitialJobs } from '../data/initialJobs';
-import { subscribeToFirestoreJobs, cleanJobId } from '../firebase';
+import { subscribeToFirestoreJobs, subscribeToBreakingNews, cleanJobId } from '../firebase';
 import {
   isResult,
   isAnswerKey,
@@ -40,15 +40,23 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [breakingNews, setBreakingNews] = useState(initialNews);
 
-  // Subscribing to Firestore directly from client causes massive quota usage (429 errors).
-  // We now rely purely on `initialJobs` passed from Next.js server component which caches the data.
-  // The Admin panel still uses it for real-time updates.
   useEffect(() => {
     if (!initialJobs || initialJobs.length === 0) {
       getInitialJobs().then(staticJobs => {
         setJobs(prev => mergeAndSortJobs(prev, staticJobs));
       });
     }
+
+    // Subscribe to real-time Breaking News updates from Firestore
+    const unsubNews = subscribeToBreakingNews((newsData) => {
+      if (Array.isArray(newsData) && newsData.length > 0) {
+        setBreakingNews(newsData);
+      }
+    });
+
+    return () => {
+      if (typeof unsubNews === 'function') unsubNews();
+    };
   }, [initialJobs]);
 
   const handleResetFilters = () => {
