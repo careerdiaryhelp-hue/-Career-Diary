@@ -115,22 +115,12 @@ export default function AdminDashboardPage({
   const [textColor, setTextColor] = useState('#000000');
   const [highlightColor, setHighlightColor] = useState('#fef08a');
 
-  // Dynamic Categories Management State (Matching Screenshots 1 & 3)
-  const [localCategories, setLocalCategories] = useState(() => {
-    if (categories && categories.length > 0) return categories;
-    try {
-      const saved = localStorage.getItem('career_diary_categories');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [
-      { id: '1', name: 'Results', subtitle: 'Latest Exam Results 2026 - Check Merit Lists & Cut-Off Marks Online | [Career Diary 2026]', slug: '/results', order: 1, seoTitle: 'Results 2026', seoDescription: 'Download the [Result Pdf] All Result 2026 here. Download," "Direct Link," "Live," "Official." Get the direct link, exam date,...' },
-      { id: '2', name: 'Admit Card', subtitle: 'Latest Exams Admit Card 2026 - Download Admit Card ,Exam Date& Online | [Career Diary 2026]', slug: '/admit-card', order: 2, seoTitle: 'Admit Cards 2026', seoDescription: 'Get the latest updates on admit cards and hall tickets. Download your exam call letters for SSC, Banking, Railways, and...' },
-      { id: '3', name: 'Latest Jobs', subtitle: 'Latest Job 2026 @Careerdiary', slug: '/latest-jobs', order: 3, seoTitle: 'Latest Jobs 2026', seoDescription: 'Latest Government Jobs, Notifications, Apply Online...' },
-      { id: '4', name: 'Answer Key', subtitle: 'Official Answer Keys', slug: '/answer-key', order: 4, seoTitle: 'Answer Key 2026', seoDescription: 'Download official answer keys and response sheets...' },
-      { id: '5', name: 'Admission', subtitle: 'Admission Notices', slug: '/admission', order: 5, seoTitle: 'Admissions 2026', seoDescription: 'College, University, and School admissions 2026...' },
-      { id: '6', name: 'Syllabus', subtitle: 'Exam Syllabus & Pattern', slug: '/syllabus', order: 6, seoTitle: 'Exam Syllabus 2026', seoDescription: 'Detailed exam syllabus and selection process...' },
-    ];
-  });
+  // Dynamic Categories Management State
+  const [localCategories, setLocalCategories] = useState(categories || []);
+
+  useEffect(() => {
+    setLocalCategories(categories || []);
+  }, [categories]);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -143,21 +133,12 @@ export default function AdminDashboardPage({
     seoDescription: ''
   });
 
-  // Dynamic Breaking News Management State (Matching Screenshots 2 & 4)
-  const [localBreakingNews, setLocalBreakingNews] = useState(() => {
-    if (breakingNews && breakingNews.length > 0) return breakingNews;
-    try {
-      const saved = localStorage.getItem('career_diary_breaking_news');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [
-      { id: '1', message: 'BPSSC Bihar Police Range Officer of Forest Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/bpssc-bihar-police-range-officer-of-forest-recruitment-2026-online-form-16-post', priority: 0, expiry: '8/17/2026, 5:32:00 AM', active: true },
-      { id: '2', message: 'Railway RRB Section Controller Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/railway-rrb-section-controller-recruitment-2026', priority: 1, expiry: '8/15/2026, 4:53:00 PM', active: true },
-      { id: '3', message: 'Patna High Court Ex-Cadre Assistant Recruitment 2026 Online start', link: 'https://www.careerdiary.in/post/patna-high-court-ex-cadre-assistant-recruitment-2026', priority: 2, expiry: '8/30/2026, 11:52:00 PM', active: true },
-      { id: '4', message: 'JSSC 10+2 Inter Level JILCCE Recruitment 2026 Online Start', link: 'https://www.careerdiary.in/post/jssc-10-2-inter-level-jilcce-recruitment-2026-online-start', priority: 0, expiry: '9/8/2026, 5:20:00 AM', active: true },
-      { id: '5', message: 'RRB Group D Level 1 Exam City & Admit Card Download', link: 'https://www.careerdiary.in/post/railway-rrb-group-d-admit-card-exam-city-2026-out', priority: 0, expiry: '8/31/2026, 11:21:00 PM', active: true },
-    ];
-  });
+  // Dynamic Breaking News Management State
+  const [localBreakingNews, setLocalBreakingNews] = useState(breakingNews || []);
+
+  useEffect(() => {
+    setLocalBreakingNews(breakingNews || []);
+  }, [breakingNews]);
 
   const [showNewsForm, setShowNewsForm] = useState(false);
   const [editingNews, setEditingNews] = useState(null);
@@ -188,16 +169,7 @@ export default function AdminDashboardPage({
   const [customTopFormTitle, setCustomTopFormTitle] = useState('');
   const [customTopFormLink, setCustomTopFormLink] = useState('');
 
-  // Sync external props if provided
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (categories && categories.length > 0) setLocalCategories(categories);
-  }, [categories]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (breakingNews && breakingNews.length > 0) setLocalBreakingNews(breakingNews);
-  }, [breakingNews]);
+  // External props synchronization handled by individual useEffects above
 
   // Handle window resize for mobile responsiveness
   useEffect(() => {
