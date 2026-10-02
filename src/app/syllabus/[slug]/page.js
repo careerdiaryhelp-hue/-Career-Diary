@@ -13,8 +13,6 @@ export async function generateStaticParams() {
   }));
 }
 
-export const revalidate = 120;
-
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;

@@ -1,8 +1,8 @@
 import { getAllJobsServer } from '../../utils/jobsService';
+import { isAdmission } from '../../data/categoryHelpers';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Admissions 2026 – University, College & School Entrance Forms | Career Diary',
@@ -13,7 +13,8 @@ export const metadata = {
 };
 
 export default async function AdmissionCategoryPage() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(isAdmission);
   return (
     <CategoryPageClient
       categoryKey="ADMISSION"

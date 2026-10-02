@@ -1,8 +1,8 @@
 import { getAllJobsServer } from '../../utils/jobsService';
+import { isSyllabus } from '../../data/categoryHelpers';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Exam Syllabus 2026 – Download Detailed Exam Pattern & Syllabus PDF | Career Diary',
@@ -13,7 +13,8 @@ export const metadata = {
 };
 
 export default async function SyllabusCategoryPage() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(isSyllabus);
   return (
     <CategoryPageClient
       categoryKey="SYLLABUS"

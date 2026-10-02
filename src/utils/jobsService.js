@@ -122,18 +122,15 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
 }
 
 import { precomputedSummary } from '../data/precomputed_summary.js';
-import { precomputedFullJobs } from '../data/precomputed_full.js';
 
-let _staticJobsReady = false;
 let SORTED_STATIC_JOBS = null;
-let SORTED_STATIC_SUMMARY = null;
 
-async function ensureStaticData() {
-  if (_staticJobsReady) return;
-  
-  SORTED_STATIC_JOBS = precomputedFullJobs;
-  SORTED_STATIC_SUMMARY = precomputedSummary;
-  _staticJobsReady = true;
+async function getFullStaticJobs() {
+  if (!SORTED_STATIC_JOBS) {
+    const { precomputedFullJobs } = await import('../data/precomputed_full.js');
+    SORTED_STATIC_JOBS = precomputedFullJobs;
+  }
+  return SORTED_STATIC_JOBS;
 }
 
 // In-memory cache for Cloudflare Worker instances
@@ -141,46 +138,19 @@ let _cachedFullJobs = null;
 let _cachedSummaryJobs = null;
 let _cachedTime = 0;
 
-// Maps removed to save CPU time. Linear .find is < 0.1ms.
-
-// Fast cached getter for Full Jobs (includes content, cached for 60s)
+// Fast cached getter for Full Jobs (includes content)
 export async function getAllJobsFullServer() {
-  await ensureStaticData();
-  const now = Date.now();
-  if (_cachedFullJobs && (now - _cachedTime < 60000)) {
+  if (_cachedFullJobs) {
     return _cachedFullJobs;
   }
-
-  try {
-    const firestorePosts = await fetchFirestoreJobsOnce();
-    if (firestorePosts && firestorePosts.length > 0) {
-      _cachedFullJobs = mergeAndSortJobs(firestorePosts, SORTED_STATIC_JOBS);
-      _cachedSummaryJobs = _cachedFullJobs.map(summarizeJobForList);
-      _cachedTime = now;
-      return _cachedFullJobs;
-    }
-  } catch (e) {
-    console.warn('Failed to fetch jobs server-side from Firestore, falling back to static:', e.message);
-  }
-
-  _cachedFullJobs = SORTED_STATIC_JOBS;
-  _cachedSummaryJobs = SORTED_STATIC_SUMMARY;
-  _cachedTime = now;
+  _cachedFullJobs = await getFullStaticJobs();
   return _cachedFullJobs;
 }
 
 // Server-side fetching helper for Next.js SSR / Static Generation
-// Returns lightweight summarized jobs to keep RSC payload under 100KB (instead of 3MB!)
+// Returns lightweight precomputed summary instantly (<0.01ms CPU time, 0 network, no Cloudflare 1102 errors)
 export async function getAllJobsServer() {
-  await ensureStaticData();
-  const now = Date.now();
-  if (_cachedSummaryJobs && (now - _cachedTime < 60000)) {
-    return _cachedSummaryJobs;
-  }
-  try {
-    await getAllJobsFullServer();
-  } catch (e) {}
-  return _cachedSummaryJobs || SORTED_STATIC_SUMMARY;
+  return precomputedSummary;
 }
 
 // Fast helper for detail pages to get only the top N recent jobs for related posts sidebar (3KB payload!)
@@ -189,15 +159,13 @@ export async function getTopRecentJobsSummary(limit = 15) {
   return jobs.slice(0, limit);
 }
 
-// Fast O(N) lookup for single job post pages (<0.1ms CPU time, saves 20ms startup)
 export async function getJobBySlug(slug) {
   if (!slug) return null;
-  await ensureStaticData();
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
   // Try static first to avoid Firestore if possible
-  const fullJobs = _cachedFullJobs || SORTED_STATIC_JOBS || [];
+  const fullJobs = await getFullStaticJobs();
   
   let match = fullJobs.find(j => {
     if (!j) return false;

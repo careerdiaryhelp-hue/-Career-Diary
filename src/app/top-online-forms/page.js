@@ -4,8 +4,7 @@ import Header from '../../components/Header';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Top Online Form 2026 – Apply Online for Latest Vacancies | Career Diary',
@@ -16,7 +15,8 @@ export const metadata = {
 };
 
 export default async function TopOnlineFormsRoute() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(j => Boolean(j.isTopForm) && !j.title?.toLowerCase().includes('top online form'));
   return (
     <div className="app-root">
       <Header />

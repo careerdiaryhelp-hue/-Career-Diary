@@ -1,8 +1,8 @@
 import { getAllJobsServer } from '../../utils/jobsService';
+import { isAnswerKey } from '../../data/categoryHelpers';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Answer Key 2026 – Download Official Keys & Response Sheets | Career Diary',
@@ -13,7 +13,8 @@ export const metadata = {
 };
 
 export default async function AnswerKeyCategoryPage() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(isAnswerKey);
   return (
     <CategoryPageClient
       categoryKey="ANSWER KEY"

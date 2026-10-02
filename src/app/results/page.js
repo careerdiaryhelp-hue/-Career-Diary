@@ -1,8 +1,8 @@
 import { getAllJobsServer } from '../../utils/jobsService';
+import { isResult } from '../../data/categoryHelpers';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Results 2026 – Check Exam Results, Scorecards & Merit Lists | Career Diary',
@@ -13,7 +13,8 @@ export const metadata = {
 };
 
 export default async function ResultsCategoryPage() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(isResult);
   return (
     <CategoryPageClient
       categoryKey="RESULT"

@@ -1,8 +1,8 @@
 import { getAllJobsServer } from '../../utils/jobsService';
+import { isLatestJob } from '../../data/categoryHelpers';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 120;
-
+export const dynamic = 'force-static';
 
 export const metadata = {
   title: 'Latest Jobs 2026 – Apply Online for Central & State Govt Jobs | Career Diary',
@@ -13,7 +13,8 @@ export const metadata = {
 };
 
 export default async function LatestJobsPage() {
-  const jobs = await getAllJobsServer();
+  const allJobs = await getAllJobsServer();
+  const jobs = allJobs.filter(isLatestJob);
   return (
     <CategoryPageClient
       categoryKey="LATEST JOB"

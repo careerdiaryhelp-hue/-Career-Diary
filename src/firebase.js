@@ -232,7 +232,6 @@ export async function fetchFirestoreJobsOnce() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        next: { revalidate: 120 },
         cf: { cacheTtl: 120, cacheEverything: true }
       });
       clearTimeout(timeoutId);
@@ -285,7 +284,6 @@ export async function fetchFirestoreJobById(docId) {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}`,
       { 
-        next: { revalidate: 120 },
         cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
@@ -303,7 +301,6 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/settings/breakingNews`,
       { 
-        next: { revalidate: 120 },
         cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
