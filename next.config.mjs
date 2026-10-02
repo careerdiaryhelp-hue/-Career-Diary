@@ -24,17 +24,7 @@ const nextConfig = {
     ];
   },
   async headers() {
-    return [
-      {
-        source: '/((?!admin|api).*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=0, s-maxage=60, stale-while-revalidate=120',
-          },
-        ],
-      },
-    ];
+    return [];
   },
 };
 

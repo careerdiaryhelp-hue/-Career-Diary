@@ -121,32 +121,19 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   });
 }
 
-// Lazy-initialized static data — deferred from module load to first access
-// to keep cold-start CPU time under Cloudflare Worker limits.
+import { precomputedSummary } from '../data/precomputed_summary.js';
+import { precomputedFullJobs } from '../data/precomputed_full.js';
+
 let _staticJobsReady = false;
 let SORTED_STATIC_JOBS = null;
 let SORTED_STATIC_SUMMARY = null;
 let STATIC_SLUG_MAP = null;
 
-let _staticJobsPromise = null;
-async function getInitialJobsAsync() {
-  if (_staticJobsPromise) return _staticJobsPromise;
-  _staticJobsPromise = Promise.all([
-    import('../data/jobsData.js').then(m => m.jobsData),
-    import('../data/admitCardsData.js').then(m => m.admitCardsData),
-    import('../data/resultsData.js').then(m => m.resultsData),
-    import('../data/admissionsData.js').then(m => m.admissionsData),
-    import('../data/syllabusData.js').then(m => m.syllabusData),
-    import('../data/importantData.js').then(m => m.importantData)
-  ]).then(arrays => arrays.flat());
-  return _staticJobsPromise;
-}
-
 async function ensureStaticData() {
   if (_staticJobsReady) return;
-  const initialJobs = await getInitialJobsAsync();
-  SORTED_STATIC_JOBS = mergeAndSortJobs([], initialJobs);
-  SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
+  
+  SORTED_STATIC_JOBS = precomputedFullJobs;
+  SORTED_STATIC_SUMMARY = precomputedSummary;
   STATIC_SLUG_MAP = buildSlugMap(SORTED_STATIC_JOBS);
   _staticJobsReady = true;
 }
