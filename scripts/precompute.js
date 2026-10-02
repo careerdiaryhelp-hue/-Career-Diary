@@ -131,5 +131,36 @@ const __dirname = path.dirname(__filename);
     `export const precomputedFullJobs = ${JSON.stringify(SORTED_STATIC_JOBS)};`
   );
 
-  console.log("Precomputed jobs summary and full array into JS files.");
+  // Generate per-job chunked files in src/data/posts to eliminate the 1MB monolithic bundle
+  const postsDir = path.join(__dirname, '../src/data/posts');
+  if (!fs.existsSync(postsDir)) {
+    fs.mkdirSync(postsDir, { recursive: true });
+  }
+
+  const manifestEntries = [];
+  const registeredKeys = new Set();
+
+  for (const job of SORTED_STATIC_JOBS) {
+    if (!job || !job._safeId) continue;
+    const safeId = job._safeId;
+    const filePath = path.join(postsDir, `${safeId}.js`);
+    fs.writeFileSync(filePath, `export const job = ${JSON.stringify(job)};\n`);
+
+    const keys = [safeId];
+    if (job.id && job.id !== safeId) keys.push(cleanJobId(job.id));
+    if (job.slug && job.slug !== safeId) keys.push(cleanJobId(job.slug));
+
+    for (const k of keys) {
+      if (!k || registeredKeys.has(k)) continue;
+      registeredKeys.add(k);
+      manifestEntries.push(`  ${JSON.stringify(k)}: () => import('./${safeId}.js')`);
+    }
+  }
+
+  fs.writeFileSync(
+    path.join(postsDir, 'manifest.js'),
+    `// Auto-generated per-job lazy loader manifest\nexport const postsMap = {\n${manifestEntries.join(',\n')}\n};\n`
+  );
+
+  console.log(`Precomputed ${SORTED_STATIC_JOBS.length} chunked jobs into src/data/posts/ and generated manifest.`);
 })();
