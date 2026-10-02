@@ -1,17 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import JobColumnsGrid from './JobColumnsGrid';
 import { DisplayAd } from './AdSenseBanner';
-import { getJobUrl } from '../data/categoryHelpers';
+import { getJobUrl, getJobsForCategory } from '../data/categoryHelpers';
+import { subscribeToFirestoreJobs } from '../firebase';
+import { mergeAndSortJobs } from '../utils/jobsService';
 
 export default function CategoryPageClient({ categoryKey, title, subtitle, initialJobs = [] }) {
+  const [jobs, setJobs] = useState(initialJobs);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredJobs = initialJobs.filter((job) => {
+  useEffect(() => {
+    const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
+      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        const catPosts = getJobsForCategory(firestorePosts, categoryKey);
+        setJobs(prev => mergeAndSortJobs(catPosts, prev));
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [categoryKey]);
+
+  const filteredJobs = jobs.filter((job) => {
     if (!job || !job.title) return false;
     if (job.status === 'Draft' || job.status === 'draft') return false;
     if (searchQuery.trim()) {

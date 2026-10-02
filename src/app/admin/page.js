@@ -102,7 +102,7 @@ export default function AdminPage() {
       ...newJob,
       id: safeId,
       slug: safeId,
-      updatedAt: newJob.updatedAt || new Date().toISOString()
+      updatedAt: new Date().toISOString()
     };
 
     setJobs((prevJobs) => {
