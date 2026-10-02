@@ -3,7 +3,6 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, FileText, UserCheck, Info, Link, FileDown, Send, MessageCircle, AlertCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
-import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
 
 export default function AdmitCardDetailPage({ job, onBack }) {
@@ -31,14 +30,6 @@ export default function AdmitCardDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
-      {/* Dynamic SEO Meta, Titles & Schema */}
-      <SEOHead
-        title={`${job.title} – Download Admit Card, Hall Ticket & Exam Date | Career Diary`}
-        description={`Download ${job.title} Admit Card 2026. Check examination date, shift timings, exam city slip notice and direct link to download call letter on Career Diary.`}
-        canonicalUrl={`https://careerdiary.in/${job.id}`}
-        job={job}
-        category="Admit Card"
-      />
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

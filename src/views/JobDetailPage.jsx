@@ -3,7 +3,6 @@ import React from 'react';
 import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
-import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
 import { autoLinkSocialChannels } from '../utils/linkUtils';
@@ -345,13 +344,6 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   return (
     <div className="container" style={{ paddingTop: '20px', paddingBottom: '40px', maxWidth: '860px', width: '100%', boxSizing: 'border-box' }}>
       {/* Dynamic SEO Meta, Titles & Google Jobs Schema */}
-      <SEOHead
-        title={`${job.title} – ${isAdmit ? 'Download Admit Card, Hall Ticket & Exam Date' : isRes ? 'Check Result, Cut Off & Merit List' : 'Notification, Eligibility & Apply Online'} | Career Diary`}
-        description={`${job.title} 2026. Check details, dates, eligibility and direct official links on Career Diary.`}
-        canonicalUrl={`https://careerdiary.in${getJobUrl(job)}`}
-        job={job}
-        category={pageCategory}
-      />
 
       {/* Back Button */}
       <div style={{ marginBottom: '12px' }}>

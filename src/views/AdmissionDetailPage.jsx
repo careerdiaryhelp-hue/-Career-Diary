@@ -3,7 +3,6 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, MapPin } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
-import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
 
 export default function AdmissionDetailPage({ job, onBack }) {
@@ -31,14 +30,7 @@ export default function AdmissionDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
-      {/* Dynamic SEO Meta, Titles & Schema */}
-      <SEOHead
-        title={`${job.title} – Admission Form 2026, Counseling & Prospectus PDF | Career Diary`}
-        description={`Apply online for ${job.title} Admission 2026. Check eligibility, counseling dates, seat matrix, fee structure and direct registration link on Career Diary.`}
-        canonicalUrl={`https://careerdiary.in/${job.id}`}
-        job={job}
-        category="Admission"
-      />
+
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

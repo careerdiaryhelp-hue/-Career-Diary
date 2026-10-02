@@ -3,7 +3,6 @@ import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
-import SEOHead from '../components/SEOHead';
 import PostFooterSection from '../components/PostFooterSection';
 
 export default function ResultDetailPage({ job, onBack }) {
@@ -31,14 +30,6 @@ export default function ResultDetailPage({ job, onBack }) {
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
-      {/* Dynamic SEO Meta, Titles & Schema */}
-      <SEOHead
-        title={`${job.title} – Result Out, Merit List PDF & Cut Off Marks | Career Diary`}
-        description={`Check ${job.title} Result 2026 online. Download qualifying merit list PDF, subject-wise score card, category cut off marks and direct link on Career Diary.`}
-        canonicalUrl={`https://careerdiary.in/${job.id}`}
-        job={job}
-        category="Result"
-      />
       {/* Back Button & Breadcrumb */}
       <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={onBack} className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
