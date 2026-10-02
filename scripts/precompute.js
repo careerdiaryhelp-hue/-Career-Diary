@@ -114,11 +114,20 @@ const __dirname = path.dirname(__filename);
     });
   }
 
+  let firestoreJobs = [];
+  try {
+    const { fetchFirestoreJobsOnce } = await import('../src/firebase.js');
+    firestoreJobs = await fetchFirestoreJobsOnce();
+    console.log(`Fetched ${firestoreJobs.length} live jobs from Firestore for precomputation.`);
+  } catch (err) {
+    console.warn("Could not fetch Firestore jobs at build time, using static fallback:", err?.message || err);
+  }
+
   const initialJobs = [
     ...jobsData, ...admitCardsData, ...resultsData, ...admissionsData, ...syllabusData, ...importantData
   ];
 
-  const SORTED_STATIC_JOBS = mergeAndSortJobs([], initialJobs);
+  const SORTED_STATIC_JOBS = mergeAndSortJobs(firestoreJobs, initialJobs);
   const SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
 
   fs.writeFileSync(
