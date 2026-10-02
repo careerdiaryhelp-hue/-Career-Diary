@@ -41,11 +41,13 @@ export async function publishJobToFirestore(job) {
     if (!safeId) {
       throw new Error('Invalid Job ID: Post title or slug must contain letters or numbers.');
     }
+    const { _ts, _safeId, _normTitle, ...cleanData } = job;
+    const nowIso = new Date().toISOString();
     const safeJob = {
-      ...job,
+      ...cleanData,
       id: safeId,
       slug: safeId,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowIso
     };
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');

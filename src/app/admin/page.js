@@ -98,11 +98,13 @@ export default function AdminPage() {
   const handleAddJob = async (newJob) => {
     const rawId = newJob.id || newJob.slug || newJob.title || '';
     const safeId = cleanJobId(rawId);
+    const { _ts, _safeId, _normTitle, ...cleanJob } = newJob;
+    const nowIso = new Date().toISOString();
     const sanitizedJob = {
-      ...newJob,
+      ...cleanJob,
       id: safeId,
       slug: safeId,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowIso
     };
 
     setJobs((prevJobs) => {

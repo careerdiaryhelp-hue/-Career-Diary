@@ -56,11 +56,18 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
     seenIds.add(safeId);
     if (normTitle) seenTitles.add(normTitle);
     
-    let _ts = post._ts;
-    if (_ts === undefined) {
-      if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
-      if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
-      if (isNaN(_ts)) _ts = 0;
+    let _ts = 0;
+    if (post.updatedAt) {
+      const parsed = new Date(post.updatedAt).getTime();
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
+    }
+    if (_ts === 0 && post.postDate) {
+      const parsed = new Date(post.postDate).getTime();
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
+    }
+    if (_ts === 0 && post._ts) {
+      const parsed = Number(post._ts);
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
     }
 
     merged.push({
@@ -86,11 +93,18 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
     seenIds.add(safeId);
     if (normTitle) seenTitles.add(normTitle);
 
-    let _ts = post._ts;
-    if (_ts === undefined) {
-      if (post.updatedAt) _ts = new Date(post.updatedAt).getTime();
-      if ((isNaN(_ts) || _ts === 0) && post.postDate) _ts = new Date(post.postDate).getTime();
-      if (isNaN(_ts)) _ts = 0;
+    let _ts = 0;
+    if (post.updatedAt) {
+      const parsed = new Date(post.updatedAt).getTime();
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
+    }
+    if (_ts === 0 && post.postDate) {
+      const parsed = new Date(post.postDate).getTime();
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
+    }
+    if (_ts === 0 && post._ts) {
+      const parsed = Number(post._ts);
+      if (!isNaN(parsed) && parsed > 0) _ts = parsed;
     }
 
     merged.push({ ...post, _ts, _safeId: safeId, _normTitle: normTitle });
