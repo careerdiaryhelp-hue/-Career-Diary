@@ -1,37 +1,20 @@
-import { jobsData } from './jobsData.js';
-import { admitCardsData } from './admitCardsData.js';
-import { syllabusData } from './syllabusData.js';
-import { resultsData } from './resultsData.js';
-import { admissionsData } from './admissionsData.js';
-import { importantData } from './importantData.js';
+// Removed synchronous imports to prevent Cloudflare Worker 1102 bundle size crash.
+// The large static data arrays are now dynamically imported and code-split.
 
-// Export individual category data files
-export {
-  jobsData,
-  admitCardsData,
-  syllabusData,
-  resultsData,
-  admissionsData,
-  importantData
-};
+let _initialJobsPromise = null;
 
-// Lazy-computed merged master array — deferred from module load to first access
-// to avoid spreading ~1MB of arrays during cold-start module evaluation.
-let _initialJobs = null;
 export function getInitialJobs() {
-  if (!_initialJobs) {
-    _initialJobs = [
-      ...jobsData,
-      ...admitCardsData,
-      ...resultsData,
-      ...admissionsData,
-      ...syllabusData,
-      ...importantData
-    ];
+  if (!_initialJobsPromise) {
+    _initialJobsPromise = Promise.all([
+      import('./jobsData.js').then(m => m.jobsData),
+      import('./admitCardsData.js').then(m => m.admitCardsData),
+      import('./resultsData.js').then(m => m.resultsData),
+      import('./admissionsData.js').then(m => m.admissionsData),
+      import('./syllabusData.js').then(m => m.syllabusData),
+      import('./importantData.js').then(m => m.importantData)
+    ]).then(arrays => arrays.flat());
   }
-  return _initialJobs;
+  return _initialJobsPromise;
 }
 
-// Keep backward-compatible named export for any other consumers
-// (uses a getter so it's lazy too)
-export { _initialJobs as INITIAL_JOBS };
+export { getInitialJobs as INITIAL_JOBS };

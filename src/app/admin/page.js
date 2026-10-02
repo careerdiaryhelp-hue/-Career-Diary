@@ -36,7 +36,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const [jobs, setJobs] = useState(() => mergeAndSortJobs([], getInitialJobs()));
+  const [jobs, setJobs] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [breakingNews, setBreakingNews] = useState(DEFAULT_BREAKING_NEWS);
 
@@ -65,14 +65,23 @@ export default function AdminPage() {
       }
     } catch (_) {}
 
-    // Subscribe to Firestore jobs
+    // Subscribe to Firestore jobs and load static jobs
+    let active = true;
+    getInitialJobs().then(staticJobs => {
+      if (!active) return;
+      setJobs(prev => mergeAndSortJobs(prev, staticJobs));
+    });
+
     const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
       if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        setJobs(() => mergeAndSortJobs(firestorePosts, getInitialJobs()));
+        getInitialJobs().then(staticJobs => {
+          if (active) setJobs(() => mergeAndSortJobs(firestorePosts, staticJobs));
+        });
       }
     });
 
     return () => {
+      active = false;
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);

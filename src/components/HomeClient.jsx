@@ -41,7 +41,7 @@ const DEFAULT_BREAKING_NEWS = [
 export default function HomeClient({ initialJobs = [] }) {
   const [jobs, setJobs] = useState(() => {
     if (initialJobs && initialJobs.length > 0) return initialJobs;
-    return mergeAndSortJobs([], getInitialJobs());
+    return [];
   });
 
   const [currentCategory, setCurrentCategory] = useState('all');
@@ -55,8 +55,12 @@ export default function HomeClient({ initialJobs = [] }) {
   // We now rely purely on `initialJobs` passed from Next.js server component which caches the data.
   // The Admin panel still uses it for real-time updates.
   useEffect(() => {
-    // Client-side realtime updates disabled for normal visitors to save Firestore quota
-  }, []);
+    if (!initialJobs || initialJobs.length === 0) {
+      getInitialJobs().then(staticJobs => {
+        setJobs(prev => mergeAndSortJobs(prev, staticJobs));
+      });
+    }
+  }, [initialJobs]);
 
   const handleResetFilters = () => {
     setCurrentCategory('all');
