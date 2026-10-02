@@ -25,14 +25,19 @@ export function summarizeJobForList(job) {
     isTopCard: !!job.isTopCard,
     isLatest: !!job.isLatest,
     isLatestUpdate: !!job.isLatestUpdate,
+    isBreakingNews: !!job.isBreakingNews,
+    isTopForm: !!job.isTopForm,
     bannerColor: job.bannerColor || '',
     pinned: !!job.pinned,
     displayOrder: job.displayOrder || 0,
+    latestOrder: job.latestOrder || 0,
+    featuredOrder: job.featuredOrder || 0,
     order: job.order || 0,
     state: job.state || 'All India',
     status: job.status || 'Active Notification',
     shortInfo: job.shortInfo || '',
     importantDates: job.importantDates || null,
+    secondaryCategories: job.secondaryCategories || [],
   };
 }
 

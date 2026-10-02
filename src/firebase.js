@@ -185,13 +185,13 @@ let memoryCache = {
 };
 
 const FIRESTORE_LIST_FIELDS = [
-  'id', 'slug', 'title', 'category', 'badge', 'postDate', 'updatedAt',
+  'id', 'slug', 'title', 'category', 'secondaryCategories', 'badge', 'postDate', 'updatedAt',
   'displayOrder', 'order', 'pinned', 'state', 'qualification', 'vacancies',
-  'totalPosts', 'appStart', 'lastDate', 'feeGen', 'feeSc', 'minAge', 'maxAge',
+  'totalPosts', 'appStart', 'lastDate', 'examDate', 'feeGen', 'feeSc', 'minAge', 'maxAge',
   'shortInfo', 'description', 'uniqueDescription', 'officialUrl', 'notificationUrl',
   'applyUrl', 'importantDates', 'important_dates', 'applicationFee', 'ageLimit',
-  'vacancyDetails', 'importantLinks', 'important_links', 'isLatest', 'isLatestUpdate',
-  'isFeatured', 'isTopCard', 'bannerColor', 'status'
+  'vacancyDetails', 'importantLinks', 'important_links', 'isLatest', 'isLatestUpdate', 'latestOrder',
+  'isFeatured', 'isTopCard', 'featured', 'featuredOrder', 'bannerColor', 'status', 'isBreakingNews', 'isTopForm'
 ];
 const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&');
 
