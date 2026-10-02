@@ -2,7 +2,7 @@ import { getAllJobsServer } from '../utils/jobsService';
 import { fetchBreakingNewsServer } from '../firebase';
 import HomeClient from '../components/HomeClient';
 
-export const revalidate = 600; // Revalidate every 10 minutes (ISR)
+export const revalidate = 120; // Revalidate every 10 minutes (ISR)
 
 export const metadata = {
   title: 'CAREER DIARY • GOVT JOB PORTAL | CareerDiary.in',

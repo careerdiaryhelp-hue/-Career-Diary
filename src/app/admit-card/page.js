@@ -1,7 +1,7 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import CategoryPageClient from '../../components/CategoryPageClient';
 
-export const revalidate = 600;
+export const revalidate = 120;
 
 
 export const metadata = {

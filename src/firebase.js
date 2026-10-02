@@ -220,7 +220,7 @@ export async function fetchFirestoreJobsOnce() {
         structuredQuery: {
           from: [{ collectionId: 'jobs' }],
           orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
-          limit: 150,
+          limit: 60,
           select: { fields: FIRESTORE_LIST_FIELDS.map(f => ({ fieldPath: f })) }
         }
       };
@@ -231,8 +231,8 @@ export async function fetchFirestoreJobsOnce() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        next: { revalidate: 300 },
-        cf: { cacheTtl: 300, cacheEverything: true }
+        next: { revalidate: 120 },
+        cf: { cacheTtl: 120, cacheEverything: true }
       });
       clearTimeout(timeoutId);
 
@@ -284,8 +284,8 @@ export async function fetchFirestoreJobById(docId) {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}`,
       { 
-        next: { revalidate: 300 },
-        cf: { cacheTtl: 300, cacheEverything: true }
+        next: { revalidate: 120 },
+        cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
     if (!res.ok) return null;
@@ -302,8 +302,8 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/settings/breakingNews`,
       { 
-        next: { revalidate: 60 },
-        cf: { cacheTtl: 60, cacheEverything: true }
+        next: { revalidate: 120 },
+        cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
     if (!res.ok) return [];

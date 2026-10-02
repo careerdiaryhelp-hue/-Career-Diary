@@ -3,7 +3,7 @@ import Header from '../../components/Header';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
-export const revalidate = 600;
+export const revalidate = 120;
 
 
 export const metadata = {
