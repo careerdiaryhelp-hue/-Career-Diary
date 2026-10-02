@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Calendar, Flame, Clock, Search, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { isResult, isAnswerKey, isAdmitCard } from '../data/categoryHelpers.js';
+import { isResult, isAnswerKey, isAdmitCard, getJobUrl } from '../data/categoryHelpers.js';
 
 // Month names mapping for dynamic parsing
 const MONTH_MAP = {
@@ -518,11 +518,12 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                           )}
 
                           <a
-                            href={`/${job.id}`}
+                            href={getJobUrl(job)}
                             onClick={(e) => {
                               if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                                 e.preventDefault();
-                                onSelectJob(job.id);
+                                if (onSelectJob) onSelectJob(job.id);
+                                else window.location.href = getJobUrl(job);
                               }
                             }}
                             style={{
@@ -607,11 +608,12 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
                             </a>
                           ) : (
                             <a
-                              href={`/${job.id}`}
+                              href={getJobUrl(job)}
                               onClick={(e) => {
                                 if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
                                   e.preventDefault();
-                                  onSelectJob(job.id);
+                                  if (onSelectJob) onSelectJob(job.id);
+                                  else window.location.href = getJobUrl(job);
                                 }
                               }}
                               style={{

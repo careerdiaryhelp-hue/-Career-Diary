@@ -75,7 +75,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
           onClick={(e) => {
             if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
               e.preventDefault();
-              onSelectJob('last-date-jobs');
+              window.location.href = '/last-date-jobs';
             }
           }}
         >

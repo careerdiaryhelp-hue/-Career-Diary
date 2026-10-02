@@ -1,9 +1,6 @@
 import { getAllJobsServer } from '../../utils/jobsService';
 import { isResult, isAnswerKey, isAdmitCard } from '../../data/categoryHelpers';
-import LastDateJobsPage from '../../views/LastDateJobsPage';
-import Header from '../../components/Header';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import LastDateClient from '../../components/LastDateClient';
 
 export const dynamic = 'force-static';
 
@@ -18,14 +15,5 @@ export const metadata = {
 export default async function LastDateRoute() {
   const allJobs = await getAllJobsServer();
   const jobs = allJobs.filter(j => !isResult(j) && !isAnswerKey(j) && !isAdmitCard(j));
-  return (
-    <div className="app-root">
-      <Header />
-      <Navbar />
-      <main className="main-content">
-        <LastDateJobsPage jobs={jobs} />
-      </main>
-      <Footer />
-    </div>
-  );
+  return <LastDateClient jobs={jobs} />;
 }
