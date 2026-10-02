@@ -1,6 +1,17 @@
-import { getJobBySlug, getTopRecentJobsSummary } from '../../../utils/jobsService';
+import { isResult, isAdmitCard, isAnswerKey, isAdmission, isSyllabus, isDocument, isImportant } from '../../../data/categoryHelpers';
+import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary } from '../../../utils/jobsService';
 import JobDetailWrapper from '../../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
+
+
+
+
+export async function generateStaticParams() {
+  const jobs = await getAllJobsServer();
+  return jobs.filter(isAnswerKey).map((job) => ({
+    slug: job.slug || job.id,
+  }));
+}
 
 export const revalidate = 120;
 
