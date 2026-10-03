@@ -15,12 +15,20 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        const catPosts = getJobsForCategory(firestorePosts, categoryKey);
-        setJobs(prev => mergeAndSortJobs(catPosts, prev));
-      }
-    });
+    let unsubscribe = null;
+    const isAdminUser = typeof window !== 'undefined' && (
+      localStorage.getItem('career_diary_admin') === 'true' ||
+      window.location.search.includes('admin')
+    );
+
+    if (isAdminUser) {
+      unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
+        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+          const catPosts = getJobsForCategory(firestorePosts, categoryKey);
+          setJobs(prev => mergeAndSortJobs(catPosts, prev));
+        }
+      });
+    }
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();

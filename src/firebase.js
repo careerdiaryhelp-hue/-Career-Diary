@@ -316,20 +316,31 @@ export async function fetchFirestoreJobsOnce() {
   return pendingFetch;
 }
 
+const DOC_MEM_CACHE = new Map();
+
 // Fetch a single document by ID from Firestore (includes full HTML content, ~30KB)
 export async function fetchFirestoreJobById(docId) {
   if (!docId) return null;
   const clean = cleanJobId(docId);
+  const now = Date.now();
+  const cached = DOC_MEM_CACHE.get(clean);
+  if (cached && (now - cached.time < 300000)) {
+    return cached.data;
+  }
   try {
     const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}`,
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}?key=${firebaseConfig.apiKey}`,
       { 
-        cf: { cacheTtl: 120, cacheEverything: true }
+        cf: { cacheTtl: 300, cacheEverything: true }
       }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    return parseFirestoreDoc(data);
+    const parsed = parseFirestoreDoc(data);
+    if (parsed) {
+      DOC_MEM_CACHE.set(clean, { time: now, data: parsed });
+    }
+    return parsed;
   } catch (e) {
     return null;
   }
