@@ -76,8 +76,8 @@ const EMPTY_FORM = {
   importantDates: {},
   applicationFee: {},
   ageLimit: {},
-  vacancyDetails: [],
   selectionProcess: [],
+  howToFill: [],
 };
 
 export default function AdminDashboardPage({
@@ -737,6 +737,7 @@ export default function AdminDashboardPage({
       applicationFee: job.applicationFee || {},
       ageLimit: job.ageLimit || {},
       selectionProcess: job.selectionProcess || [],
+      howToFill: job.howToFill || [],
     });
 
     const STANDARD_BADGES = ['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''];
@@ -3920,6 +3921,7 @@ export default function AdminDashboardPage({
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
       },
       selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
+      howToFill: Array.isArray(form.howToFill) ? form.howToFill.map(s => s.trim()).filter(Boolean) : (existingJob?.howToFill || []),
       importantLinks: {
         ...(existingJob?.importantLinks || {}),
         ...(form.importantLinks || {}),
@@ -4103,6 +4105,7 @@ export default function AdminDashboardPage({
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
       },
       selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
+      howToFill: Array.isArray(form.howToFill) ? form.howToFill.map(s => s.trim()).filter(Boolean) : (existingJob?.howToFill || []),
       importantLinks: {
         ...(existingJob?.importantLinks || {}),
         ...(form.importantLinks || {}),
@@ -5804,6 +5807,24 @@ export default function AdminDashboardPage({
                       value={(form.selectionProcess || []).join('\n')}
                       onChange={e => setForm(prev => ({ ...prev, selectionProcess: e.target.value.split('\n') }))}
                       placeholder="e.g.&#10;Merit List Basis on Marks / Written Examination (CBT)&#10;Document Verification (DV)&#10;Medical Examination"
+                      style={{ width: '100%', minHeight: '120px', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', lineHeight: '1.5' }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>
+                      Enter each step on a new line. Leave empty for default steps.
+                    </div>
+                  </div>
+
+                  {/* Section C.6: How To Fill */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
+                        ✍️ HOW TO FILL
+                      </label>
+                    </div>
+                    <textarea
+                      value={(form.howToFill || []).join('\n')}
+                      onChange={e => setForm(prev => ({ ...prev, howToFill: e.target.value.split('\n') }))}
+                      placeholder="e.g.&#10;Interested candidates can apply online...&#10;Use the Apply Online link...&#10;Pay the application fee..."
                       style={{ width: '100%', minHeight: '120px', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', lineHeight: '1.5' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>

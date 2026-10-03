@@ -465,11 +465,19 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                   <tr>
                     <td>
                       <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
-                        <li>Use the &quot;Apply Online&quot; link provided below under important link section to apply directly.</li>
-                        <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
-                        <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
-                        <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                        {job.howToFill && Array.isArray(job.howToFill) && job.howToFill.length > 0 ? (
+                          job.howToFill.map((step, idx) => (
+                            <li key={idx} dangerouslySetInnerHTML={{ __html: step }} />
+                          ))
+                        ) : (
+                          <>
+                            <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                            <li>Use the &quot;Apply Online&quot; link provided below under important link section to apply directly.</li>
+                            <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
+                            <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                            <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                          </>
+                        )}
                       </ol>
                     </td>
                   </tr>
@@ -654,14 +662,22 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                 <tr>
                   <td>
                     <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                      <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
-                      <li>Use the click here link provided below under important link section to apply directly.</li>
-                      <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
-                      <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
-                      <li>Keep ready all basic documents (Photograph, Signature, ID Proof, and Educational Qualification Marksheets).</li>
-                      <li>Verify all column details in the preview option before submitting the form.</li>
-                      <li>Pay the application fee (if applicable) and take a final printout of your submitted application form for future reference.</li>
-                      <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                      {job.howToFill && Array.isArray(job.howToFill) && job.howToFill.length > 0 ? (
+                        job.howToFill.map((step, idx) => (
+                          <li key={idx} dangerouslySetInnerHTML={{ __html: step }} />
+                        ))
+                      ) : (
+                        <>
+                          <li>Interested candidates who wish to apply for the {introOrg} post can submit their application online before <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                          <li>Use the click here link provided below under important link section to apply directly.</li>
+                          <li>Alternatively, visit the official website of {introOrg} to complete the application process online.</li>
+                          <li>Make sure to complete the application before the deadline <strong style={{ color: '#ff0000' }}>{introLast || 'As per notification schedule'}</strong>.</li>
+                          <li>Keep ready all basic documents (Photograph, Signature, ID Proof, and Educational Qualification Marksheets).</li>
+                          <li>Verify all column details in the preview option before submitting the form.</li>
+                          <li>Pay the application fee (if applicable) and take a final printout of your submitted application form for future reference.</li>
+                          <li><strong>Note –</strong> छात्रो से ये अनुरोध किया जाता है की वो अपना फॉर्म भरने से पहले Official Notification को ध्यान से जरूर पढे उसके बाद ही अपना फॉर्म भरे । (Last Date, Age Limit, &amp; Education Qualification)</li>
+                        </>
+                      )}
                     </ol>
                   </td>
                 </tr>
