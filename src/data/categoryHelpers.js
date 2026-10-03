@@ -227,41 +227,62 @@ export const getJobBadgeInfo = (job) => {
 
   let className = 'tag-amber';
 
-  // Green Badges for all "OUT" statuses (matches live site design)
-  if (lower.includes('out') || lower.includes('green') || lower.includes('available')) {
+  // Standard preset matching & custom badge formatting
+  if (lower === 'out' || lower === 'out 🔥' || lower === 'out!') {
     className = 'tag-out'; // Green
-    if (lower === 'out' || lower === 'out 🔥') {
-      text = 'OUT';
-    } else if (lower.includes('admit') && lower.includes('out')) {
-      text = 'ADMIT CARD OUT';
-    } else if (lower.includes('exam date') && lower.includes('out')) {
-      text = 'EXAM DATE OUT';
-    } else if (lower.includes('exam city') || lower.includes('city out')) {
-      text = 'EXAM CITY OUT';
-    } else if (lower.includes('answer') && lower.includes('out')) {
-      text = 'ANSWER KEY OUT';
-    }
-  } else if (lower.includes('new') || lower.includes('fresh')) {
+    text = 'OUT';
+  } else if (lower === 'admit card out' || (lower.includes('admit') && lower.includes('out'))) {
+    className = 'tag-out';
+    text = 'ADMIT CARD OUT';
+  } else if (lower === 'exam date out' || (lower.includes('exam date') && lower.includes('out'))) {
+    className = 'tag-out';
+    text = 'EXAM DATE OUT';
+  } else if (lower === 'exam city out' || lower.includes('city out')) {
+    className = 'tag-out';
+    text = 'EXAM CITY OUT';
+  } else if (lower === 'answer key out' || (lower.includes('answer') && lower.includes('out'))) {
+    className = 'tag-out';
+    text = 'ANSWER KEY OUT';
+  } else if (lower.includes('out') || lower.includes('green') || lower.includes('available')) {
+    className = 'tag-out';
+    // Preserve custom text if it has out/available
+  } else if (lower === 'new' || lower === 'new!' || lower === 'fresh') {
     className = 'tag-new'; // Red/Salmon (#f87171 / #ef4444)
     text = 'NEW';
-  } else if (lower.includes('start')) {
+  } else if (lower === 'start') {
     className = 'tag-new'; // Red/Salmon (#f87171)
     text = 'START';
-  } else if (lower.includes('active') || lower.includes('link') || lower.includes('blue')) {
+  } else if (lower === 'link active') {
     className = 'tag-active'; // Blue
     text = 'LINK ACTIVE';
-  } else if (lower.includes('result') || lower.includes('purple')) {
+  } else if (lower === 'result') {
     className = 'tag-purple'; // Purple
     text = 'RESULT';
-  } else if (lower.includes('answer') || lower.includes('key')) {
+  } else if (lower === 'answer key' || lower === 'ans key') {
     className = 'tag-purple'; // Purple
     text = 'ANSWER KEY';
-  } else if (lower.includes('extended') || lower.includes('teal')) {
+  } else if (lower === 'admit card' || lower === 'hall ticket') {
+    className = 'tag-active';
+    text = 'ADMIT CARD';
+  } else if (lower === 'extended') {
     className = 'tag-teal'; // Teal
     text = 'EXTENDED';
-  } else if (lower.includes('last') || lower.includes('date') || lower.includes('orange') || lower.includes('amber')) {
+  } else if (lower === 'last date') {
     className = 'tag-amber'; // Amber
     text = 'LAST DATE';
+  } else {
+    // Custom Badge: preserve user's typed text, and pick smart matching color
+    if (lower.includes('new') || lower.includes('start') || lower.includes('red') || lower.includes('urgent') || lower.includes('hot')) {
+      className = 'tag-new';
+    } else if (lower.includes('active') || lower.includes('link') || lower.includes('admit') || lower.includes('blue')) {
+      className = 'tag-active';
+    } else if (lower.includes('result') || lower.includes('answer') || lower.includes('purple')) {
+      className = 'tag-purple';
+    } else if (lower.includes('extended') || lower.includes('teal')) {
+      className = 'tag-teal';
+    } else {
+      className = 'tag-amber';
+    }
   }
 
   return { text, className };

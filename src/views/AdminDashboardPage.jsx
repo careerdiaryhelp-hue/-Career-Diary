@@ -100,6 +100,8 @@ export default function AdminDashboardPage({
   const [editingJobId, setEditingJobId] = useState(null);
   const [importUrl, setImportUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [isCustomBadge, setIsCustomBadge] = useState(false);
+  const customBadgeInputRef = useRef(null);
 
   // Reset pagination to page 1 whenever search, filter, or itemsPerPage changes
   useEffect(() => {
@@ -540,6 +542,7 @@ export default function AdminDashboardPage({
   const handleStartNewPost = () => {
     setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
+    setIsCustomBadge(false);
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = '';
     }
@@ -705,7 +708,7 @@ export default function AdminDashboardPage({
       lastDate: job.lastDate || job.appLast || '',
       appStart: job.appStart || '',
       examDate: job.examDate || '',
-      badge: job.badge || 'New!',
+      badge: job.badge !== undefined ? job.badge : 'New!',
       bannerColor: job.bannerColor || 'pink',
       description: job.description || job.uniqueDescription || job.shortInfo || '',
       content: initialHtml,
@@ -726,6 +729,9 @@ export default function AdminDashboardPage({
       applicationFee: job.applicationFee || {},
       ageLimit: job.ageLimit || {},
     });
+
+    const STANDARD_BADGES = ['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''];
+    setIsCustomBadge(Boolean(job.badge && !STANDARD_BADGES.includes(job.badge)));
 
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = initialHtml;
@@ -3604,6 +3610,7 @@ export default function AdminDashboardPage({
     }
     setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
+    setIsCustomBadge(false);
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = '';
     }
@@ -3744,6 +3751,7 @@ export default function AdminDashboardPage({
     }
     setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
+    setIsCustomBadge(false);
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = '';
     }
@@ -4631,7 +4639,7 @@ export default function AdminDashboardPage({
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-outline btn-sm" onClick={() => { setEditingJobId(null); setForm({ ...EMPTY_FORM }); setActiveSection('dashboard'); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
+          <button className="btn btn-outline btn-sm" onClick={() => { setEditingJobId(null); setForm({ ...EMPTY_FORM }); setIsCustomBadge(false); setActiveSection('dashboard'); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
             <X size={14} /> Cancel
           </button>
           <button onClick={handleSaveDraft} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
@@ -4929,14 +4937,31 @@ export default function AdminDashboardPage({
 
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <select
-                      value={['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''].includes(form.badge) ? (form.badge || 'None') : 'custom'}
+                      value={isCustomBadge ? 'custom' : (['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''].includes(form.badge) ? (form.badge || 'None') : 'custom')}
                       onChange={e => {
-                        if (e.target.value === 'None') set('badge', '');
-                        else if (e.target.value === 'custom') set('badge', form.badge || 'New!');
-                        else set('badge', e.target.value);
+                        const val = e.target.value;
+                        if (val === 'custom') {
+                          setIsCustomBadge(true);
+                          const standardBadges = ['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None'];
+                          if (standardBadges.includes(form.badge)) {
+                            set('badge', '');
+                          }
+                          setTimeout(() => {
+                            if (customBadgeInputRef.current) {
+                              customBadgeInputRef.current.focus();
+                              customBadgeInputRef.current.select();
+                            }
+                          }, 50);
+                        } else if (val === 'None') {
+                          setIsCustomBadge(false);
+                          set('badge', '');
+                        } else {
+                          setIsCustomBadge(false);
+                          set('badge', val);
+                        }
                       }}
                       style={{
-                        flex: 1,
+                        flex: '1 1 50%',
                         padding: '8px 10px',
                         border: '1px solid #cbd5e1',
                         borderRadius: '6px',
@@ -4952,32 +4977,48 @@ export default function AdminDashboardPage({
                       <option value="START">START (Red)</option>
                       <option value="Link Active">Link Active (Blue)</option>
                       <option value="Last Date">Last Date (Amber)</option>
-                      <option value="Answer Key">Answer Key</option>
-                      <option value="Admit Card">Admit Card</option>
-                      <option value="Result">Result</option>
-                      <option value="Extended">Extended</option>
-                      <option value="custom">Custom Text...</option>
+                      <option value="Answer Key">Answer Key (Purple)</option>
+                      <option value="Admit Card">Admit Card (Blue)</option>
+                      <option value="Result">Result (Purple)</option>
+                      <option value="Extended">Extended (Teal)</option>
+                      <option value="custom">✍️ Custom Text (Type your own)...</option>
                       <option value="None">None (No Badge)</option>
                     </select>
 
                     <input
+                      ref={customBadgeInputRef}
                       type="text"
-                      placeholder="Custom Text"
+                      placeholder={isCustomBadge ? "Type custom badge..." : "Custom Text"}
                       value={form.badge || ''}
-                      onChange={e => set('badge', e.target.value)}
+                      onFocus={() => {
+                        setIsCustomBadge(true);
+                      }}
+                      onChange={e => {
+                        setIsCustomBadge(true);
+                        set('badge', e.target.value);
+                      }}
                       style={{
-                        width: '120px',
+                        flex: '1 1 50%',
                         padding: '8px 10px',
-                        border: '1px solid #cbd5e1',
+                        border: isCustomBadge ? '2px solid #2563eb' : '1px solid #cbd5e1',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
                         fontWeight: 600,
-                        background: '#ffffff',
-                        boxSizing: 'border-box'
+                        background: isCustomBadge ? '#eff6ff' : '#ffffff',
+                        color: '#1e293b',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isCustomBadge ? '0 0 0 3px rgba(37, 99, 235, 0.15)' : 'none'
                       }}
-                      title="Edit badge text"
+                      title="Type your custom badge text here"
                     />
                   </div>
+                  {isCustomBadge && (
+                    <div style={{ marginTop: '5px', fontSize: '0.74rem', color: '#2563eb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>✏️ Custom badge active: Type your own badge text above (e.g. Exam Date, Notice, 10th Pass).</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
