@@ -162,7 +162,9 @@ export const ALL_COLUMNS = [
 ];
 
 export const getJobUrl = (job) => {
-  if (!job || !job.id) return '/';
+  if (!job) return '/';
+  if (job.isExternal && job.directLink) return job.directLink;
+  if (!job.id) return '/';
   
   // Use category classification to determine URL prefix
   if (isResult(job)) return `/result/${job.id}`;

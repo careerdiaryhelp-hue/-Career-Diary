@@ -11,7 +11,7 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns
+  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns, Zap
 } from 'lucide-react';
 
 const cleanSlug = (str) => {
@@ -101,6 +101,13 @@ export default function AdminDashboardPage({
   const [importUrl, setImportUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [isCustomBadge, setIsCustomBadge] = useState(false);
+
+  // Sarkari Guide Import state
+  const [sgUrl, setSgUrl] = useState('');
+  const [sgTitle, setSgTitle] = useState('');
+  const [sgCategory, setSgCategory] = useState('Latest Job');
+  const [sgImporting, setSgImporting] = useState(false);
+  const [sgLog, setSgLog] = useState([]);
   const customBadgeInputRef = useRef(null);
 
   // Reset pagination to page 1 whenever search, filter, or itemsPerPage changes
@@ -4129,6 +4136,163 @@ export default function AdminDashboardPage({
     setActiveSection('dashboard');
   };
 
+  // ── Sarkari Guide Import Section ──────────────────────────
+  const handleSarkariGuideImport = async () => {
+    if (!sgUrl) {
+      showToast('Please enter a valid URL', 'error');
+      return;
+    }
+    if (!sgTitle) {
+      showToast('Please enter a Title for the post', 'error');
+      return;
+    }
+    
+    setSgImporting(true);
+    setSgLog([]);
+    const addLog = (msg) => setSgLog(prev => [...prev, msg]);
+    
+    addLog(`⏳ Preparing direct publish for: ${sgTitle}`);
+    
+    try {
+      const finalSlug = cleanSlug(sgTitle);
+      const newJob = {
+        id: finalSlug,
+        slug: finalSlug,
+        title: sgTitle.trim(),
+        status: 'Published',
+        category: sgCategory,
+        organization: 'Sarkari Guide',
+        vacancies: 'Various',
+        totalPosts: 'Various',
+        displayOrder: 0,
+        featured: false,
+        isFeatured: false,
+        isTopCard: false,
+        isTopForm: false,
+        isLatestUpdate: false,
+        isBreakingNews: false,
+        description: `Apply online for ${sgTitle.trim()}`,
+        shortInfo: `Apply online for ${sgTitle.trim()}`,
+        content: `<p>Please click the official link below for more details and to apply online.</p>`,
+        htmlContent: `<p>Please click the official link below for more details and to apply online.</p>`,
+        seoTitle: sgTitle.trim(),
+        seoDescription: `Apply online for ${sgTitle.trim()}`,
+        applyUrl: sgUrl,
+        importantLinks: {
+          'Apply Online / View Details': sgUrl
+        },
+        important_links: {
+          'Apply Online / View Details': sgUrl
+        },
+        isExternal: true,
+        directLink: sgUrl,
+        postDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+        updatedAt: new Date().toISOString(),
+      };
+
+      addLog(`⏳ Saving to database...`);
+      const res = await onAddJob(newJob);
+      
+      if (res && res.success === false) {
+        if (res.queued) {
+           addLog(`⚠️ Saved locally (Firestore quota exhausted).`);
+           showToast(`⚠️ Quota exhausted — post queued for auto-retry!`, 'info');
+        } else {
+           throw new Error(res.error?.message || res.error);
+        }
+      } else {
+        addLog(`✅ Published successfully!`);
+        showToast('🎉 Direct Post published successfully!', 'success');
+      }
+      
+      setSgUrl('');
+      setSgTitle('');
+      setSgImporting(false);
+      
+    } catch (err) {
+      addLog(`❌ Error: ${err.message}`);
+      setSgImporting(false);
+    }
+  };
+
+  const renderSarkariGuideImport = () => (
+    <div style={{ padding: isMobile ? '15px' : '30px', maxWidth: '800px', margin: '0 auto', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', color: '#1e293b' }}>
+        <Zap size={24} color="#f59e0b" /> Direct Publish External Link
+      </h2>
+      <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px', lineHeight: 1.5 }}>
+        Quickly publish a direct link to an external site (like sarkariguidejob.com). The post will appear in the selected category and redirect users straight to the provided URL.
+      </p>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#334155' }}>Post Title <span style={{ color: '#ef4444' }}>*</span></label>
+        <input 
+          type="text" 
+          value={sgTitle} 
+          onChange={e => setSgTitle(e.target.value)} 
+          placeholder="e.g. ISRO IPRC Recruitment 2026 Notification Out..."
+          style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#334155' }}>External URL <span style={{ color: '#ef4444' }}>*</span></label>
+        <input 
+          type="text" 
+          value={sgUrl} 
+          onChange={e => setSgUrl(e.target.value)} 
+          placeholder="https://sarkariguidejob.com/job/isro-iprc-recruitment-2026/"
+          style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '24px' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#334155' }}>Category <span style={{ color: '#ef4444' }}>*</span></label>
+        <select 
+          value={sgCategory} 
+          onChange={e => setSgCategory(e.target.value)}
+          style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '15px', cursor: 'pointer' }}
+        >
+          {['Latest Job', 'Admit Card', 'Result', 'Admission', 'Syllabus', 'Answer Key', 'Important', 'Online Form'].map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+      
+      <button 
+        onClick={handleSarkariGuideImport}
+        disabled={sgImporting || !sgUrl || !sgTitle}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: (sgImporting || !sgUrl || !sgTitle) ? '#94a3b8' : '#2563eb',
+          color: '#fff',
+          fontWeight: 'bold',
+          borderRadius: '8px',
+          cursor: (sgImporting || !sgUrl || !sgTitle) ? 'not-allowed' : 'pointer',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          fontSize: '16px',
+          transition: 'background 0.2s'
+        }}
+      >
+        {sgImporting ? <RotateCw size={20} className="animate-spin" /> : <UploadCloud size={20} />}
+        {sgImporting ? 'Publishing...' : 'Publish Direct Link'}
+      </button>
+
+      {sgLog.length > 0 && (
+        <div style={{ marginTop: '24px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto' }}>
+          {sgLog.map((log, i) => (
+             <div key={i} style={{ marginBottom: '6px', color: log.includes('❌') ? '#ef4444' : '#334155' }}>{log}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   // ── Sidebar Nav Items ────────────────────────────────────
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -4138,6 +4302,7 @@ export default function AdminDashboardPage({
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
     { id: 'top-online-forms', label: 'Top Online Forms', icon: FileText },
+    { id: 'sarkari-guide', label: 'Sarkari Guide Import', icon: Zap },
   ];
 
   // ── Dashboard Overview Section ──
@@ -8095,6 +8260,7 @@ export default function AdminDashboardPage({
           {activeSection === 'latest-updates' && renderLatestUpdates()}
           {activeSection === 'featured-posts' && renderFeaturedPosts()}
           {activeSection === 'top-online-forms' && renderTopOnlineForms()}
+          {activeSection === 'sarkari-guide' && renderSarkariGuideImport()}
         </div>
       </div>
 
