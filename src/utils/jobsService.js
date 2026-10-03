@@ -164,16 +164,9 @@ export async function getJobBySlug(slug) {
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
-  // 1. Check live Firestore doc first (ensures edits in admin immediately appear with full HTML content)
-  try {
-    const directDoc = await fetchFirestoreJobById(clean);
-    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
-      return directDoc;
-    }
-  } catch (e) {}
-
   const fullJobs = await getFullJobs();
 
+  // 1. Check precomputed static jobs first (0ms, 0 network, immune to Firestore quota exhaustion)
   let match = fullJobs.find(j => {
     if (!j) return false;
     if (j._safeId === clean) return true;
@@ -185,6 +178,18 @@ export async function getJobBySlug(slug) {
     if (jTitle === lowerSlug) return true;
     return false;
   });
+
+  if (match && (match.content || match.htmlContent)) {
+    return match;
+  }
+
+  // 2. If not found in static list (e.g. dynamic post created in admin), query live Firestore doc
+  try {
+    const directDoc = await fetchFirestoreJobById(clean);
+    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
+      return directDoc;
+    }
+  } catch (e) {}
 
   if (match) return match;
 
@@ -198,7 +203,7 @@ export async function getJobBySlug(slug) {
   });
   if (match) return match;
 
-  // Fallback 2: If not in static posts, query Firestore for dynamic new posts
+  // Fallback 2: Direct lookup by ID in Firestore
   try {
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc) return directDoc;

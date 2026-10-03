@@ -1,5 +1,176 @@
 export const admissionsData = [
   {
+    "id": "up-scholarship-2026",
+    "slug": "up-scholarship-2026",
+    "title": "UP Scholarship Online Form 2026–27",
+    "organization": "Social Welfare Department, Government of Uttar Pradesh",
+    "category": "ADMISSION",
+    "badge": "START",
+    "uniqueDescription": "Social Welfare Department, Government of Uttar Pradesh has invited online applications for UP Scholarship 2026-27 for Pre-Matric (Class 9-10), Post-Matric (Class 11-12), and Dashmottar (UG, PG, Diploma, Certificate) courses. Eligible students enrolled in recognized schools, colleges, and universities across Uttar Pradesh can apply online through scholarship.up.gov.in.",
+    "description": "UP Scholarship 2026-27 Online Application Form started. Check eligibility, important dates, category wise income criteria, DigiLocker OTR process, and apply online links for Pre-Matric, Post-Matric, and Dashmottar scholarship schemes on Career Diary.",
+    "postName": "UP Scholarship Online Form 2026–27 (Pre-Matric, Post-Matric & Dashmottar)",
+    "status": "Active Notification",
+    "updateType": "Official Update",
+    "postDate": "2026-10-03 09:30:00",
+    "updatedAt": "2026-10-03T04:10:00.000Z",
+    "expertTip": "Career Diary Advice: Complete DigiLocker verification and ensure your Aadhaar is linked to your bank account for Direct Benefit Transfer (DBT).",
+    "totalPosts": "All Eligible Students",
+    "jobLocation": "Uttar Pradesh",
+    "eligibility": {
+      "education": "Enrolled in recognized School, College, University, or Institute in Uttar Pradesh (Class 9, 10, 11, 12, UG, PG, Diploma, ITI, or Certificate courses).",
+      "fresherEligible": true,
+      "location": "Uttar Pradesh"
+    },
+    "ageLimit": {
+      "minimum": "As per course rules",
+      "maximum": "No upper age limit for scholarship",
+      "relaxation": "As per UP Government Scholarship Rules."
+    },
+    "applicationFee": {
+      "General / OBC / EWS": "₹ 0/-",
+      "SC / ST / PH": "₹ 0/-",
+      "paymentMode": "Free Application (No Application Fee for Any Category)"
+    },
+    "importantDates": {
+      "Application Start Date": "01 July 2026",
+      "Pre-Matric (Class 9-10) Last Date": "21 September 2026",
+      "Post-Matric (Class 11-12) Last Date": "15 October 2026",
+      "Dashmottar (UG/PG/Diploma) Last Date": "31 October 2026",
+      "Hard Copy Submit to College": "Within 7 Days of Final Submit",
+      "Correction Window": "November 2026"
+    },
+    "selectionProcess": [
+      "Online Application Submission",
+      "College / Institute Level Verification",
+      "District Welfare Officer (DWO) Verification",
+      "Direct Benefit Transfer (DBT) into Aadhaar Seeded Bank Account"
+    ],
+    "vacancyDetails": [
+      {
+        "Course / Scheme": "Pre-Matric Scholarship",
+        "Class / Level": "Class 9th & 10th",
+        "Eligibility": "Passed previous class and enrolled in Class 9 or 10 in UP."
+      },
+      {
+        "Course / Scheme": "Post-Matric Intermediate",
+        "Class / Level": "Class 11th & 12th",
+        "Eligibility": "Passed Class 10/11 and enrolled in Class 11 or 12 in UP."
+      },
+      {
+        "Course / Scheme": "Dashmottar Other Than Inter",
+        "Class / Level": "UG, PG, Diploma, ITI, B.Ed, B.Tech, etc.",
+        "Eligibility": "Enrolled in Graduation, Post Graduation, or Professional Courses."
+      }
+    ],
+    "importantLinks": {
+      "Apply Online (Registration)": "https://scholarship.up.gov.in/RegistrationNew.aspx",
+      "Student Login (Pre-Matric Fresh)": "https://scholarship.up.gov.in/",
+      "Student Login (Post-Matric Fresh)": "https://scholarship.up.gov.in/",
+      "Student Login (Renewal All Courses)": "https://scholarship.up.gov.in/",
+      "UP Scholarship Official Website": "https://scholarship.up.gov.in/",
+      "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u",
+      "Join Telegram Channel": "https://t.me/careerdiary"
+    },
+    "content": `<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#003366; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1.1rem; padding:12px;">Social Welfare Department, Government of Uttar Pradesh (UP)</td>
+    </tr>
+    <tr style="background-color:#f1f5f9; text-align:center; font-weight:bold;">
+      <td colspan="2" style="font-size:1rem; padding:10px; color:#b45309;">UP Scholarship Online Form 2026–27 (Pre-Matric, Post-Matric & Dashmottar)</td>
+    </tr>
+    <tr style="text-align:center;">
+      <td colspan="2" style="padding:10px;"><strong>Short Details of Notification :</strong> The Social Welfare Department, Government of Uttar Pradesh has released the online application schedule for UP Scholarship 2026-27 for Pre-Matric (Class 9-10), Post-Matric (Class 11-12), and Dashmottar (UG, PG, Diploma, ITI, B.Ed, B.Tech) schemes. Eligible students can apply online through the official portal.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#003366; color:#ffffff; font-weight:bold; text-align:center;">
+      <th style="width:50%; padding:10px;">Important Dates</th>
+      <th style="width:50%; padding:10px;">Application Fee</th>
+    </tr>
+    <tr style="vertical-align:top;">
+      <td style="padding:12px; line-height:1.7;">
+        <strong>Application Begin :</strong> 01/07/2026<br/>
+        <strong>Pre-Matric (Class 9-10) Last Date :</strong> 21/09/2026<br/>
+        <strong>Post-Matric (Class 11-12) Last Date :</strong> 15/10/2026<br/>
+        <strong>Dashmottar (Other Than Inter) Last Date :</strong> 31/10/2026<br/>
+        <strong>Hard Copy Submit to College :</strong> Within 7 Days<br/>
+        <strong>Correction Window :</strong> November 2026
+      </td>
+      <td style="padding:12px; line-height:1.7;">
+        <strong>General / OBC / EWS :</strong> ₹ 0/-<br/>
+        <strong>SC / ST / PH :</strong> ₹ 0/-<br/>
+        <strong>Female Candidates :</strong> ₹ 0/-<br/>
+        <span style="color:#16a34a; font-weight:bold;">No Application Fee for Any Candidate. Free Online Form.</span>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#006b00; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1rem; padding:10px;">Scholarship Scheme & Eligibility Details</td>
+    </tr>
+    <tr>
+      <td style="width:35%; font-weight:bold; padding:10px;">Pre-Matric (Class 9th & 10th)</td>
+      <td style="padding:10px;">Passed Class 8 exam and enrolled in Class 9 or 10 in any recognized school in Uttar Pradesh.</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; padding:10px;">Post-Matric Intermediate (Class 11th & 12th)</td>
+      <td style="padding:10px;">Passed Class 10/11 exam and enrolled in Class 11 or 12 in any recognized college/school in Uttar Pradesh.</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; padding:10px;">Dashmottar (Other Than Intermediate)</td>
+      <td style="padding:10px;">Enrolled in Under Graduate (BA, BSc, BCom), Post Graduate (MA, MSc, MCom), Diploma, Polytechnic, ITI, B.Ed, B.Tech, Medical, or any Certificate Course in UP.</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; padding:10px;">Annual Income Criteria</td>
+      <td style="padding:10px;">General / OBC / Minority: Family income up to ₹ 2,00,000/- per year. SC / ST: Family income up to ₹ 2,50,000/- per year.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#a80000; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1rem; padding:10px;">Some Useful Important Links</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; width:45%; text-align:center; padding:10px;">Apply Online (Registration)</td>
+      <td style="text-align:center; padding:10px;"><a href="https://scholarship.up.gov.in/RegistrationNew.aspx" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Student Login (Pre-Matric Fresh)</td>
+      <td style="text-align:center; padding:10px;"><a href="https://scholarship.up.gov.in/" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Student Login (Post-Matric Fresh)</td>
+      <td style="text-align:center; padding:10px;"><a href="https://scholarship.up.gov.in/" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Student Login (Renewal All Courses)</td>
+      <td style="text-align:center; padding:10px;"><a href="https://scholarship.up.gov.in/" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Official Website</td>
+      <td style="text-align:center; padding:10px;"><a href="https://scholarship.up.gov.in/" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Join Telegram Channel</td>
+      <td style="text-align:center; padding:10px;"><a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer" style="color:#0088cc; font-weight:bold;">Click Here</a></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; text-align:center; padding:10px;">Join WhatsApp Channel</td>
+      <td style="text-align:center; padding:10px;"><a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer" style="color:#25d366; font-weight:bold;">Click Here</a></td>
+    </tr>
+  </tbody>
+</table>`
+  },
+  {
     "id": "simultala-awasiya-vidyalaya-sav-bihar-class-6-admission-form-2026",
     "title": "Simultala Awasiya Vidyalaya (SAV) Bihar Class 6 Admission Form 2026 Extended",
     "organization": "Govt of Bihar",
