@@ -2066,54 +2066,195 @@ export default function AdminDashboardPage({
     };
   };
 
+  // Sanitizes copied webpage text/HTML by stripping header, navbar, footer, layout junk, and promo links
+  const sanitizeImportedText = (text) => {
+    if (!text || typeof text !== 'string') return '';
+
+    let cleaned = String(text);
+
+    // 1. Remove HTML Header and Nav elements
+    cleaned = cleaned
+      .replace(/<header[\s\S]*?<\/header>/gi, '')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+      .replace(/<div[^>]*class=["'][^"']*(?:header|navbar|nav-bar|top-bar|main-header|menu)[^"']*["'][\s\S]*?<\/div>/gi, '')
+      .replace(/<div[^>]*id=["'][^"']*(?:header|navbar|nav-bar|top-bar|main-header|menu)[^"']*["'][\s\S]*?<\/div>/gi, '')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+      .replace(/<div[^>]*class=["'][^"']*(?:footer|main-footer|bottom-bar|disclaimer|copyright)[^"']*["'][\s\S]*?<\/div>/gi, '')
+      .replace(/<div[^>]*id=["'][^"']*(?:footer|main-footer|bottom-bar|disclaimer|copyright)[^"']*["'][\s\S]*?<\/div>/gi, '');
+
+    // 2. Cut everything before post title if navigation keywords are detected at the top
+    const headerMarkers = [
+      /Back to All Posts/i,
+      /Home\s*>\s*[^>\n]+\s*>\s*/i,
+      /Skip to content/i,
+      /Sarkari Result\s*:\s*SarkariResult\.Com/i,
+      /WWW\.SARKARIRESULT\.COM/i,
+      /WWW\.CAREERDIARY\.IN/i,
+      /SarkariResult\.Com\.Cm/i,
+      /Rojgar Result/i,
+      /Result Bharat/i,
+    ];
+
+    for (const marker of headerMarkers) {
+      const match = cleaned.match(marker);
+      if (match && match.index < 1800) {
+        cleaned = cleaned.slice(match.index + match[0].length);
+        break;
+      }
+    }
+
+    // 3. Strip leading lines that are purely navbar/brand links
+    const navKeywords = [
+      'career diary', 'sarkari result', 'sarkariresult', 'result bharat', 'rojgar result',
+      'home', 'latest jobs', 'latest job', 'admit card', 'result', 'results',
+      'answer key', 'syllabus', 'admission', 'certificate verification', 'important',
+      'contact us', 'english', 'हिन्दी', 'search jobs', 'back to all posts', 'govt job portal'
+    ];
+
+    let lines = cleaned.split('\n');
+    let firstValidLineIndex = 0;
+
+    for (let i = 0; i < Math.min(lines.length, 35); i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cleanLine = line
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+        .toLowerCase();
+
+      const isNav = navKeywords.some(kw => cleanLine === kw || cleanLine.startsWith(kw + ' •') || cleanLine.startsWith(kw + ' -') || cleanLine.includes('• govt job portal'));
+      if (isNav) {
+        firstValidLineIndex = i + 1;
+      } else {
+        if (line.length > 10 && !cleanLine.includes('careerdiary') && !cleanLine.includes('sarkariresult') && !cleanLine.includes('back to all')) {
+          firstValidLineIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (firstValidLineIndex > 0) {
+      cleaned = lines.slice(firstValidLineIndex).join('\n');
+    }
+
+    // 4. Remove Footer Blocks (Disclaimers, FAQs, Related Posts, Social Media, Quick Categories)
+    const footerMarkers = [
+      /Frequently Asked Questions\s*\(FAQs\)/i,
+      /Important Question/i,
+      /Question:\s*When will the online application/i,
+      /You May Also Check\s*:/i,
+      /Latest Posts\s*\n\s*👉/i,
+      /Related Posts\s*\n\s*👉/i,
+      /Disclaimer\s*:\s*Information regarding/i,
+      /Join Us On Social Media Platforms/i,
+      /👉\s*Go to home/i,
+      /Quick Categories\s*\n/i,
+      /Popular Exam Alerts\s*\n/i,
+      /©\s*\d{4}[–-]\d{4}\s*Career Diary/i,
+      /©\s*Copyright\s*\d{4}/i,
+      /All Rights Reserved/i,
+      /Download Mobile Apps/i
+    ];
+
+    let earliestFooterIndex = cleaned.length;
+    for (const marker of footerMarkers) {
+      const match = cleaned.match(marker);
+      if (match && match.index < earliestFooterIndex) {
+        earliestFooterIndex = match.index;
+      }
+    }
+
+    if (earliestFooterIndex < cleaned.length) {
+      cleaned = cleaned.slice(0, earliestFooterIndex);
+    }
+
+    return cleaned.trim();
+  };
+
   // Universal parser for any job notification HTML or Plain Text (Result Bharat, Sarkari Result, Rojgar Result, etc.)
-  const parseUniversalJobHtml = (html, pageUrl = '') => {
-    if (!html || typeof html !== 'string') return null;
+  const parseUniversalJobHtml = (rawHtml, pageUrl = '') => {
+    if (!rawHtml || typeof rawHtml !== 'string') return null;
+
+    const html = sanitizeImportedText(rawHtml);
 
     // 1. Title
     let title = '';
     const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
     if (h1Match) title = h1Match[1].replace(/<[^>]+>/g, '').trim();
+
     if (!title || title.length < 5) {
-      const npMatch = html.match(/Name\s+Of\s+Post\s*:?\s*([^<\n\r]+)/i);
-      if (npMatch) title = npMatch[1].trim();
+      const npMatch = html.match(/(?:Name\s+Of\s+Post|Post\s+Name)[ \t]*:?[ \t]*([^\n\r<]+)/i);
+      if (npMatch && npMatch[1].trim().length > 5) {
+        const candidate = npMatch[1].trim();
+        const cl = candidate.toLowerCase();
+        if (!cl.includes('total vacancies') && !cl.includes('total post') && !cl.includes('eligibility')) {
+          title = candidate;
+        }
+      }
     }
     if (!title) {
       const tMatch = html.match(/<title>([^<]+)<\/title>/i);
       if (tMatch) title = tMatch[1].replace(/\|.*$/g, '').trim();
     }
     if (!title || title.length < 5) {
-      const rawLines = html.split('\n').map(l => l.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()).filter(Boolean);
-      for (const line of rawLines.slice(0, 20)) {
+      const rawLines = html.split('\n')
+        .map(l => l.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim())
+        .filter(Boolean);
+
+      for (const line of rawLines.slice(0, 12)) {
         const ll = line.toLowerCase();
-        if (
-          (ll.includes('recruitment') || ll.includes('online form') || ll.includes('bharti') || ll.includes('admit card') || ll.includes('result')) &&
-          !ll.includes('sarkariresult') && !ll.includes('career diary') && !ll.includes('sarkari result') && line.length > 8 && line.length < 130
-        ) {
-          title = line;
+        if (ll.startsWith('post date') || ll.startsWith('application start') || ll.startsWith('advertisement') || ll.startsWith('advt')) continue;
+        if (line.length >= 10 && line.length <= 150) {
+          if (
+            ll.includes('recruitment') || ll.includes('online form') || ll.includes('bharti') ||
+            ll.includes('admit card') || ll.includes('result') || ll.includes('answer key') ||
+            ll.includes('exam date') || ll.includes('notification') || ll.includes('officer') ||
+            ll.includes('constable') || ll.includes('teacher') || ll.includes('clerk') || ll.includes('rrb')
+          ) {
+            title = line;
+            break;
+          }
+        }
+      }
+
+      if (!title && rawLines.length > 0 && rawLines[0].length >= 10 && !rawLines[0].toLowerCase().startsWith('post date')) {
+        title = rawLines[0];
+      }
+    }
+    title = cleanStr(title.replace(/\s*#\w+/g, '').replace(/(?:Name\s+of\s+Post|Post\s+Name)\s*:?\s*/i, '').trim());
+
+    // 2. Organization / Board
+    let org = '';
+    const orgExplicit = html.match(/Organization(?:\s+Name)?[ \t]*:?[ \t]*\n?[ \t]*([^\n\r<\[]+)/i);
+    if (orgExplicit && orgExplicit[1].trim().length > 3) {
+      const cand = orgExplicit[1].trim();
+      if (!cand.toLowerCase().includes('post name') && !cand.toLowerCase().includes('total vacancies')) {
+        org = cand;
+      }
+    }
+
+    if (!org) {
+      const h2Matches = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)];
+      for (const m of h2Matches) {
+        const txt = m[1].replace(/<[^>]+>/g, '').trim();
+        const tl = txt.toLowerCase();
+        if (txt && !tl.includes('important') && !tl.includes('result') && !tl.includes('sarkari') && !tl.includes('apply') && !tl.includes('download') && !tl.includes('link') && txt.length > 3 && txt.length < 120) {
+          org = txt;
           break;
         }
       }
     }
-    title = cleanStr(title.replace(/\s*#\w+/g, '').replace(/Name\s+of\s+Post\s*:?\s*/i, '').trim());
-
-    // 2. Organization / Board
-    let org = '';
-    const h2Matches = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)];
-    for (const m of h2Matches) {
-      const txt = m[1].replace(/<[^>]+>/g, '').trim();
-      const tl = txt.toLowerCase();
-      if (txt && !tl.includes('important') && !tl.includes('result') && !tl.includes('sarkari') && !tl.includes('apply') && !tl.includes('download') && !tl.includes('link') && txt.length > 3 && txt.length < 120) {
-        org = txt;
-        break;
-      }
-    }
     if (!org) {
       const orgMatch = html.match(/(?:Recruitment Board|Commission|Agency|Organisation|Organization|Department)\s*:?\s*([^\n<]+)/i);
-      if (orgMatch) org = orgMatch[1].trim();
+      if (orgMatch && orgMatch[1].trim().length > 3) org = orgMatch[1].trim();
+    }
+    if (!org) {
+      const mdOrgMatch = html.match(/\[([^\]]*(?:Recruitment Board|Commission|Agency|Organisation|Organization|Department|Railway|Police|Court|Trust|Authority|NTPC|SSC|UPSC|BPSC|BTSC)[^\]]*)\]/i);
+      if (mdOrgMatch) org = mdOrgMatch[1].trim();
     }
     if (!org && title) {
-      const parts = title.split(/\s+(?:Recruitment|Online|Bharti|Exam|Various|Technical|Constable|Teacher)/i);
+      const parts = title.split(/\s+(?:Recruitment|Online|Bharti|Exam|Various|Technical|Constable|Teacher|CEN|Vacanc)/i);
       if (parts[0] && parts[0].trim().length > 3) org = parts[0].trim();
     }
     org = cleanStr(org) || 'Government Department';
@@ -2135,18 +2276,18 @@ export default function AdminDashboardPage({
 
     // 4. Vacancy / Total Posts
     const cleanBody = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-    const postMatch = cleanBody.match(/Total\s*:?\s*([0-9,]+|-)\s*Post/i) || cleanBody.match(/(\d[\d,]*\s*(?:Posts?|पद|Vacanc(?:y|ies)))/i);
+    const postMatch = cleanBody.match(/Total\s*(?:Vacancies|Post)?\s*:?\s*([0-9,]+|-)\s*Post/i) || cleanBody.match(/(\d[\d,]*\s*(?:Posts?|पद|Vacanc(?:y|ies)))/i);
     const totalPosts = postMatch ? (postMatch[1] || postMatch[0]).replace(/posts?/i, '').trim() + ' Posts' : '';
 
     // 5. Category detection
     let category = 'LATEST JOB';
     const urlLower = (pageUrl || '').toLowerCase();
     const titleLower = title.toLowerCase();
-    if (urlLower.includes('admit') || titleLower.includes('admit card') || titleLower.includes('hall ticket')) category = 'ADMIT CARD';
-    else if (urlLower.includes('result') || titleLower.includes('result') || titleLower.includes('score card') || titleLower.includes('cutoff')) category = 'RESULT';
-    else if (urlLower.includes('answer') || titleLower.includes('answer key')) category = 'ANSWER KEY';
-    else if (urlLower.includes('syllabus') || titleLower.includes('syllabus')) category = 'SYLLABUS';
-    else if (urlLower.includes('admission') || titleLower.includes('admission')) category = 'ADMISSION';
+    if (urlLower.includes('admit') || titleLower.includes('admit card') || titleLower.includes('hall ticket') || titleLower.includes('exam city') || titleLower.includes('city details')) category = 'ADMIT CARD';
+    else if (urlLower.includes('result') || titleLower.includes('result') || titleLower.includes('score card') || titleLower.includes('cutoff') || titleLower.includes('cut off') || titleLower.includes('merit list')) category = 'RESULT';
+    else if (urlLower.includes('answer') || titleLower.includes('answer key') || titleLower.includes('response sheet') || titleLower.includes('ans key')) category = 'ANSWER KEY';
+    else if (urlLower.includes('syllabus') || titleLower.includes('syllabus') || titleLower.includes('exam pattern')) category = 'SYLLABUS';
+    else if (urlLower.includes('admission') || titleLower.includes('admission') || titleLower.includes('entrance') || titleLower.includes('scholarship')) category = 'ADMISSION';
     else category = 'LATEST JOB';
 
     // 6. Dates, Fees, Age
@@ -2413,6 +2554,27 @@ export default function AdminDashboardPage({
 
     // 8. Important Links
     const links = {};
+    const ignoredLabels = [
+      'home', 'latest jobs', 'latest job', 'admit card', 'result', 'results',
+      'answer key', 'syllabus', 'admission', 'certificate verification', 'important',
+      'contact us', 'privacy policy', 'terms & conditions', 'terms of use', 'about us',
+      'disclaimer', 'back to all posts', 'top online form', 'top online form 2026',
+      'all current job list', 'check career diary', 'www.career diary', 'click here',
+      'important link', 'rrbcdg.gov.in', 'short information :', 'short information',
+      'english', 'हिन्दी'
+    ];
+
+    const ignoredUrls = [
+      'https://careerdiary.in/', 'https://careerdiary.in',
+      'https://www.careerdiary.in/', 'https://www.careerdiary.in',
+      'https://careerdiary.in/latest-jobs', 'https://careerdiary.in/admit-card',
+      'https://careerdiary.in/results', 'https://careerdiary.in/answer-key',
+      'https://careerdiary.in/syllabus', 'https://careerdiary.in/admission',
+      'https://careerdiary.in/contact-us', 'https://careerdiary.in/privacy-policy',
+      'https://careerdiary.in/terms', 'https://sarkariresult.com/', 'https://www.sarkariresult.com/'
+    ];
+
+    // HTML table links
     for (const trm of trMatches) {
       const rowHtml = trm[1];
       const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
@@ -2435,10 +2597,14 @@ export default function AdminDashboardPage({
 
           const ll = label.toLowerCase();
           let hl = href.toLowerCase();
+
+          if (ignoredLabels.includes(ll)) continue;
+          if (ignoredUrls.some(u => hl === u || hl.startsWith(u))) continue;
+          if (hl.includes('facebook') || hl.includes('twitter') || hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('youtube') || hl.includes('instagram')) continue;
+          if (ll.startsWith('join telegram') || ll.startsWith('join whatsapp')) continue;
+
           if (
-            !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
-            !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('android app') && !ll.includes('mobile app') &&
-            (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari') || ll.includes('cutoff') || ll.includes('cut off') || ll.includes('c utoff') || ll.includes('score'))
+            ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('syllabus') || ll.includes('admit') || ll.includes('result') || ll.includes('answer') || ll.includes('correction') || ll.includes('login') || ll.includes('registration') || ll.includes('city') || ll.includes('career diary') || ll.includes('sarkari') || ll.includes('cutoff') || ll.includes('cut off') || ll.includes('c utoff') || ll.includes('score') || ll.includes('website')
           ) {
             if (
               ll.includes('career diary') ||
@@ -2463,18 +2629,29 @@ export default function AdminDashboardPage({
     const plainLines = html.split('\n').map(l => l.trim()).filter(Boolean);
     for (let i = 0; i < plainLines.length; i++) {
       const line = plainLines[i];
-      const mdMatch = line.match(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/);
-      if (mdMatch) {
+      const mdMatches = [...line.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g)];
+      if (mdMatches.length > 0) {
         const prevLine = cleanStr(plainLines[i - 1] || '');
-        const label = prevLine && prevLine.length < 80 && !prevLine.includes('http') ? prevLine : cleanStr(mdMatch[1]);
-        const href = mdMatch[2];
-        const ll = label.toLowerCase();
-        const hl = href.toLowerCase();
-        if (
-          !hl.includes('facebook') && !hl.includes('twitter') && !hl.includes('t.me') && !hl.includes('whatsapp') && !hl.includes('youtube') && !hl.includes('instagram') &&
-          !ll.includes('join') && !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('app') &&
-          (ll.includes('apply') || ll.includes('notif') || ll.includes('download') || ll.includes('official') || ll.includes('website') || ll.includes('result') || ll.includes('admit'))
-        ) {
+        const prevLower = prevLine.toLowerCase();
+        const isIntroOrMeta = prevLower.startsWith('post date') || prevLower.startsWith('short info') || prevLower.startsWith('advertisement') || prevLower.startsWith('advt') || prevLower.includes('has released') || prevLower.includes('has invited') || prevLower.includes('notification on');
+        const prefix = (prevLine && !isIntroOrMeta && prevLine.length < 60 && !prevLine.includes('http') && !prevLine.includes('[')) ? prevLine : '';
+
+        for (const m of mdMatches) {
+          let label = cleanStr(m[1]);
+          const href = m[2].trim();
+
+          if (prefix && prefix !== label && !label.toLowerCase().includes(prefix.toLowerCase())) {
+            label = `${prefix} ${label}`;
+          }
+
+          const ll = label.toLowerCase();
+          const hl = href.toLowerCase();
+
+          if (ignoredLabels.includes(ll)) continue;
+          if (ignoredUrls.some(u => hl === u || hl.startsWith(u))) continue;
+          if (hl.includes('facebook') || hl.includes('twitter') || hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('youtube') || hl.includes('instagram')) continue;
+          if (ll.startsWith('join telegram') || ll.startsWith('join whatsapp')) continue;
+
           if (!links[label]) links[label] = href;
         }
       }
@@ -3099,12 +3276,22 @@ export default function AdminDashboardPage({
 
     // 3. Universal HTML code or Raw Webpage Text import (Result Bharat, Sarkari Result, Rojgar Result, Bigbooster, etc.)
     const isHtml = text.includes('<') && text.includes('>');
-    const isJobText = text.toLowerCase().includes('important date') || 
-                      text.toLowerCase().includes('post name') || 
-                      text.toLowerCase().includes('application fee') || 
-                      text.toLowerCase().includes('recruitment') || 
-                      text.toLowerCase().includes('eligibility') ||
-                      text.toLowerCase().includes('online form');
+    const textLower = text.toLowerCase();
+    const isJobText = textLower.includes('important date') || 
+                      textLower.includes('post name') || 
+                      textLower.includes('application fee') || 
+                      textLower.includes('recruitment') || 
+                      textLower.includes('eligibility') ||
+                      textLower.includes('online form') ||
+                      textLower.includes('admit card') ||
+                      textLower.includes('result') ||
+                      textLower.includes('score card') ||
+                      textLower.includes('answer key') ||
+                      textLower.includes('syllabus') ||
+                      textLower.includes('admission') ||
+                      textLower.includes('exam date') ||
+                      textLower.includes('total vacancies') ||
+                      textLower.includes('sarkari');
 
     if (isHtml || isJobText) {
       try {
@@ -4656,7 +4843,7 @@ export default function AdminDashboardPage({
         <span style={{ fontWeight: 700, color: '#1d4ed8', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Quick Import:</span>
         <input
           type="text"
-          placeholder="Paste sarkariresult.com.cm, bigbooster or post URL here..."
+          placeholder="Paste URL, raw post text, or HTML code here..."
           value={importUrl}
           onChange={e => setImportUrl(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleImportData(); } }}
@@ -4668,6 +4855,21 @@ export default function AdminDashboardPage({
           disabled={isImporting}
           style={{ background: isImporting ? '#60a5fa' : '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: isImporting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem' }}>
           <Download size={14} /> {isImporting ? 'Importing...' : 'Import Data'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setInsertModal({
+              isOpen: true,
+              type: 'import',
+              title: '📋 Smart Paste (Full Page / Raw Text / HTML)',
+              label: 'Sarkari Result, SarkariResult.com.cm, ya kisi bhi website ka poora page copy karke (Ctrl+A & Ctrl+C) yahan paste karein. Website header, navbar, footer aur layout automatic clean ho jayega aur sirf post import hoga:',
+              placeholder: 'Paste full copied webpage text or HTML code here...',
+              value: '',
+            });
+          }}
+          style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem' }}>
+          <FileText size={14} /> 📋 Smart Paste (Full Page)
         </button>
       </div>
 
