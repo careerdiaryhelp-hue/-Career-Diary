@@ -177,11 +177,21 @@ const __dirname = path.dirname(__filename);
     } catch (_) {}
   }
 
+  let existingPrecomputedJobs = [];
+  try {
+    const { precomputedFullJobs } = await import('../src/data/precomputed_full.js');
+    if (Array.isArray(precomputedFullJobs)) {
+      existingPrecomputedJobs = precomputedFullJobs;
+    }
+  } catch (_) {}
+
   const initialJobs = [
     ...jobsData, ...admitCardsData, ...resultsData, ...admissionsData, ...syllabusData, ...importantData
   ];
 
-  const SORTED_STATIC_JOBS = mergeAndSortJobs(firestoreJobs, initialJobs);
+  // Merge live firestore jobs with existing precomputed jobs (so 429 quota exhaustion never loses posts)
+  const combinedPrimary = mergeAndSortJobs(firestoreJobs, existingPrecomputedJobs);
+  const SORTED_STATIC_JOBS = mergeAndSortJobs(combinedPrimary, initialJobs);
   const SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);
 
   fs.writeFileSync(
@@ -194,5 +204,5 @@ const __dirname = path.dirname(__filename);
     `export const precomputedFullJobs = ${JSON.stringify(SORTED_STATIC_JOBS)};`
   );
 
-  console.log("Precomputed jobs summary and full array into JS files.");
+  console.log(`Precomputed ${SORTED_STATIC_JOBS.length} jobs summary and full array into JS files.`);
 })();
