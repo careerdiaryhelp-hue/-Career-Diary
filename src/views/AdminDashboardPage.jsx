@@ -1746,9 +1746,9 @@ export default function AdminDashboardPage({
   const cleanVacancyDetails = (html) => {
     if (!html || typeof html !== 'string') return '';
     let cleaned = html
-      // Remove WhatsApp / Telegram channel promotional tables and links
-      .replace(/<table[^>]*>[\s\S]*?(?:Join\s+Our\s+(?:WhatsApp|Telegram)\s+Channel|t\.me|whatsapp\.com)[\s\S]*?<\/table>/gi, '')
-      .replace(/<table[^>]*>[\s\S]*?You\s+May\s+Also\s+Check[\s\S]*?<\/table>/gi, '')
+      // Remove WhatsApp / Telegram channel promotional tables and links safely without deleting other tables
+      .replace(/<table(?:(?!<table)[\s\S])*?(?:Join\s+Our\s+(?:WhatsApp|Telegram)\s+Channel|t\.me|whatsapp\.com)(?:(?!<table)[\s\S])*?<\/table>/gi, '')
+      .replace(/<table(?:(?!<table)[\s\S])*?You\s+May\s+Also\s+Check(?:(?!<table)[\s\S])*?<\/table>/gi, '')
       .replace(/<p[^>]*>[\s\S]*?You\s+May\s+Also\s+Check[\s\S]*?<\/p>/gi, '')
       .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
       .replace(/sarkariresult\.com/gi, 'careerdiary.in')
@@ -1760,6 +1760,27 @@ export default function AdminDashboardPage({
     cleaned = cleaned.replace(/<th([^>]*)>/gi, () => `<th style="border: 1px solid #000; padding: 10px; background-color: #008000; color: #fff; text-align: center; font-weight: bold;">`);
 
     return cleanStr(cleaned);
+  };
+
+  // Helper to format HTML lists cleanly without losing items
+  const formatWpListHtml = (html) => {
+    if (!html || typeof html !== 'string') return '';
+    let cleaned = html
+      .replace(/sarkariresult\.com\.cm/gi, 'careerdiary.in')
+      .replace(/sarkariresult\.com/gi, 'careerdiary.in')
+      .replace(/sarkari\s*result/gi, 'Career Diary')
+      .replace(/font-size:[^;"]+;?/gi, '')
+      .replace(/font-family:[^;"]+;?/gi, '')
+      .replace(/background-color:[^;"]+;?/gi, '')
+      .replace(/color:[^;"]+;?/gi, '')
+      .replace(/<span[^>]*>/gi, '')
+      .replace(/<\/span>/gi, '')
+      .replace(/\s+class="[^"]*"/gi, '')
+      .replace(/\s+data-[a-z-]+="[^"]*"/gi, '')
+      .replace(/\s+style=""/gi, '');
+
+    cleaned = cleaned.replace(/<ul[^>]*>/gi, '<ul style="margin: 0; padding-left: 20px; line-height: 1.8;">');
+    return cleaned.trim();
   };
 
   // Helper to parse WordPress REST API post with ACF (e.g. from sarkariresult.com.cm)
@@ -1844,12 +1865,18 @@ export default function AdminDashboardPage({
     const fees = parseList(acf.application_fee || '');
     const age = parseList(acf.age_limits_details || '');
 
+    const formattedDatesHtml = formatWpListHtml(acf.important_dates || '');
+    const formattedFeesHtml = formatWpListHtml(acf.application_fee || '');
+    const formattedAgeHtml = formatWpListHtml(acf.age_limits_details || '');
+    const ageTitle = clean(acf.age_limit_for) || 'Age Limit Details';
+
     // 7. Parse links from table or html (support multiple links in a single row)
     const links = {};
     const trRegex = /<tr>([\s\S]*?)<\/tr>/gi;
     let trMatch;
     while ((trMatch = trRegex.exec(acf.important_links || '')) !== null) {
       const row = trMatch[1];
+      if (row.toLowerCase().includes('important question')) continue;
       const aRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
       let aMatch;
       const aList = [];
@@ -1861,8 +1888,8 @@ export default function AdminDashboardPage({
       if (textMatch && textMatch.length >= 1) {
         const label = clean(textMatch[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
         const ll = label.toLowerCase();
-        // Skip competitor promotional channels
-        if (ll.includes('telegram') || ll.includes('whatsapp') || ll.includes('mobile app') || ll.includes('android app') || ll.includes('ios app')) {
+        // Skip competitor promotional channels & competitor official site links
+        if (ll.includes('telegram') || ll.includes('whatsapp') || ll.includes('mobile app') || ll.includes('android app') || ll.includes('ios app') || ll.includes('sarkari result')) {
           continue;
         }
 
@@ -1904,6 +1931,7 @@ export default function AdminDashboardPage({
     // Always inject Career Diary's official Telegram & WhatsApp channels
     links['Join Telegram Channel'] = CAREER_DIARY_TELEGRAM;
     links['Join WhatsApp Channel'] = CAREER_DIARY_WHATSAPP;
+    links['Check Career Diary'] = 'https://careerdiary.in/';
 
     // Quick URL detection
     let applyUrl = '';
@@ -1948,6 +1976,30 @@ export default function AdminDashboardPage({
 
     const cleanedVacancyHtml = cleanVacancyDetails(acf.vacancy_details || '');
 
+    // Extract questions and answers from post if available
+    const extractWpQuestions = (html) => {
+      if (!html) return [];
+      const questions = [];
+      const qTableMatch = html.match(/<table(?:(?!<table)[\s\S])*?Important\s+Question(?:(?!<table)[\s\S])*?<\/table>/i);
+      if (qTableMatch) {
+        const qHtml = qTableMatch[0];
+        const liMatches = [...qHtml.matchAll(/<li>([\s\S]*?)<\/li>/gi)];
+        let curQ = '';
+        for (const lim of liMatches) {
+          const text = clean(lim[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+          if (/^Question\s*:/i.test(text)) {
+            curQ = text.replace(/^Question\s*:\s*/i, '').trim();
+          } else if (/^Answer\s*:/i.test(text) && curQ) {
+            const ans = text.replace(/^Answer\s*:\s*/i, '').trim();
+            questions.push({ q: curQ, a: ans });
+            curQ = '';
+          }
+        }
+      }
+      return questions;
+    };
+    const realQuestions = extractWpQuestions(acf.important_links || '');
+
     // Generate standardized Career Diary Rich HTML Content for Visual Preview
     const contentHtml = `
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
@@ -1986,32 +2038,40 @@ export default function AdminDashboardPage({
         <tbody>
           <tr>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
-              <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(dates).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
-              </ul>
+              ${formattedDatesHtml ? formattedDatesHtml : `
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                  ${Object.entries(dates).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
+                </ul>
+              `}
             </td>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
-              <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(fees).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
-              </ul>
+              ${formattedFeesHtml ? formattedFeesHtml : `
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                  ${Object.entries(fees).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
+                </ul>
+              `}
             </td>
           </tr>
         </tbody>
       </table>
 
-      ${Object.keys(age).length > 0 ? `
+      ${(formattedAgeHtml || Object.keys(age).length > 0) ? `
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
         <thead>
           <tr>
-            <th style="background-color: #0056b3; color: #fff; text-align: center; font-weight: bold; padding: 8px;">Age Limit Details</th>
+            <th style="background-color: #0056b3; color: #fff; text-align: center; font-weight: bold; padding: 8px;">
+              ${ageTitle}
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td style="border: 1px solid #000; padding: 10px;">
-              <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(age).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
-              </ul>
+              ${formattedAgeHtml ? formattedAgeHtml : `
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                  ${Object.entries(age).map(([k, v]) => `<li><strong>${k} :</strong> ${v}</li>`).join('')}
+                </ul>
+              `}
             </td>
           </tr>
         </tbody>
@@ -2052,26 +2112,33 @@ export default function AdminDashboardPage({
         <tbody>
           <tr>
             <td style="border: 1px solid #000; padding: 14px 18px; line-height: 1.8;">
-              <div style="margin-bottom: 12px;">
-                <strong style="color: #b91c1c;">Question: When will the online application / exam for ${title} Start?</strong><br />
-                <strong>Answer:</strong> The schedule for this recruitment starts on ${appStart || 'declared schedule'}.
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: #b91c1c;">Question: What is the last date for ${title}?</strong><br />
-                <strong>Answer:</strong> The last date is ${lastDate || 'as per notification'}.
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: #b91c1c;">Question: What is the age limit for ${title}?</strong><br />
-                <strong>Answer:</strong> The minimum age is ${minAge || '18 Years'} and maximum age is ${maxAge || '30 Years'}.
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: #b91c1c;">Question: What is the eligibility for ${title}?</strong><br />
-                <strong>Answer:</strong> Candidates must check official notification for complete educational qualification and eligibility criteria.
-              </div>
-              <div>
-                <strong style="color: #b91c1c;">Question: What is the official website for ${org}?</strong><br />
-                <strong>Answer:</strong> The official website is ${officialUrl || 'https://careerdiary.in/'}.
-              </div>
+              ${realQuestions.length > 0 ? realQuestions.map(item => `
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #b91c1c;">Question: ${item.q}</strong><br />
+                  <strong>Answer:</strong> ${item.a}
+                </div>
+              `).join('') : `
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #b91c1c;">Question: When will the online application / exam for ${title} Start?</strong><br />
+                  <strong>Answer:</strong> The schedule for this recruitment starts on ${appStart || 'declared schedule'}.
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #b91c1c;">Question: What is the last date for ${title}?</strong><br />
+                  <strong>Answer:</strong> The last date is ${lastDate || 'as per notification'}.
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #b91c1c;">Question: What is the age limit for ${title}?</strong><br />
+                  <strong>Answer:</strong> The minimum age is ${minAge || '18 Years'} and maximum age is ${maxAge || '30 Years'}.
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #b91c1c;">Question: What is the eligibility for ${title}?</strong><br />
+                  <strong>Answer:</strong> Candidates must check official notification for complete educational qualification and eligibility criteria.
+                </div>
+                <div>
+                  <strong style="color: #b91c1c;">Question: What is the official website for ${org}?</strong><br />
+                  <strong>Answer:</strong> The official website is ${officialUrl || 'https://careerdiary.in/'}.
+                </div>
+              `}
             </td>
           </tr>
         </tbody>
@@ -2387,10 +2454,60 @@ export default function AdminDashboardPage({
       }
     }
 
-    // Check plain text colon lines (for plain text paste)
+    // Section-based line capturing for plain text paste
+    let activeSection = '';
+    let ageSectionHeader = '';
     const rawLinesForProps = html.split('\n').map(l => l.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()).filter(Boolean);
-    for (const line of rawLinesForProps) {
-      if (line.includes(':') && !line.includes('http') && !line.includes('www.')) {
+    
+    for (let i = 0; i < rawLinesForProps.length; i++) {
+      const line = rawLinesForProps[i];
+      const ll = line.toLowerCase();
+      if (ll === 'important dates' || ll.startsWith('important dates:')) {
+        activeSection = 'dates';
+        continue;
+      } else if (ll === 'application fee' || ll.startsWith('application fee:')) {
+        activeSection = 'fees';
+        continue;
+      } else if (ll.includes('age limit') || ll.includes('age limits')) {
+        activeSection = 'age';
+        ageSectionHeader = line;
+        continue;
+      } else if (
+        ll.includes('vacancy details') || ll.includes('eligibility criteria') || 
+        ll.includes('mode of selection') || ll.includes('how to fill') || 
+        ll.includes('important links') || ll.includes('some useful') || ll.includes('important question')
+      ) {
+        activeSection = '';
+      }
+
+      if (activeSection === 'dates') {
+        if (line.includes(':')) {
+          const parts = line.split(':');
+          const k = cleanStr(parts[0]);
+          const v = cleanStr(parts.slice(1).join(':'));
+          if (k && v && !dates[k]) dates[k] = v;
+        } else if (line.length > 5 && !line.toLowerCase().includes('important dates')) {
+          if (!dates[cleanStr(line)]) dates[cleanStr(line)] = '';
+        }
+      } else if (activeSection === 'fees') {
+        if (line.includes(':')) {
+          const parts = line.split(':');
+          const k = cleanStr(parts[0]);
+          const v = cleanStr(parts.slice(1).join(':'));
+          if (k && v && !fees[k]) fees[k] = v;
+        } else if (line.length > 3 && !line.toLowerCase().includes('application fee')) {
+          if (!fees[cleanStr(line)]) fees[cleanStr(line)] = '';
+        }
+      } else if (activeSection === 'age') {
+        if (line.includes(':')) {
+          const parts = line.split(':');
+          const k = cleanStr(parts[0]);
+          const v = cleanStr(parts.slice(1).join(':'));
+          if (k && v && !age[k]) age[k] = v;
+        } else if (line.length > 5 && !line.toLowerCase().includes('age limit')) {
+          if (!age[cleanStr(line)]) age[cleanStr(line)] = '';
+        }
+      } else if (line.includes(':') && !line.includes('http') && !line.includes('www.')) {
         const parts = line.split(':');
         const k = cleanStr(parts[0].trim());
         const v = cleanStr(parts.slice(1).join(':').trim());
@@ -2794,7 +2911,7 @@ export default function AdminDashboardPage({
           <tr>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
               <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(dates).length > 0 ? Object.entries(dates).map(([k, v]) => `<li>⚫ <strong>${k} :</strong> ${v}</li>`).join('') : `
+                ${Object.entries(dates).length > 0 ? Object.entries(dates).map(([k, v]) => v ? `<li>⚫ <strong>${k} :</strong> ${v}</li>` : `<li>⚫ <strong>${k}</strong></li>`).join('') : `
                   <li>⚫ <strong>Online Apply Start Date :</strong> ${appStart || 'Declared / Announced'}</li>
                   <li>⚫ <strong>Online Apply Last Date :</strong> <span style="color: #ff0000;">${lastDate || 'As per notification'}</span></li>
                   <li>⚫ <strong>Exam Date :</strong> ${examDate || 'Notify Soon'}</li>
@@ -2804,11 +2921,11 @@ export default function AdminDashboardPage({
             </td>
             <td style="border: 1px solid #000; padding: 10px; vertical-align: top;">
               <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                ${Object.entries(fees).length > 0 ? Object.entries(fees).map(([k, v]) => `<li>⚫ <strong>${k} :</strong> ${v}</li>`).join('') : `
+                ${Object.entries(fees).length > 0 ? Object.entries(fees).map(([k, v]) => v ? `<li>⚫ <strong>${k} :</strong> ${v}</li>` : `<li>⚫ <strong>${k}</strong></li>`).join('') : `
                   <li>⚫ <strong>For General / OBC / EWS :</strong> ${feeGen || '₹ 100/-'}</li>
                   <li>⚫ <strong>For SC / ST / PH :</strong> ${feeSc || '₹ 00/-'}</li>
                 `}
-                <li>⚫ <strong>Payment Mode (Online) :</strong> You can make the payment using Debit Card, Credit Card, Net Banking, UPI, IMPS, Mobile Wallet.</li>
+                ${!Object.keys(fees).some(k => k.toLowerCase().includes('payment mode')) ? '<li>⚫ <strong>Payment Mode (Online) :</strong> You can make the payment using Debit Card, Credit Card, Net Banking, UPI, IMPS, Mobile Wallet.</li>' : ''}
               </ul>
             </td>
           </tr>
@@ -2819,19 +2936,29 @@ export default function AdminDashboardPage({
       <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
         <thead>
           <tr>
-            <th colspan="2" style="background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px;">Age Limit Details</th>
+            <th colspan="2" style="background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px;">${ageSectionHeader || 'Age Limit Details'}</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Minimum Age :</strong> ${minAge || '18 Years'}</td>
-            <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Maximum Age :</strong> ${maxAge || '30 Years'}</td>
-          </tr>
-          <tr>
-            <td colspan="2" style="border: 1px solid #000; padding: 8px 12px; text-align: center; color: #008000;">
-              Age Relaxation Extra as per ${org} Recruitment Rules.
-            </td>
-          </tr>
+          ${Object.entries(age).length > 0 ? `
+            <tr>
+              <td colspan="2" style="border: 1px solid #000; padding: 10px;">
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                  ${Object.entries(age).map(([k, v]) => v ? `<li>⚫ <strong>${k} :</strong> ${v}</li>` : `<li>⚫ <strong>${k}</strong></li>`).join('')}
+                </ul>
+              </td>
+            </tr>
+          ` : `
+            <tr>
+              <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Minimum Age :</strong> ${minAge || '18 Years'}</td>
+              <td style="border: 1px solid #000; padding: 10px; text-align: center; width: 50%;"><strong>Maximum Age :</strong> ${maxAge || '30 Years'}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="border: 1px solid #000; padding: 8px 12px; text-align: center; color: #008000;">
+                Age Relaxation Extra as per ${org} Recruitment Rules.
+              </td>
+            </tr>
+          `}
         </tbody>
       </table>` : ''}
 
