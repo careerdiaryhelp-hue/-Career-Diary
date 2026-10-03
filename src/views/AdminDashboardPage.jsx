@@ -1964,6 +1964,10 @@ export default function AdminDashboardPage({
             <td style="border: 1px solid #000; padding: 8px 12px;"><strong>${org}</strong></td>
           </tr>
           <tr>
+            <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Post Name</td>
+            <td style="border: 1px solid #000; padding: 8px 12px;">${title}</td>
+          </tr>
+          <tr>
             <td style="border: 1px solid #000; padding: 8px 12px; font-weight: bold;">Total Vacancies</td>
             <td style="border: 1px solid #000; padding: 8px 12px; color: #008000; font-weight: bold;">${totalPosts || 'Check Official Notification'}</td>
           </tr>
@@ -2036,6 +2040,42 @@ export default function AdminDashboardPage({
           `).join('')}
         </tbody>
       </table>` : ''}
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;">
+        <thead>
+          <tr>
+            <th style="background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 8px; font-size: 1.1rem;">
+              ${title} : Important Question
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #000; padding: 14px 18px; line-height: 1.8;">
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: When will the online application / exam for ${title} Start?</strong><br />
+                <strong>Answer:</strong> The schedule for this recruitment starts on ${appStart || 'declared schedule'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the last date for ${title}?</strong><br />
+                <strong>Answer:</strong> The last date is ${lastDate || 'as per notification'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the age limit for ${title}?</strong><br />
+                <strong>Answer:</strong> The minimum age is ${minAge || '18 Years'} and maximum age is ${maxAge || '30 Years'}.
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: #b91c1c;">Question: What is the eligibility for ${title}?</strong><br />
+                <strong>Answer:</strong> Candidates must check official notification for complete educational qualification and eligibility criteria.
+              </div>
+              <div>
+                <strong style="color: #b91c1c;">Question: What is the official website for ${org}?</strong><br />
+                <strong>Answer:</strong> The official website is ${officialUrl || 'https://careerdiary.in/'}.
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     `.trim();
 
     return {
@@ -2087,12 +2127,12 @@ export default function AdminDashboardPage({
       /Back to All Posts/i,
       /Home\s*>\s*[^>\n]+\s*>\s*/i,
       /Skip to content/i,
-      /Sarkari Result\s*:\s*SarkariResult\.Com/i,
-      /WWW\.SARKARIRESULT\.COM/i,
-      /WWW\.CAREERDIARY\.IN/i,
-      /SarkariResult\.Com\.Cm/i,
-      /Rojgar Result/i,
-      /Result Bharat/i,
+      /(?:^|\n)\s*Sarkari Result\s*:\s*SarkariResult\.Com/i,
+      /(?:^|\n)\s*WWW\.SARKARIRESULT\.COM/i,
+      /(?:^|\n)\s*WWW\.CAREERDIARY\.IN/i,
+      /(?:^|\n)\s*SarkariResult\.Com\.Cm/i,
+      /(?:^|\n)\s*Rojgar Result/i,
+      /(?:^|\n)\s*Result Bharat/i,
     ];
 
     for (const marker of headerMarkers) {
@@ -3021,6 +3061,14 @@ export default function AdminDashboardPage({
   const executeImport = (raw, sourceUrl = '') => {
     if (!raw) return false;
 
+    // Guard: A single URL string must NOT be treated as raw HTML/text content
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if ((trimmed.startsWith('http://') || trimmed.startsWith('https://')) && !trimmed.includes('\n') && !trimmed.includes('<')) {
+        return false;
+      }
+    }
+
     // Check if raw is already an object or WordPress post
     let p = null;
     let text = typeof raw === 'string' ? raw.trim() : '';
@@ -3375,9 +3423,14 @@ export default function AdminDashboardPage({
       return;
     }
 
-    if (executeImport(raw)) return;
+    const isSingleUrl = (raw.startsWith('http://') || raw.startsWith('https://')) && !raw.includes('\n') && !raw.includes('<');
 
-    // 4. If user pasted a URL
+    // 1. If it's NOT a single-line URL (e.g. JSON snippet, copied full-page text, or HTML code), parse directly
+    if (!isSingleUrl) {
+      if (executeImport(raw)) return;
+    }
+
+    // 2. If it IS a URL, fetch it from URL!
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
       setIsImporting(true);
       showToast('⏳ Fetching post data from URL...', 'info');
