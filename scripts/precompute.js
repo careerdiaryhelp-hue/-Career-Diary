@@ -185,11 +185,19 @@ const __dirname = path.dirname(__filename);
     }
   } catch (_) {}
 
+  let backupJobs = [];
+  try {
+    const { firestoreBackupJobs } = await import('../src/data/firestoreBackupJobs.js');
+    if (Array.isArray(firestoreBackupJobs)) {
+      backupJobs = firestoreBackupJobs;
+    }
+  } catch (_) {}
+
   const initialJobs = [
-    ...jobsData, ...admitCardsData, ...resultsData, ...admissionsData, ...syllabusData, ...importantData
+    ...jobsData, ...admitCardsData, ...resultsData, ...admissionsData, ...syllabusData, ...importantData, ...backupJobs
   ];
 
-  // Merge live firestore jobs with existing precomputed jobs (so 429 quota exhaustion never loses posts)
+  // Merge live firestore jobs with existing precomputed jobs and base backup jobs (so 429 quota exhaustion never loses posts)
   const combinedPrimary = mergeAndSortJobs(firestoreJobs, existingPrecomputedJobs);
   const SORTED_STATIC_JOBS = mergeAndSortJobs(combinedPrimary, initialJobs);
   const SORTED_STATIC_SUMMARY = SORTED_STATIC_JOBS.map(summarizeJobForList);

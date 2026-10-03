@@ -11,6 +11,12 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      { source: '/admit-card/:slug', destination: '/admitcard/:slug' },
+      { source: '/results/:slug', destination: '/result/:slug' },
+      { source: '/answer-key/:slug', destination: '/answerkey/:slug' },
+      { source: '/latest-jobs/:slug', destination: '/job/:slug' },
+      { source: '/jobs/:slug', destination: '/job/:slug' },
+      { source: '/admissions/:slug', destination: '/admission/:slug' },
       { source: '/terms-conditions', destination: '/terms' },
       { source: '/last-date-jobs', destination: '/last-date' },
       { source: '/last-date-reminder', destination: '/last-date' },
