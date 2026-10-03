@@ -237,8 +237,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
   // Sanitize any raw HTML content so external competitor links point to https://careerdiary.in/
   const sanitizedContent = React.useMemo(() => {
-    if (!job?.content) return '';
-    let out = autoLinkSocialChannels(job.content);
+    const raw = job?.content || job?.htmlContent || '';
+    if (!raw) return '';
+    let out = autoLinkSocialChannels(raw.replace(/<\/?message-content>/gi, ''));
     out = out.replace(/href=["']https?:\/\/(?:www\.)?(?:sarkariresult|resultbharat|rojgarresult|bigbooster)[^"']*["']/gi, (match) => {
       const lower = match.toLowerCase();
       if (lower.includes('.pdf') || lower.includes('.jpg') || lower.includes('.png') || lower.includes('.jpeg')) {
@@ -255,7 +256,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     });
 
     return out;
-  }, [job?.content]);
+  }, [job?.content, job?.htmlContent]);
 
   // Cleanly split HTML content into two parts at the middle table/paragraph
   // so the middle ad can be rendered as a true React <InPostAd /> component
@@ -311,7 +312,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     return { contentPart1: sanitizedContent, contentPart2: '' };
   }, [sanitizedContent]);
 
-  const contentLower = (job?.content || '').toLowerCase();
+  const contentLower = (job?.content || job?.htmlContent || '').toLowerCase();
   const hasHowToFill = contentLower.includes('how to fill') || contentLower.includes('how to apply') || contentLower.includes('how to check');
   const hasSelectionMode = contentLower.includes('mode of selection') || contentLower.includes('selection process');
   const hasFaqSection = contentLower.includes('important question') || contentLower.includes('frequently asked');
@@ -319,10 +320,10 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
   // Check if job.content already has its own embedded Important Links table to avoid duplicates
   const hasEmbeddedLinks = Boolean(
-    job.content &&
-    (job.content.toLowerCase().includes('important links') ||
-     job.content.includes('Click Here') ||
-     job.content.includes('sr-links-table'))
+    (job.content || job.htmlContent) &&
+    (contentLower.includes('important links') ||
+     contentLower.includes('click here') ||
+     contentLower.includes('sr-links-table'))
   );
 
   const pageCategory = isAdmit
@@ -388,7 +389,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
-        {job.content ? (
+        {(job.content || job.htmlContent) ? (
           <>
             <div
               className="sr-rich-html-content"

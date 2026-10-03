@@ -130,11 +130,51 @@ const __dirname = path.dirname(__filename);
 
   let firestoreJobs = [];
   try {
-    const { fetchFirestoreJobsOnce } = await import('../src/firebase.js');
-    firestoreJobs = await fetchFirestoreJobsOnce();
-    console.log(`Fetched ${firestoreJobs.length} live jobs from Firestore for precomputation.`);
+    const res = await fetch('https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents:runQuery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: 'jobs' }],
+          orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
+          limit: 100
+        }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      function parseVal(val) {
+        if (!val) return null;
+        if ('stringValue' in val) return val.stringValue;
+        if ('integerValue' in val) return Number(val.integerValue);
+        if ('doubleValue' in val) return Number(val.doubleValue);
+        if ('booleanValue' in val) return val.booleanValue;
+        if ('timestampValue' in val) return val.timestampValue;
+        if ('arrayValue' in val) return (val.arrayValue.values || []).map(parseVal);
+        if ('mapValue' in val) {
+          const r = {};
+          for (const [k, v] of Object.entries(val.mapValue.fields || {})) r[k] = parseVal(v);
+          return r;
+        }
+        return null;
+      }
+      firestoreJobs = data
+        .filter(item => item && item.document && item.document.fields)
+        .map(item => {
+          const doc = item.document;
+          const fields = {};
+          for (const [k, v] of Object.entries(doc.fields || {})) fields[k] = parseVal(v);
+          const id = doc.name.split('/').pop();
+          return { id, ...fields };
+        });
+      console.log(`Fetched ${firestoreJobs.length} full live jobs from Firestore for precomputation.`);
+    }
   } catch (err) {
-    console.warn("Could not fetch Firestore jobs at build time, using static fallback:", err?.message || err);
+    console.warn("Could not fetch full Firestore jobs, falling back to fetchFirestoreJobsOnce:", err?.message || err);
+    try {
+      const { fetchFirestoreJobsOnce } = await import('../src/firebase.js');
+      firestoreJobs = await fetchFirestoreJobsOnce();
+    } catch (_) {}
   }
 
   const initialJobs = [

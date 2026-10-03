@@ -11,40 +11,60 @@ export default function JobDetailWrapper({ job: initialJob, allJobs = [], slug =
   const [search, setSearch] = React.useState('');
 
   React.useEffect(() => {
-    if (job) return;
-    try {
-      const clean = String(slug || '').toLowerCase().trim();
-      if (!clean) return;
+    const clean = String(slug || '').toLowerCase().trim();
+    if (!clean) return;
 
-      // 1. Try finding in allJobs with loose match
-      const inAll = allJobs.find(j => {
-        if (!j) return false;
-        const id = String(j.id || '').toLowerCase();
-        const s = String(j.slug || '').toLowerCase();
-        return id === clean || s === clean || id.includes(clean) || clean.includes(id);
-      });
-      if (inAll) {
-        setJob(inAll);
-        return;
-      }
+    // Check if live document in Firestore has content or more recent updatedAt
+    import('../firebase').then(({ fetchFirestoreJobById }) => {
+      fetchFirestoreJobById(clean).then(liveDoc => {
+        if (liveDoc && (liveDoc.content || liveDoc.htmlContent || liveDoc.title)) {
+          setJob(prev => {
+            if (!prev) return liveDoc;
+            const liveHasContent = Boolean(liveDoc.content || liveDoc.htmlContent);
+            const prevHasContent = Boolean(prev.content || prev.htmlContent);
+            const liveTs = new Date(liveDoc.updatedAt || 0).getTime();
+            const prevTs = new Date(prev.updatedAt || 0).getTime();
+            if ((liveHasContent && !prevHasContent) || liveTs >= prevTs) {
+              return { ...prev, ...liveDoc };
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+    });
 
-      // 2. Try finding in client cached firestore jobs
-      const cached = localStorage.getItem('career_diary_cached_firestore_jobs');
-      if (cached) {
-        const posts = JSON.parse(cached);
-        const inCache = posts.find(j => {
+    if (!job) {
+      try {
+        // Fallback: Try finding in allJobs with loose match
+        const inAll = allJobs.find(j => {
           if (!j) return false;
           const id = String(j.id || '').toLowerCase();
           const s = String(j.slug || '').toLowerCase();
           return id === clean || s === clean || id.includes(clean) || clean.includes(id);
         });
-        if (inCache) {
-          setJob(inCache);
+        if (inAll) {
+          setJob(inAll);
           return;
         }
-      }
-    } catch (e) {}
-  }, [job, slug, allJobs]);
+
+        // Try finding in client cached firestore jobs
+        const cached = localStorage.getItem('career_diary_cached_firestore_jobs');
+        if (cached) {
+          const posts = JSON.parse(cached);
+          const inCache = posts.find(j => {
+            if (!j) return false;
+            const id = String(j.id || '').toLowerCase();
+            const s = String(j.slug || '').toLowerCase();
+            return id === clean || s === clean || id.includes(clean) || clean.includes(id);
+          });
+          if (inCache) {
+            setJob(inCache);
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+  }, [slug, allJobs]);
 
   if (!job) {
     return (

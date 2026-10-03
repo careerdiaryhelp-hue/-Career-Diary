@@ -164,6 +164,14 @@ export async function getJobBySlug(slug) {
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
 
+  // 1. Check live Firestore doc first (ensures edits in admin immediately appear with full HTML content)
+  try {
+    const directDoc = await fetchFirestoreJobById(clean);
+    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
+      return directDoc;
+    }
+  } catch (e) {}
+
   const fullJobs = await getFullJobs();
 
   let match = fullJobs.find(j => {
