@@ -34,6 +34,53 @@ export default function AdminPage() {
   const [breakingNews, setBreakingNews] = useState([]);
 
   useEffect(() => {
+    document.body.classList.add('admin-active');
+
+    const killAdOverlays = () => {
+      const selectors = [
+        '.fc-dialog-container',
+        '.fc-dialog-overlay',
+        '.fc-consent-root',
+        '.fc-ab-root',
+        'div[class*="google-revapi"]',
+        'div[id*="google-rewarded"]',
+        'iframe[id^="aswift_"]',
+        'iframe[name^="google_ads_"]',
+        'ins.adsbygoogle',
+        'div[style*="z-index: 2147483647"]',
+        'div[style*="z-index: 2147483646"]',
+        'div[style*="z-index: 999999"]'
+      ];
+      document.querySelectorAll(selectors.join(', ')).forEach((el) => {
+        try { el.remove(); } catch (_) {}
+      });
+
+      document.querySelectorAll('div').forEach((el) => {
+        const text = el.innerText || '';
+        if (text.includes('Unlock more content') || text.includes('View a short ad')) {
+          if (el.classList.contains('fc-dialog') || el.style.position === 'fixed' || (el.style.zIndex && parseInt(el.style.zIndex, 10) > 1000)) {
+            try { el.remove(); } catch (_) {}
+          }
+        }
+      });
+
+      if (document.body.style.overflow === 'hidden') {
+        document.body.style.overflow = 'auto';
+      }
+      document.body.classList.remove('fc-dialog-open');
+    };
+
+    killAdOverlays();
+    const interval = setInterval(killAdOverlays, 300);
+
+    let observer = null;
+    if (typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver(() => {
+        killAdOverlays();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
     // Check admin authentication
     const searchParams = new URLSearchParams(window.location.search);
     const hasAdminParam = searchParams.get('admin') === 'true' || searchParams.get('admin') === 'secret';
@@ -43,6 +90,15 @@ export default function AdminPage() {
       setIsAdmin(true);
     }
     setIsLoaded(true);
+
+    return () => {
+      clearInterval(interval);
+      if (observer) observer.disconnect();
+      document.body.classList.remove('admin-active');
+    };
+  }, []);
+
+  useEffect(() => {
 
     // Read stored categories & news
     try {

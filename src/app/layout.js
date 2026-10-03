@@ -1,5 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
+import AdSenseScript from "../components/AdSenseScript";
 
 export const metadata = {
   metadataBase: new URL('https://careerdiary.in'),
@@ -44,13 +45,8 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://careerdiary-f2e0a.firebaseapp.com" />
-        {/* Google AdSense Script */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        {/* Google AdSense Script (excluded from /admin) */}
+        <AdSenseScript />
         {/* Google Analytics Script */}
         <Script
           async

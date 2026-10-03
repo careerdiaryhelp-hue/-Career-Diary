@@ -2552,3 +2552,53 @@ sup .badge-tag {
     left: calc(50% + 510px);
   }
 }
+
+/* =========================================
+   COMPLETELY SUPPRESS ADSENSE OFFERWALL & OVERLAYS ON ADMIN
+   ========================================= */
+body.admin-active .fc-dialog-container,
+body.admin-active .fc-dialog-overlay,
+body.admin-active .fc-consent-root,
+body.admin-active .fc-ab-root,
+body.admin-active div[class*="google-revapi"],
+body.admin-active div[id*="google-rewarded"],
+body.admin-active iframe[id^="aswift_"],
+body.admin-active iframe[name^="google_ads_"],
+body.admin-active div[style*="z-index: 2147483647"],
+body.admin-active div[style*="z-index: 2147483646"],
+body.admin-active div[style*="z-index: 999999"],
+body:has(.admin-dashboard-root) .fc-dialog-container,
+body:has(.admin-dashboard-root) .fc-dialog-overlay,
+body:has(.admin-dashboard-root) .fc-consent-root,
+body:has(.admin-dashboard-root) .fc-ab-root,
+body:has(.admin-dashboard-root) div[class*="google-revapi"],
+body:has(.admin-dashboard-root) div[id*="google-rewarded"],
+body:has(.admin-dashboard-root) iframe[id^="aswift_"],
+body:has(.admin-dashboard-root) iframe[name^="google_ads_"],
+body:has(.admin-dashboard-root) div[style*="z-index: 2147483647"],
+body:has(.admin-dashboard-root) div[style*="z-index: 2147483646"],
+body:has(.admin-dashboard-root) div[style*="z-index: 999999"],
+body:has(.admin-login-wrapper) .fc-dialog-container,
+body:has(.admin-login-wrapper) .fc-dialog-overlay,
+body:has(.admin-login-wrapper) .fc-consent-root,
+body:has(.admin-login-wrapper) .fc-ab-root,
+body:has(.admin-login-wrapper) iframe[id^="aswift_"],
+body:has(.admin-login-wrapper) iframe[name^="google_ads_"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -99999 !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+body.admin-active,
+body:has(.admin-dashboard-root),
+body:has(.admin-login-wrapper) {
+  overflow: auto !important;
+  position: static !important;
+}
+

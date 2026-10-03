@@ -26,7 +26,7 @@ export default function AdminLoginPage({ onLoginSuccess, onLogin, onCancel }) {
   };
 
   return (
-    <div style={{
+    <div className="admin-login-wrapper" style={{
       minHeight: '100vh',
       width: '100vw',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',

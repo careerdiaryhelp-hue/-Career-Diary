@@ -7427,7 +7427,7 @@ export default function AdminDashboardPage({
 
   // ── Layout ────────────────────────────────────────────────
   return (
-    <div style={{
+    <div className="admin-dashboard-root" style={{
       display: 'flex',
       height: '100vh',
       minHeight: '100vh',
@@ -7440,10 +7440,25 @@ export default function AdminDashboardPage({
       <style>{`
         .google-auto-placed, 
         ins.adsbygoogle, 
-        iframe[name^="google_ads_iframe"] { 
+        iframe[name^="google_ads_iframe"],
+        iframe[id^="aswift_"],
+        .fc-dialog-container,
+        .fc-dialog-overlay,
+        .fc-consent-root,
+        .fc-ab-root,
+        div[class*="google-revapi"],
+        div[id*="google-rewarded"],
+        div[style*="z-index: 2147483647"],
+        div[style*="z-index: 2147483646"],
+        div[style*="z-index: 999999"] { 
           display: none !important; 
           height: 0 !important; 
+          width: 0 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
           visibility: hidden !important; 
+          position: absolute !important;
+          z-index: -99999 !important;
         }
       `}</style>
 
