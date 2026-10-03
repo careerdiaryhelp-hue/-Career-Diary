@@ -11,7 +11,8 @@ import {
   subscribeToFirestoreJobs,
   cleanJobId,
   subscribeToBreakingNews,
-  saveBreakingNewsToFirestore
+  saveBreakingNewsToFirestore,
+  retryPendingSaves
 } from '../../firebase';
 
 const DEFAULT_CATEGORIES = [
@@ -132,6 +133,9 @@ export default function AdminPage() {
         }
       }
     });
+
+    // Retry any pending Firestore saves that failed due to quota errors
+    retryPendingSaves().catch(() => {});
 
     return () => {
       active = false;

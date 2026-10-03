@@ -3969,7 +3969,11 @@ export default function AdminDashboardPage({
     }
 
     if (res && res.success === false) {
-      showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
+      if (res.queued) {
+        showToast(`⚠️ Firestore quota exhausted — post "${newJob.title}" saved locally & queued for auto-retry! It will sync automatically when quota resets.`, 'info');
+      } else {
+        showToast(`⚠️ Note: Post is saved locally, but Firestore sync error: ${res.error?.message || res.error}`, 'info');
+      }
     } else if (isUpdate) {
       showToast(`🔄 Post "${newJob.title}" updated successfully!`, 'success');
     } else {

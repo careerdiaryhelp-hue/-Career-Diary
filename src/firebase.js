@@ -33,32 +33,94 @@ export function cleanJobId(id) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Save or publish a job to Firestore (client-side only)
-export async function publishJobToFirestore(job) {
+// ─── localStorage pending queue for failed Firestore saves ───
+const PENDING_SAVES_KEY = 'career_diary_pending_firestore_saves';
+
+function getPendingSaves() {
   try {
-    const rawId = job.id || job.slug || job.title || '';
-    const safeId = cleanJobId(rawId);
-    if (!safeId) {
-      throw new Error('Invalid Job ID: Post title or slug must contain letters or numbers.');
+    return JSON.parse(localStorage.getItem(PENDING_SAVES_KEY) || '[]');
+  } catch (_) { return []; }
+}
+
+function addPendingSave(job) {
+  try {
+    const pending = getPendingSaves().filter(j => j.id !== job.id);
+    pending.push(job);
+    localStorage.setItem(PENDING_SAVES_KEY, JSON.stringify(pending));
+  } catch (_) {}
+}
+
+function removePendingSave(jobId) {
+  try {
+    const pending = getPendingSaves().filter(j => j.id !== jobId);
+    localStorage.setItem(PENDING_SAVES_KEY, JSON.stringify(pending));
+  } catch (_) {}
+}
+
+// Retry pending Firestore saves (called on app load / after successful save)
+export async function retryPendingSaves() {
+  if (typeof window === 'undefined') return;
+  const pending = getPendingSaves();
+  if (pending.length === 0) return;
+  console.log(`[Firestore] Retrying ${pending.length} pending saves...`);
+  for (const job of pending) {
+    const res = await publishJobToFirestore(job, /* skipQueue */ true);
+    if (res.success) {
+      console.log(`[Firestore] ✅ Pending save succeeded for: ${job.id}`);
     }
-    const { _ts, _safeId, _normTitle, ...cleanData } = job;
-    const nowIso = new Date().toISOString();
-    const safeJob = {
-      ...cleanData,
-      id: safeId,
-      slug: safeId,
-      updatedAt: nowIso
-    };
-    const db = await getClientDb();
-    if (!db) throw new Error('Firestore is only available in browser');
-    const { doc, setDoc } = await import('firebase/firestore');
-    const jobRef = doc(db, 'jobs', safeId);
-    await setDoc(jobRef, safeJob, { merge: true });
-    return { success: true, cleanId: safeId };
-  } catch (error) {
-    console.error('Error publishing job to Firestore:', error);
-    return { success: false, error };
   }
+}
+
+// Save or publish a job to Firestore (client-side only) — with retry & backoff
+export async function publishJobToFirestore(job, skipQueue = false) {
+  const rawId = job.id || job.slug || job.title || '';
+  const safeId = cleanJobId(rawId);
+  if (!safeId) {
+    return { success: false, error: new Error('Invalid Job ID: Post title or slug must contain letters or numbers.') };
+  }
+  const { _ts, _safeId, _normTitle, ...cleanData } = job;
+  const nowIso = new Date().toISOString();
+  const safeJob = {
+    ...cleanData,
+    id: safeId,
+    slug: safeId,
+    updatedAt: nowIso
+  };
+
+  const MAX_RETRIES = 3;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const db = await getClientDb();
+      if (!db) throw new Error('Firestore is only available in browser');
+      const { doc, setDoc } = await import('firebase/firestore');
+      const jobRef = doc(db, 'jobs', safeId);
+      await setDoc(jobRef, safeJob, { merge: true });
+      // Success — remove from pending queue if it was there
+      removePendingSave(safeId);
+      return { success: true, cleanId: safeId };
+    } catch (error) {
+      lastError = error;
+      const errMsg = String(error?.message || error?.code || '').toLowerCase();
+      const isQuotaError = errMsg.includes('quota') || errMsg.includes('resource-exhausted') || errMsg.includes('429') || errMsg.includes('unavailable');
+      if (isQuotaError && attempt < MAX_RETRIES - 1) {
+        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+        console.warn(`[Firestore] Quota error on attempt ${attempt + 1}, retrying in ${delay / 1000}s...`);
+        await new Promise(r => setTimeout(r, delay));
+      } else {
+        break;
+      }
+    }
+  }
+
+  // All retries failed — queue for later retry
+  console.error('Error publishing job to Firestore after retries:', lastError);
+  if (!skipQueue) {
+    addPendingSave(safeJob);
+    console.log(`[Firestore] 📋 Queued "${safeId}" for later retry (${getPendingSaves().length} pending)`);
+  }
+  return { success: false, error: lastError, queued: !skipQueue };
 }
 
 // Delete a job from Firestore (client-side only)
