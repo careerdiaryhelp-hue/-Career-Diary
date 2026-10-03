@@ -77,6 +77,7 @@ const EMPTY_FORM = {
   applicationFee: {},
   ageLimit: {},
   vacancyDetails: [],
+  selectionProcess: [],
 };
 
 export default function AdminDashboardPage({
@@ -735,6 +736,7 @@ export default function AdminDashboardPage({
       importantDates: job.importantDates || {},
       applicationFee: job.applicationFee || {},
       ageLimit: job.ageLimit || {},
+      selectionProcess: job.selectionProcess || [],
     });
 
     const STANDARD_BADGES = ['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''];
@@ -3917,6 +3919,7 @@ export default function AdminDashboardPage({
         ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
       },
+      selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
       importantLinks: {
         ...(existingJob?.importantLinks || {}),
         ...(form.importantLinks || {}),
@@ -4099,6 +4102,7 @@ export default function AdminDashboardPage({
         ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
         ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
       },
+      selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
       importantLinks: {
         ...(existingJob?.importantLinks || {}),
         ...(form.importantLinks || {}),
@@ -5787,6 +5791,24 @@ export default function AdminDashboardPage({
                         </div>
                       ))
                     )}
+                  </div>
+
+                  {/* Section C.5: Mode Of Selection */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
+                        📋 MODE OF SELECTION
+                      </label>
+                    </div>
+                    <textarea
+                      value={(form.selectionProcess || []).join('\n')}
+                      onChange={e => setForm(prev => ({ ...prev, selectionProcess: e.target.value.split('\n') }))}
+                      placeholder="e.g.&#10;Merit List Basis on Marks / Written Examination (CBT)&#10;Document Verification (DV)&#10;Medical Examination"
+                      style={{ width: '100%', minHeight: '120px', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', lineHeight: '1.5' }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>
+                      Enter each step on a new line. Leave empty for default steps.
+                    </div>
                   </div>
 
                   {/* Section D: Useful Important Links */}
