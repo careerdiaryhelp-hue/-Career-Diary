@@ -220,7 +220,7 @@ export async function saveBreakingNewsToFirestore(items) {
 }
 
 // Real-time listener for Firestore jobs (client-side only)
-export function subscribeToFirestoreJobs(onUpdate, onError) {
+export function subscribeToFirestoreJobs(onUpdate, onError, maxJobs = 150) {
   if (typeof window === 'undefined') return () => {};
   let unsubscribe = null;
   let active = true;
@@ -230,7 +230,7 @@ export function subscribeToFirestoreJobs(onUpdate, onError) {
     try {
       const { collection, onSnapshot, query, orderBy, limit } = await import('firebase/firestore');
       const jobsCol = collection(db, 'jobs');
-      const q = query(jobsCol, orderBy('updatedAt', 'desc'), limit(150));
+      const q = query(jobsCol, orderBy('updatedAt', 'desc'), limit(maxJobs));
       unsubscribe = onSnapshot(q, (snapshot) => {
         const posts = [];
         snapshot.forEach((d) => {
