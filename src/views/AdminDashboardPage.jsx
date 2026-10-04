@@ -201,6 +201,37 @@ export default function AdminDashboardPage({
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'success') => setToast({ message, type });
 
+  const triggerCloudflareDeploy = () => {
+    let webhookUrl = localStorage.getItem('cf_webhook_url');
+    if (!webhookUrl) {
+      const setup = window.confirm("Job saved to database! To make it immediately visible to normal visitors, we need to trigger a Cloudflare rebuild.\n\nDo you want to configure your Cloudflare Deploy Webhook URL now?\n(You only need to do this once)");
+      if (setup) {
+        webhookUrl = window.prompt("Enter your Cloudflare Deploy Webhook URL:");
+        if (webhookUrl && webhookUrl.startsWith('http')) {
+          localStorage.setItem('cf_webhook_url', webhookUrl.trim());
+        } else {
+          showToast('Invalid or no webhook URL provided. Build was NOT triggered.', 'error');
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+    
+    if (webhookUrl) {
+      showToast('🚀 Triggering Cloudflare build...', 'info');
+      fetch(webhookUrl, { method: 'POST' })
+        .then(res => {
+          if (res.ok) {
+            showToast('✅ Build triggered! Live site will update in 1-2 minutes.', 'success');
+          } else {
+            showToast('⚠️ Failed to trigger build: ' + res.statusText, 'error');
+          }
+        })
+        .catch(e => showToast('⚠️ Failed to trigger build: ' + e.message, 'error'));
+    }
+  };
+
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(null), 3800);
@@ -3988,8 +4019,10 @@ export default function AdminDashboardPage({
       }
     } else if (isUpdate) {
       showToast(`🔄 Post "${newJob.title}" updated successfully!`, 'success');
+      setTimeout(triggerCloudflareDeploy, 1000);
     } else {
       showToast('🎉 Post published successfully! It is now LIVE on Career Diary.', 'success');
+      setTimeout(triggerCloudflareDeploy, 1000);
     }
     setEditingJobId(null);
     setForm({ ...EMPTY_FORM });
@@ -4210,6 +4243,7 @@ export default function AdminDashboardPage({
       } else {
         addLog(`✅ Published successfully!`);
         showToast('🎉 Direct Post published successfully!', 'success');
+        setTimeout(triggerCloudflareDeploy, 1000);
       }
       
       setSgUrl('');
