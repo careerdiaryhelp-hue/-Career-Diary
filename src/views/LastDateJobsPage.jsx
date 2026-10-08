@@ -182,9 +182,14 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
     return null;
   };
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Build list of active jobs with dynamically calculated last date info
   // STRICT RULE: All expired / closed jobs and non-job categories are filtered out
   const enrichedJobs = useMemo(() => {
+    if (!mounted) return [];
+    
     const todayRef = new Date();
     const currentYear = todayRef.getFullYear();
 

@@ -4,7 +4,12 @@ import { Bell, Newspaper, ExternalLink } from 'lucide-react';
 import { getJobUrl } from '../data/categoryHelpers.js';
 
 export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob }) {
-  const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+  const [today, setToday] = React.useState('');
+
+  React.useEffect(() => {
+    setToday(new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'));
+  }, []);
+
   const tickerJobs = useMemo(() => {
     if (!jobs || jobs.length === 0) return [];
     const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
