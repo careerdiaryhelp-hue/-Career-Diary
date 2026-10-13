@@ -28,10 +28,7 @@ import {
 } from '../data/categoryHelpers';
 
 export default function HomeClient({ initialJobs = [], initialNews = [] }) {
-  const [jobs, setJobs] = useState(() => {
-    if (initialJobs && initialJobs.length > 0) return initialJobs;
-    return [];
-  });
+  const [jobs, setJobs] = useState(initialJobs);
 
   const [currentCategory, setCurrentCategory] = useState('all');
   const [currentStateFilter, setCurrentStateFilter] = useState('all');
@@ -41,6 +38,17 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
   const [breakingNews, setBreakingNews] = useState(initialNews);
 
   useEffect(() => {
+    // Sync cached live jobs after hydration to avoid SSR mismatch
+    try {
+      const cached = sessionStorage.getItem('careerdiary_live_jobs');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setJobs(prev => mergeAndSortJobs(parsed, prev));
+        }
+      }
+    } catch (_) {}
+
     if (!initialJobs || initialJobs.length === 0) {
       getInitialJobs().then(staticJobs => {
         setJobs(prev => mergeAndSortJobs(prev, staticJobs));
@@ -65,6 +73,9 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
     
     const unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
       if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        try {
+          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+        } catch (_) {}
         setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
       }
     }, (err) => console.warn(err), maxFetchCount);

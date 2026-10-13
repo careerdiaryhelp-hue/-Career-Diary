@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Calendar, Flame, Clock, Search, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { isResult, isAnswerKey, isAdmitCard, getJobUrl } from '../data/categoryHelpers.js';
 

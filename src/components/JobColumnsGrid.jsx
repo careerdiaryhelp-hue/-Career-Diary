@@ -173,31 +173,6 @@ export default function JobColumnsGrid({
           </div>
 
           {renderColumnCard(activeCol, catJobs, true)}
-
-          <div style={{ marginTop: '24px', textAlign: 'center' }}>
-            <a
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onNavigateCategory) onNavigateCategory('all', '/');
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontWeight: 700,
-                fontSize: '0.92rem',
-                color: '#ffffff',
-                background: '#a71b30',
-                padding: '10px 24px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                boxShadow: '0 2px 6px rgba(167, 27, 48, 0.25)'
-              }}
-            >
-              ← Back to Home / All Updates
-            </a>
-          </div>
         </div>
       </main>
     );

@@ -1,13 +1,42 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import LastDateJobsPage from '../views/LastDateJobsPage';
 import { getJobUrl } from '../data/categoryHelpers';
+import { subscribeToFirestoreJobs } from '../firebase';
+import { mergeAndSortJobs } from '../utils/jobsService';
 
-export default function LastDateClient({ jobs = [] }) {
+export default function LastDateClient({ jobs: initialJobs = [] }) {
+  const [jobs, setJobs] = useState(initialJobs);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    // Sync cached live jobs after hydration to avoid SSR mismatch
+    try {
+      const cached = sessionStorage.getItem('careerdiary_live_jobs');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setJobs(prev => mergeAndSortJobs(parsed, prev));
+        }
+      }
+    } catch (_) {}
+
+    const unsub = subscribeToFirestoreJobs((firestorePosts) => {
+      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        try {
+          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+        } catch (_) {}
+        setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
+      }
+    }, (err) => console.warn(err), 30);
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, []);
 
   return (
     <div className="app-root">

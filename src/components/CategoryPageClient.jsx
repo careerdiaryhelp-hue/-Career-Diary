@@ -15,20 +15,35 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    // Sync cached live jobs after hydration to avoid SSR mismatch
+    try {
+      const cached = sessionStorage.getItem('careerdiary_live_jobs');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const catPosts = getJobsForCategory(parsed, categoryKey);
+          setJobs(prev => mergeAndSortJobs(catPosts, prev));
+        }
+      }
+    } catch (_) {}
+
     let unsubscribe = null;
     const isAdminUser = typeof window !== 'undefined' && (
       localStorage.getItem('career_diary_admin') === 'true' ||
       window.location.search.includes('admin')
     );
 
-    if (isAdminUser) {
-      unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-          const catPosts = getJobsForCategory(firestorePosts, categoryKey);
-          setJobs(prev => mergeAndSortJobs(catPosts, prev));
-        }
-      });
-    }
+    const maxFetchCount = isAdminUser ? 150 : 30;
+
+    unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
+      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        try {
+          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+        } catch (_) {}
+        const catPosts = getJobsForCategory(firestorePosts, categoryKey);
+        setJobs(prev => mergeAndSortJobs(catPosts, prev));
+      }
+    }, (err) => console.warn(err), maxFetchCount);
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
