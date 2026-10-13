@@ -258,58 +258,108 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     return out;
   }, [job?.content, job?.htmlContent]);
 
-  // Cleanly split HTML content into two parts at the middle table/paragraph
-  // so the middle ad can be rendered as a true React <InPostAd /> component
-  const { contentPart1, contentPart2 } = React.useMemo(() => {
+  // Cleanly split HTML content so ads can be placed before:
+  // 1. Selection Process section
+  // 2. Important Links section
+  const contentParts = React.useMemo(() => {
     if (!sanitizedContent || typeof sanitizedContent !== 'string') {
-      return { contentPart1: '', contentPart2: '' };
+      return { parts: [], adPlacements: [] };
     }
 
-    const tableMatches = sanitizedContent.match(/<\/table>/gi);
-    if (tableMatches && tableMatches.length >= 2) {
-      const midTableIndex = Math.floor(tableMatches.length / 2);
-      let count = 0;
-      let splitPos = -1;
-      const regex = /<\/table>/gi;
-      let match;
-      while ((match = regex.exec(sanitizedContent)) !== null) {
-        count++;
-        if (count === midTableIndex) {
-          splitPos = regex.lastIndex;
-          break;
+    const selRegex = /selection\s*process|mode\s*of\s*selection/i;
+    const impRegex = /important\s*links|some\s*important\s*links|useful\s*important\s*links/i;
+
+    const selMatch = selRegex.exec(sanitizedContent);
+    const impMatch = impRegex.exec(sanitizedContent);
+
+    const targets = [];
+    if (selMatch) targets.push({ type: 'selection', idx: selMatch.index });
+    if (impMatch) targets.push({ type: 'important', idx: impMatch.index });
+    targets.sort((a, b) => a.idx - b.idx);
+
+    if (targets.length === 0) {
+      // Fallback: middle table/paragraph split
+      const tableMatches = sanitizedContent.match(/<\/table>/gi);
+      if (tableMatches && tableMatches.length >= 2) {
+        const midTableIndex = Math.floor(tableMatches.length / 2);
+        let count = 0;
+        let splitPos = -1;
+        const regex = /<\/table>/gi;
+        let match;
+        while ((match = regex.exec(sanitizedContent)) !== null) {
+          count++;
+          if (count === midTableIndex) {
+            splitPos = regex.lastIndex;
+            break;
+          }
+        }
+        if (splitPos !== -1) {
+          return {
+            parts: [sanitizedContent.slice(0, splitPos), sanitizedContent.slice(splitPos)],
+            adPlacements: ['middle']
+          };
         }
       }
-      if (splitPos !== -1) {
+      return { parts: [sanitizedContent], adPlacements: [] };
+    }
+
+    function getSplitInfo(currentHtml, targetIdx) {
+      const before = currentHtml.substring(0, targetIdx);
+      const lastTableClose = before.lastIndexOf('</table>');
+      const lastTableOpen = before.lastIndexOf('<table');
+      const isInsideTable = lastTableOpen > lastTableClose && lastTableOpen !== -1;
+
+      if (isInsideTable) {
+        const lastTrOpen = before.lastIndexOf('<tr');
+        if (lastTrOpen === -1) {
+          return { splitIdx: lastTableOpen, closePart1: '', openPart2: '' };
+        }
+        const tableTagMatch = currentHtml.substring(lastTableOpen).match(/^<table[^>]*>(?:\s*<tbody>)?/i);
+        const openTag = tableTagMatch ? tableTagMatch[0] : '<table><tbody>';
         return {
-          contentPart1: sanitizedContent.slice(0, splitPos),
-          contentPart2: sanitizedContent.slice(splitPos)
+          splitIdx: lastTrOpen,
+          closePart1: '</tbody></table>',
+          openPart2: openTag
+        };
+      } else {
+        const lastH = Math.max(
+          before.lastIndexOf('<h1'),
+          before.lastIndexOf('<h2'),
+          before.lastIndexOf('<h3'),
+          before.lastIndexOf('<h4')
+        );
+        const splitIdx = (lastH > lastTableClose && lastH !== -1)
+          ? lastH
+          : (lastTableOpen !== -1 && lastTableOpen > lastTableClose ? lastTableOpen : targetIdx);
+        return {
+          splitIdx: splitIdx > 0 ? splitIdx : targetIdx,
+          closePart1: '',
+          openPart2: ''
         };
       }
     }
 
-    const pMatches = sanitizedContent.match(/<\/p>/gi);
-    if (pMatches && pMatches.length >= 4) {
-      const midPIndex = Math.floor(pMatches.length / 2);
-      let count = 0;
-      let splitPos = -1;
-      const regex = /<\/p>/gi;
-      let match;
-      while ((match = regex.exec(sanitizedContent)) !== null) {
-        count++;
-        if (count === midPIndex) {
-          splitPos = regex.lastIndex;
-          break;
-        }
-      }
-      if (splitPos !== -1) {
-        return {
-          contentPart1: sanitizedContent.slice(0, splitPos),
-          contentPart2: sanitizedContent.slice(splitPos)
-        };
-      }
-    }
+    let remaining = sanitizedContent;
+    const parts = [];
+    const adPlacements = [];
 
-    return { contentPart1: sanitizedContent, contentPart2: '' };
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      const match = (target.type === 'selection' ? selRegex : impRegex).exec(remaining);
+      if (!match) continue;
+
+      const info = getSplitInfo(remaining, match.index);
+      if (info.splitIdx <= 0 || info.splitIdx >= remaining.length) continue;
+
+      const part1 = remaining.substring(0, info.splitIdx) + info.closePart1;
+      remaining = info.openPart2 + remaining.substring(info.splitIdx);
+
+      parts.push(part1);
+      adPlacements.push(target.type);
+    }
+    parts.push(remaining);
+
+    return { parts, adPlacements };
   }, [sanitizedContent]);
 
   const contentLower = (job?.content || job?.htmlContent || '').toLowerCase();
@@ -391,23 +441,28 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {(job.content || job.htmlContent) ? (
           <>
-            <div
-              className="sr-rich-html-content"
-              dangerouslySetInnerHTML={{ __html: contentPart1 }}
-            />
+            {contentParts.parts.map((part, index) => {
+              const adType = contentParts.adPlacements[index];
+              return (
+                <React.Fragment key={index}>
+                  <div
+                    className="sr-rich-html-content"
+                    dangerouslySetInnerHTML={{ __html: part }}
+                  />
 
-            {/* Middle In-Post Ad (Clean React Component) */}
-            {contentPart2 && (
-              <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
-            )}
-
-            {contentPart2 && (
-              <div
-                className="sr-rich-html-content"
-                style={{ marginBottom: '24px' }}
-                dangerouslySetInnerHTML={{ __html: contentPart2 }}
-              />
-            )}
+                  {/* Ad placed before Selection Process or Important Links */}
+                  {adType === 'selection' && (
+                    <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+                  )}
+                  {adType === 'important' && (
+                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+                  )}
+                  {adType === 'middle' && (
+                    <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+                  )}
+                </React.Fragment>
+              );
+            })}
 
             {/* If content does not have You May Also Check */}
             {!hasAlsoCheck && youMayAlsoCheckJob && (
@@ -430,11 +485,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
             {/* If content does not have Mode of Selection */}
             {!hasSelectionMode && (
-              <table className="sr-table">
-                <tbody>
-                  <tr>
-                    <td className="sr-table-subheading">{job.title} : Mode Of Selection</td>
-                  </tr>
+              <>
+                <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+                <table className="sr-table">
+                  <tbody>
+                    <tr>
+                      <td className="sr-table-subheading">{job.title} : Mode Of Selection</td>
+                    </tr>
                   <tr>
                     <td>
                       <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
@@ -453,7 +510,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                   </tr>
                 </tbody>
               </table>
-            )}
+            </>
+          )}
 
             {/* If content does not have How to Fill */}
             {!hasHowToFill && (
@@ -685,6 +743,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             </table>
 
             {/* Mode of Selection Table */}
+            <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
             <table className="sr-table">
               <tbody>
                 <tr>
@@ -738,13 +797,15 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
-          <table className="sr-table sr-links-table">
-            <tbody>
-              <tr>
-                <td colSpan={2} className="sr-table-heading">
-                  Some Useful Important Links
-                </td>
-              </tr>
+          <>
+            <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+            <table className="sr-table sr-links-table">
+              <tbody>
+                <tr>
+                  <td colSpan={2} className="sr-table-heading">
+                    Some Useful Important Links
+                  </td>
+                </tr>
 
               {(() => {
                 const grouped = {};
@@ -821,7 +882,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
               })()}
             </tbody>
           </table>
-        )}
+        </>
+      )}
 
         {/* Important Questions Section (Sarkari Result Visual Q&A Table) */}
         {!hasFaqSection && (
