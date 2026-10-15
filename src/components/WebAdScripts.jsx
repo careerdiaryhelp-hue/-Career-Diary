@@ -13,19 +13,9 @@ export default function WebAdScripts() {
     // 1. Initialize click shield protection
     attachAdClickTracker();
 
-    // 2. Google Ad Manager (GPT) safety fallback
-    if (!document.getElementById('gpt-script') && !document.querySelector('script[src*="gpt.js"]')) {
-      const gptScript = document.createElement('script');
-      gptScript.id = 'gpt-script';
-      gptScript.async = true;
-      gptScript.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
-      gptScript.crossOrigin = 'anonymous';
-      document.head.appendChild(gptScript);
-    }
-
     // 3. Google AdSense safety fallback - Website only
     if (!GLOBAL_DISABLE_ADSENSE) {
-      if (!document.getElementById('adsbygoogle-script') && !document.querySelector('script[src*="adsbygoogle.js"]')) {
+      if (!document.getElementById('adsense-init-script') && !document.getElementById('adsbygoogle-script') && !document.querySelector('script[src*="adsbygoogle.js"]')) {
         const adsenseScript = document.createElement('script');
         adsenseScript.id = 'adsbygoogle-script';
         adsenseScript.async = true;

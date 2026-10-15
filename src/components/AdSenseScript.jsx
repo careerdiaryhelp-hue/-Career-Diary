@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 
 export default function AdSenseScript() {
@@ -27,10 +28,12 @@ export default function AdSenseScript() {
   }
 
   return (
-    <script
+    <Script
+      id="adsense-init-script"
       async
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
       crossOrigin="anonymous"
+      strategy="afterInteractive"
     />
   );
 }

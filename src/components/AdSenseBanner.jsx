@@ -67,10 +67,8 @@ export default function AdSenseBanner({
       }
 
       try {
-        if (window.adsbygoogle) {
-          el.dataset.adPushDone = 'true';
-          (window.adsbygoogle = window.adsbygoogle || []).push({});
-        }
+        el.dataset.adPushDone = 'true';
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
       } catch (err) {
         // Safe catch
       }

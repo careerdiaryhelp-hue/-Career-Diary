@@ -1,7 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
 import AdSenseScript from "../components/AdSenseScript";
-import AdSandboxer from "../components/AdSandboxer";
 import WebAdScripts from "../components/WebAdScripts";
 import ScrollPopupAd from "../components/ScrollPopupAd";
 
@@ -44,12 +43,10 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://careerdiary-f2e0a.firebaseapp.com" />
-        {/* Google AdSense Script (excluded from /admin) */}
-        <AdSenseScript />
         {/* Google Analytics Script */}
         <Script
           async
@@ -65,8 +62,8 @@ export default function RootLayout({ children }) {
           `}
         </Script>
       </head>
-      <body>
-        <AdSandboxer />
+      <body suppressHydrationWarning>
+        <AdSenseScript />
         <WebAdScripts />
         {children}
         <ScrollPopupAd />
