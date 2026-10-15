@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
 import { ALL_COLUMNS, getJobsForCategory, getJobUrl, getJobBadgeInfo } from '../data/categoryHelpers.js';
-import { InFeedAd } from './AdSenseBanner';
+import { DisplayAd } from './AdSenseBanner';
 
 export default function JobColumnsGrid({
   jobs = [],
@@ -87,13 +86,13 @@ export default function JobColumnsGrid({
           {displayedJobs.length === 0 ? (
             <div className="empty-state">No active updates.</div>
           ) : (
-            <ul className={`sarkari-quick-list ${isSingle ? 'category-items-list' : ''}`}>
+            <ul className={`sarkari-quick-list google-anno-skip ${isSingle ? 'category-items-list' : ''}`}>
               {displayedJobs.map((job, idx) => (
                 <React.Fragment key={job.id || idx}>
                   {renderJobItem(job, isSingle)}
                   {(isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : idx === 4) && (
                     <li className="in-column-ad-item" style={{ listStyle: 'none', margin: '8px 0', padding: 0 }}>
-                      <InFeedAd label="" style={{ margin: '4px 0' }} />
+                      <DisplayAd label="" style={{ margin: '4px 0' }} />
                     </li>
                   )}
                 </React.Fragment>
@@ -222,13 +221,13 @@ export default function JobColumnsGrid({
   return (
     <main className="main-content">
       <div className="container">
-        <div className="columns-3x3-grid">
+        <div className="columns-3x3-grid google-anno-skip">
           {ALL_COLUMNS.map((col) =>
             renderColumnCard(col, getJobsForCategory(jobs, col.key))
           )}
         </div>
-        {/* AdSense In-Feed Ad Unit (Slot 2542955740) */}
-        <InFeedAd label="ADVERTISEMENT" style={{ marginTop: '24px' }} />
+        {/* AdSense Display Banner Ad Unit (Slot 1202822135) */}
+        <DisplayAd label="ADVERTISEMENT" style={{ marginTop: '24px' }} />
       </div>
     </main>
   );

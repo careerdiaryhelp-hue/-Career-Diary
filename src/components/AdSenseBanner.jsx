@@ -156,7 +156,8 @@ export function DisplayAd(props) {
 }
 
 export function InFeedAd(props) {
-  return <AdSenseBanner slot="2542955740" format="fluid" {...props} />;
+  // Use responsive display banner format instead of fluid search chips to maximize revenue
+  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
 }
 
 export function MultiplexAd(props) {
@@ -164,7 +165,7 @@ export function MultiplexAd(props) {
 }
 
 export function InPostAd(props) {
-  return <AdSenseBanner slot="7544533819" format="fluid" layout="in-article" {...props} />;
+  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
 }
 
 

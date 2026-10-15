@@ -149,6 +149,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return null;
     }
   })() : null);
+  const displayUpdateDate = postUpdateDate || postDate;
   const isAdmit = isAdmitCard(job);
   const isRes = isResult(job) || isAnswerKey(job);
   const isAdm = isAdmission(job);
@@ -287,9 +288,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     targets.sort((a, b) => b.idx - a.idx);
 
     const adSnippets = {
-      selection: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="fluid" data-ad-layout="in-article" data-full-width-responsive="true"></ins></div>`,
+      selection: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`,
       important: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`,
-      middle: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="fluid" data-ad-layout="in-article" data-full-width-responsive="true"></ins></div>`
+      middle: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`
     };
 
     if (targets.length === 0) {
@@ -378,16 +379,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       </div>
 
       {/* Main Detail Container */}
-      <div className="sr-detail-container">
+      <div className="sr-detail-container google-anno-skip">
 
         {/* Title */}
         <h1 className="sr-main-title">{job.title}</h1>
-        {(postDate || postUpdateDate) && (
+        {displayUpdateDate && (
           <div className="sr-post-date">
-            {postDate && <span>Post Date: {postDate}</span>}
-            {postUpdateDate && postUpdateDate !== postDate && (
-              <span>{postDate ? ' | ' : ''}Post Update Date: {postUpdateDate}</span>
-            )}
+            <span>Post Update Date: {displayUpdateDate}</span>
           </div>
         )}
 
@@ -421,7 +419,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         {(job.content || job.htmlContent) ? (
           <>
             <div
-              className="sr-rich-html-content"
+              className="sr-rich-html-content google-anno-skip"
               suppressHydrationWarning
               dangerouslySetInnerHTML={{ __html: contentWithAds }}
             />
