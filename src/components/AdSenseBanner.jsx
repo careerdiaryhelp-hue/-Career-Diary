@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function AdSenseBanner({
   slot = '1202822135',
@@ -21,19 +22,10 @@ export default function AdSenseBanner({
     setIsMounted(true);
   }, []);
 
-  if (pathname && pathname.startsWith('/admin')) {
-    return null;
-  }
-
-  const isLocalhost =
-    isMounted &&
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname.includes('192.168.'));
+  const isLocalhost = isMounted && isLocalDev();
 
   useEffect(() => {
-    if (!isMounted || isLocalhost) return;
+    if (!isMounted || !canServeAds()) return;
 
     let isMountedEffect = true;
     const el = adRef.current;
@@ -110,8 +102,8 @@ export default function AdSenseBanner({
     };
   }, [slot, layout, layoutKey, isLocalhost, isMounted]);
 
-  // Hide wrapper completely if AdSense marks it as unfilled
-  if (adStatus === 'unfilled') {
+  // Hide wrapper completely on admin routes or if AdSense marks it as unfilled
+  if ((pathname && pathname.startsWith('/admin')) || adStatus === 'unfilled') {
     return null;
   }
 

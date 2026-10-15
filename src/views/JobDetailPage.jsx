@@ -6,6 +6,7 @@ import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
 import { autoLinkSocialChannels } from '../utils/linkUtils';
+import { canServeAds } from '../utils/adShield';
 
 export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }) {
   if (!job) return null;
@@ -323,7 +324,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
   // Push AdSense requests for in-article ad units safely after mount
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !canServeAds()) return;
     try {
       const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
       ads.forEach((ad) => {

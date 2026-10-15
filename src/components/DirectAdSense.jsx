@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { canServeAds } from '../utils/adShield';
+import { canServeAds, isLocalDev } from '../utils/adShield';
 
 // AdSense Global Switch
 const GLOBAL_DISABLE_ADSENSE = false;
@@ -25,37 +25,22 @@ export default function DirectAdSense({
   onAdStatusChange,
 }) {
   const pathname = usePathname();
-
-  // 1. Check if Ads are globally disabled or if we are on an admin page
-  if (GLOBAL_DISABLE_ADSENSE || (pathname && pathname.startsWith('/admin'))) return null;
-
-  // 2. Check IBT (Invalid Bot Traffic / Click Shield)
+  const insRef = useRef(null);
+  const pushAttempted = useRef(false);
+  const activeSlot = adSlot || '1202822135';
   const [isAdSafe, setIsAdSafe] = useState(true);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+  const [adStatus, setAdStatus] = useState('loading');
+
   useEffect(() => {
     setIsAdSafe(canServeAds());
   }, []);
 
-  if (!isAdSafe) return null; // Block ad if user is a bot or has clicked too many times
-
-  const insRef = useRef(null);
-  const activeSlot = adSlot || '1202822135';
-  const [isLocalhost, setIsLocalhost] = useState(false);
-  const [adStatus, setAdStatus] = useState('loading');
-  const pushAttempted = useRef(false);
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname.startsWith('192.168.') ||
-        hostname.endsWith('.local')
-      ) {
-        setIsLocalhost(true);
-        setAdStatus('filled');
-        if (onAdStatusChange) onAdStatusChange('filled');
-      }
+    if (isLocalDev()) {
+      setIsLocalhost(true);
+      setAdStatus('filled');
+      if (onAdStatusChange) onAdStatusChange('filled');
     }
   }, [onAdStatusChange]);
 
@@ -152,10 +137,16 @@ export default function DirectAdSense({
   }, [onAdStatusChange, isLocalhost, pathname, activeSlot]);
 
   useEffect(() => {
-    if (isLocalhost) return;
+    if (isLocalhost || !isAdSafe) return;
     pushAttempted.current = false;
     pushAd();
-  }, [pathname, activeSlot, isLocalhost, pushAd]);
+  }, [pathname, activeSlot, isLocalhost, isAdSafe, pushAd]);
+
+  // Safe unconditional hook execution guaranteed: check admin/disabled/IBT returns here
+  const isAdmin = pathname ? pathname.startsWith('/admin') : false;
+  if (GLOBAL_DISABLE_ADSENSE || isAdmin || !isAdSafe) {
+    return null;
+  }
 
   return (
     <div
