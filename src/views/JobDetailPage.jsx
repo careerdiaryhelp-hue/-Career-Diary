@@ -357,7 +357,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       });
     } catch (_) {}
 
-    // 2. Observer: if Google explicitly reports data-ad-status="unfilled", hide the wrapper completely
+    // 2. Observer: if Google explicitly reports data-ad-status="unfilled" or serves related search chips, hide wrapper completely
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
@@ -371,6 +371,25 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             }
           }
         }
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeName === 'IFRAME' || (node.querySelectorAll && node.querySelectorAll('iframe').length > 0)) {
+              const iframes = node.nodeName === 'IFRAME' ? [node] : node.querySelectorAll('iframe');
+              iframes.forEach((ifr) => {
+                const src = ifr.getAttribute('src') || '';
+                const id = ifr.getAttribute('id') || '';
+                if (src.includes('rsfc') || src.includes('related_search') || id.includes('rsfc')) {
+                  const wrapper = ifr.closest('.adsense-banner-wrapper');
+                  if (wrapper) {
+                    wrapper.style.display = 'none';
+                    wrapper.style.margin = '0';
+                    wrapper.style.height = '0';
+                  }
+                }
+              });
+            }
+          });
+        }
       });
     });
 
@@ -378,6 +397,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     if (richContentEl) {
       observer.observe(richContentEl, {
         attributes: true,
+        childList: true,
         subtree: true,
         attributeFilter: ['data-ad-status']
       });

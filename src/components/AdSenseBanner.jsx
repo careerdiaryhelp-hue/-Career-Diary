@@ -31,7 +31,7 @@ export default function AdSenseBanner({
     const el = adRef.current;
     if (!el) return;
 
-    // MutationObserver to detect AdSense status changes (filled vs unfilled)
+    // MutationObserver to detect AdSense status changes (filled vs unfilled) & suppress related search chips
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
@@ -40,10 +40,22 @@ export default function AdSenseBanner({
             setAdStatus(status || 'filled');
           }
         }
+        if (mutation.type === 'childList') {
+          const iframes = el.querySelectorAll('iframe');
+          iframes.forEach((ifr) => {
+            const src = ifr.getAttribute('src') || '';
+            const id = ifr.getAttribute('id') || '';
+            if (src.includes('rsfc') || src.includes('related_search') || id.includes('rsfc')) {
+              if (isMountedEffect) {
+                setAdStatus('unfilled');
+              }
+            }
+          });
+        }
       });
     });
 
-    observer.observe(el, { attributes: true });
+    observer.observe(el, { attributes: true, childList: true, subtree: true });
 
     let intersectionObserver = null;
 
