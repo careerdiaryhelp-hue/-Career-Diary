@@ -143,7 +143,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     try {
       const d = new Date(job.updatedAt);
       if (isNaN(d.getTime())) return null;
-      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
     } catch (_) {
       return null;
     }
@@ -267,12 +267,10 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     return out;
   }, [job?.content, job?.htmlContent]);
 
-  // Cleanly split HTML content so ads can be placed before:
-  // 1. Selection Process section
-  // 2. Important Links section
-  const contentParts = React.useMemo(() => {
+  // Inject in-content AdSense blocks directly into HTML string while preserving 100% tag balance
+  const contentWithAds = React.useMemo(() => {
     if (!sanitizedContent || typeof sanitizedContent !== 'string') {
-      return { parts: [], adPlacements: [] };
+      return '';
     }
 
     const selRegex = /selection\s*process|mode\s*of\s*selection/i;
@@ -284,92 +282,58 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     const targets = [];
     if (selMatch) targets.push({ type: 'selection', idx: selMatch.index });
     if (impMatch) targets.push({ type: 'important', idx: impMatch.index });
-    targets.sort((a, b) => a.idx - b.idx);
+    // Sort descending by index so inserting ads from back to front never alters previous indices!
+    targets.sort((a, b) => b.idx - a.idx);
+
+    const adSnippets = {
+      selection: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="fluid" data-ad-layout="in-article" data-full-width-responsive="true"></ins></div>`,
+      important: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`,
+      middle: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="fluid" data-ad-layout="in-article" data-full-width-responsive="true"></ins></div>`
+    };
 
     if (targets.length === 0) {
-      // Fallback: middle table/paragraph split
-      const tableMatches = sanitizedContent.match(/<\/table>/gi);
-      if (tableMatches && tableMatches.length >= 2) {
-        const midTableIndex = Math.floor(tableMatches.length / 2);
-        let count = 0;
-        let splitPos = -1;
-        const regex = /<\/table>/gi;
-        let match;
-        while ((match = regex.exec(sanitizedContent)) !== null) {
-          count++;
-          if (count === midTableIndex) {
-            splitPos = regex.lastIndex;
-            break;
-          }
-        }
-        if (splitPos !== -1) {
-          return {
-            parts: [sanitizedContent.slice(0, splitPos), sanitizedContent.slice(splitPos)],
-            adPlacements: ['middle']
-          };
-        }
-      }
-      return { parts: [sanitizedContent], adPlacements: [] };
-    }
-
-    function getSplitInfo(currentHtml, targetIdx) {
-      const before = currentHtml.substring(0, targetIdx);
-      const lastTableClose = before.lastIndexOf('</table>');
-      const lastTableOpen = before.lastIndexOf('<table');
-      const isInsideTable = lastTableOpen > lastTableClose && lastTableOpen !== -1;
-
-      if (isInsideTable) {
-        const lastTrOpen = before.lastIndexOf('<tr');
-        if (lastTrOpen === -1) {
-          return { splitIdx: lastTableOpen, closePart1: '', openPart2: '' };
-        }
-        const tableTagMatch = currentHtml.substring(lastTableOpen).match(/^<table[^>]*>(?:\s*<tbody>)?/i);
-        const openTag = tableTagMatch ? tableTagMatch[0] : '<table><tbody>';
-        return {
-          splitIdx: lastTrOpen,
-          closePart1: '</tbody></table>',
-          openPart2: openTag
-        };
-      } else {
-        const lastH = Math.max(
-          before.lastIndexOf('<h1'),
-          before.lastIndexOf('<h2'),
-          before.lastIndexOf('<h3'),
-          before.lastIndexOf('<h4')
+      const tableMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
+      if (tableMatches.length >= 2) {
+        const midIdx = Math.floor(tableMatches.length / 2);
+        const splitPos = tableMatches[midIdx].index + tableMatches[midIdx][0].length;
+        return (
+          sanitizedContent.substring(0, splitPos) +
+          adSnippets.middle +
+          sanitizedContent.substring(splitPos)
         );
-        const splitIdx = (lastH > lastTableClose && lastH !== -1)
-          ? lastH
-          : (lastTableOpen !== -1 && lastTableOpen > lastTableClose ? lastTableOpen : targetIdx);
-        return {
-          splitIdx: splitIdx > 0 ? splitIdx : targetIdx,
-          closePart1: '',
-          openPart2: ''
-        };
+      }
+      return sanitizedContent;
+    }
+
+    let out = sanitizedContent;
+    for (const t of targets) {
+      const before = out.substring(0, t.idx);
+      const lastTableOpen = before.lastIndexOf('<table');
+      const lastTableClose = before.lastIndexOf('</table>');
+      const isInsideTable = lastTableOpen > lastTableClose && lastTableOpen !== -1;
+      const insertIdx = isInsideTable ? lastTableOpen : t.idx;
+
+      if (insertIdx > 0) {
+        out = out.substring(0, insertIdx) + adSnippets[t.type] + out.substring(insertIdx);
       }
     }
 
-    let remaining = sanitizedContent;
-    const parts = [];
-    const adPlacements = [];
-
-    for (let i = 0; i < targets.length; i++) {
-      const target = targets[i];
-      const match = (target.type === 'selection' ? selRegex : impRegex).exec(remaining);
-      if (!match) continue;
-
-      const info = getSplitInfo(remaining, match.index);
-      if (info.splitIdx <= 0 || info.splitIdx >= remaining.length) continue;
-
-      const part1 = remaining.substring(0, info.splitIdx) + info.closePart1;
-      remaining = info.openPart2 + remaining.substring(info.splitIdx);
-
-      parts.push(part1);
-      adPlacements.push(target.type);
-    }
-    parts.push(remaining);
-
-    return { parts, adPlacements };
+    return out;
   }, [sanitizedContent]);
+
+  // Push AdSense requests for in-article ad units safely after mount
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
+      ads.forEach((ad) => {
+        if (!ad.dataset.adPushDone) {
+          ad.dataset.adPushDone = 'true';
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
+      });
+    } catch (_) {}
+  }, [contentWithAds]);
 
   const contentLower = (job?.content || job?.htmlContent || '').toLowerCase();
   const hasHowToFill = contentLower.includes('how to fill') || contentLower.includes('how to apply') || contentLower.includes('how to check');
@@ -455,28 +419,11 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {(job.content || job.htmlContent) ? (
           <>
-            {contentParts.parts.map((part, index) => {
-              const adType = contentParts.adPlacements[index];
-              return (
-                <React.Fragment key={index}>
-                  <div
-                    className="sr-rich-html-content"
-                    dangerouslySetInnerHTML={{ __html: part }}
-                  />
-
-                  {/* Ad placed before Selection Process or Important Links */}
-                  {adType === 'selection' && (
-                    <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
-                  )}
-                  {adType === 'important' && (
-                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
-                  )}
-                  {adType === 'middle' && (
-                    <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
-                  )}
-                </React.Fragment>
-              );
-            })}
+            <div
+              className="sr-rich-html-content"
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{ __html: contentWithAds }}
+            />
 
             {/* If content does not have You May Also Check */}
             {!hasAlsoCheck && youMayAlsoCheckJob && (

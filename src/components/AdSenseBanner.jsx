@@ -110,27 +110,6 @@ export default function AdSenseBanner({
     };
   }, [slot, layout, layoutKey, isLocalhost, isMounted]);
 
-  if (isLocalhost) {
-    return (
-      <div
-        className="adsense-banner-wrapper localhost-preview"
-        style={{
-          margin: '16px 0',
-          padding: '10px',
-          textAlign: 'center',
-          backgroundColor: '#f8fafc',
-          border: '1px dashed #cbd5e1',
-          borderRadius: '6px',
-          color: '#64748b',
-          fontSize: '0.8rem',
-          ...style
-        }}
-      >
-        📢 [AdSense Slot {slot} - Active on Production Domain]
-      </div>
-    );
-  }
-
   // Hide wrapper completely if AdSense marks it as unfilled
   if (adStatus === 'unfilled') {
     return null;
@@ -140,6 +119,7 @@ export default function AdSenseBanner({
     <div
       ref={wrapperRef}
       className="adsense-banner-wrapper"
+      suppressHydrationWarning
       style={{
         margin: '16px 0',
         textAlign: 'center',
@@ -148,7 +128,7 @@ export default function AdSenseBanner({
         ...style
       }}
     >
-      {label && adStatus === 'filled' && (
+      {label && (adStatus === 'filled' || isLocalhost) && (
         <div
           style={{
             fontSize: '0.65rem',
@@ -172,6 +152,7 @@ export default function AdSenseBanner({
         {...(layout ? { 'data-ad-layout': layout } : {})}
         {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
         data-full-width-responsive={responsive}
+        suppressHydrationWarning
       />
     </div>
   );

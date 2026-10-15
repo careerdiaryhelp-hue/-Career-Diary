@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Script from 'next/script';
 
 export default function AdSenseScript() {
   const pathname = usePathname();
@@ -28,12 +27,10 @@ export default function AdSenseScript() {
   }
 
   return (
-    <Script
-      id="google-adsense"
+    <script
       async
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
       crossOrigin="anonymous"
-      strategy="afterInteractive"
     />
   );
 }
