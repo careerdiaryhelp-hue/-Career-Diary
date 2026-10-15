@@ -148,11 +148,11 @@ export default function ScrollPopupAd() {
             }}
           >
             <DirectAdSense
-              adSlot="1202822135"
+              adSlot="7544533819"
               adId="div-gpt-ad-scroll-popup"
               minWidth="300px"
               minHeight="250px"
-              adFormat="rectangle"
+              adFormat="auto"
               priority={true}
               lazy={false}
               showLabel={false}

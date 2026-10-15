@@ -10,7 +10,7 @@ import AdSenseBanner, { DisplayAd, InFeedAd, MultiplexAd, InPostAd } from './AdS
  */
 export default function AdBanner({
   adClient = 'ca-pub-2108299943580613',
-  adSlot = '1202822135',
+  adSlot = '7544533819',
   adFormat = 'auto',
   fullWidthResponsive = true,
   className = '',

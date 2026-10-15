@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function AdSenseBanner({
-  slot = '1202822135',
+  slot = '7544533819',
   format = 'auto',
   layout = null,
   layoutKey = null,
@@ -151,12 +151,11 @@ export default function AdSenseBanner({
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="7544533819" format="auto" responsive="true" {...props} />;
 }
 
 export function InFeedAd(props) {
-  // Use responsive display banner format instead of fluid search chips to maximize revenue
-  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="7544533819" format="auto" responsive="true" {...props} />;
 }
 
 export function MultiplexAd(props) {
@@ -164,7 +163,7 @@ export function MultiplexAd(props) {
 }
 
 export function InPostAd(props) {
-  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="7544533819" format="auto" responsive="true" {...props} />;
 }
 
 

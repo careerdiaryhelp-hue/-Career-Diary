@@ -275,8 +275,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // Constant high-paying Display Banner Ad (Slot 1202822135, Responsive Auto Format)
-    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+    // Constant high-paying In-Content Ad (Slot 7544533819, Responsive Auto Format)
+    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
     const tableMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
     const nTables = tableMatches.length;
@@ -463,7 +463,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </a>
         </div>
 
-        {/* AdSense Block Ad #1: Display Ad (Slot 1202822135) */}
+        {/* AdSense Block Ad #1: Display Ad (Slot 7544533819) */}
         <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
