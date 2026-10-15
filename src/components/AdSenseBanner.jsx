@@ -179,7 +179,7 @@ export default function AdSenseBanner({
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202822135" format="auto" responsive="false" {...props} />;
+  return <AdSenseBanner slot="1202822135" format="auto" responsive="true" {...props} />;
 }
 
 export function InFeedAd(props) {

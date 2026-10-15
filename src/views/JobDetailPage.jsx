@@ -139,6 +139,15 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   ];
 
   const postDate = job.postDate || job.importantDates?.postDate || null;
+  const postUpdateDate = job.postUpdateDate || job.updateDate || (job.updatedAt ? (() => {
+    try {
+      const d = new Date(job.updatedAt);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (_) {
+      return null;
+    }
+  })() : null);
   const isAdmit = isAdmitCard(job);
   const isRes = isResult(job) || isAnswerKey(job);
   const isAdm = isAdmission(job);
@@ -408,8 +417,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
         {/* Title */}
         <h1 className="sr-main-title">{job.title}</h1>
-        {postDate && (
-          <div className="sr-post-date">Post Date: {postDate}</div>
+        {(postDate || postUpdateDate) && (
+          <div className="sr-post-date">
+            {postDate && <span>Post Date: {postDate}</span>}
+            {postUpdateDate && postUpdateDate !== postDate && (
+              <span>{postDate ? ' | ' : ''}Post Update Date: {postUpdateDate}</span>
+            )}
+          </div>
         )}
 
         {/* Rich Intro Paragraph (Sarkari Result style) */}

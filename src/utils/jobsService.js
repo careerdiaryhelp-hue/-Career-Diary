@@ -16,6 +16,7 @@ export function summarizeJobForList(job) {
     category: job.category || '',
     badge: job.badge || '',
     postDate: job.postDate || '',
+    postUpdateDate: job.postUpdateDate || job.updateDate || '',
     updatedAt: job.updatedAt || '',
     lastDate: job.lastDate || job.appLast || job.importantDates?.lastDate || '',
     appLast: job.appLast || job.lastDate || '',

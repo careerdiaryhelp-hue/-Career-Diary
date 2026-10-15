@@ -33,6 +33,7 @@ const __dirname = path.dirname(__filename);
       category: job.category || '',
       badge: job.badge || '',
       postDate: job.postDate || '',
+      postUpdateDate: job.postUpdateDate || job.updateDate || '',
       updatedAt: job.updatedAt || '',
       lastDate: job.lastDate || job.appLast || job.importantDates?.lastDate || '',
       appLast: job.appLast || job.lastDate || '',
@@ -212,5 +213,50 @@ const __dirname = path.dirname(__filename);
     `export const precomputedFullJobs = ${JSON.stringify(SORTED_STATIC_JOBS)};`
   );
 
-  console.log(`Precomputed ${SORTED_STATIC_JOBS.length} jobs summary and full array into JS files.`);
+  // Generate fresh, comprehensive sitemap files for Google Search Console
+  const todayIso = new Date().toISOString();
+  const staticRoutes = [
+    { loc: 'https://careerdiary.in/', priority: '1.00', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/latest-jobs', priority: '0.90', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/admit-card', priority: '0.90', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/results', priority: '0.90', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/answer-key', priority: '0.90', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/admission', priority: '0.85', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/syllabus', priority: '0.80', changefreq: 'weekly' },
+    { loc: 'https://careerdiary.in/important', priority: '0.80', changefreq: 'weekly' },
+    { loc: 'https://careerdiary.in/top-online-forms', priority: '0.85', changefreq: 'daily' },
+    { loc: 'https://careerdiary.in/last-date', priority: '0.85', changefreq: 'daily' },
+  ];
+
+  const staticXmlEntries = staticRoutes.map(
+    r => `  <url>\n    <loc>${r.loc}</loc>\n    <lastmod>${todayIso}</lastmod>\n    <changefreq>${r.changefreq}</changefreq>\n    <priority>${r.priority}</priority>\n  </url>`
+  );
+
+  const seenSlugs = new Set();
+  const jobXmlEntries = [];
+  for (const j of SORTED_STATIC_JOBS) {
+    if (!j || !j.id || j.isExternal) continue;
+    const slug = (j.slug || j.id).trim();
+    if (seenSlugs.has(slug)) continue;
+    seenSlugs.add(slug);
+
+    let lastmod = todayIso;
+    if (j.updatedAt && !isNaN(Date.parse(j.updatedAt))) {
+      lastmod = new Date(j.updatedAt).toISOString();
+    } else if (j.postDate && !isNaN(Date.parse(j.postDate))) {
+      lastmod = new Date(j.postDate).toISOString();
+    }
+
+    jobXmlEntries.push(
+      `  <url>\n    <loc>https://careerdiary.in/${slug}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.85</priority>\n  </url>`
+    );
+  }
+
+  const postSitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...staticXmlEntries, ...jobXmlEntries].join('\n')}\n</urlset>\n`;
+  fs.writeFileSync(path.join(__dirname, '../public/post-sitemap.xml'), postSitemapXml);
+
+  const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\t<sitemap>\n\t\t<loc>https://careerdiary.in/post-sitemap.xml</loc>\n\t\t<lastmod>${todayIso}</lastmod>\n\t</sitemap>\n</sitemapindex>\n`;
+  fs.writeFileSync(path.join(__dirname, '../public/sitemap.xml'), sitemapIndexXml);
+
+  console.log(`Precomputed ${SORTED_STATIC_JOBS.length} jobs and generated sitemap with ${staticRoutes.length + jobXmlEntries.length} URLs.`);
 })();

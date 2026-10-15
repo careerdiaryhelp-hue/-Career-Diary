@@ -1,6 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
 import AdSenseScript from "../components/AdSenseScript";
+import AdSandboxer from "../components/AdSandboxer";
 
 export const metadata = {
   metadataBase: new URL('https://careerdiary.in'),
@@ -63,6 +64,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
+        <AdSandboxer />
         {children}
       </body>
     </html>

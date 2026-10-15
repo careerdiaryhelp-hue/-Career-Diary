@@ -36,6 +36,7 @@ const CATEGORIES = [
 const EMPTY_FORM = {
   title: '',
   postDate: '',
+  postUpdateDate: '',
   category: 'LATEST JOB',
   secondaryCategories: [],
   organization: '',
@@ -697,6 +698,8 @@ export default function AdminDashboardPage({
 
     setForm({
       title: job.title || '',
+      postDate: job.postDate || '',
+      postUpdateDate: job.postUpdateDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
       category: job.category || 'LATEST JOB',
       secondaryCategories: Array.isArray(job.secondaryCategories)
         ? job.secondaryCategories
@@ -3940,7 +3943,8 @@ export default function AdminDashboardPage({
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
-      postDate: existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      postDate: (form.postDate && form.postDate.trim()) || existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      postUpdateDate: (form.postUpdateDate && form.postUpdateDate.trim()) || (isUpdate ? new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : (existingJob?.postUpdateDate || '')),
       updatedAt: new Date().toISOString(),
     };
 
@@ -4124,7 +4128,8 @@ export default function AdminDashboardPage({
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
-      postDate: existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      postDate: (form.postDate && form.postDate.trim()) || existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      postUpdateDate: (form.postUpdateDate && form.postUpdateDate.trim()) || (existingJob ? new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : ''),
       updatedAt: new Date().toISOString(),
     };
 
@@ -5377,16 +5382,32 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* Post Date */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>POST DATE (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 10 September 2026"
-                  value={form.postDate || ''}
-                  onChange={e => set('postDate', e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.92rem', fontWeight: 600 }}
-                />
+              {/* Post Date & Post Update Date */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    POST DATE (Original)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 23 September 2026"
+                    value={form.postDate || ''}
+                    onChange={e => set('postDate', e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.92rem', fontWeight: 600 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    POST UPDATE DATE (Latest)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 15 October 2026"
+                    value={form.postUpdateDate || ''}
+                    onChange={e => set('postUpdateDate', e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.92rem', fontWeight: 600 }}
+                  />
+                </div>
               </div>
 
               {/* Slug Auto-Generated */}

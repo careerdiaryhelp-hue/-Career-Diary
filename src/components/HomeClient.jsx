@@ -214,6 +214,11 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
             else setCurrentCategory(cat);
           }}
         />
+
+        {/* AdSense Block Ad #2: Display Ad at bottom of content */}
+        <div className="container" style={{ margin: '20px auto' }}>
+          <DisplayAd label="ADVERTISEMENT" />
+        </div>
       </main>
 
       {/* Footer */}

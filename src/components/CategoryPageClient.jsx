@@ -106,6 +106,11 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
             if (slug) window.location.href = slug;
           }}
         />
+
+        {/* AdSense Block Ad #2: Bottom Display Ad */}
+        <div style={{ margin: '20px 0' }}>
+          <DisplayAd label="ADVERTISEMENT" />
+        </div>
       </main>
       <Footer />
 
