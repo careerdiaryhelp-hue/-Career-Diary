@@ -2,175 +2,230 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import DirectAdSense from './DirectAdSense';
 import { X } from 'lucide-react';
+import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function ScrollPopupAd() {
   const pathname = usePathname();
-  const [scrollReady, setScrollReady] = useState(false);
-  const [adLoaded, setAdLoaded] = useState(false);
-  const [closed, setClosed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const insRef = useRef(null);
   const hasTriggeredRef = useRef(false);
 
-  // Step 1: Detect user scroll (30% down the page or 350px)
+  // Trigger popup when user scrolls down >= 250px or after 5s of reading
   useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    // Check cooldown: Don't show more than once every 15 seconds per session
-    if (typeof window !== 'undefined') {
-      const lastShown = sessionStorage.getItem('scroll_ad_last_shown');
-      if (lastShown) {
-        const diff = Date.now() - parseInt(lastShown, 10);
-        if (diff < 15000) {
-          setClosed(true);
-          return;
-        }
+    // Check if already closed by the user in this session
+    try {
+      if (sessionStorage.getItem('careerdiary_scroll_popup_closed') === 'true') {
+        return;
       }
-    }
+    } catch (_) {}
+
+    const triggerPopup = () => {
+      if (hasTriggeredRef.current) return;
+      hasTriggeredRef.current = true;
+      setIsOpen(true);
+      window.removeEventListener('scroll', handleScroll);
+    };
 
     const handleScroll = () => {
-      if (hasTriggeredRef.current || closed) return;
-
-      const scrolled = window.scrollY || document.documentElement.scrollTop;
-      const total =
-        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) -
-        window.innerHeight;
-
-      const pct = total > 0 ? (scrolled / total) * 100 : 0;
-
-      // Trigger when user scrolls at least 30% of page or 350px
-      if (pct >= 30 || scrolled >= 350) {
-        hasTriggeredRef.current = true;
-        setScrollReady(true);
-        window.removeEventListener('scroll', handleScroll);
+      const scrolled = window.scrollY || document.documentElement.scrollTop || 0;
+      if (scrolled >= 250) {
+        triggerPopup();
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [closed, pathname]);
+
+    // Fallback timer: also show after 6 seconds of engagement if user has not scrolled yet
+    const fallbackTimer = setTimeout(() => {
+      triggerPopup();
+    }, 6000);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(fallbackTimer);
+    };
+  }, [pathname]);
+
+  // Push AdSense ad unit as soon as popup is mounted and visible
+  useEffect(() => {
+    if (!isOpen || !insRef.current) return;
+    if (typeof window === 'undefined' || !canServeAds()) return;
+
+    const el = insRef.current;
+    if (el.dataset.adPushDone) return;
+
+    // Push after modal animation renders so offset dimensions are confirmed
+    const pushTimer = setTimeout(() => {
+      try {
+        el.dataset.adPushDone = 'true';
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (_) {}
+    }, 200);
+
+    // If AdSense explicitly reports unfilled after auction, auto-close smoothly
+    const observer = new MutationObserver(() => {
+      if (el.getAttribute('data-ad-status') === 'unfilled') {
+        setTimeout(() => {
+          if (el.getAttribute('data-ad-status') === 'unfilled') {
+            setIsOpen(false);
+          }
+        }, 3000);
+      }
+    });
+
+    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
+
+    return () => {
+      clearTimeout(pushTimer);
+      observer.disconnect();
+    };
+  }, [isOpen]);
 
   const handleClose = () => {
-    setClosed(true);
-    setScrollReady(false);
-    setAdLoaded(false);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('scroll_ad_last_shown', Date.now().toString());
-    }
+    setIsOpen(false);
+    try {
+      sessionStorage.setItem('careerdiary_scroll_popup_closed', 'true');
+    } catch (_) {}
   };
 
-  // Strictly disabled in app mode, or before scroll trigger, or once closed, or on admin pages
-  if (closed || !scrollReady || (pathname && pathname.startsWith('/admin'))) return null;
+  // Disabled on admin pages or if not opened
+  if (!isOpen || (pathname && pathname.startsWith('/admin'))) {
+    return null;
+  }
+
+  const isLocal = isLocalDev();
 
   return (
-    <>
-      {/* 
-        Container stays invisible until the ad creative is CONFIRMED loaded.
-        MUST stay in viewport for AdSense to fetch it!
-      */}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        backdropFilter: 'blur(3px)',
+      }}
+      onClick={handleClose}
+    >
       <div
-        className={
-          adLoaded
-            ? 'fixed inset-0 z-[99999] flex items-center justify-center p-4'
-            : 'fixed inset-0 z-[-1] flex items-center justify-center p-4 opacity-0 pointer-events-none'
-        }
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '340px',
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
+          animation: 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        }}
       >
-        {adLoaded && (
-          <div
-            className="fixed inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity duration-300"
-            onClick={handleClose}
-            aria-hidden="true"
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)', zIndex: 99998 }}
-          />
-        )}
-
+        {/* Header Bar */}
         <div
-          className={`relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 ${
-            adLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-          }`}
           style={{
-            position: 'relative',
-            zIndex: 99999,
-            width: '100%',
-            maxWidth: '340px',
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-            margin: 'auto',
-            animation: adLoaded ? 'slideUpFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #f1f5f9',
           }}
         >
-          {/* Header with Title and Accessible Close Button */}
-          <div
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '8px 14px',
-              backgroundColor: '#f8fafc',
-              borderBottom: '1px solid #f1f5f9',
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#64748b',
             }}
           >
-            <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8' }}>
-              Advertisement
-            </span>
-            <button
-              onClick={handleClose}
+            Advertisement
+          </span>
+          <button
+            onClick={handleClose}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: '#334155',
+              fontWeight: 700,
+              fontSize: '12px',
+            }}
+            aria-label="Close"
+          >
+            <X size={15} /> Close
+          </button>
+        </div>
+
+        {/* Ad Unit Container */}
+        <div
+          style={{
+            padding: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '260px',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          {isLocal ? (
+            <div
               style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '50%',
+                width: '300px',
+                height: '250px',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
+                border: '2px dashed #93c5fd',
+                backgroundColor: '#eff6ff',
+                borderRadius: '8px',
+                textAlign: 'center',
+                padding: '16px',
+                boxSizing: 'border-box',
               }}
-              aria-label="Close advertisement"
-              title="Close Ad"
             >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Ad Creative Unit (300x250 Rectangle) */}
-          <div
-            style={{
-              padding: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '250px',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <DirectAdSense
-              adSlot="7544533819"
-              adId="div-gpt-ad-scroll-popup"
-              minWidth="300px"
-              minHeight="250px"
-              adFormat="auto"
-              priority={true}
-              lazy={false}
-              showLabel={false}
-              className="!my-0 !p-0"
-              onAdStatusChange={(status) => {
-                if (status === 'filled') {
-                  setAdLoaded(true);
-                  if (typeof window !== 'undefined') {
-                    sessionStorage.setItem('scroll_ad_last_shown', Date.now().toString());
-                  }
-                } else if (status === 'unfilled') {
-                  handleClose();
-                }
+              <div style={{ color: '#1d4ed8', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>
+                Scroll Popup Ad (Preview)
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                Slot: <span style={{ fontWeight: 700 }}>7544533819</span> (300x250)
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '6px' }}>
+                Live AdSense ad serves on careerdiary.in
+              </div>
+            </div>
+          ) : (
+            <ins
+              ref={insRef}
+              className="adsbygoogle"
+              style={{
+                display: 'inline-block',
+                width: '300px',
+                height: '250px',
               }}
+              data-ad-client="ca-pub-2108299943580613"
+              data-ad-slot="7544533819"
+              data-ad-format="rectangle"
+              data-full-width-responsive="false"
             />
-          </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
