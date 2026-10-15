@@ -33,17 +33,18 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
       window.location.search.includes('admin')
     );
 
-    const maxFetchCount = isAdminUser ? 150 : 30;
-
-    unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        try {
-          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
-        } catch (_) {}
-        const catPosts = getJobsForCategory(firestorePosts, categoryKey);
-        setJobs(prev => mergeAndSortJobs(catPosts, prev));
-      }
-    }, (err) => console.warn(err), maxFetchCount);
+    // Protect Firestore free quota: only subscribe if admin or if initialJobs is missing
+    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
+      unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
+        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+          } catch (_) {}
+          const catPosts = getJobsForCategory(firestorePosts, categoryKey);
+          setJobs(prev => mergeAndSortJobs(catPosts, prev));
+        }
+      }, (err) => console.warn(err), isAdminUser ? 150 : 30);
+    }
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();

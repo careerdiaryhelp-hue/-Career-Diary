@@ -14,24 +14,31 @@ export default function JobDetailWrapper({ job: initialJob, allJobs = [], slug =
     const clean = String(slug || '').toLowerCase().trim();
     if (!clean) return;
 
-    // Fetch live Firestore document so updates (dates, links, content) are immediately visible
-    import('../firebase').then(({ fetchFirestoreJobById }) => {
-      fetchFirestoreJobById(clean).then(liveDoc => {
-        if (liveDoc && (liveDoc.content || liveDoc.htmlContent || liveDoc.title)) {
-          setJob(prev => {
-            if (!prev) return liveDoc;
-            const liveTs = new Date(liveDoc.updatedAt || 0).getTime();
-            const prevTs = new Date(prev.updatedAt || 0).getTime();
-            const dateChanged = (liveDoc.postDate && liveDoc.postDate !== prev.postDate) ||
-              (liveDoc.postUpdateDate && liveDoc.postUpdateDate !== prev.postUpdateDate);
-            if (liveTs >= prevTs || dateChanged || !prev.content) {
-              return { ...prev, ...liveDoc };
-            }
-            return prev;
-          });
-        }
-      }).catch(() => {});
-    });
+    const isAdminUser = typeof window !== 'undefined' && (
+      localStorage.getItem('career_diary_admin') === 'true' ||
+      window.location.search.includes('admin')
+    );
+
+    // Protect Firestore free quota: only fetch live document if admin or if initialJob is missing
+    if (isAdminUser || !initialJob) {
+      import('../firebase').then(({ fetchFirestoreJobById }) => {
+        fetchFirestoreJobById(clean).then(liveDoc => {
+          if (liveDoc && (liveDoc.content || liveDoc.htmlContent || liveDoc.title)) {
+            setJob(prev => {
+              if (!prev) return liveDoc;
+              const liveTs = new Date(liveDoc.updatedAt || 0).getTime();
+              const prevTs = new Date(prev.updatedAt || 0).getTime();
+              const dateChanged = (liveDoc.postDate && liveDoc.postDate !== prev.postDate) ||
+                (liveDoc.postUpdateDate && liveDoc.postUpdateDate !== prev.postUpdateDate);
+              if (liveTs >= prevTs || dateChanged || !prev.content) {
+                return { ...prev, ...liveDoc };
+              }
+              return prev;
+            });
+          }
+        }).catch(() => {});
+      });
+    }
 
     if (!job) {
       try {

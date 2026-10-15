@@ -67,18 +67,18 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       window.location.search.includes('admin')
     );
 
-    // Fetch live posts from Firestore for EVERYONE so published posts show up instantly.
-    // Protect quota by limiting normal visitors to 30 posts. Admins get 150.
-    const maxFetchCount = isAdminUser ? 150 : 30;
-    
-    const unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        try {
-          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
-        } catch (_) {}
-        setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
-      }
-    }, (err) => console.warn(err), maxFetchCount);
+    // Protect Firestore free quota: only subscribe if admin or if initialJobs is missing
+    let unsubJobs = null;
+    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
+      unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
+        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+          } catch (_) {}
+          setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
+        }
+      }, (err) => console.warn(err), isAdminUser ? 150 : 30);
+    }
 
     return () => {
       if (typeof unsubNews === 'function') unsubNews();

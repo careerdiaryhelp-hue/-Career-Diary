@@ -24,14 +24,22 @@ export default function LastDateClient({ jobs: initialJobs = [] }) {
       }
     } catch (_) {}
 
-    const unsub = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        try {
-          sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
-        } catch (_) {}
-        setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
-      }
-    }, (err) => console.warn(err), 30);
+    const isAdminUser = typeof window !== 'undefined' && (
+      localStorage.getItem('career_diary_admin') === 'true' ||
+      window.location.search.includes('admin')
+    );
+
+    let unsub = null;
+    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
+      unsub = subscribeToFirestoreJobs((firestorePosts) => {
+        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+          } catch (_) {}
+          setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
+        }
+      }, (err) => console.warn(err), isAdminUser ? 150 : 30);
+    }
 
     return () => {
       if (typeof unsub === 'function') unsub();

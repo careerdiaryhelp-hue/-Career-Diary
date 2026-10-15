@@ -2,7 +2,6 @@ import "./globals.css";
 import Script from "next/script";
 import AdSenseScript from "../components/AdSenseScript";
 import WebAdScripts from "../components/WebAdScripts";
-import ScrollPopupAd from "../components/ScrollPopupAd";
 
 export const metadata = {
   metadataBase: new URL('https://careerdiary.in'),
@@ -66,7 +65,6 @@ export default function RootLayout({ children }) {
         <AdSenseScript />
         <WebAdScripts />
         {children}
-        <ScrollPopupAd />
       </body>
     </html>
   );
