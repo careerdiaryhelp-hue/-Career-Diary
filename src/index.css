@@ -2626,7 +2626,12 @@ body:has(.admin-login-wrapper) {
 .google-anno-skip .google-auto-placed,
 .google-anno-skip [data-ad-intent],
 .google-anno-skip iframe[id*="google_ads_iframe"][src*="related_search"],
-.google-anno-skip .google-auto-placed[data-ad-format="related_search"] {
+.google-anno-skip .google-auto-placed[data-ad-format="related_search"],
+iframe[src*="rsfc"],
+iframe[id*="rsfc"],
+.google-auto-placed:has(iframe[src*="rsfc"]),
+.adsense-banner-wrapper:has(iframe[src*="rsfc"]),
+.adsense-banner-wrapper:has([aria-label*="Discover more" i]) {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
