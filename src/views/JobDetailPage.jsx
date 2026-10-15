@@ -275,57 +275,89 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    const selRegex = /selection\s*process|mode\s*of\s*selection/i;
-    const impRegex = /important\s*links|some\s*important\s*links|useful\s*important\s*links/i;
+    // Constant high-paying Display Banner Ad (Slot 1202822135, Responsive Auto Format)
+    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
-    const selMatch = selRegex.exec(sanitizedContent);
-    const impMatch = impRegex.exec(sanitizedContent);
+    const tableMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
+    const nTables = tableMatches.length;
 
-    const targets = [];
-    if (selMatch) targets.push({ type: 'selection', idx: selMatch.index });
-    if (impMatch) targets.push({ type: 'important', idx: impMatch.index });
-    // Sort descending by index so inserting ads from back to front never alters previous indices!
-    targets.sort((a, b) => b.idx - a.idx);
+    let insertionIndices = [];
 
-    const adSnippets = {
-      selection: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`,
-      important: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`,
-      middle: `<div class="adsense-banner-wrapper" style="margin: 24px 0; text-align: center; width: 100%; box-sizing: border-box;"><div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202822135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`
-    };
-
-    if (targets.length === 0) {
-      const tableMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
-      if (tableMatches.length >= 2) {
-        const midIdx = Math.floor(tableMatches.length / 2);
-        const splitPos = tableMatches[midIdx].index + tableMatches[midIdx][0].length;
-        return (
-          sanitizedContent.substring(0, splitPos) +
-          adSnippets.middle +
-          sanitizedContent.substring(splitPos)
-        );
+    if (nTables >= 2) {
+      if (nTables === 2) {
+        // 2 tables -> 1 in-content ad after Table 1
+        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
+      } else if (nTables === 3) {
+        // 3 tables -> 2 in-content ads: after Table 1 and Table 2
+        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[1].index + tableMatches[1][0].length);
+      } else if (nTables === 4) {
+        // 4 tables -> 2 in-content ads: after Table 1 and Table 3
+        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[2].index + tableMatches[2][0].length);
+      } else if (nTables >= 5 && nTables <= 7) {
+        // 5-7 tables -> 3 in-content ads: early, middle, and before last table
+        const mid = Math.floor(nTables / 2);
+        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[mid].index + tableMatches[mid][0].length);
+        insertionIndices.push(tableMatches[nTables - 2].index + tableMatches[nTables - 2][0].length);
+      } else {
+        // 8+ tables (long post with syllabus / detailed rules) -> 4-5 in-content ads evenly spaced
+        const step = Math.max(2, Math.floor(nTables / 4));
+        for (let i = 0; i < nTables - 1; i += step) {
+          if (insertionIndices.length >= 5) break;
+          insertionIndices.push(tableMatches[i].index + tableMatches[i][0].length);
+        }
+        // Always place one before the last table (usually Important Links)
+        const lastBeforeFinal = tableMatches[nTables - 2].index + tableMatches[nTables - 2][0].length;
+        if (!insertionIndices.includes(lastBeforeFinal)) {
+          insertionIndices.push(lastBeforeFinal);
+        }
       }
-      return sanitizedContent;
+    } else {
+      // 0 or 1 table: Look for paragraph breaks </p> or section headers <h2, <h3
+      const breakMatches = [...sanitizedContent.matchAll(/<\/p>|<h[2-4]/gi)];
+      if (breakMatches.length >= 4) {
+        const step = Math.floor(breakMatches.length / 3);
+        const idx1 = breakMatches[step].index + (breakMatches[step][0].startsWith('<h') ? 0 : breakMatches[step][0].length);
+        const idx2 = breakMatches[step * 2].index + (breakMatches[step * 2][0].startsWith('<h') ? 0 : breakMatches[step * 2][0].length);
+        insertionIndices.push(idx1, idx2);
+      } else if (sanitizedContent.length > 800) {
+        const mid = Math.floor(sanitizedContent.length / 2);
+        const spaceIdx = sanitizedContent.indexOf(' ', mid);
+        if (spaceIdx > 0) insertionIndices.push(spaceIdx);
+      }
     }
 
-    let out = sanitizedContent;
-    for (const t of targets) {
-      const before = out.substring(0, t.idx);
-      const lastTableOpen = before.lastIndexOf('<table');
-      const lastTableClose = before.lastIndexOf('</table>');
-      const isInsideTable = lastTableOpen > lastTableClose && lastTableOpen !== -1;
-      const insertIdx = isInsideTable ? lastTableOpen : t.idx;
+    // Sort descending so inserting from back to front never alters previous indices!
+    const uniqueIndices = [...new Set(insertionIndices)].sort((a, b) => b - a);
 
-      if (insertIdx > 0) {
-        out = out.substring(0, insertIdx) + adSnippets[t.type] + out.substring(insertIdx);
+    let out = sanitizedContent;
+    for (const idx of uniqueIndices) {
+      if (idx > 0 && idx < out.length) {
+        out = out.substring(0, idx) + '\n' + adSnippet + '\n' + out.substring(idx);
       }
     }
 
     return out;
   }, [sanitizedContent]);
 
-  // Push AdSense requests for in-article ad units safely after mount
+  // Push AdSense requests for in-article ad units safely after mount & auto-collapse unfilled ads
   React.useEffect(() => {
-    if (typeof window === 'undefined' || !canServeAds()) return;
+    if (typeof window === 'undefined') return;
+
+    // 1. If ads cannot be served (adblock, dev, admin), collapse all in-content ad wrappers immediately
+    if (!canServeAds()) {
+      document.querySelectorAll('.sr-rich-html-content .adsense-banner-wrapper').forEach((w) => {
+        w.classList.add('ad-collapsed');
+        w.style.display = 'none';
+        w.style.height = '0';
+        w.style.margin = '0';
+      });
+      return;
+    }
+
+    // 2. Push adsbygoogle for unfilled units
     try {
       const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
       ads.forEach((ad) => {
@@ -335,6 +367,63 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         }
       });
     } catch (_) {}
+
+    // 3. Monitor ad load: if unfilled or no iframe within 3.5s, collapse wrapper completely (remove empty space)
+    const checkCollapse = () => {
+      const wrappers = document.querySelectorAll('.sr-rich-html-content .adsense-banner-wrapper');
+      wrappers.forEach((wrapper) => {
+        const ins = wrapper.querySelector('ins.adsbygoogle');
+        if (!ins) return;
+
+        const status = ins.getAttribute('data-ad-status');
+        const googleStatus = ins.getAttribute('data-adsbygoogle-status');
+        const hasIframe = !!ins.querySelector('iframe');
+
+        if (status === 'unfilled') {
+          wrapper.classList.add('ad-collapsed');
+          wrapper.style.display = 'none';
+          wrapper.style.height = '0';
+          wrapper.style.margin = '0';
+        } else if (googleStatus === 'done') {
+          if (!hasIframe && ins.offsetHeight === 0) {
+            wrapper.classList.add('ad-collapsed');
+            wrapper.style.display = 'none';
+            wrapper.style.height = '0';
+            wrapper.style.margin = '0';
+          } else {
+            wrapper.classList.remove('ad-collapsed');
+            wrapper.style.display = 'block';
+            wrapper.style.margin = '18px 0';
+            const label = wrapper.querySelector('.ad-label');
+            if (label) label.style.display = 'block';
+          }
+        }
+      });
+    };
+
+    const t1 = setTimeout(checkCollapse, 1500);
+    const t2 = setTimeout(checkCollapse, 3500);
+    const t3 = setTimeout(checkCollapse, 6000);
+
+    const observer = new MutationObserver(() => {
+      checkCollapse();
+    });
+
+    const richContentEl = document.querySelector('.sr-rich-html-content');
+    if (richContentEl) {
+      observer.observe(richContentEl, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['data-ad-status', 'data-adsbygoogle-status']
+      });
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      observer.disconnect();
+    };
   }, [contentWithAds]);
 
   const contentLower = (job?.content || job?.htmlContent || '').toLowerCase();
@@ -871,6 +960,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             </tbody>
           </table>
         )}
+
+        {/* AdSense Bottom Display Ad (Guarantees min 4 ads on all pages) */}
+        <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
 
         {/* Latest Posts & Related Posts Section */}
         <div style={{ margin: '24px 0' }}>

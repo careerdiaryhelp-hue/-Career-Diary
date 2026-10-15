@@ -93,8 +93,20 @@ export default function AdSenseBanner({
       setTimeout(tryPush, 1000);
     }
 
+    // Safety timeout: if ad does not load within 3.5s, collapse and clear space
+    const collapseTimer = setTimeout(() => {
+      if (!isMountedEffect || !adRef.current) return;
+      const status = adRef.current.getAttribute('data-ad-status');
+      const googleStatus = adRef.current.getAttribute('data-adsbygoogle-status');
+      const hasIframe = !!adRef.current.querySelector('iframe');
+      if (status === 'unfilled' || (googleStatus === 'done' && !hasIframe) || (!hasIframe && !isLocalhost)) {
+        setAdStatus('unfilled');
+      }
+    }, 3500);
+
     return () => {
       isMountedEffect = false;
+      clearTimeout(collapseTimer);
       observer.disconnect();
       if (intersectionObserver) {
         intersectionObserver.disconnect();
@@ -102,26 +114,31 @@ export default function AdSenseBanner({
     };
   }, [slot, layout, layoutKey, isLocalhost, isMounted]);
 
-  // Hide wrapper completely on admin routes or if AdSense marks it as unfilled
+  // Hide wrapper completely on admin routes or if AdSense marks it as unfilled (zero space)
   if ((pathname && pathname.startsWith('/admin')) || adStatus === 'unfilled') {
     return null;
   }
 
+  const isFilled = adStatus === 'filled' || isLocalhost;
+
   return (
     <div
       ref={wrapperRef}
-      className="adsense-banner-wrapper"
+      className={`adsense-banner-wrapper ${!isFilled ? 'ad-collapsed' : ''}`}
       suppressHydrationWarning
       style={{
-        margin: '16px 0',
+        margin: isFilled ? (style?.margin || '16px 0') : 0,
+        padding: 0,
         textAlign: 'center',
         width: '100%',
         boxSizing: 'border-box',
-        ...style
+        overflow: 'hidden',
+        ...(isFilled ? style : {})
       }}
     >
-      {label && (adStatus === 'filled' || isLocalhost) && (
+      {label && isFilled && (
         <div
+          className="ad-label"
           style={{
             fontSize: '0.65rem',
             color: '#94a3b8',

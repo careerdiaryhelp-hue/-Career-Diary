@@ -2622,11 +2622,70 @@ body:has(.admin-login-wrapper) {
 .google-auto-placed:has([aria-label*="Discover more" i]),
 .google-auto-placed:has([aria-label*="Related search" i]),
 [data-ad-intent],
+[data-ad-slot="related_search"],
+.google-anno-skip .google-auto-placed,
+.google-anno-skip [data-ad-intent],
+.google-anno-skip iframe[id*="google_ads_iframe"][src*="related_search"],
 .google-anno-skip .google-auto-placed[data-ad-format="related_search"] {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* =========================================
+   AUTO-COLLAPSE ADSENSE (Zero Empty Space)
+   agr ads load nahi ho rha to space hat jaye
+   ========================================= */
+.adsense-banner-wrapper {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Hide label by default until ad is confirmed loaded */
+.adsense-banner-wrapper .ad-label {
+  display: none;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* When filled with an active iframe, show margins and label */
+.adsense-banner-wrapper:has(ins iframe),
+.adsense-banner-wrapper:has(ins[data-adsbygoogle-status="done"]:not([data-ad-status="unfilled"])) {
+  margin: 18px 0;
+}
+
+.adsense-banner-wrapper:has(ins iframe) .ad-label,
+.adsense-banner-wrapper:has(ins[data-adsbygoogle-status="done"]:not([data-ad-status="unfilled"])) .ad-label {
+  display: block !important;
+}
+
+/* Force collapse unfilled, empty, or failed ad units completely to 0px */
+ins.adsbygoogle[data-ad-status="unfilled"],
+ins.adsbygoogle[data-adsbygoogle-status="done"]:not(:has(iframe)),
+.adsense-banner-wrapper:has(ins[data-ad-status="unfilled"]),
+.adsense-banner-wrapper:has(ins[data-adsbygoogle-status="done"]:not(:has(iframe))),
+.adsense-banner-wrapper.ad-collapsed {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 
