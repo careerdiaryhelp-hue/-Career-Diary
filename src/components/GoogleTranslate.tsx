@@ -34,7 +34,7 @@ export default function GoogleTranslate() {
 
     // 2. Add Google Translate script if not already present
     const SCRIPT_ID = 'google-translate-script';
-    let script = document.getElementById(SCRIPT_ID);
+    let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
     if (!script) {
       script = document.createElement('script');
       script.id = SCRIPT_ID;
@@ -54,7 +54,7 @@ export default function GoogleTranslate() {
       const bannerIframes = document.querySelectorAll(
         '.goog-te-banner-frame, iframe.goog-te-banner-frame, iframe[class*="goog-te-banner-frame"], .VIpgJd-ZVi9I-OR9QNe-OR9QNe'
       );
-      bannerIframes.forEach((iframe) => {
+      bannerIframes.forEach((iframe: any) => {
         iframe.style.setProperty('display', 'none', 'important');
         iframe.style.setProperty('visibility', 'hidden', 'important');
         iframe.style.setProperty('height', '0px', 'important');
@@ -104,7 +104,7 @@ export default function GoogleTranslate() {
       }
 
       // Check if native select element is available in DOM
-      const select = document.querySelector('.goog-te-combo');
+      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
       if (select) {
         select.value = langCode;
         select.dispatchEvent(new Event('change'));

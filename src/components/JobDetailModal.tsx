@@ -163,11 +163,11 @@ export default function JobDetailModal({ job, onClose }) {
               </h4>
               <table className="table-styled">
                 <tbody>
-                  {Object.entries(job.importantLinks).map(([label, url], idx) => (
+                  {Object.entries(job.importantLinks).map(([label, url]: [string, any], idx) => (
                     <tr key={idx}>
                       <td style={{ fontWeight: '600', width: '60%' }}>{label}</td>
                       <td>
-                        <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 'bold', textDecoration: 'underline' }}>
+                        <a href={typeof url === 'string' ? url : (url?.url || '')} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 'bold', textDecoration: 'underline' }}>
                           Click Here
                         </a>
                       </td>

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { X, Lock, Key, ShieldCheck } from 'lucide-react';
 
-export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
+export default function AdminLoginModal({ isOpen = true, onClose, onLoginSuccess, onSuccess }: any = {}) {
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
 
@@ -13,9 +13,10 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
     // Admin passcode: Careerdiary12345
     if (passcode === 'Careerdiary@2210') {
       setError('');
-      onLoginSuccess();
+      if (typeof onLoginSuccess === 'function') onLoginSuccess();
+      if (typeof onSuccess === 'function') onSuccess();
       setPasscode('');
-      onClose();
+      if (typeof onClose === 'function') onClose();
     } else {
       setError('Invalid Admin Passcode!');
     }

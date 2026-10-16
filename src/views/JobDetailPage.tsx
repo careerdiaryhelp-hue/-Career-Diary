@@ -80,7 +80,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       }
     });
   } else if (typeof rawLinks === 'object' && rawLinks !== null) {
-    Object.entries(rawLinks).forEach(([label, url]) => {
+    Object.entries(rawLinks).forEach(([label, url]: [string, any]) => {
       const linkUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
       if (label && linkUrl) {
         customLinks.push(sanitizeLink(label, linkUrl));
@@ -278,49 +278,49 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     // Constant high-paying In-Content Ad (Slot 7544533819, Rectangle & Horizontal Formats)
     const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="rectangle, horizontal" data-full-width-responsive="true"></ins></div>`;
 
-    const tableMatches = [...sanitizedContent.matchAll(/<\/table>/gi)];
+    const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
 
-    let insertionIndices = [];
+    let insertionIndices: number[] = [];
 
     if (nTables >= 2) {
       if (nTables === 2) {
         // 2 tables -> 1 in-content ad after Table 1
-        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
       } else if (nTables === 3) {
         // 3 tables -> 2 in-content ads: after Table 1 and Table 2
-        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[1].index + tableMatches[1][0].length);
+        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[1].index! + tableMatches[1][0].length);
       } else if (nTables === 4) {
         // 4 tables -> 2 in-content ads: after Table 1 and Table 3
-        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[2].index + tableMatches[2][0].length);
+        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[2].index! + tableMatches[2][0].length);
       } else if (nTables >= 5 && nTables <= 7) {
         // 5-7 tables -> 3 in-content ads: early, middle, and before last table
         const mid = Math.floor(nTables / 2);
-        insertionIndices.push(tableMatches[0].index + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[mid].index + tableMatches[mid][0].length);
-        insertionIndices.push(tableMatches[nTables - 2].index + tableMatches[nTables - 2][0].length);
+        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        insertionIndices.push(tableMatches[mid].index! + tableMatches[mid][0].length);
+        insertionIndices.push(tableMatches[nTables - 2].index! + tableMatches[nTables - 2][0].length);
       } else {
         // 8+ tables (long post with syllabus / detailed rules) -> 4-5 in-content ads evenly spaced
         const step = Math.max(2, Math.floor(nTables / 4));
         for (let i = 0; i < nTables - 1; i += step) {
           if (insertionIndices.length >= 5) break;
-          insertionIndices.push(tableMatches[i].index + tableMatches[i][0].length);
+          insertionIndices.push(tableMatches[i].index! + tableMatches[i][0].length);
         }
         // Always place one before the last table (usually Important Links)
-        const lastBeforeFinal = tableMatches[nTables - 2].index + tableMatches[nTables - 2][0].length;
+        const lastBeforeFinal = tableMatches[nTables - 2].index! + tableMatches[nTables - 2][0].length;
         if (!insertionIndices.includes(lastBeforeFinal)) {
           insertionIndices.push(lastBeforeFinal);
         }
       }
     } else {
       // 0 or 1 table: Look for paragraph breaks </p> or section headers <h2, <h3
-      const breakMatches = [...sanitizedContent.matchAll(/<\/p>|<h[2-4]/gi)];
+      const breakMatches = Array.from(sanitizedContent.matchAll(/<\/p>|<h[2-4]/gi));
       if (breakMatches.length >= 4) {
         const step = Math.floor(breakMatches.length / 3);
-        const idx1 = breakMatches[step].index + (breakMatches[step][0].startsWith('<h') ? 0 : breakMatches[step][0].length);
-        const idx2 = breakMatches[step * 2].index + (breakMatches[step * 2][0].startsWith('<h') ? 0 : breakMatches[step * 2][0].length);
+        const idx1 = breakMatches[step].index! + (breakMatches[step][0].startsWith('<h') ? 0 : breakMatches[step][0].length);
+        const idx2 = breakMatches[step * 2].index! + (breakMatches[step * 2][0].startsWith('<h') ? 0 : breakMatches[step * 2][0].length);
         insertionIndices.push(idx1, idx2);
       } else if (sanitizedContent.length > 800) {
         const mid = Math.floor(sanitizedContent.length / 2);
@@ -330,7 +330,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     }
 
     // Sort descending so inserting from back to front never alters previous indices!
-    const uniqueIndices = [...new Set(insertionIndices)].sort((a, b) => b - a);
+    const uniqueIndices = Array.from(new Set(insertionIndices)).sort((a, b) => b - a);
 
     let out = sanitizedContent;
     for (const idx of uniqueIndices) {
@@ -349,8 +349,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     // 1. Push adsbygoogle for uninitialized units
     try {
       const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
-      ads.forEach((ad) => {
-        if (!ad.dataset.adPushDone) {
+      ads.forEach((ad: any) => {
+        if (!ad.dataset?.adPushDone) {
           ad.dataset.adPushDone = 'true';
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         }
@@ -361,9 +361,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
-          const target = mutation.target;
-          if (target && target.getAttribute('data-ad-status') === 'unfilled') {
-            const wrapper = target.closest('.adsense-banner-wrapper');
+          const target = mutation.target as HTMLElement | null;
+          if (target && typeof target.getAttribute === 'function' && target.getAttribute('data-ad-status') === 'unfilled') {
+            const wrapper = target.closest ? (target.closest('.adsense-banner-wrapper') as HTMLElement | null) : null;
             if (wrapper) {
               wrapper.style.display = 'none';
               wrapper.style.margin = '0';
@@ -372,14 +372,14 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           }
         }
         if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((node) => {
+          mutation.addedNodes.forEach((node: any) => {
             if (node.nodeName === 'IFRAME' || (node.querySelectorAll && node.querySelectorAll('iframe').length > 0)) {
-              const iframes = node.nodeName === 'IFRAME' ? [node] : node.querySelectorAll('iframe');
-              iframes.forEach((ifr) => {
-                const src = ifr.getAttribute('src') || '';
-                const id = ifr.getAttribute('id') || '';
+              const iframes: any[] = node.nodeName === 'IFRAME' ? [node] : Array.from(node.querySelectorAll('iframe'));
+              iframes.forEach((ifr: any) => {
+                const src = ifr.getAttribute ? (ifr.getAttribute('src') || '') : '';
+                const id = ifr.getAttribute ? (ifr.getAttribute('id') || '') : '';
                 if (src.includes('rsfc') || src.includes('related_search') || id.includes('rsfc')) {
-                  const wrapper = ifr.closest('.adsense-banner-wrapper');
+                  const wrapper = ifr.closest ? (ifr.closest('.adsense-banner-wrapper') as HTMLElement | null) : null;
                   if (wrapper) {
                     wrapper.style.display = 'none';
                     wrapper.style.margin = '0';
@@ -630,7 +630,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                       {Object.entries(importantDates)
                         .filter(([k]) => !['applyStart', 'lastDate', 'applyLastDate', 'feeLastDate', 'examDate', 'admitCard', 'result', 'postDate', 'Online Apply Start Date', 'Online Apply Last Date', 'Last Date For Fee Payment', 'Exam Date', 'Admit Card', 'Result Date'].includes(k))
                         .map(([k, v]) => (
-                          <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                          <li key={k}>⚫ <strong>{k} :</strong> {String(v ?? '')}</li>
                         ))}
                     </ul>
                   </td>
@@ -644,7 +644,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                       {Object.entries(applicationFee)
                         .filter(([k]) => !['For General, OBC, EWS', 'General / OBC / EWS', 'For SC, ST, PH', 'SC / ST', 'paymentMode', 'Payment Mode (Online)', 'general', 'sc'].includes(k))
                         .map(([k, v]) => (
-                          <li key={k}>⚫ <strong>{k} :</strong> {v}</li>
+                          <li key={k}>⚫ <strong>{k} :</strong> {String(v ?? '')}</li>
                         ))}
                       <li>
                         ⚫ <strong>Payment Mode (Online):</strong> You can make the payment using the following methods:
@@ -839,7 +839,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                 </tr>
 
               {(() => {
-                const grouped = {};
+                const grouped: Record<string, Array<{ type: string; url: string; originalLabel: string }>> = {};
                 for (const item of finalImportantLinks) {
                   let base = (item.label || '').trim();
                   let type = 'Click Here';

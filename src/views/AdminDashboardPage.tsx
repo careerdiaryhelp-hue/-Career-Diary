@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { autoLinkSocialChannels, extractQuickUrlsFromContent, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
@@ -91,7 +92,7 @@ export default function AdminDashboardPage({
   onSaveBreakingNews,
   onBack,
   onLogout
-}) {
+}: any = {}) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');

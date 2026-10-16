@@ -4,8 +4,9 @@ import { getJobUrl } from '../data/categoryHelpers.js';
 
 export default function HighlightsGrid({
   jobs = [],
-  onSelectJob
-}) {
+  onSelectJob,
+  ...rest
+}: any = {}) {
   const topItems = useMemo(() => {
     if (!jobs || jobs.length === 0) return [];
 

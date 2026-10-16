@@ -128,7 +128,7 @@ export const getDayDiff = (targetDate, refDate = new Date()) => {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 };
 
-export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
+export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }: any = {}) {
   const [filterType, setFilterType] = useState('all'); // 'all', 'today', 'week'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -174,7 +174,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }) {
     const links = job.importantLinks || job.important_links || {};
     for (const [k, v] of Object.entries(links)) {
       const kl = k.toLowerCase();
-      const vl = typeof v === 'string' ? v : (v?.url || '');
+      const vl = typeof v === 'string' ? v : ((v as any)?.url || '');
       if ((kl.includes('apply') || kl.includes('registration') || kl.includes('form') || kl.includes('online')) && vl.startsWith('http')) {
         return vl;
       }

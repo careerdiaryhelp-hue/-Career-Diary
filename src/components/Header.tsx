@@ -7,7 +7,7 @@ export default function Header({
   searchQuery,
   setSearchQuery,
   onResetFilters
-}) {
+}: any = {}) {
   return (
     <header className="main-header">
       <div className="container header-container">

@@ -2,7 +2,7 @@
 import React from 'react';
 import { ArrowLeft, Shield } from 'lucide-react';
 
-export default function PrivacyPolicyPage({ onBack }) {
+export default function PrivacyPolicyPage({ onBack }: any = {}) {
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '48px', maxWidth: '860px' }}>
       <div style={{ marginBottom: '16px' }}>

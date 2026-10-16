@@ -162,7 +162,7 @@ export default function PostJobModal({ isOpen, onClose, onAddJob }) {
           <div className="form-group">
             <label>Full Description / Details *</label>
             <textarea
-              rows="4"
+              rows={4}
               required
               placeholder="Enter brief overview, eligibility, and steps to apply..."
               value={formData.description}

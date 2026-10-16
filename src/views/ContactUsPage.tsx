@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone, MapPin, Send, MessageCircle, Share2 } from 'lucide-react';
 
-export default function ContactUsPage({ onBack }) {
+export default function ContactUsPage({ onBack }: any = {}) {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
 

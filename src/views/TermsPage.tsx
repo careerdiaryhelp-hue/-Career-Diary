@@ -2,7 +2,7 @@
 import React from 'react';
 import { ArrowLeft, FileText } from 'lucide-react';
 
-export default function TermsPage({ onBack }) {
+export default function TermsPage({ onBack }: any = {}) {
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '48px', maxWidth: '860px' }}>
       <div style={{ marginBottom: '16px' }}>

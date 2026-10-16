@@ -2,7 +2,7 @@
 import React from 'react';
 import { Home, Briefcase, IdCard, CheckSquare, Key, FileText, GraduationCap } from 'lucide-react';
 
-export default function Navbar({ currentCategory, setCurrentCategory, onNavigate }) {
+export default function Navbar({ currentCategory, setCurrentCategory, onNavigate }: any = {}) {
   const navItems = [
     { cat: 'all', path: '/', label: 'Home', icon: Home },
     { cat: 'LATEST JOB', path: '/latest-jobs', label: 'Latest Jobs', icon: Briefcase },

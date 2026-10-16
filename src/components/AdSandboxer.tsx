@@ -42,7 +42,7 @@ export default function AdSandboxer() {
     // MutationObserver to sanitize dynamically injected ad iframes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
+        mutation.addedNodes.forEach((node: any) => {
           if (node.nodeName === 'IFRAME') {
             sanitizeIframe(node);
           } else if (node.querySelectorAll) {

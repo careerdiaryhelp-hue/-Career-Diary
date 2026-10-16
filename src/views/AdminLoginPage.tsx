@@ -153,8 +153,8 @@ export default function AdminLoginPage({ onLoginSuccess, onLogin, onCancel }) {
                 color: '#94a3b8', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.07)'; e.target.style.color = '#fff'; }}
-              onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#94a3b8'; }}>
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}>
               Cancel — Back to Website
             </button>
           </form>

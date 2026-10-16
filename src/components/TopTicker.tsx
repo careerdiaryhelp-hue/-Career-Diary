@@ -148,7 +148,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
             style={{
               display: 'flex',
               alignItems: 'center',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: '12px',
               background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
@@ -292,7 +292,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
             </div>
             <div className="sr-marquee-container">
               {marqueeRows.map((row, rowIdx) => (
-                <div key={`sr-marquee-row-${rowIdx}`} className="sr-marquee-row" align="center">
+                <div key={`sr-marquee-row-${rowIdx}`} className="sr-marquee-row" style={{ textAlign: 'center' }}>
                   <marquee
                     behavior="alternate"
                     scrollamount="4"
