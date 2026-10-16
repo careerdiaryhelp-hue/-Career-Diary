@@ -55,17 +55,20 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       });
     }
 
-    // Subscribe to real-time Breaking News updates from Firestore
-    const unsubNews = subscribeToBreakingNews((newsData) => {
-      if (Array.isArray(newsData) && newsData.length > 0) {
-        setBreakingNews(newsData);
-      }
-    });
-
     const isAdminUser = typeof window !== 'undefined' && (
       localStorage.getItem('career_diary_admin') === 'true' ||
       window.location.search.includes('admin')
     );
+
+    // Subscribe to real-time Breaking News updates from Firestore ONLY for admins or if empty
+    let unsubNews = null;
+    if (isAdminUser || !initialNews || initialNews.length === 0) {
+      unsubNews = subscribeToBreakingNews((newsData) => {
+        if (Array.isArray(newsData) && newsData.length > 0) {
+          setBreakingNews(newsData);
+        }
+      });
+    }
 
     // Protect Firestore free quota: only subscribe if admin or if initialJobs is missing
     let unsubJobs = null;

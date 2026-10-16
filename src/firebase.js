@@ -287,6 +287,16 @@ let memoryCache = {
   quotaExceededUntil: 0,
 };
 
+let breakingNewsCache = {
+  data: [],
+  timestamp: 0,
+};
+
+let topFormsCache = {
+  data: [],
+  timestamp: 0,
+};
+
 const FIRESTORE_LIST_FIELDS = [
   'id', 'slug', 'title', 'category', 'secondaryCategories', 'badge', 'postDate', 'updatedAt',
   'displayOrder', 'order', 'pinned', 'state', 'qualification', 'vacancies',
@@ -300,13 +310,14 @@ const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURICo
 
 let pendingFetch = null;
 
-// Fetch all jobs once (fast REST fetch with field masking, quota backoff, and concurrency lock)
+// Fetch all jobs once (fast REST fetch with 10-minute cache, field masking, quota backoff, and concurrency lock)
 export async function fetchFirestoreJobsOnce() {
   const now = Date.now();
   if (now < memoryCache.quotaExceededUntil) {
     return memoryCache.data || [];
   }
-  if (memoryCache.data && (now - memoryCache.timestamp < 60000)) {
+  // 10-minute in-memory cache protects Firestore free tier (50k reads/day)
+  if (memoryCache.data && (now - memoryCache.timestamp < 600000)) {
     return memoryCache.data;
   }
   if (pendingFetch) {
@@ -328,20 +339,19 @@ export async function fetchFirestoreJobsOnce() {
         }
       };
 
-      // Add cf-specific cache options to leverage Cloudflare CDN Cache API if available
       const res = await fetch(url, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        cf: { cacheTtl: 120, cacheEverything: true }
+        cf: { cacheTtl: 300, cacheEverything: true }
       });
       clearTimeout(timeoutId);
 
       if (res.status === 429 || res.status === 403) {
-        // Firebase daily quota reached - back off for 30 minutes to prevent resource limits error
-        memoryCache.quotaExceededUntil = Date.now() + (30 * 60 * 1000);
-        console.warn('Firebase Firestore quota exceeded (429). Using static data fallback for 30m.');
+        // Firebase daily quota reached - back off for 1 hour to prevent resource limits error
+        memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
+        console.warn('Firebase Firestore quota exceeded (429). Using static data fallback for 60m.');
         return memoryCache.data || [];
       }
 
@@ -366,7 +376,7 @@ export async function fetchFirestoreJobsOnce() {
     } catch (e) {
       const isRateLimit = String(e.message || '').includes('429') || String(e.message || '').includes('Too Many');
       if (isRateLimit) {
-        memoryCache.quotaExceededUntil = Date.now() + (30 * 60 * 1000);
+        memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
       }
       if (memoryCache.data) return memoryCache.data;
       return [];
@@ -381,57 +391,87 @@ export async function fetchFirestoreJobsOnce() {
 const DOC_MEM_CACHE = new Map();
 
 // Fetch a single document by ID from Firestore (includes full HTML content, ~30KB)
+// Caches both hits and misses (negative caching) to eliminate repetitive 404 queries
 export async function fetchFirestoreJobById(docId) {
   if (!docId) return null;
   const clean = cleanJobId(docId);
   const now = Date.now();
+  if (now < memoryCache.quotaExceededUntil) {
+    return null;
+  }
   const cached = DOC_MEM_CACHE.get(clean);
-  if (cached && (now - cached.time < 300000)) {
+  if (cached && (now - cached.time < 600000)) {
     return cached.data;
   }
   try {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}?key=${firebaseConfig.apiKey}`,
       { 
-        cf: { cacheTtl: 300, cacheEverything: true }
+        cf: { cacheTtl: 600, cacheEverything: true }
       }
     );
-    if (!res.ok) return null;
+    if (res.status === 429 || res.status === 403) {
+      memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
+      DOC_MEM_CACHE.set(clean, { time: now, data: null });
+      return null;
+    }
+    if (!res.ok) {
+      // Cache negative lookup for 10 minutes so non-existent URLs don't burn Firestore quota
+      DOC_MEM_CACHE.set(clean, { time: now, data: null });
+      return null;
+    }
     const data = await res.json();
     const parsed = parseFirestoreDoc(data);
-    if (parsed) {
-      DOC_MEM_CACHE.set(clean, { time: now, data: parsed });
-    }
+    DOC_MEM_CACHE.set(clean, { time: now, data: parsed });
     return parsed;
   } catch (e) {
+    DOC_MEM_CACHE.set(clean, { time: now, data: null });
     return null;
   }
 }
 
-// Fetch Breaking News array from Firestore REST (server-side support)
+// Fetch Breaking News array from Firestore REST (server-side support with 15m memory cache)
 export async function fetchBreakingNewsServer() {
+  const now = Date.now();
+  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 900000)) {
+    return breakingNewsCache.data;
+  }
+  if (now < memoryCache.quotaExceededUntil) {
+    return breakingNewsCache.data;
+  }
   try {
-    // 1. Try public jobs/settings_breakingNews first
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 60, cacheEverything: true }
+        cf: { cacheTtl: 900, cacheEverything: true }
       }
     );
+    if (res.status === 429) {
+      memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
+      return breakingNewsCache.data;
+    }
     if (res.ok) {
       const data = await res.json();
       const doc = parseFirestoreDoc(data);
       if (Array.isArray(doc.items) && doc.items.length > 0) {
+        breakingNewsCache = { data: doc.items, timestamp: now };
         return doc.items;
       }
     }
   } catch (e) {}
 
-  return [];
+  return breakingNewsCache.data;
 }
 
-// Fetch jobs marked with isTopForm: true directly from Firestore REST
+// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 15m memory cache)
 export async function fetchTopOnlineFormsServer() {
+  const now = Date.now();
+  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 900000)) {
+    return topFormsCache.data;
+  }
+  if (now < memoryCache.quotaExceededUntil) {
+    return topFormsCache.data;
+  }
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -454,18 +494,25 @@ export async function fetchTopOnlineFormsServer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query),
       signal: controller.signal,
-      cf: { cacheTtl: 60, cacheEverything: true }
+      cf: { cacheTtl: 900, cacheEverything: true }
     });
     clearTimeout(timeoutId);
-    if (!res.ok) return [];
+    if (res.status === 429) {
+      memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
+      return topFormsCache.data;
+    }
+    if (!res.ok) return topFormsCache.data;
     const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return data
+    if (!Array.isArray(data)) return topFormsCache.data;
+    const parsed = data
       .filter(item => item && item.document)
       .map(item => parseFirestoreDoc(item.document));
+    if (parsed.length > 0) {
+      topFormsCache = { data: parsed, timestamp: now };
+    }
+    return parsed;
   } catch (e) {
-    console.warn('Error fetching top online forms from Firestore:', e);
-    return [];
+    return topFormsCache.data;
   }
 }
 

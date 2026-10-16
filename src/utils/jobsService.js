@@ -206,15 +206,7 @@ export async function getJobBySlug(slug) {
     if (match) return match;
   }
 
-  // 3. If not found in static list (e.g. brand new post created in admin), query live Firestore doc
-  try {
-    const directDoc = await fetchFirestoreJobById(clean);
-    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
-      return directDoc;
-    }
-  } catch (e) {}
-
-  // 4. Fallback: Fuzzy match in full list (for older mismatched URLs)
+  // 3. Fallback: Fuzzy match in static jobs (instant, 0 network, protects Firestore quota)
   match = fullJobs.find(j => {
     if (!j) return false;
     const jId = String(j.id || '').toLowerCase().trim();
@@ -223,6 +215,14 @@ export async function getJobBySlug(slug) {
            (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
   });
   if (match) return match;
+
+  // 4. If not found in any static list (e.g. brand new post created in admin), query live Firestore doc
+  try {
+    const directDoc = await fetchFirestoreJobById(clean);
+    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
+      return directDoc;
+    }
+  } catch (e) {}
 
   return null;
 }

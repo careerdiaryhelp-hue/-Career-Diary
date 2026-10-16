@@ -13,25 +13,32 @@ export default function TopOnlineFormsClient({ initialJobs = [], fallbackJobs = 
   useEffect(() => {
     let active = true;
 
-    // Fetch fresh top forms from Firestore immediately on mount
-    fetchTopOnlineFormsServer().then((fresh) => {
-      if (active && Array.isArray(fresh) && fresh.length > 0) {
-        setForms(fresh);
-      }
-    });
+    const isAdminUser = typeof window !== 'undefined' && (
+      localStorage.getItem('career_diary_admin') === 'true' ||
+      window.location.search.includes('admin')
+    );
 
-    // Real-time listener for live additions / removals in admin
-    const unsub = subscribeToTopForms((livePosts) => {
-      if (active && Array.isArray(livePosts) && livePosts.length > 0) {
-        setForms(livePosts);
-      }
-    });
+    let unsub = null;
+    // Only hit Firestore live if user is an admin or initialJobs is completely missing
+    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
+      fetchTopOnlineFormsServer().then((fresh) => {
+        if (active && Array.isArray(fresh) && fresh.length > 0) {
+          setForms(fresh);
+        }
+      }).catch(() => {});
+
+      unsub = subscribeToTopForms((livePosts) => {
+        if (active && Array.isArray(livePosts) && livePosts.length > 0) {
+          setForms(livePosts);
+        }
+      });
+    }
 
     return () => {
       active = false;
       if (typeof unsub === 'function') unsub();
     };
-  }, []);
+  }, [initialJobs]);
 
   const displayJobs = useMemo(() => {
     let source = forms;
