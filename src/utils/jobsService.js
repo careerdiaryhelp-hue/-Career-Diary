@@ -167,7 +167,7 @@ export async function getJobBySlug(slug) {
 
   const fullJobs = await getFullJobs();
 
-  // 1. Check precomputed static jobs first (0ms, 0 network, immune to Firestore quota exhaustion)
+  // 1. Direct match on clean, slug, title, or aliases
   let match = fullJobs.find(j => {
     if (!j) return false;
     if (j._safeId === clean) return true;
@@ -177,14 +177,36 @@ export async function getJobBySlug(slug) {
     if (jSlug === clean || jSlug === lowerSlug) return true;
     const jTitle = String(j.title || '').toLowerCase().trim();
     if (jTitle === lowerSlug) return true;
+    if (Array.isArray(j.aliases) && j.aliases.some(a => {
+      const ca = cleanJobId(a);
+      return ca === clean || ca === lowerSlug;
+    })) return true;
     return false;
   });
 
-  if (match && (match.content || match.htmlContent)) {
+  if (match) {
     return match;
   }
 
-  // 2. If not found in static list (e.g. dynamic post created in admin), query live Firestore doc
+  // 2. Loose / Normalized match (removes filler terms like -notice, -out, -now, etc.)
+  const stripFiller = (str) =>
+    String(str || '')
+      .toLowerCase()
+      .replace(/-(notice|recruitment|online-form|form|out|now|download|check)/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  const normClean = stripFiller(clean);
+  if (normClean) {
+    match = fullJobs.find(j => {
+      if (!j) return false;
+      const jSlugNorm = stripFiller(j.slug || j.id);
+      return jSlugNorm && jSlugNorm === normClean;
+    });
+    if (match) return match;
+  }
+
+  // 3. If not found in static list (e.g. brand new post created in admin), query live Firestore doc
   try {
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
@@ -192,9 +214,7 @@ export async function getJobBySlug(slug) {
     }
   } catch (e) {}
 
-  if (match) return match;
-
-  // Fallback 1: Fuzzy match in full list (for older mismatched URLs)
+  // 4. Fallback: Fuzzy match in full list (for older mismatched URLs)
   match = fullJobs.find(j => {
     if (!j) return false;
     const jId = String(j.id || '').toLowerCase().trim();
@@ -203,12 +223,6 @@ export async function getJobBySlug(slug) {
            (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
   });
   if (match) return match;
-
-  // Fallback 2: Direct lookup by ID in Firestore
-  try {
-    const directDoc = await fetchFirestoreJobById(clean);
-    if (directDoc) return directDoc;
-  } catch (e) {}
 
   return null;
 }

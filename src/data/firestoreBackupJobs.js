@@ -1,5 +1,180 @@
 export const firestoreBackupJobs = [
   {
+  "id": "rrb-section-controller-answer-key-2026",
+  "slug": "rrb-section-controller-answer-key-2026",
+  "aliases": [
+    "rrb-section-controller-answer-key-notice-2026"
+  ],
+  "title": "RRB Section Controller Answer Key Notice 2026",
+  "postName": "RRB Section Controller Answer Key Notice 2026",
+  "organization": "Railway Recruitment Board (RRB)",
+  "category": "ANSWER KEY",
+  "secondaryCategories": [
+    "ANSWER KEY",
+    "ADMIT CARD"
+  ],
+  "status": "Published",
+  "badge": "Answer Key Notice Out",
+  "postDate": "15 October 2026",
+  "postUpdateDate": "15 October 2026",
+  "updatedAt": "2026-10-15T18:00:00.000Z",
+  "featured": false,
+  "isFeatured": false,
+  "isTopCard": false,
+  "isLatest": true,
+  "isLatestUpdate": true,
+  "isBreakingNews": true,
+  "state": "All India",
+  "bannerColor": "pink",
+  "totalPosts": "119 Posts",
+  "vacancies": "119 Posts",
+  "qualification": "Candidates must be a Graduate in any discipline from a recognized university.",
+  "minAge": "20 Years",
+  "maxAge": "33 Years",
+  "appStart": "15 July 2026",
+  "appLast": "14 August 2026 (23: 59 PM)",
+  "lastDate": "14 August 2026 (23: 59 PM)",
+  "feeGen": "₹ 500/-",
+  "feeSc": "₹ 250/-",
+  "shortInfo": "Railway Recruitment Board (RRB), has released a notification on official website for the recruitment of RRB Section Controller Answer Key Notice 2026. This recruitment is for 119 Posts positions. Railway Recruitment Board (RRB) Application Form will start on 15 July 2026 & the candidates can apply till the 14 August 2026 (23: 59 PM). Minimum age required is 20 Years & The Maximum Age Is 33 Years. Candidates must check the complete details for RRB Section Controller Answer Key Notice 2026. Link are given below.",
+  "description": "Railway Recruitment Board (RRB), has released a notification on official website for the recruitment of RRB Section Controller Answer Key Notice 2026. This recruitment is for 119 Posts positions. Railway Recruitment Board (RRB) Application Form will start on 15 July 2026 & the candidates can apply till the 14 August 2026 (23: 59 PM). Minimum age required is 20 Years & The Maximum Age Is 33 Years. Candidates must check the complete details for RRB Section Controller Answer Key Notice 2026. Link are given below.",
+  "uniqueDescription": "Railway Recruitment Board (RRB), has released a notification on official website for the recruitment of RRB Section Controller Answer Key Notice 2026. This recruitment is for 119 Posts positions. Railway Recruitment Board (RRB) Application Form will start on 15 July 2026 & the candidates can apply till the 14 August 2026 (23: 59 PM). Minimum age required is 20 Years & The Maximum Age Is 33 Years. Candidates must check the complete details for RRB Section Controller Answer Key Notice 2026. Link are given below.",
+  "seoTitle": "RRB Section Controller Answer Key Notice 2026",
+  "seoDescription": "Railway Recruitment Board (RRB), has released a notification on official website for the recruitment of RRB Section Controller Answer Key Notice 2026. Check Objection Tracker notice and download links.",
+  "ageLimit": {
+    "Minimum Age": "20 Years",
+    "Maximum Age": "33 Years"
+  },
+  "age_limits": {
+    "Minimum Age": "20 Years",
+    "Maximum Age": "33 Years"
+  },
+  "applicationFee": {
+    "For General / OBC / EWS": "₹ 500/-",
+    "For SC / ST / EBC": "₹ 250/-",
+    "For All Category female": "₹ 250/-",
+    "UR / OBC / EWS Fee Refund": "Rs. 400/-",
+    "SC / ST / PH & Female Refund": "Rs. 250/-",
+    "Payment Mode (Online)": "Debit Card, Credit Card, Internet Banking, IMPS, Cash Card / Mobile Wallet"
+  },
+  "application_fee": {
+    "For General / OBC / EWS": "₹ 500/-",
+    "For SC / ST / EBC": "₹ 250/-",
+    "For All Category female": "₹ 250/-",
+    "UR / OBC / EWS Fee Refund": "Rs. 400/-",
+    "SC / ST / PH & Female Refund": "Rs. 250/-",
+    "Payment Mode (Online)": "Debit Card, Credit Card, Internet Banking, IMPS, Cash Card / Mobile Wallet"
+  },
+  "importantDates": {
+    "Online Apply Start Date": "15 July 2026",
+    "Online Apply Last Date": "14 August 2026 (23: 59 PM)",
+    "Last Date For Fee Payment": "16 August 2026",
+    "Correction Date": "17 - 26 August 2026",
+    "Exam Date": "12 - 13 October 2026",
+    "Exam City Details": "02 October 2026",
+    "Admit Card": "08 October 2026",
+    "Answer Key": "16 October 2026 Available Soon",
+    "Result Date": "Will Be Updated Here Soon"
+  },
+  "important_dates": {
+    "Online Apply Start Date": "15 July 2026",
+    "Online Apply Last Date": "14 August 2026 (23: 59 PM)",
+    "Last Date For Fee Payment": "16 August 2026",
+    "Correction Date": "17 - 26 August 2026",
+    "Exam Date": "12 - 13 October 2026",
+    "Exam City Details": "02 October 2026",
+    "Admit Card": "08 October 2026",
+    "Answer Key": "16 October 2026 Available Soon",
+    "Result Date": "Will Be Updated Here Soon"
+  },
+  "vacancyDetails": [
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "General",
+      "No. Of Post": "50"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "EWS",
+      "No. Of Post": "09"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "OBC",
+      "No. Of Post": "29"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "SC",
+      "No. Of Post": "19"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "ST",
+      "No. Of Post": "12"
+    }
+  ],
+  "vacancy_details": [
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "General",
+      "No. Of Post": "50"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "EWS",
+      "No. Of Post": "09"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "OBC",
+      "No. Of Post": "29"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "SC",
+      "No. Of Post": "19"
+    },
+    {
+      "Post Name": "Section Controller",
+      "Category Name": "ST",
+      "No. Of Post": "12"
+    }
+  ],
+  "importantLinks": {
+    "Check Answer Key Notice": "https://rrb.indianrailways.gov.in/-/image/1792070657420English_CEN_03_2026_Section_Controller_Objection_Tracker_notice_15.10.2026.pdf/examsDocuments",
+    "Download Exam City / Admit Card": "https://rrb.digialm.com/EForms/configuredHtml/33128/102721/lM441ZzlGKrNhupJK6/login.html",
+    "Download Application Status": "https://www.rrbapply.gov.in/#/auth/landing",
+    "Check Application Status Notice": "https://rrb.indianrailways.gov.in/-/image/1789552281962ENG_HINDI_NOTICE_SC_03_2026.pdf/examsDocuments",
+    "Check Exam Date Notice": "https://rrb.indianrailways.gov.in/-/image/1789113322014Section_Controller_CBT_Tentitive_Notice_CEN_03_2026.pdf/examsDocuments",
+    "Apply Online Link": "https://www.rrbapply.gov.in/",
+    "Check Short Notice": "https://careerdiary.in/",
+    "Check Official Notification": "https://rrb.indianrailways.gov.in/-/image/1784023647659FINAL_CEN_03_2026_SECTION_CONTROLLER.pdf/examsDocuments",
+    "Official Career Diary Website": "https://careerdiary.in/",
+    "RRB Official Website": "https://indianrailways.gov.in/railwayboard/view_section.jsp?lang=0&id=0,7,1281",
+    "Join Telegram Channel": "https://t.me/careerdiary",
+    "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u"
+  },
+  "important_links": {
+    "Check Answer Key Notice": "https://rrb.indianrailways.gov.in/-/image/1792070657420English_CEN_03_2026_Section_Controller_Objection_Tracker_notice_15.10.2026.pdf/examsDocuments",
+    "Download Exam City / Admit Card": "https://rrb.digialm.com/EForms/configuredHtml/33128/102721/lM441ZzlGKrNhupJK6/login.html",
+    "Download Application Status": "https://www.rrbapply.gov.in/#/auth/landing",
+    "Check Application Status Notice": "https://rrb.indianrailways.gov.in/-/image/1789552281962ENG_HINDI_NOTICE_SC_03_2026.pdf/examsDocuments",
+    "Check Exam Date Notice": "https://rrb.indianrailways.gov.in/-/image/1789113322014Section_Controller_CBT_Tentitive_Notice_CEN_03_2026.pdf/examsDocuments",
+    "Apply Online Link": "https://www.rrbapply.gov.in/",
+    "Check Short Notice": "https://careerdiary.in/",
+    "Check Official Notification": "https://rrb.indianrailways.gov.in/-/image/1784023647659FINAL_CEN_03_2026_SECTION_CONTROLLER.pdf/examsDocuments",
+    "Official Career Diary Website": "https://careerdiary.in/",
+    "RRB Official Website": "https://indianrailways.gov.in/railwayboard/view_section.jsp?lang=0&id=0,7,1281",
+    "Join Telegram Channel": "https://t.me/careerdiary",
+    "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u"
+  },
+  "notificationUrl": "https://rrb.indianrailways.gov.in/-/image/1792070657420English_CEN_03_2026_Section_Controller_Objection_Tracker_notice_15.10.2026.pdf/examsDocuments",
+  "applyUrl": "https://www.rrbapply.gov.in/",
+  "officialUrl": "https://careerdiary.in/",
+  "htmlContent": "<table border=\"1\" style=\"width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;\">\n        <thead>\n          <tr>\n            <th colspan=\"2\" style=\"background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 10px; font-size: 1.15rem;\">\n              Railway Recruitment Board (RRB) : RRB Section Controller Answer Key Notice 2026\n            </th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 45%;\">Organization Name</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px;\"><strong>Railway Recruitment Board (RRB)</strong></td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold;\">Post Name</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px;\"><strong>RRB Section Controller Answer Key Notice 2026</strong></td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold;\">Total Vacancies</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; color: #008000; font-weight: bold;\">119 Posts</td>\n          </tr>\n          <tr><td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold;\">Application Start Date</td><td style=\"border: 1px solid #000; padding: 8px 12px;\">15 July 2026</td></tr>\n          <tr><td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold;\">Last Date for Apply</td><td style=\"border: 1px solid #000; padding: 8px 12px; color: #ff0000; font-weight: bold;\">14 August 2026 (23: 59 PM)</td></tr>\n        </tbody>\n      </table>\n\n      <table border=\"1\" style=\"width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;\">\n        <thead>\n          <tr>\n            <th style=\"background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px; width: 50%;\">Important Dates</th>\n            <th style=\"background-color: #008000; color: #fff; text-align: center; font-weight: bold; padding: 8px; width: 50%;\">Application Fee</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 10px; vertical-align: top;\">\n              <ul style=\"margin: 0; padding-left: 20px; line-height: 1.8;\">\n                <li><strong>Online Apply Start Date :</strong> 15 July 2026</li>\n                <li><strong>Online Apply Last Date :</strong> 14 August 2026 (23: 59 PM)</li>\n                <li><strong>Last Date For Fee Payment :</strong> 16 August 2026</li>\n                <li><strong>Correction Date :</strong> 17 - 26 August 2026</li>\n                <li><strong>Exam Date :</strong> 12 - 13 October 2026</li>\n                <li><strong>Exam City Details :</strong> 02 October 2026</li>\n                <li><strong>Admit Card :</strong> 08 October 2026</li>\n                <li><strong>Answer Key :</strong> 16 October 2026 Available Soon</li>\n                <li><strong>Result Date :</strong> Will Be Updated Here Soon</li>\n              </ul>\n            </td>\n            <td style=\"border: 1px solid #000; padding: 10px; vertical-align: top;\">\n              <ul style=\"margin: 0; padding-left: 20px; line-height: 1.8;\">\n                <li><strong>For General / OBC / EWS :</strong> ₹ 500/-</li>\n                <li><strong>For SC / ST / EBC :</strong> ₹ 250/-</li>\n                <li><strong>For All Category female :</strong> ₹ 250/-</li>\n                <li><strong>UR / OBC / EWS Fee Refund :</strong> Rs. 400/-</li>\n                <li><strong>SC / ST / PH &amp; Female Refund :</strong> Rs. 250/-</li>\n                <li><strong>Payment Mode (Online) :</strong> Debit Card, Credit Card, Internet Banking, IMPS, Cash Card / Mobile Wallet</li>\n              </ul>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n\n      <table border=\"1\" style=\"width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;\">\n        <thead>\n          <tr>\n            <th style=\"background-color: #0056b3; color: #fff; text-align: center; font-weight: bold; padding: 8px;\">Age Limit Details As On 01 July 2026</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 10px;\">\n              <ul style=\"margin: 0; padding-left: 20px; line-height: 1.8;\">\n                <li><strong>Minimum Age :</strong> 20 Years</li>\n                <li><strong>Maximum Age :</strong> 33 Years</li>\n                <li>Age relaxation as per RRB Section Controller rules.</li>\n              </ul>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n\n      <table border=\"1\" style=\"width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;\">\n        <thead>\n          <tr>\n            <th colspan=\"3\" style=\"background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 8px;\">Category Wise Vacancy Details</th>\n          </tr>\n          <tr>\n            <th style=\"background-color: #f1f5f9; padding: 8px; border: 1px solid #000;\">Post Name</th>\n            <th style=\"background-color: #f1f5f9; padding: 8px; border: 1px solid #000;\">Category Name</th>\n            <th style=\"background-color: #f1f5f9; padding: 8px; border: 1px solid #000;\">No. Of Post</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td rowspan=\"5\" style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; text-align: center; vertical-align: middle;\">Section Controller</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">General</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">50</td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">EWS</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">09</td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">OBC</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">29</td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">SC</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">19</td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">ST</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">12</td>\n          </tr>\n          <tr>\n            <th colspan=\"2\" style=\"border: 1px solid #000; padding: 8px 12px; text-align: center; background-color: #f8fafc;\">Total Vacancies</th>\n            <th style=\"border: 1px solid #000; padding: 8px 12px; text-align: center; color: #008000; font-weight: bold;\">119 Posts</th>\n          </tr>\n        </tbody>\n      </table>\n\n      <table border=\"1\" style=\"width: 100%; border-collapse: collapse; margin: 16px 0; border: 2px solid #000;\">\n        <thead>\n          <tr>\n            <th colspan=\"2\" style=\"background-color: #ff0080; color: #fff; text-align: center; font-weight: bold; padding: 8px;\">Some Useful Important Links</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Check Answer Key Notice</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://rrb.indianrailways.gov.in/-/image/1792070657420English_CEN_03_2026_Section_Controller_Objection_Tracker_notice_15.10.2026.pdf/examsDocuments\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Download Exam City / Admit Card</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://rrb.digialm.com/EForms/configuredHtml/33128/102721/lM441ZzlGKrNhupJK6/login.html\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Download Application Status</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://www.rrbapply.gov.in/#/auth/landing\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Check Application Status Notice</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://rrb.indianrailways.gov.in/-/image/1789552281962ENG_HINDI_NOTICE_SC_03_2026.pdf/examsDocuments\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Check Exam Date Notice</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://rrb.indianrailways.gov.in/-/image/1789113322014Section_Controller_CBT_Tentitive_Notice_CEN_03_2026.pdf/examsDocuments\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Apply Online Link</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://www.rrbapply.gov.in/\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Check Official Notification</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://rrb.indianrailways.gov.in/-/image/1784023647659FINAL_CEN_03_2026_SECTION_CONTROLLER.pdf/examsDocuments\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">RRB Official Website</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://indianrailways.gov.in/railwayboard/view_section.jsp?lang=0&amp;id=0,7,1281\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Join Telegram Channel</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://t.me/careerdiary\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; font-weight: bold; width: 60%;\">Join WhatsApp Channel</td>\n            <td style=\"border: 1px solid #000; padding: 8px 12px; text-align: center;\">\n              <a href=\"https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u\" target=\"_blank\" style=\"color: #0000ff; font-weight: bold;\">Click Here</a>\n            </td>\n          </tr>\n        </tbody>\n      </table>"
+},
+  {
     "id": "bihar-btsc-food-safety-officer-recruitment-advt-29-2026",
     "featured": false,
     "isTopCard": false,
