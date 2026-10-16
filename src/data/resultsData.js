@@ -1,5 +1,113 @@
 export const resultsData = [
   {
+    "id": "rrb-section-controller-answer-key-2026",
+    "slug": "rrb-section-controller-answer-key-2026",
+    "aliases": [
+      "rrb-section-controller-answer-key-03-2026",
+      "railway-rrb-section-controller-answer-key-2026",
+      "rrb-section-controller-03-2026-answer-key"
+    ],
+    "title": "Railway RRB Section Controller CEN 03/2026 Answer Key 2026 – Out",
+    "organization": "Railway Recruitment Board (RRB)",
+    "category": "RESULT / ANSWER KEY",
+    "secondaryCategories": [
+      "ANSWER KEY",
+      "RESULT"
+    ],
+    "badge": "Answer Key",
+    "uniqueDescription": "Railway Recruitment Board (RRB) has officially released the Answer Key and Question Paper with Candidate Response Sheet on 16 October 2026 for the recruitment of Section Controller Examination 2026 (Advt No : CEN 03/2026) for 119 vacancies. Candidates who appeared in the Computer Based Test (CBT) held on 12 – 13 October 2026 can now check and download their Answer Key and submit objections using their Registration Number and Date of Birth from the direct official link provided below.",
+    "postName": "Railway RRB Section Controller Answer Key 2026",
+    "status": "Answer Key Released",
+    "updateType": "Answer Key",
+    "postDate": "2026-10-16 16:06:00",
+    "updatedAt": "2026-10-16 16:15:00",
+    "isLatest": true,
+    "isLatestUpdate": true,
+    "expertTip": "Career Diary Advice: Login with your Registration Number and Date of Birth to check your response sheet. Review all answers carefully and raise objections before the closing date.",
+    "totalPosts": "119 Posts",
+    "jobLocation": "All India",
+    "eligibility": {
+      "education": "Candidates must be a Graduate (Bachelor's Degree) in any discipline from a recognized university.",
+      "fresherEligible": true,
+      "location": "All India"
+    },
+    "ageLimit": {
+      "minimum": "20 Years",
+      "maximum": "33 Years (As on 01/07/2026)",
+      "relaxation": "Age relaxation applicable as per Railway Recruitment Board (RRB) rules."
+    },
+    "applicationFee": {
+      "General / OBC / EWS": "₹ 500/- (₹ 400/- refunded after appearing in CBT)",
+      "SC / ST / EBC / PH": "₹ 250/- (₹ 250/- refunded after appearing in CBT)",
+      "All Category Female": "₹ 250/- (₹ 250/- refunded after appearing in CBT)",
+      "paymentMode": "Online (Debit Card, Credit Card, Net Banking, IMPS, UPI, Mobile Wallet)"
+    },
+    "importantDates": {
+      "Online Apply Start Date": "15 July 2026",
+      "Online Apply Last Date": "14 August 2026 (23:59 PM)",
+      "Last Date For Fee Payment": "16 August 2026",
+      "Correction Date": "17 – 26 August 2026",
+      "Exam Date": "12 – 13 October 2026",
+      "Exam City Details": "02 October 2026",
+      "Admit Card": "08 October 2026",
+      "Answer Key Available": "16 October 2026 (Available Now)",
+      "Result Date": "Will Be Updated Soon"
+    },
+    "selectionProcess": [
+      "Computer Based Test (CBT)",
+      "Computer Based Aptitude Test (CBAT)",
+      "Document Verification (DV)",
+      "Medical Examination"
+    ],
+    "vacancyDetails": [
+      {
+        "Post Name": "Section Controller (General / UR)",
+        "Total": "50",
+        "Eligibility": "Bachelor's Degree in any discipline from a recognized University."
+      },
+      {
+        "Post Name": "Section Controller (EWS)",
+        "Total": "09",
+        "Eligibility": "Bachelor's Degree in any discipline from a recognized University."
+      },
+      {
+        "Post Name": "Section Controller (OBC)",
+        "Total": "29",
+        "Eligibility": "Bachelor's Degree in any discipline from a recognized University."
+      },
+      {
+        "Post Name": "Section Controller (SC)",
+        "Total": "19",
+        "Eligibility": "Bachelor's Degree in any discipline from a recognized University."
+      },
+      {
+        "Post Name": "Section Controller (ST)",
+        "Total": "12",
+        "Eligibility": "Bachelor's Degree in any discipline from a recognized University."
+      }
+    ],
+    "howToFill": [
+      "Visit the official website of your respective Railway Recruitment Board (RRB) or click on the direct link below.",
+      "Go to the CEN 03/2026 – Section Controller recruitment section.",
+      "Click on the 'RRB Section Controller Answer Key 2026' or 'Objection Tracker' login link.",
+      "Enter your Registration Number / Application Number and Date of Birth / Password.",
+      "Click on the Login / Submit button.",
+      "Your RRB Section Controller Question Paper, Response Sheet and Answer Key will appear on the screen.",
+      "Review all questions and answers carefully, calculate your score, and raise objection with valid documentation if required before the last date."
+    ],
+    "importantLinks": {
+      "Download Answer Key": "https://rrb.digialm.com/EForms/configuredHtml/33128/102721/lM441ZzlGKrNhupJK6/login.html",
+      "Check Answer Key Notice": "https://rrb.indianrailways.gov.in/-/image/1792070657420English_CEN_03_2026_Section_Controller_Objection_Tracker_notice_15.10.2026.pdf/examsDocuments",
+      "Download Exam City / Admit Card": "https://rrb.digialm.com/EForms/configuredHtml/33128/102721/lM441ZzlGKrNhupJK6/login.html",
+      "Download Application Status": "https://www.rrbapply.gov.in/#/auth/landing",
+      "Check Application Status Notice": "https://rrb.indianrailways.gov.in/-/image/1789552281962ENG_HINDI_NOTICE_SC_03_2026.pdf/examsDocuments",
+      "Check Exam Date Notice": "https://rrb.indianrailways.gov.in/-/image/1789113322014Section_Controller_CBT_Tentitive_Notice_CEN_03_2026.pdf/examsDocuments",
+      "Apply Online Link": "https://www.rrbapply.gov.in/",
+      "Check Official Notification": "https://rrb.indianrailways.gov.in/-/image/1784023647659FINAL_CEN_03_2026_SECTION_CONTROLLER.pdf/examsDocuments",
+      "RRB Official Website": "https://indianrailways.gov.in/railwayboard/view_section.jsp?lang=0&id=0,7,1281"
+    }
+  },
+  {
     "id": "rssb-clerk-jr-ii-junior-assistant-2026",
     "slug": "rssb-clerk-jr-ii-junior-assistant-2026",
     "title": "Rajasthan RSSB Clerk Grade-II / Junior Assistant 2026 Written Exam Result Out",
