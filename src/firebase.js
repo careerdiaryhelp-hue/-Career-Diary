@@ -324,8 +324,8 @@ export async function fetchFirestoreJobsOnce() {
   if (now < memoryCache.quotaExceededUntil) {
     return memoryCache.data || [];
   }
-  // 60-second in-memory cache protects Firestore free tier while delivering fast updates
-  if (memoryCache.data && (now - memoryCache.timestamp < 60000)) {
+  // 120-second in-memory cache protects Firestore free tier while delivering fast updates
+  if (memoryCache.data && (now - memoryCache.timestamp < 120000)) {
     return memoryCache.data;
   }
   if (pendingFetch) {
@@ -342,7 +342,7 @@ export async function fetchFirestoreJobsOnce() {
         structuredQuery: {
           from: [{ collectionId: 'jobs' }],
           orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
-          limit: 60,
+          limit: 35,
           select: { fields: FIRESTORE_LIST_FIELDS.map(f => ({ fieldPath: f })) }
         }
       };
@@ -352,7 +352,7 @@ export async function fetchFirestoreJobsOnce() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        cf: { cacheTtl: 60, cacheEverything: true }
+        cf: { cacheTtl: 120, cacheEverything: true }
       });
       clearTimeout(timeoutId);
 
@@ -439,10 +439,10 @@ export async function fetchFirestoreJobById(docId) {
   }
 }
 
-// Fetch Breaking News array from Firestore REST (server-side support with 60s memory cache)
+// Fetch Breaking News array from Firestore REST (server-side support with 120s memory cache)
 export async function fetchBreakingNewsServer() {
   const now = Date.now();
-  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 60000)) {
+  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 120000)) {
     return breakingNewsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -452,7 +452,7 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 60, cacheEverything: true }
+        cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
     if (res.status === 429) {
@@ -472,10 +472,10 @@ export async function fetchBreakingNewsServer() {
   return breakingNewsCache.data;
 }
 
-// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 60s memory cache)
+// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 120s memory cache)
 export async function fetchTopOnlineFormsServer() {
   const now = Date.now();
-  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 60000)) {
+  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 120000)) {
     return topFormsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -495,7 +495,7 @@ export async function fetchTopOnlineFormsServer() {
             value: { booleanValue: true }
           }
         },
-        limit: 50
+        limit: 20
       }
     };
     const res = await fetch(url, {
@@ -503,7 +503,7 @@ export async function fetchTopOnlineFormsServer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query),
       signal: controller.signal,
-      cf: { cacheTtl: 60, cacheEverything: true }
+      cf: { cacheTtl: 120, cacheEverything: true }
     });
     clearTimeout(timeoutId);
     if (res.status === 429) {

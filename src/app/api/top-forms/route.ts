@@ -7,7 +7,7 @@ export async function GET() {
     const forms = await fetchTopOnlineFormsServer();
     return Response.json(forms, {
       headers: {
-        'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': 'public, max-age=60, s-maxage=120, stale-while-revalidate=300',
         'Access-Control-Allow-Origin': '*',
       },
     });

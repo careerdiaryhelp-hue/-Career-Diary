@@ -1,4 +1,19 @@
-/api/*
+/api/jobs
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Cache-Control: public, max-age=60, s-maxage=120, stale-while-revalidate=300
+
+/api/news
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Cache-Control: public, max-age=60, s-maxage=120, stale-while-revalidate=300
+
+/api/top-forms
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Cache-Control: public, max-age=60, s-maxage=120, stale-while-revalidate=300
+
+/api/proxy
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, OPTIONS
   Access-Control-Allow-Headers: Content-Type
