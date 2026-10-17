@@ -15,7 +15,9 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Sync cached live jobs after hydration to avoid SSR mismatch
+    let active = true;
+
+    // 1. Instant hydration from sessionStorage if previously cached
     try {
       const cached = sessionStorage.getItem('careerdiary_live_jobs');
       if (cached) {
@@ -27,26 +29,53 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
       }
     } catch (_) {}
 
+    // 2. Fetch fresh live jobs from /api/jobs for ALL browsers
+    fetch('/api/jobs')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(freshPosts => {
+        if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
+          } catch (_) {}
+          const catPosts = getJobsForCategory(freshPosts, categoryKey);
+          setJobs(prev => mergeAndSortJobs(catPosts, prev));
+        }
+      })
+      .catch(() => {
+        import('../firebase').then(({ fetchFirestoreJobsOnce }) => {
+          fetchFirestoreJobsOnce().then(freshPosts => {
+            if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
+              try {
+                sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
+              } catch (_) {}
+              const catPosts = getJobsForCategory(freshPosts, categoryKey);
+              setJobs(prev => mergeAndSortJobs(catPosts, prev));
+            }
+          }).catch(() => {});
+        }).catch(() => {});
+      });
+
+    // 3. Admin Real-time Listener
     let unsubscribe = null;
     const isAdminUser = typeof window !== 'undefined' && (
       localStorage.getItem('career_diary_admin') === 'true' ||
       window.location.search.includes('admin')
     );
 
-    // Protect Firestore free quota: only subscribe if admin or if initialJobs is missing
-    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
+    if (isAdminUser) {
       unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        if (active && Array.isArray(firestorePosts) && firestorePosts.length > 0) {
           try {
             sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
           } catch (_) {}
           const catPosts = getJobsForCategory(firestorePosts, categoryKey);
           setJobs(prev => mergeAndSortJobs(catPosts, prev));
         }
-      }, (err) => console.warn(err), isAdminUser ? 150 : 30);
+      }, (err) => console.warn(err), 150);
     }
 
     return () => {
+      active = false;
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [categoryKey]);

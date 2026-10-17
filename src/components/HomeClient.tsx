@@ -38,7 +38,9 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
   const [breakingNews, setBreakingNews] = useState(initialNews);
 
   useEffect(() => {
-    // Sync cached live jobs after hydration to avoid SSR mismatch
+    let active = true;
+
+    // 1. Instant hydration from sessionStorage if previously cached
     try {
       const cached = sessionStorage.getItem('careerdiary_live_jobs');
       if (cached) {
@@ -47,43 +49,94 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
           setJobs(prev => mergeAndSortJobs(parsed, prev));
         }
       }
+      const cachedNews = sessionStorage.getItem('careerdiary_breaking_news');
+      if (cachedNews) {
+        const parsedNews = JSON.parse(cachedNews);
+        if (Array.isArray(parsedNews) && parsedNews.length > 0) {
+          setBreakingNews(parsedNews);
+        }
+      }
     } catch (_) {}
 
     if (!initialJobs || initialJobs.length === 0) {
       getInitialJobs().then(staticJobs => {
-        setJobs(prev => mergeAndSortJobs(prev, staticJobs));
+        if (active) setJobs(prev => mergeAndSortJobs(prev, staticJobs));
       });
     }
 
+    // 2. Fetch fresh live jobs from /api/jobs for ALL browsers (works in Chrome, Vivo, Samsung, Firefox, Safari)
+    fetch('/api/jobs')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(freshPosts => {
+        if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
+          } catch (_) {}
+          setJobs(prev => mergeAndSortJobs(freshPosts, prev));
+        }
+      })
+      .catch(() => {
+        // Fallback: direct REST query from Firestore if API route is unreachable
+        import('../firebase').then(({ fetchFirestoreJobsOnce }) => {
+          fetchFirestoreJobsOnce().then(freshPosts => {
+            if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
+              try {
+                sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
+              } catch (_) {}
+              setJobs(prev => mergeAndSortJobs(freshPosts, prev));
+            }
+          }).catch(() => {});
+        }).catch(() => {});
+      });
+
+    // 3. Fetch fresh breaking news from /api/news for ALL browsers
+    fetch('/api/news')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(newsData => {
+        if (active && Array.isArray(newsData) && newsData.length > 0) {
+          try {
+            sessionStorage.setItem('careerdiary_breaking_news', JSON.stringify(newsData));
+          } catch (_) {}
+          setBreakingNews(newsData);
+        }
+      })
+      .catch(() => {
+        import('../firebase').then(({ fetchBreakingNewsServer }) => {
+          fetchBreakingNewsServer().then(newsData => {
+            if (active && Array.isArray(newsData) && newsData.length > 0) {
+              setBreakingNews(newsData);
+            }
+          }).catch(() => {});
+        }).catch(() => {});
+      });
+
+    // 4. Admin Real-time Listener (for live preview while editing in admin dashboard)
     const isAdminUser = typeof window !== 'undefined' && (
       localStorage.getItem('career_diary_admin') === 'true' ||
       window.location.search.includes('admin')
     );
 
-    // Subscribe to real-time Breaking News updates from Firestore ONLY for admins or if empty
     let unsubNews = null;
-    if (isAdminUser || !initialNews || initialNews.length === 0) {
+    let unsubJobs = null;
+    if (isAdminUser) {
       unsubNews = subscribeToBreakingNews((newsData) => {
-        if (Array.isArray(newsData) && newsData.length > 0) {
+        if (active && Array.isArray(newsData) && newsData.length > 0) {
           setBreakingNews(newsData);
         }
       });
-    }
 
-    // Protect Firestore free quota: only subscribe if admin or if initialJobs is missing
-    let unsubJobs = null;
-    if (isAdminUser || !initialJobs || initialJobs.length === 0) {
       unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
-        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+        if (active && Array.isArray(firestorePosts) && firestorePosts.length > 0) {
           try {
             sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
           } catch (_) {}
           setJobs(prev => mergeAndSortJobs(firestorePosts, prev));
         }
-      }, (err) => console.warn(err), isAdminUser ? 150 : 30);
+      }, (err) => console.warn(err), 150);
     }
 
     return () => {
+      active = false;
       if (typeof unsubNews === 'function') unsubNews();
       if (typeof unsubJobs === 'function') unsubJobs();
     };

@@ -97,6 +97,9 @@ export async function publishJobToFirestore(job, skipQueue = false) {
       const { doc, setDoc } = await import('firebase/firestore');
       const jobRef = doc(db, 'jobs', safeId);
       await setDoc(jobRef, safeJob, { merge: true });
+      // Invalidate memory cache so next fetch immediately returns fresh data
+      memoryCache.data = null;
+      memoryCache.timestamp = 0;
       // Success — remove from pending queue if it was there
       removePendingSave(safeId);
       return { success: true, cleanId: safeId };
@@ -133,6 +136,8 @@ export async function deleteJobFromFirestore(jobId) {
     const { doc, deleteDoc } = await import('firebase/firestore');
     const jobRef = doc(db, 'jobs', safeId);
     await deleteDoc(jobRef);
+    memoryCache.data = null;
+    memoryCache.timestamp = 0;
     return { success: true };
   } catch (error) {
     console.error('Error deleting job from Firestore:', error);
@@ -212,6 +217,8 @@ export async function saveBreakingNewsToFirestore(items) {
       console.warn('Could not save to jobs/settings_breakingNews:', e);
     }
 
+    breakingNewsCache.data = [];
+    breakingNewsCache.timestamp = 0;
     return { success: true };
   } catch (error) {
     console.error('Error saving breaking news:', error);
@@ -304,20 +311,21 @@ const FIRESTORE_LIST_FIELDS = [
   'shortInfo', 'description', 'uniqueDescription', 'officialUrl', 'notificationUrl',
   'applyUrl', 'importantDates', 'important_dates', 'applicationFee', 'ageLimit',
   'vacancyDetails', 'importantLinks', 'important_links', 'isLatest', 'isLatestUpdate', 'latestOrder',
-  'isFeatured', 'isTopCard', 'featured', 'featuredOrder', 'bannerColor', 'status', 'isBreakingNews', 'isTopForm'
+  'isFeatured', 'isTopCard', 'featured', 'featuredOrder', 'bannerColor', 'status', 'isBreakingNews', 'isTopForm',
+  'aliases', 'howToFill'
 ];
 const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&');
 
 let pendingFetch = null;
 
-// Fetch all jobs once (fast REST fetch with 10-minute cache, field masking, quota backoff, and concurrency lock)
+// Fetch all jobs once (fast REST fetch with 60-second cache, field masking, quota backoff, and concurrency lock)
 export async function fetchFirestoreJobsOnce() {
   const now = Date.now();
   if (now < memoryCache.quotaExceededUntil) {
     return memoryCache.data || [];
   }
-  // 10-minute in-memory cache protects Firestore free tier (50k reads/day)
-  if (memoryCache.data && (now - memoryCache.timestamp < 600000)) {
+  // 60-second in-memory cache protects Firestore free tier while delivering fast updates
+  if (memoryCache.data && (now - memoryCache.timestamp < 60000)) {
     return memoryCache.data;
   }
   if (pendingFetch) {
@@ -327,7 +335,7 @@ export async function fetchFirestoreJobsOnce() {
   pendingFetch = (async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents:runQuery`;
       
       const queryBody = {
@@ -344,7 +352,7 @@ export async function fetchFirestoreJobsOnce() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        cf: { cacheTtl: 300, cacheEverything: true }
+        cf: { cacheTtl: 60, cacheEverything: true }
       });
       clearTimeout(timeoutId);
 
@@ -365,7 +373,8 @@ export async function fetchFirestoreJobsOnce() {
       
       const parsed = data
         .filter(item => item && item.document)
-        .map(item => parseFirestoreDoc(item.document));
+        .map(item => parseFirestoreDoc(item.document))
+        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && doc.title);
         
       memoryCache = {
         data: parsed,
@@ -430,10 +439,10 @@ export async function fetchFirestoreJobById(docId) {
   }
 }
 
-// Fetch Breaking News array from Firestore REST (server-side support with 15m memory cache)
+// Fetch Breaking News array from Firestore REST (server-side support with 60s memory cache)
 export async function fetchBreakingNewsServer() {
   const now = Date.now();
-  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 900000)) {
+  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 60000)) {
     return breakingNewsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -443,7 +452,7 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 900, cacheEverything: true }
+        cf: { cacheTtl: 60, cacheEverything: true }
       }
     );
     if (res.status === 429) {
@@ -463,10 +472,10 @@ export async function fetchBreakingNewsServer() {
   return breakingNewsCache.data;
 }
 
-// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 15m memory cache)
+// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 60s memory cache)
 export async function fetchTopOnlineFormsServer() {
   const now = Date.now();
-  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 900000)) {
+  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 60000)) {
     return topFormsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -474,7 +483,7 @@ export async function fetchTopOnlineFormsServer() {
   }
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const url = `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents:runQuery`;
     const query = {
       structuredQuery: {
@@ -494,7 +503,7 @@ export async function fetchTopOnlineFormsServer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query),
       signal: controller.signal,
-      cf: { cacheTtl: 900, cacheEverything: true }
+      cf: { cacheTtl: 60, cacheEverything: true }
     });
     clearTimeout(timeoutId);
     if (res.status === 429) {
