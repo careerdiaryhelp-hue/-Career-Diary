@@ -11,29 +11,62 @@ export default function JobDetailWrapper({ job: initialJob, allJobs = [], slug =
   const [search, setSearch] = React.useState('');
 
   React.useEffect(() => {
+    if (initialJob) {
+      setJob(initialJob);
+    }
+  }, [initialJob]);
+
+  React.useEffect(() => {
     const clean = String(slug || '').toLowerCase().trim();
     if (!clean) return;
+
+    // Check localStorage cached live jobs first (immediate synchronous update for any browser)
+    try {
+      const cached = localStorage.getItem('careerdiary_live_jobs') || sessionStorage.getItem('careerdiary_live_jobs');
+      if (cached) {
+        const posts = JSON.parse(cached);
+        const inCache = posts.find(j => {
+          if (!j) return false;
+          const id = String(j.id || '').toLowerCase();
+          const s = String(j.slug || '').toLowerCase();
+          return id === clean || s === clean || id.includes(clean) || clean.includes(id);
+        });
+        if (inCache && (inCache.faqImage || inCache.postImage || inCache.bannerImage)) {
+          setJob(prev => ({
+            ...prev,
+            faqImage: inCache.faqImage || inCache.postImage || inCache.bannerImage || prev?.faqImage,
+            postImage: inCache.postImage || inCache.faqImage || inCache.bannerImage || prev?.postImage,
+            bannerImage: inCache.bannerImage || inCache.faqImage || inCache.postImage || prev?.bannerImage,
+            faqImageLink: inCache.faqImageLink || prev?.faqImageLink,
+            faqImageCaption: inCache.faqImageCaption || prev?.faqImageCaption,
+          }));
+        }
+      }
+    } catch (_) {}
 
     const isAdminUser = typeof window !== 'undefined' && (
       localStorage.getItem('career_diary_admin') === 'true' ||
       window.location.search.includes('admin')
     );
 
-    // Protect Firestore free quota: only fetch live document if admin or if initialJob is missing
-    if (isAdminUser || !initialJob) {
+    // Fetch live Firestore document if admin, or if initialJob is missing, or if image is missing
+    const needsLiveFetch = isAdminUser || !initialJob || (!initialJob?.faqImage && !initialJob?.postImage && !initialJob?.bannerImage);
+
+    if (needsLiveFetch) {
       import('../firebase').then(({ fetchFirestoreJobById }) => {
         fetchFirestoreJobById(clean).then(liveDoc => {
-          if (liveDoc && (liveDoc.content || liveDoc.htmlContent || liveDoc.title)) {
+          if (liveDoc && (liveDoc.content || liveDoc.htmlContent || liveDoc.title || liveDoc.faqImage)) {
             setJob(prev => {
               if (!prev) return liveDoc;
-              const liveTs = new Date(liveDoc.updatedAt || 0).getTime();
-              const prevTs = new Date(prev.updatedAt || 0).getTime();
-              const dateChanged = (liveDoc.postDate && liveDoc.postDate !== prev.postDate) ||
-                (liveDoc.postUpdateDate && liveDoc.postUpdateDate !== prev.postUpdateDate);
-              if (liveTs >= prevTs || dateChanged || !prev.content) {
-                return { ...prev, ...liveDoc };
-              }
-              return prev;
+              return {
+                ...prev,
+                ...liveDoc,
+                faqImage: liveDoc.faqImage || liveDoc.postImage || liveDoc.bannerImage || prev.faqImage || '',
+                postImage: liveDoc.postImage || liveDoc.faqImage || liveDoc.bannerImage || prev.postImage || '',
+                bannerImage: liveDoc.bannerImage || liveDoc.faqImage || liveDoc.postImage || prev.bannerImage || '',
+                faqImageLink: liveDoc.faqImageLink || prev.faqImageLink || '',
+                faqImageCaption: liveDoc.faqImageCaption || prev.faqImageCaption || '',
+              };
             });
           }
         }).catch(() => {});
@@ -53,25 +86,9 @@ export default function JobDetailWrapper({ job: initialJob, allJobs = [], slug =
           setJob(inAll);
           return;
         }
-
-        // Try finding in client cached firestore jobs
-        const cached = localStorage.getItem('career_diary_cached_firestore_jobs');
-        if (cached) {
-          const posts = JSON.parse(cached);
-          const inCache = posts.find(j => {
-            if (!j) return false;
-            const id = String(j.id || '').toLowerCase();
-            const s = String(j.slug || '').toLowerCase();
-            return id === clean || s === clean || id.includes(clean) || clean.includes(id);
-          });
-          if (inCache) {
-            setJob(inCache);
-            return;
-          }
-        }
       } catch (e) {}
     }
-  }, [slug, allJobs]);
+  }, [slug, allJobs, initialJob]);
 
   if (!job) {
     return (

@@ -997,9 +997,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </table>
         )}
 
-        {/* Post Banner / FAQ Bottom Image (Sarkari Result Style) */}
+        {/* Official Notice / FAQ Bottom Image (Sarkari Result Style) */}
         {(job.faqImage || job.postImage || job.bannerImage) && (
-          <div className="sr-faq-banner-wrapper" style={{ margin: '22px 0 26px', textAlign: 'center' }}>
+          <div className="sr-faq-notice-image-container" style={{ margin: '22px 0 26px', textAlign: 'center' }}>
             <div
               style={{
                 display: 'inline-block',
@@ -1015,7 +1015,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                 <a href={job.faqImageLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
                   <img
                     src={job.faqImage || job.postImage || job.bannerImage}
-                    alt={job.title || job.postName || 'Post Banner'}
+                    alt={job.title || job.postName || 'Official Notification'}
                     style={{
                       maxWidth: '100%',
                       height: 'auto',
@@ -1029,7 +1029,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
               ) : (
                 <img
                   src={job.faqImage || job.postImage || job.bannerImage}
-                  alt={job.title || job.postName || 'Post Banner'}
+                  alt={job.title || job.postName || 'Official Notification'}
                   style={{
                     maxWidth: '100%',
                     height: 'auto',

@@ -190,7 +190,7 @@ export async function getJobBySlug(slug) {
 
   const fullJobs = await getFullJobs();
 
-  // 1. Direct match on clean, slug, title, or aliases
+  // 1. Direct match on clean, slug, title, or aliases in static database
   let match = fullJobs.find(j => {
     if (!j) return false;
     if (j._safeId === clean) return true;
@@ -207,39 +207,78 @@ export async function getJobBySlug(slug) {
     return false;
   });
 
+  // 2. Loose / Normalized match (removes filler terms like -notice, -out, -now, etc.)
+  if (!match) {
+    const stripFiller = (str) =>
+      String(str || '')
+        .toLowerCase()
+        .replace(/-(notice|recruitment|online-form|form|out|now|download|check)/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    const normClean = stripFiller(clean);
+    if (normClean) {
+      match = fullJobs.find(j => {
+        if (!j) return false;
+        const jSlugNorm = stripFiller(j.slug || j.id);
+        return jSlugNorm && jSlugNorm === normClean;
+      });
+    }
+  }
+
+  // 3. Fallback: Fuzzy match in static jobs
+  if (!match) {
+    match = fullJobs.find(j => {
+      if (!j) return false;
+      const jId = String(j.id || '').toLowerCase().trim();
+      const jSlug = String(j.slug || '').toLowerCase().trim();
+      return (jId && (jId.includes(clean) || clean.includes(jId))) ||
+             (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
+    });
+  }
+
+  // 4. Check live Firestore jobs (cached in memory 120s, 0 quota waste)
+  // Ensures admin edits, new posts, and uploaded FAQ images appear in ALL browsers (Brave, Chrome, Safari, etc.)
+  try {
+    const liveJobs = await fetchFirestoreJobsOnce();
+    const liveMatch = liveJobs.find(j => {
+      if (!j) return false;
+      const jId = cleanJobId(j.id || '');
+      const jSlug = cleanJobId(j.slug || '');
+      return jId === clean || jSlug === clean || (match && (jId === match._safeId || jId === cleanJobId(match.id)));
+    });
+
+    if (liveMatch) {
+      if (match) {
+        // Merge latest live changes (faqImage, postImage, bannerImage, updated dates, links) onto static job
+        match = {
+          ...match,
+          ...liveMatch,
+          content: liveMatch.content || liveMatch.htmlContent || match.content,
+          htmlContent: liveMatch.htmlContent || liveMatch.content || match.htmlContent,
+          faqImage: liveMatch.faqImage || liveMatch.postImage || liveMatch.bannerImage || match.faqImage || '',
+          postImage: liveMatch.postImage || liveMatch.faqImage || liveMatch.bannerImage || match.postImage || '',
+          bannerImage: liveMatch.bannerImage || liveMatch.faqImage || liveMatch.postImage || match.bannerImage || '',
+          faqImageLink: liveMatch.faqImageLink || match.faqImageLink || '',
+          faqImageCaption: liveMatch.faqImageCaption || match.faqImageCaption || '',
+        };
+        return match;
+      } else {
+        // Brand new post from live Firestore
+        if (!liveMatch.content && !liveMatch.htmlContent) {
+          const directDoc = await fetchFirestoreJobById(clean);
+          if (directDoc) return { ...liveMatch, ...directDoc };
+        }
+        return liveMatch;
+      }
+    }
+  } catch (_) {}
+
   if (match) {
     return match;
   }
 
-  // 2. Loose / Normalized match (removes filler terms like -notice, -out, -now, etc.)
-  const stripFiller = (str) =>
-    String(str || '')
-      .toLowerCase()
-      .replace(/-(notice|recruitment|online-form|form|out|now|download|check)/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-  const normClean = stripFiller(clean);
-  if (normClean) {
-    match = fullJobs.find(j => {
-      if (!j) return false;
-      const jSlugNorm = stripFiller(j.slug || j.id);
-      return jSlugNorm && jSlugNorm === normClean;
-    });
-    if (match) return match;
-  }
-
-  // 3. Fallback: Fuzzy match in static jobs (instant, 0 network, protects Firestore quota)
-  match = fullJobs.find(j => {
-    if (!j) return false;
-    const jId = String(j.id || '').toLowerCase().trim();
-    const jSlug = String(j.slug || '').toLowerCase().trim();
-    return (jId && (jId.includes(clean) || clean.includes(jId))) ||
-           (jSlug && (jSlug.includes(clean) || clean.includes(jSlug)));
-  });
-  if (match) return match;
-
-  // 4. If not found in any static list (e.g. brand new post created in admin), query live Firestore doc
+  // 5. If not found in static list or recent live list, query live Firestore single document
   try {
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
