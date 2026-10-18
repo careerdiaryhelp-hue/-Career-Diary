@@ -1,6 +1,6 @@
 'use client';
-import React from 'react';
-import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Send, MessageCircle, Share2, Copy, Check } from 'lucide-react';
 import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
@@ -9,6 +9,7 @@ import { autoLinkSocialChannels } from '../utils/linkUtils';
 import { canServeAds } from '../utils/adShield';
 
 export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }) {
+  const [copied, setCopied] = useState(false);
   if (!job) return null;
 
   const getLinkUrl = (...keys) => {
@@ -169,6 +170,25 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     .slice(0, 5);
 
   const youMayAlsoCheckJob = finalRelatedPosts[0] || latestPosts[0] || null;
+
+  // Social Sharing URLs & Handler
+  const postRelativeUrl = getJobUrl(job);
+  const postUrl = typeof window !== 'undefined' && window.location.origin
+    ? `${window.location.origin}${postRelativeUrl}`
+    : `https://careerdiary.in${postRelativeUrl}`;
+  const shareText = `*${job.title || 'Career Diary'}*\nCheck eligibility, important dates & apply online here:\n`;
+  const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + postUrl)}`;
+  const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(job.title || 'Career Diary')}`;
+
+  const handleCopyLink = () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(postUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } catch (_) {}
+  };
 
   // Rich Intro Variables
   const introOrg = job.organization || 'Government Recruitment Board';
@@ -471,16 +491,50 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           {' '}Candidates must check the complete details for <strong>{job.title}</strong>. Link are given below.
         </div>
 
-        {/* Social Banners */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-          <a href="https://t.me/careerdiary" target="_blank" rel="noopener noreferrer"
-            style={{ background: '#0088cc', color: '#fff', padding: '8px 18px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Send className="w-4 h-4" /> Join Telegram Channel
+        {/* Social Action Bar: Join Community + 1-Tap Share */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
+          <a
+            href="https://t.me/careerdiary"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: '#0088cc', color: '#fff', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', textDecoration: 'none' }}
+          >
+            <Send className="w-4 h-4" /> Join Telegram
           </a>
-          <a href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u" target="_blank" rel="noopener noreferrer"
-            style={{ background: '#25d366', color: '#fff', padding: '8px 18px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <MessageCircle className="w-4 h-4" /> Join WhatsApp Channel
+          <a
+            href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: '#25d366', color: '#fff', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', textDecoration: 'none' }}
+          >
+            <MessageCircle className="w-4 h-4" /> Join WhatsApp
           </a>
+          <a
+            href={whatsappShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Share on WhatsApp"
+            style={{ background: '#128c7e', color: '#fff', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', textDecoration: 'none' }}
+          >
+            <Share2 className="w-4 h-4" /> Share on WhatsApp
+          </a>
+          <a
+            href={telegramShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Share on Telegram"
+            style={{ background: '#229ED9', color: '#fff', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', textDecoration: 'none' }}
+          >
+            <Send className="w-4 h-4" /> Share on Telegram
+          </a>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            style={{ background: copied ? '#16a34a' : '#475569', color: '#fff', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', border: 'none', cursor: 'pointer', transition: 'background 0.2s' }}
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? 'Link Copied!' : 'Copy Link'}
+          </button>
         </div>
 
         {/* AdSense Block Ad #1: Display Ad (Slot 7544533819) */}
@@ -1016,6 +1070,85 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
                 </a>
               </div>
             )}
+
+            {/* 1-Tap Share Post Card Under Banner */}
+            <div
+              style={{
+                margin: '12px auto 0',
+                maxWidth: '520px',
+                padding: '10px 14px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Share2 className="w-3.5 h-3.5" /> Share this post:
+              </span>
+              <a
+                href={whatsappShareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#25d366',
+                  color: '#fff',
+                  padding: '4px 12px',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  textDecoration: 'none'
+                }}
+              >
+                <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+              </a>
+              <a
+                href={telegramShareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#0088cc',
+                  color: '#fff',
+                  padding: '4px 12px',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  textDecoration: 'none'
+                }}
+              >
+                <Send className="w-3.5 h-3.5" /> Telegram
+              </a>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                style={{
+                  background: copied ? '#16a34a' : '#64748b',
+                  color: '#fff',
+                  padding: '4px 12px',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
           </div>
         )}
 

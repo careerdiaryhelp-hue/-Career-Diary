@@ -1,5 +1,5 @@
 import { isResult, isAdmitCard, isAnswerKey, isAdmission, isSyllabus, isDocument, isImportant } from '../../../data/categoryHelpers';
-import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary } from '../../../utils/jobsService';
+import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary, getSocialImageUrl } from '../../../utils/jobsService';
 import JobDetailWrapper from '../../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
 
@@ -28,6 +28,7 @@ export async function generateMetadata({ params }) {
   const title = `${job.title} – Important Notification & Online Services | Career Diary`;
   const description = `${job.title} 2026. Official notice and links on Career Diary.`;
   const url = `https://careerdiary.in/important/${slug}`;
+  const socialImage = getSocialImageUrl(job, slug);
 
   return {
     title,
@@ -41,13 +42,20 @@ export async function generateMetadata({ params }) {
       url,
       siteName: 'Career Diary',
       type: 'article',
-      images: [{ url: 'https://careerdiary.in/image.png' }],
+      images: [
+        {
+          url: socialImage,
+          width: 1200,
+          height: 630,
+          alt: job.title || 'Career Diary Post',
+        },
+      ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: ['https://careerdiary.in/image.png'],
+      images: [socialImage],
     },
   };
 }

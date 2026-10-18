@@ -3,6 +3,29 @@ import { cleanJobId, fetchFirestoreJobsOnce, fetchFirestoreJobById } from '../fi
 
 export { cleanJobId };
 
+// Returns the full absolute URL for OpenGraph / WhatsApp / Telegram sharing preview
+export function getSocialImageUrl(job, slug = '') {
+  if (!job) return 'https://careerdiary.in/image.png';
+  const img = job.faqImage || job.postImage || job.bannerImage || job.image || job.thumbnail;
+  if (!img) return 'https://careerdiary.in/image.png';
+
+  const trimmed = String(img).trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return `https://careerdiary.in${trimmed}`;
+  }
+
+  if (trimmed.startsWith('data:image/')) {
+    const safeSlug = job.slug || job.id || slug;
+    return `https://careerdiary.in/api/post-image/${encodeURIComponent(cleanJobId(safeSlug))}`;
+  }
+
+  return 'https://careerdiary.in/image.png';
+}
+
 // Lightweight summarizer for lists, grids, tickers, and related post links.
 // Strips massive full-HTML tables and paragraphs (reduces payload by >96%, preventing Cloudflare Worker Error 1102).
 export function summarizeJobForList(job) {

@@ -1,5 +1,5 @@
 import { isResult, isAdmitCard, isAnswerKey, isAdmission, isSyllabus, isDocument, isImportant } from '../../../data/categoryHelpers';
-import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary } from '../../../utils/jobsService';
+import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary, getSocialImageUrl } from '../../../utils/jobsService';
 import JobDetailWrapper from '../../../components/JobDetailWrapper';
 import { notFound } from 'next/navigation';
 
@@ -28,6 +28,7 @@ export async function generateMetadata({ params }) {
   const title = `${job.title} – Notification, Eligibility & Apply Online | Career Diary`;
   const description = `${job.title} 2026. Check complete details, important dates, eligibility, fees and direct official links on Career Diary.`;
   const url = `https://careerdiary.in/job/${slug}`;
+  const socialImage = getSocialImageUrl(job, slug);
 
   return {
     title,
@@ -43,18 +44,18 @@ export async function generateMetadata({ params }) {
       type: 'article',
       images: [
         {
-          url: 'https://careerdiary.in/image.png',
-          width: 800,
-          height: 600,
+          url: socialImage,
+          width: 1200,
+          height: 630,
           alt: job.title,
         },
       ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: ['https://careerdiary.in/image.png'],
+      images: [socialImage],
     },
   };
 }
