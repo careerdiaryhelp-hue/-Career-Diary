@@ -155,8 +155,10 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   const isRes = isResult(job) || isAnswerKey(job);
   const isAdm = isAdmission(job);
 
-  // Derive all published jobs for cross-linking (SEO & UX)
-  const allPublished = Array.isArray(allJobs) ? allJobs : [];
+  // Derive all published jobs for cross-linking (SEO & UX) - strictly excluding drafts
+  const allPublished = (Array.isArray(allJobs) ? allJobs : []).filter(
+    j => j && j.title && j.status !== 'Draft' && j.status !== 'draft'
+  );
   const relatedPosts = allPublished
     .filter(j => j && j.id !== job.id && (j.category === job.category || (isAdmit && isAdmitCard(j)) || (isRes && isResult(j))))
     .slice(0, 5);

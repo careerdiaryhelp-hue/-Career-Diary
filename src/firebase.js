@@ -348,7 +348,7 @@ export async function fetchFirestoreJobsOnce() {
       const parsed = data
         .filter(item => item && item.document)
         .map(item => parseFirestoreDoc(item.document))
-        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && doc.title);
+        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && doc.title && doc.status !== 'Draft' && doc.status !== 'draft');
         
       memoryCache = {
         data: parsed,
@@ -489,7 +489,8 @@ export async function fetchTopOnlineFormsServer() {
     if (!Array.isArray(data)) return topFormsCache.data;
     const parsed = data
       .filter(item => item && item.document)
-      .map(item => parseFirestoreDoc(item.document));
+      .map(item => parseFirestoreDoc(item.document))
+      .filter(doc => doc && doc.id && doc.title && doc.status !== 'Draft' && doc.status !== 'draft');
     if (parsed.length > 0) {
       topFormsCache = { data: parsed, timestamp: now };
     }

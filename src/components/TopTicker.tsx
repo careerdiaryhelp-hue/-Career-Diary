@@ -12,7 +12,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
 
   const tickerJobs = useMemo(() => {
     if (!jobs || jobs.length === 0) return [];
-    const explicitLatest = jobs.filter(j => Boolean(j.isLatestUpdate || j.isLatest));
+    const explicitLatest = jobs.filter(j => j && Boolean(j.isLatestUpdate || j.isLatest) && j.status !== 'Draft' && j.status !== 'draft');
     return [...explicitLatest].sort((a, b) => {
       const orderA = a.latestOrder ?? a.displayOrder ?? 999;
       const orderB = b.latestOrder ?? b.displayOrder ?? 999;
@@ -24,7 +24,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
   const activeBreakingNews = useMemo(() => {
     const manual = (breakingNews || []).filter(n => n.active !== false && !n.message?.toLowerCase().includes('top online form') && !n.title?.toLowerCase().includes('top online form'));
     const fromJobs = (jobs || [])
-      .filter(j => Boolean(j.isBreakingNews))
+      .filter(j => j && Boolean(j.isBreakingNews) && j.status !== 'Draft' && j.status !== 'draft')
       .map(j => ({
         id: j.id,
         message: j.title,
@@ -37,7 +37,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
 
     // Fallback: If no custom breaking news exists, use top 9 latest updates so Breaking News marquee is ALWAYS visible
     if (merged.length === 0 && jobs && jobs.length > 0) {
-      return jobs.slice(0, 9).map(j => ({
+      return jobs.filter(j => j && j.status !== 'Draft' && j.status !== 'draft').slice(0, 9).map(j => ({
         id: j.id,
         message: j.title,
         link: getJobUrl(j),

@@ -180,13 +180,17 @@ export async function getAllJobsServer() {
 // Fast helper for detail pages to get only the top N recent jobs for related posts sidebar (3KB payload!)
 export async function getTopRecentJobsSummary(limit = 15) {
   const jobs = await getAllJobsServer();
-  return jobs.slice(0, limit);
+  return (Array.isArray(jobs) ? jobs : [])
+    .filter(j => j && j.title && j.status !== 'Draft' && j.status !== 'draft')
+    .slice(0, limit);
 }
 
 export async function getJobBySlug(slug) {
   if (!slug) return null;
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
+
+  const isDraft = (j) => j && (j.status === 'Draft' || j.status === 'draft');
 
   const fullJobs = await getFullJobs();
 
@@ -249,6 +253,8 @@ export async function getJobBySlug(slug) {
     });
 
     if (liveMatch) {
+      if (isDraft(liveMatch)) return null;
+
       if (match) {
         // Merge latest live changes (faqImage, postImage, bannerImage, updated dates, links) onto static job
         match = {
@@ -262,12 +268,15 @@ export async function getJobBySlug(slug) {
           faqImageLink: liveMatch.faqImageLink || match.faqImageLink || '',
           faqImageCaption: liveMatch.faqImageCaption || match.faqImageCaption || '',
         };
-        return match;
+        return isDraft(match) ? null : match;
       } else {
         // Brand new post from live Firestore
         if (!liveMatch.content && !liveMatch.htmlContent) {
           const directDoc = await fetchFirestoreJobById(clean);
-          if (directDoc) return { ...liveMatch, ...directDoc };
+          if (directDoc) {
+            if (isDraft(directDoc)) return null;
+            return { ...liveMatch, ...directDoc };
+          }
         }
         return liveMatch;
       }
@@ -275,14 +284,14 @@ export async function getJobBySlug(slug) {
   } catch (_) {}
 
   if (match) {
-    return match;
+    return isDraft(match) ? null : match;
   }
 
   // 5. If not found in static list or recent live list, query live Firestore single document
   try {
     const directDoc = await fetchFirestoreJobById(clean);
     if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
-      return directDoc;
+      return isDraft(directDoc) ? null : directDoc;
     }
   } catch (e) {}
 

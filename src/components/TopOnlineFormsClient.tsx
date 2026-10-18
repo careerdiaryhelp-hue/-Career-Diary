@@ -80,9 +80,9 @@ export default function TopOnlineFormsClient({ initialJobs = [], fallbackJobs = 
   }, [initialJobs]);
 
   const displayJobs = useMemo(() => {
-    let source = forms;
-    if ((!source || source.length === 0) && fallbackJobs && fallbackJobs.length > 0) {
-      source = fallbackJobs.slice(0, 16);
+    let source = (forms || []).filter(j => j && j.title && j.status !== 'Draft' && j.status !== 'draft');
+    if (source.length === 0 && fallbackJobs && fallbackJobs.length > 0) {
+      source = fallbackJobs.filter(j => j && j.title && j.status !== 'Draft' && j.status !== 'draft').slice(0, 16);
     }
     if (!searchQuery.trim()) return source;
     const q = searchQuery.toLowerCase().trim();
