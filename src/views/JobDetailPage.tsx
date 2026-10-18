@@ -943,6 +943,82 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </table>
         )}
 
+        {/* Post Banner / FAQ Bottom Image (Sarkari Result Style) */}
+        {(job.faqImage || job.postImage || job.bannerImage) && (
+          <div className="sr-faq-banner-wrapper" style={{ margin: '22px 0 26px', textAlign: 'center' }}>
+            <div
+              style={{
+                display: 'inline-block',
+                border: '2px solid #55a845',
+                padding: '4px',
+                backgroundColor: '#ffffff',
+                borderRadius: '4px',
+                maxWidth: '100%',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              }}
+            >
+              {job.faqImageLink ? (
+                <a href={job.faqImageLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+                  <img
+                    src={job.faqImage || job.postImage || job.bannerImage}
+                    alt={job.title || job.postName || 'Post Banner'}
+                    style={{
+                      maxWidth: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      margin: '0 auto',
+                      borderRadius: '2px'
+                    }}
+                    loading="lazy"
+                  />
+                </a>
+              ) : (
+                <img
+                  src={job.faqImage || job.postImage || job.bannerImage}
+                  alt={job.title || job.postName || 'Post Banner'}
+                  style={{
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 auto',
+                    borderRadius: '2px'
+                  }}
+                  loading="lazy"
+                />
+              )}
+              <div
+                style={{
+                  color: '#2e7d32',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  padding: '6px 0 2px 0',
+                  textAlign: 'center',
+                  fontFamily: 'Outfit, sans-serif'
+                }}
+              >
+                CareerDiary.in
+              </div>
+            </div>
+            {job.faqImageLink && (
+              <div style={{ marginTop: '6px' }}>
+                <a
+                  href={job.faqImageLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#0000ff',
+                    fontWeight: 700,
+                    fontSize: '0.92rem',
+                    textDecoration: 'none'
+                  }}
+                >
+                  {job.faqImageCaption || 'Click Here for More Details'}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* AdSense Bottom Display Ad (Guarantees min 4 ads on all pages) */}
         <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
 

@@ -71,6 +71,11 @@ const EMPTY_FORM = {
   maxAge: '37 Years',
   qualification: '',
   state: 'All India',
+  faqImage: '',
+  faqImageLink: '',
+  faqImageCaption: '',
+  postImage: '',
+  bannerImage: '',
   importantLinks: {
     'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
     'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP,
@@ -112,6 +117,7 @@ export default function AdminDashboardPage({
   const [sgImporting, setSgImporting] = useState(false);
   const [sgLog, setSgLog] = useState([]);
   const customBadgeInputRef = useRef(null);
+  const imageFileInputRef = useRef(null);
 
   // Reset pagination to page 1 whenever search, filter, or itemsPerPage changes
   useEffect(() => {
@@ -742,6 +748,11 @@ export default function AdminDashboardPage({
       ageLimit: job.ageLimit || {},
       selectionProcess: job.selectionProcess || [],
       howToFill: job.howToFill || [],
+      faqImage: job.faqImage || job.postImage || job.bannerImage || '',
+      faqImageLink: job.faqImageLink || '',
+      faqImageCaption: job.faqImageCaption || '',
+      postImage: job.faqImage || job.postImage || job.bannerImage || '',
+      bannerImage: job.faqImage || job.postImage || job.bannerImage || '',
     });
 
     const STANDARD_BADGES = ['New!', 'Out', 'START', 'Link Active', 'Last Date', 'Answer Key', 'Admit Card', 'Result', 'Extended', 'None', ''];
@@ -1710,6 +1721,72 @@ export default function AdminDashboardPage({
     }
     setInsertModal(prev => ({ ...prev, isOpen: false }));
     showToast('Inserted successfully into visual editor!', 'success');
+  };
+
+  const handleImageFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (JPG, PNG, WebP)', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawDataUrl = event.target?.result;
+      if (!rawDataUrl || typeof rawDataUrl !== 'string') return;
+
+      // Automatically compress & resize to max 900px width for fast loading & Firestore doc limits
+      const img = new window.Image();
+      img.onload = () => {
+        const maxW = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxW) {
+          height = Math.round((height * maxW) / width);
+          width = maxW;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          set('faqImage', compressedDataUrl);
+          set('postImage', compressedDataUrl);
+          set('bannerImage', compressedDataUrl);
+          showToast('🖼️ Image uploaded & optimized for website!', 'success');
+        } else {
+          set('faqImage', rawDataUrl);
+          set('postImage', rawDataUrl);
+          set('bannerImage', rawDataUrl);
+          showToast('🖼️ Image uploaded successfully!', 'success');
+        }
+      };
+      img.onerror = () => {
+        set('faqImage', rawDataUrl);
+        set('postImage', rawDataUrl);
+        set('bannerImage', rawDataUrl);
+        showToast('🖼️ Image uploaded successfully!', 'success');
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveFaqImage = () => {
+    set('faqImage', '');
+    set('postImage', '');
+    set('bannerImage', '');
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = '';
+    }
+    showToast('Banner image removed', 'info');
   };
 
   // Helper to sanitize external branding and decode HTML entities
@@ -3436,7 +3513,12 @@ export default function AdminDashboardPage({
         ageLimit: {
           ...(prev.ageLimit || {}),
           ...extractedAge
-        }
+        },
+        faqImage: p.faqImage || p.postImage || p.bannerImage || prev.faqImage || '',
+        faqImageLink: p.faqImageLink || prev.faqImageLink || '',
+        faqImageCaption: p.faqImageCaption || prev.faqImageCaption || '',
+        postImage: p.faqImage || p.postImage || p.bannerImage || prev.postImage || '',
+        bannerImage: p.faqImage || p.postImage || p.bannerImage || prev.bannerImage || ''
       }));
 
       setShowMetadata(true);
@@ -3944,6 +4026,11 @@ export default function AdminDashboardPage({
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
+      faqImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
+      faqImageLink: (form.faqImageLink || '').trim(),
+      faqImageCaption: (form.faqImageCaption || '').trim(),
+      postImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
+      bannerImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
       postDate: (form.postDate && form.postDate.trim()) || existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
       postUpdateDate: (form.postUpdateDate && form.postUpdateDate.trim()) || (isUpdate ? new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : (existingJob?.postUpdateDate || '')),
       updatedAt: new Date().toISOString(),
@@ -4129,6 +4216,11 @@ export default function AdminDashboardPage({
         'Join Telegram Channel': 'https://t.me/careerdiary',
         'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
       },
+      faqImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
+      faqImageLink: (form.faqImageLink || '').trim(),
+      faqImageCaption: (form.faqImageCaption || '').trim(),
+      postImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
+      bannerImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
       postDate: (form.postDate && form.postDate.trim()) || existingJob?.postDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
       postUpdateDate: (form.postUpdateDate && form.postUpdateDate.trim()) || (existingJob ? new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : ''),
       updatedAt: new Date().toISOString(),
@@ -5645,6 +5737,209 @@ export default function AdminDashboardPage({
               </div>
             </div>
 
+            {/* Box: Post Banner / FAQ Bottom Image (Upload or Direct URL) */}
+            <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '20px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16a34a', fontWeight: 700, fontSize: '1rem' }}>
+                  <Image size={18} />
+                  <span>FAQ Bottom Banner Image (Sarkari Result Style)</span>
+                </div>
+                {(form.faqImage || form.postImage) && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveFaqImage}
+                    style={{
+                      background: '#fee2e2',
+                      color: '#dc2626',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Trash2 size={12} /> Remove Image
+                  </button>
+                )}
+              </div>
+
+              <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+                Yeh image website par <strong>FAQ (Important Questions) table ke theek niche</strong> Sarkari Result style green border aur &apos;CareerDiary.in&apos; watermark ke sath display hogi:
+              </p>
+
+              {/* Upload from Device + URL Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileUpload}
+                    style={{ display: 'none' }}
+                    id="faq-image-file-input"
+                  />
+                  <label
+                    htmlFor="faq-image-file-input"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: '#16a34a',
+                      color: '#fff',
+                      padding: '9px 18px',
+                      borderRadius: '8px',
+                      fontSize: '0.86rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 5px rgba(22, 163, 74, 0.25)'
+                    }}
+                  >
+                    <UploadCloud size={16} /> 📁 Upload Image from Device
+                  </label>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>OR paste direct image link below:</span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    DIRECT IMAGE URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/banner.png or .jpg (Direct Image URL)"
+                    value={form.faqImage || form.postImage || ''}
+                    onChange={e => {
+                      const val = e.target.value;
+                      set('faqImage', val);
+                      set('postImage', val);
+                      set('bannerImage', val);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      background: '#f8fafc'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                      IMAGE CLICK URL (OPTIONAL)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="https://... (opens when user clicks image)"
+                      value={form.faqImageLink || ''}
+                      onChange={e => set('faqImageLink', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '7px 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        outline: 'none',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                      CLICK LINK TEXT (OPTIONAL)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Download English Vocab App"
+                      value={form.faqImageCaption || ''}
+                      onChange={e => set('faqImageCaption', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '7px 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        outline: 'none',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Image Preview Box */}
+              {(form.faqImage || form.postImage) ? (
+                <div style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #86efac',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#15803d', marginBottom: '8px', textTransform: 'uppercase' }}>
+                    ✓ Image Selected — Live Website Preview:
+                  </div>
+                  <div style={{
+                    display: 'inline-block',
+                    border: '2px solid #55a845',
+                    padding: '4px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '4px',
+                    maxWidth: '100%',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}>
+                    <img
+                      src={form.faqImage || form.postImage}
+                      alt="Banner Preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '260px',
+                        height: 'auto',
+                        display: 'block',
+                        margin: '0 auto',
+                        borderRadius: '2px'
+                      }}
+                    />
+                    <div style={{
+                      color: '#2e7d32',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      padding: '4px 0 2px 0',
+                      textAlign: 'center',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}>
+                      CareerDiary.in
+                    </div>
+                  </div>
+                  {form.faqImageLink && (
+                    <div style={{ marginTop: '6px' }}>
+                      <span style={{ color: '#0000ff', fontWeight: 700, fontSize: '0.85rem' }}>
+                        👉 {form.faqImageCaption || 'Click Here for More Details'} ({form.faqImageLink})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.82rem'
+                }}>
+                  No image selected yet. (Optional: Upload exam notification / admit card / result banner image)
+                </div>
+              )}
+            </div>
+
             {/* Box 2: Manage Metadata (Important Dates, Application Fee, Age Limit, Links) */}
             <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
               <button
@@ -6737,6 +7032,54 @@ export default function AdminDashboardPage({
                 color: '#1e293b'
               }}
             />
+
+            {/* Live FAQ Bottom Image Preview in Editor */}
+            {(form.faqImage || form.postImage) && (
+              <div style={{ marginTop: '24px', borderTop: '2px dashed #bbf7d0', paddingTop: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  📍 Live Preview: FAQ Bottom Banner (Appears below FAQ on Website)
+                </div>
+                <div style={{
+                  display: 'inline-block',
+                  border: '2px solid #55a845',
+                  padding: '4px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '4px',
+                  maxWidth: '100%',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                }}>
+                  <img
+                    src={form.faqImage || form.postImage}
+                    alt="FAQ Bottom Banner"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '320px',
+                      height: 'auto',
+                      display: 'block',
+                      margin: '0 auto',
+                      borderRadius: '2px'
+                    }}
+                  />
+                  <div style={{
+                    color: '#2e7d32',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    padding: '4px 0 2px 0',
+                    textAlign: 'center',
+                    fontFamily: 'Outfit, sans-serif'
+                  }}>
+                    CareerDiary.in
+                  </div>
+                </div>
+                {form.faqImageLink && (
+                  <div style={{ marginTop: '6px' }}>
+                    <span style={{ color: '#0000ff', fontWeight: 700, fontSize: '0.88rem' }}>
+                      {form.faqImageCaption || 'Click Here for More Details'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
         </div>

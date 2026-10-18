@@ -312,7 +312,7 @@ const FIRESTORE_LIST_FIELDS = [
   'applyUrl', 'importantDates', 'important_dates', 'applicationFee', 'ageLimit',
   'vacancyDetails', 'importantLinks', 'important_links', 'isLatest', 'isLatestUpdate', 'latestOrder',
   'isFeatured', 'isTopCard', 'featured', 'featuredOrder', 'bannerColor', 'status', 'isBreakingNews', 'isTopForm',
-  'aliases', 'howToFill'
+  'aliases', 'howToFill', 'faqImage', 'faqImageLink', 'postImage', 'bannerImage'
 ];
 const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&');
 
