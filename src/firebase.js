@@ -149,28 +149,15 @@ export async function deleteJobFromFirestore(jobId) {
 export function subscribeToBreakingNews(onUpdate) {
   if (typeof window === 'undefined') return () => {};
   let unsubPublic = null;
-  let unsubSettings = null;
 
   getClientDb().then(async (db) => {
     if (!db) return;
     try {
       const { doc, onSnapshot } = await import('firebase/firestore');
 
-      // 1. Listen to public doc in jobs collection (accessible to all unauthenticated visitors)
+      // Listen to public doc in jobs collection (accessible to all visitors & admin)
       const publicRef = doc(db, 'jobs', 'settings_breakingNews');
       unsubPublic = onSnapshot(publicRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (Array.isArray(data.items) && data.items.length > 0) {
-            onUpdate(data.items);
-            return;
-          }
-        }
-      }, () => {});
-
-      // 2. Also listen to settings/breakingNews (works for admin sessions)
-      const newsRef = doc(db, 'settings', 'breakingNews');
-      unsubSettings = onSnapshot(newsRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (Array.isArray(data.items) && data.items.length > 0) {
@@ -185,7 +172,6 @@ export function subscribeToBreakingNews(onUpdate) {
 
   return () => {
     if (typeof unsubPublic === 'function') unsubPublic();
-    if (typeof unsubSettings === 'function') unsubSettings();
   };
 }
 
@@ -196,26 +182,14 @@ export async function saveBreakingNewsToFirestore(items) {
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, setDoc } = await import('firebase/firestore');
 
-    // Save to settings/breakingNews
-    try {
-      const newsRef = doc(db, 'settings', 'breakingNews');
-      await setDoc(newsRef, { items, updatedAt: new Date().toISOString() }, { merge: true });
-    } catch (e) {
-      console.warn('Could not save to settings/breakingNews:', e);
-    }
-
-    // ALSO save to public jobs/settings_breakingNews so ALL visitors can read it
-    try {
-      const publicRef = doc(db, 'jobs', 'settings_breakingNews');
-      await setDoc(publicRef, { 
-        id: 'settings_breakingNews',
-        items, 
-        updatedAt: new Date().toISOString(),
-        isSystemDoc: true 
-      }, { merge: true });
-    } catch (e) {
-      console.warn('Could not save to jobs/settings_breakingNews:', e);
-    }
+    // Save to public jobs/settings_breakingNews so ALL visitors, APIs and admin can read it
+    const publicRef = doc(db, 'jobs', 'settings_breakingNews');
+    await setDoc(publicRef, { 
+      id: 'settings_breakingNews',
+      items, 
+      updatedAt: new Date().toISOString(),
+      isSystemDoc: true 
+    }, { merge: true });
 
     breakingNewsCache.data = [];
     breakingNewsCache.timestamp = 0;
