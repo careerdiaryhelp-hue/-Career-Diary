@@ -6,12 +6,8 @@ import { notFound } from 'next/navigation';
 
 
 
-export async function generateStaticParams() {
-  const jobs = await getAllJobsServer();
-  return jobs.filter(() => true).map((job) => ({
-    slug: job.slug || job.id,
-  }));
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 
 export async function generateMetadata({ params }) {
