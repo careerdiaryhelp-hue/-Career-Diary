@@ -46,9 +46,9 @@ export default function DirectAdSense({
 
   const elementKey = `${pathname || ''}-${activeSlot}-${adId || ''}-${adFormat}`;
 
-  // Function to push the ad
   const pushAd = useCallback(() => {
     if (pushAttempted.current) return;
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return;
 
     pushAttempted.current = true;
 

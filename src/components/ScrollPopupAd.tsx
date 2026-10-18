@@ -14,6 +14,7 @@ export default function ScrollPopupAd() {
   // Trigger popup when user scrolls down >= 250px or after 5s of reading
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (pathname && pathname.startsWith('/admin')) return;
 
     // Check if already closed by the user in this session
     try {

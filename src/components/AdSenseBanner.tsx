@@ -13,6 +13,7 @@ export default function AdSenseBanner({
   label = 'ADVERTISEMENT'
 }) {
   const pathname = usePathname();
+  const isAdmin = pathname ? pathname.startsWith('/admin') : false;
   const adRef = useRef(null);
   const wrapperRef = useRef(null);
   const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
@@ -25,7 +26,7 @@ export default function AdSenseBanner({
   const isLocalhost = isMounted && isLocalDev();
 
   useEffect(() => {
-    if (!isMounted || !canServeAds()) return;
+    if (isAdmin || !isMounted || !canServeAds()) return;
 
     let isMountedEffect = true;
     const el = adRef.current;
