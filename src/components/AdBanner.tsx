@@ -1,7 +1,15 @@
 'use client';
 
-import React from 'react';
-import AdSenseBanner, { DisplayAd, InFeedAd, MultiplexAd, InPostAd } from './AdSenseBanner';
+import AdSenseBanner, {
+  DisplayAd,
+  InFeedAd,
+  MultiplexAd,
+  MultiplexAd1963,
+  InArticleAd2022,
+  InArticleAd1100,
+  InPostAd,
+  InArticleAd
+} from './AdSenseBanner';
 
 /**
  * AdBanner
@@ -37,4 +45,13 @@ export default function AdBanner({
   );
 }
 
-export { DisplayAd, InFeedAd, MultiplexAd, InPostAd };
+export {
+  DisplayAd,
+  InFeedAd,
+  MultiplexAd,
+  MultiplexAd1963,
+  InArticleAd2022,
+  InArticleAd1100,
+  InPostAd,
+  InArticleAd
+};

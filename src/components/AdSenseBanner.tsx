@@ -142,13 +142,13 @@ export default function AdSenseBanner({
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block' }}
+        style={{ display: 'block', ...(layout ? { textAlign: 'center' } : {}) }}
         data-ad-client="ca-pub-2108299943580613"
         data-ad-slot={slot}
         data-ad-format={format}
         {...(layout ? { 'data-ad-layout': layout } : {})}
         {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
-        data-full-width-responsive={responsive}
+        {...(responsive !== 'false' && !layout ? { 'data-full-width-responsive': responsive } : {})}
         suppressHydrationWarning
       />
     </div>
@@ -164,12 +164,50 @@ export function InFeedAd(props) {
   return <AdSenseBanner slot="2542955740" format="auto" responsive="true" {...props} />;
 }
 
+// Google Multiplex Ad Unit (Slot 1963114002 - Autorelaxed Grid)
+export function MultiplexAd1963(props) {
+  return <AdSenseBanner slot="1963114002" format="autorelaxed" {...props} />;
+}
+
+// Google Multiplex Ad Unit (Slot 3880243672 - Autorelaxed Grid)
 export function MultiplexAd(props) {
   return <AdSenseBanner slot="3880243672" format="autorelaxed" {...props} />;
 }
 
+// Google In-Article Ad Unit 1 (Slot 2022998762)
+export function InArticleAd2022(props) {
+  return (
+    <AdSenseBanner
+      slot="2022998762"
+      layout="in-article"
+      format="fluid"
+      responsive="false"
+      style={{ textAlign: 'center' }}
+      {...props}
+    />
+  );
+}
+
+// Google In-Article Ad Unit 2 (Slot 1100799336)
+export function InArticleAd1100(props) {
+  return (
+    <AdSenseBanner
+      slot="1100799336"
+      layout="in-article"
+      format="fluid"
+      responsive="false"
+      style={{ textAlign: 'center' }}
+      {...props}
+    />
+  );
+}
+
 export function InPostAd(props) {
-  return <AdSenseBanner slot="1202522135" format="auto" responsive="true" {...props} />;
+  return <InArticleAd2022 {...props} />;
+}
+
+export function InArticleAd(props) {
+  return <InArticleAd1100 {...props} />;
 }
 
 

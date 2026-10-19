@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { InPostAd, MultiplexAd } from './AdSenseBanner';
+import { InPostAd, InArticleAd1100, MultiplexAd } from './AdSenseBanner';
 import AutoFAQSection from './AutoFAQSection';
 
 // Clean, high quality SVG brand icons for exact visual match
@@ -171,6 +171,9 @@ export default function PostFooterSection({ job, category = 'job' }) {
           </div>
         </div>
       </div>
+
+      {/* In-Article Ad Unit 2 (Slot 1100799336) */}
+      <InArticleAd1100 label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
       {/* Decorative Emojis */}
       <div style={{ textAlign: 'center', margin: '16px 0', fontSize: '1rem', letterSpacing: '2px', userSelect: 'none' }}>

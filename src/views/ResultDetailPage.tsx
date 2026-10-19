@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { ArrowLeft, Building2, Tag, CalendarCheck, Award, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
-import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
+import AdSenseBanner, { DisplayAd, InPostAd, InArticleAd1100, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
 
@@ -157,6 +157,9 @@ export default function ResultDetailPage({ job, onBack }) {
             </tr>
           </tbody>
         </table>
+
+        {/* In-Article Ad Unit 2 (Slot 1100799336) */}
+        <InArticleAd1100 label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
         {/* Direct Links Table */}
         <div style={{ marginBottom: '30px' }}>

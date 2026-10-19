@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { ArrowLeft, Send, MessageCircle, Share2, Copy, Check } from 'lucide-react';
-import AdSenseBanner, { DisplayAd, InPostAd, MultiplexAd } from '../components/AdSenseBanner';
+import AdSenseBanner, { DisplayAd, InPostAd, InArticleAd1100, MultiplexAd, MultiplexAd1963 } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
@@ -297,8 +297,11 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // Constant high-paying In-Content Ad (Slot 1202522135, Display Banner Format)
-    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+    // Google In-Article Ad Units (Native In-Article Fluid Format)
+    // Slot 2022998762: In-Article Ad Unit 1
+    // Slot 1100799336: In-Article Ad Unit 2
+    const adSnippet1 = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block; text-align: center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    const adSnippet2 = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block; text-align: center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
@@ -351,13 +354,20 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       }
     }
 
+    // Sort ascending to alternate ad units chronologically from top to bottom
+    const sortedAsc = Array.from(new Set(insertionIndices)).sort((a, b) => a - b);
+    const insertions = sortedAsc.map((idx, i) => ({
+      idx,
+      snippet: i % 2 === 0 ? adSnippet1 : adSnippet2
+    }));
+
     // Sort descending so inserting from back to front never alters previous indices!
-    const uniqueIndices = Array.from(new Set(insertionIndices)).sort((a, b) => b - a);
+    insertions.sort((a, b) => b.idx - a.idx);
 
     let out = sanitizedContent;
-    for (const idx of uniqueIndices) {
-      if (idx > 0 && idx < out.length) {
-        out = out.substring(0, idx) + '\n' + adSnippet + '\n' + out.substring(idx);
+    for (const item of insertions) {
+      if (item.idx > 0 && item.idx < out.length) {
+        out = out.substring(0, item.idx) + '\n' + item.snippet + '\n' + out.substring(item.idx);
       }
     }
 
@@ -568,7 +578,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             {/* If content does not have Mode of Selection */}
             {!hasSelectionMode && (
               <>
-                <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+                <InArticleAd1100 label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
                 <table className="sr-table">
                   <tbody>
                     <tr>
@@ -825,7 +835,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             </table>
 
             {/* Mode of Selection Table */}
-            <InPostAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+            <InArticleAd1100 label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
             <table className="sr-table">
               <tbody>
                 <tr>
@@ -1208,6 +1218,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             </div>
           )}
         </div>
+
+        {/* AdSense Multiplex Grid Unit (Slot 1963114002 - Autorelaxed Grid) */}
+        <MultiplexAd1963 label="YOU MAY ALSO LIKE" style={{ margin: '24px 0' }} />
 
         {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
         <PostFooterSection job={job} category={faqCategory} />
