@@ -297,8 +297,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // Constant high-paying In-Content Ad (Slot 7544533819, Rectangle & Horizontal Formats)
-    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="rectangle, horizontal" data-full-width-responsive="true"></ins></div>`;
+    // Constant high-paying In-Content Ad (Slot 7544533819, Auto Responsive Format)
+    const adSnippet = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
@@ -368,18 +368,32 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   React.useEffect(() => {
     if (typeof window === 'undefined' || !canServeAds()) return;
 
-    // 1. Push adsbygoogle for uninitialized units
-    try {
-      const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
-      ads.forEach((ad: any) => {
-        if (!ad.dataset?.adPushDone) {
-          ad.dataset.adPushDone = 'true';
-          (window.adsbygoogle = window.adsbygoogle || []).push({});
+    let retryCount = 0;
+    const tryPushInContentAds = () => {
+      try {
+        const ads = document.querySelectorAll('.sr-rich-html-content ins.adsbygoogle:not([data-adsbygoogle-status])');
+        let needsRetry = false;
+        ads.forEach((ad: any) => {
+          if (!ad.dataset?.adPushDone) {
+            const width = ad.offsetWidth || (ad.parentElement && ad.parentElement.offsetWidth) || 0;
+            if (width === 0) {
+              needsRetry = true;
+              return;
+            }
+            ad.dataset.adPushDone = 'true';
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          }
+        });
+        if (needsRetry && retryCount < 8) {
+          retryCount++;
+          setTimeout(tryPushInContentAds, 350);
         }
-      });
-    } catch (_) {}
+      } catch (_) {}
+    };
 
-    // 2. Observer: if Google explicitly reports data-ad-status="unfilled" or serves related search chips, hide wrapper completely
+    const timer = setTimeout(tryPushInContentAds, 250);
+
+    // Observer: if Google explicitly reports data-ad-status="unfilled", hide wrapper smoothly
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
@@ -393,25 +407,6 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             }
           }
         }
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((node: any) => {
-            if (node.nodeName === 'IFRAME' || (node.querySelectorAll && node.querySelectorAll('iframe').length > 0)) {
-              const iframes: any[] = node.nodeName === 'IFRAME' ? [node] : Array.from(node.querySelectorAll('iframe'));
-              iframes.forEach((ifr: any) => {
-                const src = ifr.getAttribute ? (ifr.getAttribute('src') || '') : '';
-                const id = ifr.getAttribute ? (ifr.getAttribute('id') || '') : '';
-                if (src.includes('rsfc') || src.includes('related_search') || id.includes('rsfc')) {
-                  const wrapper = ifr.closest ? (ifr.closest('.adsense-banner-wrapper') as HTMLElement | null) : null;
-                  if (wrapper) {
-                    wrapper.style.display = 'none';
-                    wrapper.style.margin = '0';
-                    wrapper.style.height = '0';
-                  }
-                }
-              });
-            }
-          });
-        }
       });
     });
 
@@ -419,13 +414,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     if (richContentEl) {
       observer.observe(richContentEl, {
         attributes: true,
-        childList: true,
         subtree: true,
         attributeFilter: ['data-ad-status']
       });
     }
 
     return () => {
+      clearTimeout(timer);
       observer.disconnect();
     };
   }, [contentWithAds]);

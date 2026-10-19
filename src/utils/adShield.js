@@ -20,7 +20,7 @@ export function canServeAds() {
   if (isLocalDev()) return false;
   try {
     const clicks = parseInt(sessionStorage.getItem('ad_click_count') || '0', 10);
-    if (clicks >= 6) return false; // Prevent click-bombing ban
+    if (clicks >= 20) return false; // Prevent massive click-bombing ban
   } catch (_) {}
   return true;
 }

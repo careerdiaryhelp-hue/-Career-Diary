@@ -32,7 +32,7 @@ export default function AdSenseBanner({
     const el = adRef.current;
     if (!el) return;
 
-    // MutationObserver to detect AdSense status changes (filled vs unfilled) & suppress related search chips
+    // MutationObserver to detect AdSense status changes (filled vs unfilled)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
@@ -41,24 +41,13 @@ export default function AdSenseBanner({
             setAdStatus(status || 'filled');
           }
         }
-        if (mutation.type === 'childList') {
-          const iframes = el.querySelectorAll('iframe');
-          iframes.forEach((ifr) => {
-            const src = ifr.getAttribute('src') || '';
-            const id = ifr.getAttribute('id') || '';
-            if (src.includes('rsfc') || src.includes('related_search') || id.includes('rsfc')) {
-              if (isMountedEffect) {
-                setAdStatus('unfilled');
-              }
-            }
-          });
-        }
       });
     });
 
-    observer.observe(el, { attributes: true, childList: true, subtree: true });
+    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
 
     let intersectionObserver = null;
+    let retryCount = 0;
 
     // Execute AdSense push
     const tryPush = () => {
@@ -67,15 +56,18 @@ export default function AdSenseBanner({
       if (el.dataset.adPushDone) return; // Prevent multiple pushes
 
       // Skip push if element is genuinely hidden (display: none)
-      const style = window.getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden') {
+      const computedStyle = window.getComputedStyle(el);
+      if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
         return;
       }
 
       // Skip push if element has width 0 (prevents TagError: No slot size for availableWidth=0)
       const currentWidth = el.offsetWidth || (wrapperRef.current && wrapperRef.current.offsetWidth) || 0;
       if (currentWidth === 0) {
-        setTimeout(tryPush, 350);
+        if (retryCount < 8) {
+          retryCount++;
+          setTimeout(tryPush, 350);
+        }
         return;
       }
 
@@ -93,7 +85,7 @@ export default function AdSenseBanner({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             // Add a small delay to ensure DOM is ready for ad injection
-            setTimeout(tryPush, 300);
+            setTimeout(tryPush, 200);
             intersectionObserver.unobserve(entry.target);
           }
         });
@@ -101,7 +93,7 @@ export default function AdSenseBanner({
       
       intersectionObserver.observe(wrapperRef.current || el);
     } else {
-      setTimeout(tryPush, 1000);
+      setTimeout(tryPush, 600);
     }
 
     return () => {
@@ -113,8 +105,8 @@ export default function AdSenseBanner({
     };
   }, [slot, layout, layoutKey, isLocalhost, isMounted]);
 
-  // Hide wrapper completely on admin routes or if AdSense explicitly marks it as unfilled
-  if ((pathname && pathname.startsWith('/admin')) || adStatus === 'unfilled') {
+  // Hide wrapper completely on admin routes
+  if (pathname && pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -128,10 +120,11 @@ export default function AdSenseBanner({
         textAlign: 'center',
         width: '100%',
         boxSizing: 'border-box',
+        display: adStatus === 'unfilled' ? 'none' : 'block',
         ...style
       }}
     >
-      {label && (
+      {label && adStatus !== 'unfilled' && (
         <div
           className="ad-label"
           style={{
@@ -164,7 +157,7 @@ export default function AdSenseBanner({
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="7544533819" format="rectangle, horizontal" responsive="true" {...props} />;
+  return <AdSenseBanner slot="7544533819" format="auto" responsive="true" {...props} />;
 }
 
 export function InFeedAd(props) {
@@ -176,7 +169,7 @@ export function MultiplexAd(props) {
 }
 
 export function InPostAd(props) {
-  return <AdSenseBanner slot="7544533819" format="rectangle, horizontal" responsive="true" {...props} />;
+  return <AdSenseBanner slot="7544533819" format="auto" responsive="true" {...props} />;
 }
 
 
