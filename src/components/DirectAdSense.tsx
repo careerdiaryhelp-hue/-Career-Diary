@@ -9,7 +9,7 @@ const GLOBAL_DISABLE_ADSENSE = false;
 const ADSENSE_CLIENT_ID = 'ca-pub-2108299943580613';
 
 export default function DirectAdSense({
-  adSlot = '7544533819',
+  adSlot = '1202522135',
   adId,
   minWidth = '100%',
   minHeight = '100px',
@@ -27,7 +27,7 @@ export default function DirectAdSense({
   const pathname = usePathname();
   const insRef = useRef(null);
   const pushAttempted = useRef(false);
-  const activeSlot = adSlot || '7544533819';
+  const activeSlot = adSlot || '1202522135';
   const [isAdSafe, setIsAdSafe] = useState(true);
   const [isLocalhost, setIsLocalhost] = useState(false);
   const [adStatus, setAdStatus] = useState('loading');
