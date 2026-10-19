@@ -7,7 +7,7 @@ export async function GET() {
     const jobs = await fetchFirestoreJobsOnce();
     return Response.json(jobs, {
       headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=120, stale-while-revalidate=300',
+        'Cache-Control': 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800',
         'Access-Control-Allow-Origin': '*',
       },
     });

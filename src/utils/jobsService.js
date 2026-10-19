@@ -1,3 +1,4 @@
+import { cache } from 'react';
 // Removed sync initialJobs import to prevent worker bundle bloat
 import { cleanJobId, fetchFirestoreJobsOnce, fetchFirestoreJobById } from '../firebase.js';
 
@@ -185,7 +186,8 @@ export async function getTopRecentJobsSummary(limit = 15) {
     .slice(0, limit);
 }
 
-export async function getJobBySlug(slug) {
+// React cache deduplicates calls within the same request lifecycle (e.g. generateMetadata + Page)
+export const getJobBySlug = cache(async (slug) => {
   if (!slug) return null;
   const clean = cleanJobId(slug);
   const lowerSlug = String(slug).toLowerCase().trim();
@@ -241,59 +243,50 @@ export async function getJobBySlug(slug) {
     });
   }
 
-  // 4. Check live Firestore jobs (cached in memory 120s, 0 quota waste)
-  // Ensures admin edits, new posts, and uploaded FAQ images appear in ALL browsers (Brave, Chrome, Safari, etc.)
+  // 4. If matched in static jobs: check targeted single document in Firestore (only 1 read, negative cached 10m)
+  // Ensures admin edits and uploaded FAQ images appear without reading 35 documents on every page view!
+  if (match) {
+    try {
+      const liveDoc = await fetchFirestoreJobById(clean);
+      if (liveDoc) {
+        if (isDraft(liveDoc)) return null;
+        return {
+          ...match,
+          ...liveDoc,
+          content: liveDoc.content || liveDoc.htmlContent || match.content,
+          htmlContent: liveDoc.htmlContent || liveDoc.content || match.htmlContent,
+          faqImage: liveDoc.faqImage || liveDoc.postImage || liveDoc.bannerImage || match.faqImage || '',
+          postImage: liveDoc.postImage || liveDoc.faqImage || liveDoc.bannerImage || match.postImage || '',
+          bannerImage: liveDoc.bannerImage || liveDoc.faqImage || liveDoc.postImage || match.bannerImage || '',
+          faqImageLink: liveDoc.faqImageLink || match.faqImageLink || '',
+          faqImageCaption: liveDoc.faqImageCaption || match.faqImageCaption || '',
+        };
+      }
+    } catch (_) {}
+    return isDraft(match) ? null : match;
+  }
+
+  // 5. If not in static database: query Firestore single document by ID (1 read, edge cached)
+  try {
+    const directDoc = await fetchFirestoreJobById(clean);
+    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
+      return isDraft(directDoc) ? null : directDoc;
+    }
+  } catch (_) {}
+
+  // 6. Last resort fallback for newly published post with custom slug
   try {
     const liveJobs = await fetchFirestoreJobsOnce();
     const liveMatch = liveJobs.find(j => {
       if (!j) return false;
       const jId = cleanJobId(j.id || '');
       const jSlug = cleanJobId(j.slug || '');
-      return jId === clean || jSlug === clean || (match && (jId === match._safeId || jId === cleanJobId(match.id)));
+      return jId === clean || jSlug === clean;
     });
-
-    if (liveMatch) {
-      if (isDraft(liveMatch)) return null;
-
-      if (match) {
-        // Merge latest live changes (faqImage, postImage, bannerImage, updated dates, links) onto static job
-        match = {
-          ...match,
-          ...liveMatch,
-          content: liveMatch.content || liveMatch.htmlContent || match.content,
-          htmlContent: liveMatch.htmlContent || liveMatch.content || match.htmlContent,
-          faqImage: liveMatch.faqImage || liveMatch.postImage || liveMatch.bannerImage || match.faqImage || '',
-          postImage: liveMatch.postImage || liveMatch.faqImage || liveMatch.bannerImage || match.postImage || '',
-          bannerImage: liveMatch.bannerImage || liveMatch.faqImage || liveMatch.postImage || match.bannerImage || '',
-          faqImageLink: liveMatch.faqImageLink || match.faqImageLink || '',
-          faqImageCaption: liveMatch.faqImageCaption || match.faqImageCaption || '',
-        };
-        return isDraft(match) ? null : match;
-      } else {
-        // Brand new post from live Firestore
-        if (!liveMatch.content && !liveMatch.htmlContent) {
-          const directDoc = await fetchFirestoreJobById(clean);
-          if (directDoc) {
-            if (isDraft(directDoc)) return null;
-            return { ...liveMatch, ...directDoc };
-          }
-        }
-        return liveMatch;
-      }
+    if (liveMatch && !isDraft(liveMatch)) {
+      return liveMatch;
     }
   } catch (_) {}
 
-  if (match) {
-    return isDraft(match) ? null : match;
-  }
-
-  // 5. If not found in static list or recent live list, query live Firestore single document
-  try {
-    const directDoc = await fetchFirestoreJobById(clean);
-    if (directDoc && (directDoc.content || directDoc.htmlContent || directDoc.title)) {
-      return isDraft(directDoc) ? null : directDoc;
-    }
-  } catch (e) {}
-
   return null;
-}
+});

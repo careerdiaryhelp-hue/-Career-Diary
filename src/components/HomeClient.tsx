@@ -69,9 +69,9 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       window.location.search.includes('admin')
     );
 
-    // 3-minute client throttle: skip network request if cache is fresh (< 3 mins), protecting Firebase quota
+    // 10-minute client throttle: skip network request if cache is fresh (< 10 mins), protecting Firebase quota
     const lastFetch = Number(localStorage.getItem('careerdiary_live_jobs_ts') || 0);
-    const isCacheFresh = (Date.now() - lastFetch) < 180000;
+    const isCacheFresh = (Date.now() - lastFetch) < 600000;
 
     if (!isCacheFresh || isAdminUser) {
       // 2. Fetch fresh live jobs from /api/jobs for ALL browsers (works in Chrome, Vivo, Samsung, Firefox, Safari)

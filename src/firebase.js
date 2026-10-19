@@ -298,8 +298,8 @@ export async function fetchFirestoreJobsOnce() {
   if (now < memoryCache.quotaExceededUntil) {
     return memoryCache.data || [];
   }
-  // 120-second in-memory cache protects Firestore free tier while delivering fast updates
-  if (memoryCache.data && (now - memoryCache.timestamp < 120000)) {
+  // 10-minute in-memory cache protects Firestore free tier while delivering fast updates
+  if (memoryCache.data && (now - memoryCache.timestamp < 600000)) {
     return memoryCache.data;
   }
   if (pendingFetch) {
@@ -416,7 +416,7 @@ export async function fetchFirestoreJobById(docId) {
 // Fetch Breaking News array from Firestore REST (server-side support with 120s memory cache)
 export async function fetchBreakingNewsServer() {
   const now = Date.now();
-  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 120000)) {
+  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 600000)) {
     return breakingNewsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -426,7 +426,7 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 120, cacheEverything: true }
+        cf: { cacheTtl: 600, cacheEverything: true }
       }
     );
     if (res.status === 429) {
@@ -446,10 +446,10 @@ export async function fetchBreakingNewsServer() {
   return breakingNewsCache.data;
 }
 
-// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 120s memory cache)
+// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 10-minute memory cache)
 export async function fetchTopOnlineFormsServer() {
   const now = Date.now();
-  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 120000)) {
+  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 600000)) {
     return topFormsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {

@@ -6,8 +6,7 @@ import { notFound } from 'next/navigation';
 
 
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 300; // 5-minute edge cache protects Firestore quota while keeping data fresh
 
 
 export async function generateMetadata({ params }) {
