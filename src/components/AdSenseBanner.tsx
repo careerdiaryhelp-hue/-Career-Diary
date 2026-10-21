@@ -10,25 +10,19 @@ export default function AdSenseBanner({
   layoutKey = null,
   responsive = 'true',
   style = {},
+  minHeight = '90px',
   label = 'ADVERTISEMENT'
 }) {
   const pathname = usePathname();
   const isAdmin = pathname ? pathname.startsWith('/admin') : false;
   const adRef = useRef(null);
-  const wrapperRef = useRef(null);
   const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (isAdmin || !canServeAds()) return;
 
-  const isLocalhost = isMounted && isLocalDev();
-
-  useEffect(() => {
-    if (isAdmin || !isMounted || !canServeAds()) return;
-
-    let isMountedEffect = true;
+    let isMounted = true;
+    let timer = null;
     const el = adRef.current;
     if (!el) return;
 
@@ -37,7 +31,7 @@ export default function AdSenseBanner({
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
           const status = el.getAttribute('data-ad-status');
-          if (isMountedEffect) {
+          if (isMounted) {
             setAdStatus(status || 'filled');
           }
         }
@@ -46,28 +40,16 @@ export default function AdSenseBanner({
 
     observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
 
-    let intersectionObserver = null;
     let retryCount = 0;
-
-    // Execute AdSense push
     const tryPush = () => {
-      if (!isMountedEffect || !adRef.current) return;
+      if (!isMounted || !adRef.current) return;
       if (el.getAttribute('data-adsbygoogle-status')) return;
-      if (el.dataset.adPushDone) return; // Prevent multiple pushes
+      if (el.dataset.adPushDone) return;
 
-      // Skip push if element is genuinely hidden (display: none)
-      const computedStyle = window.getComputedStyle(el);
-      if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
-        return;
-      }
-
-      // Skip push if element has width 0 (prevents TagError: No slot size for availableWidth=0)
-      const currentWidth = el.offsetWidth || (wrapperRef.current && wrapperRef.current.offsetWidth) || 0;
-      if (currentWidth === 0) {
-        if (retryCount < 8) {
-          retryCount++;
-          setTimeout(tryPush, 350);
-        }
+      const currentWidth = el.offsetWidth || (el.parentElement && el.parentElement.offsetWidth) || 0;
+      if (currentWidth === 0 && retryCount < 8) {
+        retryCount++;
+        timer = setTimeout(tryPush, 200);
         return;
       }
 
@@ -79,48 +61,35 @@ export default function AdSenseBanner({
       }
     };
 
-    // Use IntersectionObserver to wait for the ad to be visible (or near viewport)
-    if (window.IntersectionObserver) {
-      intersectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Add a small delay to ensure DOM is ready for ad injection
-            setTimeout(tryPush, 200);
-            intersectionObserver.unobserve(entry.target);
-          }
-        });
-      }, { rootMargin: '800px 0px' }); // Larger rootMargin for earlier loading on mobile
-      
-      intersectionObserver.observe(wrapperRef.current || el);
-    } else {
-      setTimeout(tryPush, 600);
-    }
+    // Push ad request smoothly once component mounts and DOM calculates width
+    timer = setTimeout(tryPush, 100);
 
     return () => {
-      isMountedEffect = false;
+      isMounted = false;
+      if (timer) clearTimeout(timer);
       observer.disconnect();
-      if (intersectionObserver) {
-        intersectionObserver.disconnect();
-      }
     };
-  }, [slot, layout, layoutKey, isLocalhost, isMounted]);
+  }, [slot, layout, layoutKey, isAdmin]);
 
   // Hide wrapper completely on admin routes
   if (pathname && pathname.startsWith('/admin')) {
     return null;
   }
 
+  const effectiveMinHeight = layout ? 'auto' : minHeight;
+
   return (
     <div
-      ref={wrapperRef}
       className="adsense-banner-wrapper"
       suppressHydrationWarning
       style={{
-        margin: '16px 0',
+        margin: '16px auto',
         textAlign: 'center',
         width: '100%',
+        maxWidth: '100%',
         boxSizing: 'border-box',
         display: adStatus === 'unfilled' ? 'none' : 'block',
+        minHeight: adStatus === 'unfilled' ? 0 : effectiveMinHeight,
         ...style
       }}
     >
@@ -142,7 +111,12 @@ export default function AdSenseBanner({
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: 'block', ...(layout ? { textAlign: 'center' } : {}) }}
+        style={{
+          display: 'block',
+          width: '100%',
+          minHeight: effectiveMinHeight,
+          ...(layout ? { textAlign: 'center' } : {})
+        }}
         data-ad-client="ca-pub-2108299943580613"
         data-ad-slot={slot}
         data-ad-format={format}

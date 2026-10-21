@@ -1,5 +1,57 @@
 export const admitCardsData = [
   {
+    "id": "upcisb-je-civil-admit-card-2026",
+    "slug": "upcisb-je-civil-admit-card-2026",
+    "title": "UPCISB JE Civil Admit Card 2026 Out",
+    "organization": "UP Cooperative Institutional Service Board (UPCISB)",
+    "category": "ADMIT CARD",
+    "badge": "Out",
+    "uniqueDescription": "Uttar Pradesh Cooperative Institutional Service Board (UPCISB) has officially released the Online Exam Call Letter / Admit Card for the recruitment of Junior Engineer (JE) Civil posts. Candidates who applied can download their Admit Card using their Registration Number and Date of Birth / Password from the direct IBPS login link provided below.",
+    "postName": "UPCISB Junior Engineer JE Civil Admit Card 2026",
+    "status": "Active Notification",
+    "updateType": "Admit Card Out",
+    "postDate": "2026-10-20 14:00:00",
+    "expertTip": "Career Diary Advice: Download and print your call letter in advance and check your reporting time and exam center details.",
+    "jobLocation": "Uttar Pradesh",
+    "importantDates": {
+      "Admit Card Available": "20 October 2026",
+      "Exam Date": "Check Hall Ticket / Call Letter"
+    },
+    "importantLinks": {
+      "Download Admit Card / Call Letter": "https://ibpsreg.ibps.in/upcisbapr26/oecla_aug26/login.php?appid=be96f03d489b0cc2d67802ae5dcc7b35",
+      "Official Website": "http://upsevamandal.org/",
+      "Check Career Diary": "https://careerdiary.in/",
+      "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u",
+      "Join Telegram Channel": "https://t.me/careerdiary"
+    }
+  },
+  {
+    "id": "tgpsc-pollution-control-board-aee-hall-ticket-2026",
+    "slug": "tgpsc-pollution-control-board-aee-hall-ticket-2026",
+    "title": "TGPSC Pollution Control Board AEE Admit Card 2026 Out",
+    "organization": "Telangana Public Service Commission (TGPSC)",
+    "category": "ADMIT CARD",
+    "badge": "Out",
+    "uniqueDescription": "Telangana Public Service Commission (TGPSC) has officially released the Hall Ticket / Admit Card for the Assistant Environmental Engineer (AEE) examination under the Telangana State Pollution Control Board (TSPCB). Registered candidates can download their hall ticket by entering their TGPSC ID and Date of Birth through the official portal link below.",
+    "postName": "TGPSC Pollution Control Board Assistant Environmental Engineer (AEE) Hall Ticket 2026",
+    "status": "Active Notification",
+    "updateType": "Hall Ticket Out",
+    "postDate": "2026-10-20 14:30:00",
+    "expertTip": "Career Diary Advice: Carry a valid photo ID card along with printed hall ticket to the examination center.",
+    "jobLocation": "Telangana",
+    "importantDates": {
+      "Hall Ticket Available": "20 October 2026",
+      "Exam Date": "Check Hall Ticket"
+    },
+    "importantLinks": {
+      "Download AEE Hall Ticket / Admit Card": "https://hallticket.tgpsc.gov.in/hOG0220261357l11-b138-296g-r47s-00aa95",
+      "TGPSC Official Website": "https://www.tgpsc.gov.in/",
+      "Check Career Diary": "https://careerdiary.in/",
+      "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u",
+      "Join Telegram Channel": "https://t.me/careerdiary"
+    }
+  },
+  {
     "id": "railway-rrb-group-d-level-1-admit-card-2026-out",
     "title": "Railway RRB Group D Level 1 Admit Card 2026  Out",
     "organization": "Railway Recruitment Board (RRB)",

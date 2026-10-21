@@ -297,11 +297,14 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // Google In-Article Ad Units (Native In-Article Fluid Format)
-    // Slot 2022998762: In-Article Ad Unit 1
-    // Slot 1100799336: In-Article Ad Unit 2
-    const adSnippet1 = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block; text-align: center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
-    const adSnippet2 = `<div class="adsense-banner-wrapper incontent-ad"><div class="ad-label">ADVERTISEMENT</div><ins class="adsbygoogle" style="display: block; text-align: center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    // 1. Google Display Ad Unit (Graphical Banners & Responsive Image Ads - Slot 1202522135)
+    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+
+    // 2. Google In-Article Native Ad Unit 1 (Slot 2022998762)
+    const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;text-align:center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+
+    // 3. Google In-Article Native Ad Unit 2 (Slot 1100799336)
+    const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;text-align:center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
@@ -354,11 +357,12 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       }
     }
 
-    // Sort ascending to alternate ad units chronologically from top to bottom
+    // Distribute display banners and in-article native ads harmoniously across the article
+    const snippets = [displaySnippet, inArticleSnippet1, inArticleSnippet2, displaySnippet];
     const sortedAsc = Array.from(new Set(insertionIndices)).sort((a, b) => a - b);
     const insertions = sortedAsc.map((idx, i) => ({
       idx,
-      snippet: i % 2 === 0 ? adSnippet1 : adSnippet2
+      snippet: snippets[i % snippets.length]
     }));
 
     // Sort descending so inserting from back to front never alters previous indices!

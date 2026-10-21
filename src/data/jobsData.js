@@ -1,5 +1,130 @@
 export const jobsData = [
   {
+    "id": "ipr-project-scientific-officer-assistant-recruitment-2026",
+    "slug": "ipr-project-scientific-officer-assistant-recruitment-2026",
+    "title": "IPR Recruitment 2026 (Advt 08/2026) – 58 Posts",
+    "postName": "IPR Project Scientific Officer, Assistant & Administrative Staff Online Form 2026 (58 Posts)",
+    "organization": "Institute for Plasma Research (IPR)",
+    "category": "LATEST JOB",
+    "totalPosts": "58 Posts",
+    "vacancies": "58 Posts",
+    "postDate": "October 19, 2026 | 11:30 am",
+    "featured": true,
+    "isFeatured": true,
+    "isTopCard": true,
+    "isLatest": true,
+    "isLatestUpdate": true,
+    "displayOrder": 0,
+    "bannerColor": "pink",
+    "state": "Gujarat / All India",
+    "lastDate": "16 November 2026",
+    "appStart": "19 October 2026",
+    "examDate": "Notify Soon",
+    "feeGen": "₹ 200/-",
+    "feeSc": "₹ 00/-",
+    "minAge": "18 Years",
+    "maxAge": "40 Years",
+    "qualification": "B.E. / B.Tech / Diploma in Engg (Min 60% Marks) / B.Sc Physics / Graduate in Any Stream with Computer Course (Min 50% Marks).",
+    "description": "Institute for Plasma Research (IPR), an autonomous aided institute under the Department of Atomic Energy (DAE), has released Advt. No. 08/2026 for 58 temporary project posts including Project Scientific Officer, Project Scientific Assistant, and Project Administrative Staff. Monthly salary runs from ₹25,870 to ₹72,930 including HRA. Candidates can apply online till 16 November 2026 (5:30 PM). Check eligibility, vacancy bifurcation, and direct application links below.",
+    "important_dates": {
+      "Online Apply Start Date": "19 October 2026",
+      "Online Apply Last Date": "16 November 2026 (5:30 PM)",
+      "Last Date For Fee Payment": "16 November 2026",
+      "Exam Date": "Notify Soon",
+      "Admit Card": "Before Exam",
+      "Result Date": "Will Be Updated Here Soon"
+    },
+    "importantDates": {
+      "applyStart": "19 October 2026",
+      "lastDate": "16 November 2026",
+      "applyLastDate": "16 November 2026 (5:30 PM)",
+      "feeLastDate": "16 November 2026",
+      "examDate": "Notify Soon",
+      "admitCard": "Before Exam",
+      "result": "Will Be Updated Here Soon"
+    },
+    "applicationFee": {
+      "For General, OBC, EWS": "₹ 200/-",
+      "For SC, ST, Female, PwBD, Ex-Serviceman": "₹ 00/- (Exempted)",
+      "Payment Mode (Online)": "Online via SBI Collect (Category: Automobiles/Fuel -> Institute for Plasma Research -> Application fees-IPR)"
+    },
+    "ageLimit": {
+      "Minimum Age": "18 Years",
+      "Maximum Age": "Project Scientific Officer: 40 Years | Assistant: 35 Years | Admin Staff: 30 Years",
+      "asOn": "16 November 2026",
+      "relaxation": "Age relaxation admissible for SC, ST, OBC, PwBD, and Ex-Servicemen as per Government of India rules."
+    },
+    "vacancyDetails": [
+      {
+        "Post Name": "Project Scientific Officer (Mechanical)",
+        "Total": "5 Posts",
+        "Eligibility": "B.E. / B.Tech. in Mechanical Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Officer (Computer Science)",
+        "Total": "2 Posts",
+        "Eligibility": "B.E. / B.Tech. in Computer Science / Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Officer (Instrumentation & Control)",
+        "Total": "1 Post",
+        "Eligibility": "B.E. / B.Tech. in Instrumentation & Control / Electronics & Instrumentation Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Mechanical)",
+        "Total": "15 Posts",
+        "Eligibility": "3-Year Diploma in Mechanical Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Electrical)",
+        "Total": "6 Posts",
+        "Eligibility": "3-Year Diploma in Electrical Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Electronics / ECE)",
+        "Total": "11 Posts",
+        "Eligibility": "3-Year Diploma in Electronics / Electronics & Communication Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Instrumentation & Control)",
+        "Total": "7 Posts",
+        "Eligibility": "3-Year Diploma in Instrumentation & Control / Electronics & Instrumentation Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Physics)",
+        "Total": "5 Posts",
+        "Eligibility": "B.Sc. (Physics) with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Scientific Assistant (Computer)",
+        "Total": "3 Posts",
+        "Eligibility": "3-Year Diploma in Computer Science / Engineering with minimum 60% marks."
+      },
+      {
+        "Post Name": "Project Administrative Staff",
+        "Total": "3 Posts",
+        "Eligibility": "Graduate in Arts, Commerce, Management, Science, Law, or Computer Applications with minimum 50% marks + Certified Course in Computer."
+      }
+    ],
+    "selectionProcess": [
+      "Project Scientific Officer & Assistant: Solely on Personal Interview (or screening test if large number of applicants)",
+      "Project Administrative Staff: Written Test & Computer Skill Test",
+      "Document Verification (DV) & Medical Check"
+    ],
+    "applyUrl": "https://erecruit.ipr.res.in/login",
+    "notificationUrl": "https://www.ipr.res.in/storage/uploads/careers/20261019_111010_S4CQNrszDSyKUI8.pdf",
+    "officialUrl": "https://www.ipr.res.in/",
+    "importantLinks": {
+      "Apply Online": "https://erecruit.ipr.res.in/login",
+      "Download Official Notification PDF": "https://www.ipr.res.in/storage/uploads/careers/20261019_111010_S4CQNrszDSyKUI8.pdf",
+      "Check Official Opportunities Portal": "https://www.ipr.res.in/opportunities/current-opening-recruitment",
+      "IPR Official Website": "https://www.ipr.res.in/",
+      "Check Career Diary": "https://careerdiary.in/",
+      "Join WhatsApp Channel": "https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u",
+      "Join Telegram Channel": "https://t.me/careerdiary"
+    }
+  },
+  {
     "id": "canara-bank-apprentice-recruitment-2026",
     "slug": "canara-bank-apprentice-recruitment-2026",
     "title": "Canara Bank Apprentice Recruitment 2026",
