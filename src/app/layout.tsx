@@ -46,11 +46,10 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         {/* Google AdSense Script */}
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
         {/* Google Analytics Script */}
         <Script

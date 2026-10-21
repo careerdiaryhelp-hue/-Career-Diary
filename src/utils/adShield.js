@@ -12,27 +12,19 @@ export function isLocalDev() {
 }
 
 /**
- * adShield: Protects against Invalid Bot Traffic (IBT) and click-bombing
+ * adShield: Protects against invalid ad execution
  */
 export function canServeAds() {
   if (typeof window === 'undefined') return true;
-  // Never fire real AdSense requests on local development environments (causes HTTP 400 Bad Request)
-  if (isLocalDev()) return false;
-  try {
-    const clicks = parseInt(sessionStorage.getItem('ad_click_count') || '0', 10);
-    if (clicks >= 20) return false; // Prevent massive click-bombing ban
-  } catch (_) {}
-  return true;
+  const host = window.location.hostname || '';
+  // Always serve on production domain careerdiary.in
+  if (host.includes('careerdiary.in')) {
+    return true;
+  }
+  // Allow real ads in all non-local preview environments
+  return !isLocalDev();
 }
 
 export function attachAdClickTracker() {
-  if (typeof window === 'undefined') return;
-  try {
-    window.addEventListener('blur', () => {
-      if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
-        const clicks = parseInt(sessionStorage.getItem('ad_click_count') || '0', 10);
-        sessionStorage.setItem('ad_click_count', String(clicks + 1));
-      }
-    });
-  } catch (_) {}
+  // Safe no-op to prevent false-positive lockouts on touch devices
 }

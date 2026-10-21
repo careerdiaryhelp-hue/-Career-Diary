@@ -298,13 +298,13 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     }
 
     // 1. Google Display Ad Unit (Graphical Banners & Responsive Image Ads - Slot 1202522135)
-    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
     // 2. Google In-Article Native Ad Unit 1 (Slot 2022998762)
-    const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;text-align:center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
     // 3. Google In-Article Native Ad Unit 2 (Slot 1100799336)
-    const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;text-align:center;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
@@ -390,7 +390,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         ads.forEach((ad: any) => {
           if (!ad.dataset?.adPushDone) {
             const width = ad.offsetWidth || (ad.parentElement && ad.parentElement.offsetWidth) || 0;
-            if (width === 0) {
+            if (width === 0 && retryCount < 4) {
               needsRetry = true;
               return;
             }
@@ -398,9 +398,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
             (window.adsbygoogle = window.adsbygoogle || []).push({});
           }
         });
-        if (needsRetry && retryCount < 8) {
+        if (needsRetry && retryCount < 4) {
           retryCount++;
-          setTimeout(tryPushInContentAds, 350);
+          setTimeout(tryPushInContentAds, 250);
         }
       } catch (_) {}
     };
@@ -481,7 +481,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       </div>
 
       {/* Main Detail Container */}
-      <div className="sr-detail-container google-anno-skip">
+      <div className="sr-detail-container">
 
         {/* Title */}
         <h1 className="sr-main-title">{job.title}</h1>
@@ -555,7 +555,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         {(job.content || job.htmlContent) ? (
           <>
             <div
-              className="sr-rich-html-content google-anno-skip"
+              className="sr-rich-html-content"
               suppressHydrationWarning
               dangerouslySetInnerHTML={{ __html: contentWithAds }}
             />

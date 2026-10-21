@@ -47,9 +47,9 @@ export default function AdSenseBanner({
       if (el.dataset.adPushDone) return;
 
       const currentWidth = el.offsetWidth || (el.parentElement && el.parentElement.offsetWidth) || 0;
-      if (currentWidth === 0 && retryCount < 8) {
+      if (currentWidth === 0 && retryCount < 4) {
         retryCount++;
-        timer = setTimeout(tryPush, 200);
+        timer = setTimeout(tryPush, 150);
         return;
       }
 

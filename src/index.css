@@ -2615,23 +2615,13 @@ body:has(.admin-login-wrapper) {
 
 /* =========================================
    SUPPRESS LOW-PAYING SEARCH INTENT CHIPS ("Discover more")
-   Forces AdSense to serve high-paying Graphic Display Banners
    ========================================= */
 .google-auto-placed[data-ad-format="related_search"],
 .google-auto-placed:has([data-ad-format="related_search"]),
 .google-auto-placed:has([aria-label*="Discover more" i]),
 .google-auto-placed:has([aria-label*="Related search" i]),
 [data-ad-intent],
-[data-ad-slot="related_search"],
-.google-anno-skip .google-auto-placed,
-.google-anno-skip [data-ad-intent],
-.google-anno-skip iframe[id*="google_ads_iframe"][src*="related_search"],
-.google-anno-skip .google-auto-placed[data-ad-format="related_search"],
-iframe[src*="rsfc"],
-iframe[id*="rsfc"],
-.google-auto-placed:has(iframe[src*="rsfc"]),
-.adsense-banner-wrapper:has(iframe[src*="rsfc"]),
-.adsense-banner-wrapper:has([aria-label*="Discover more" i]) {
+[data-ad-slot="related_search"] {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;

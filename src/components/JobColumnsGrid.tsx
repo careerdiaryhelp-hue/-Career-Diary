@@ -86,7 +86,7 @@ export default function JobColumnsGrid({
           {displayedJobs.length === 0 ? (
             <div className="empty-state">No active updates.</div>
           ) : (
-            <ul className={`sarkari-quick-list google-anno-skip ${isSingle ? 'category-items-list' : ''}`}>
+            <ul className={`sarkari-quick-list ${isSingle ? 'category-items-list' : ''}`}>
               {displayedJobs.map((job, idx) => (
                 <React.Fragment key={job.id || idx}>
                   {renderJobItem(job, isSingle)}
@@ -221,7 +221,7 @@ export default function JobColumnsGrid({
   return (
     <main className="main-content">
       <div className="container">
-        <div className="columns-3x3-grid google-anno-skip">
+        <div className="columns-3x3-grid">
           {ALL_COLUMNS.map((col) =>
             renderColumnCard(col, getJobsForCategory(jobs, col.key))
           )}
