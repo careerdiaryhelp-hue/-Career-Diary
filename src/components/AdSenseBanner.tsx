@@ -5,7 +5,7 @@ import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function AdSenseBanner({
   slot = '1202522135',
-  format = 'auto',
+  format = 'rectangle, horizontal',
   layout = null,
   layoutKey = null,
   responsive = 'true',
@@ -130,12 +130,13 @@ export default function AdSenseBanner({
 }
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
+// format="rectangle, horizontal" forces Google to serve image/banner ads instead of Related Search chips
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202522135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="1202522135" format="rectangle, horizontal" responsive="true" {...props} />;
 }
 
 export function InFeedAd(props) {
-  return <AdSenseBanner slot="2542955740" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="2542955740" format="rectangle, horizontal" responsive="true" {...props} />;
 }
 
 // Google Multiplex Ad Unit (Slot 1963114002 - Autorelaxed Grid)

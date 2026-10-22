@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 
 import { getJobUrl } from '../data/categoryHelpers.js';
+import { DisplayAd } from '../components/AdSenseBanner';
 
 export default function TopOnlineFormsPage({ jobs = [] }) {
   // Filter jobs marked as isTopForm, or accept already-filtered top forms
@@ -66,12 +67,8 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
           </div>
         </div>
 
-        {/* Ad Space Top (Optional) */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div className="ad-placeholder" style={{ border: '1px dashed #ccc', padding: '10px', color: '#999' }}>
-            [AdSense Slot - Top]
-          </div>
-        </div>
+        {/* Ad Space Top */}
+        <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px auto' }} />
 
         {/* Grid of Forms */}
         <div className="top-banners-grid" style={{ marginBottom: '30px' }}>
@@ -194,12 +191,8 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
           </p>
         </div>
 
-        {/* Ad Space Bottom (Optional) */}
-        <div style={{ textAlign: 'center', marginTop: '30px' }}>
-          <div className="ad-placeholder" style={{ border: '1px dashed #ccc', padding: '10px', color: '#999' }}>
-            [AdSense Slot - Bottom]
-          </div>
-        </div>
+        {/* Ad Space Bottom */}
+        <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px auto' }} />
 
       </div>
     </div>

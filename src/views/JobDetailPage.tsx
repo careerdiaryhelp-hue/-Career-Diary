@@ -299,7 +299,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     }
 
     // 1. Google Display Ad Unit (Graphical Banners & Responsive Image Ads - Slot 1202522135)
-    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="rectangle, horizontal" data-full-width-responsive="true"></ins></div>`;
 
     // 2. Google In-Article Native Ad Unit 1 (Slot 2022998762)
     const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 20px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;

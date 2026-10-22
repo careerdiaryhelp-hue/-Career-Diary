@@ -2666,4 +2666,30 @@ ins.adsbygoogle[data-ad-status="unfilled"],
   pointer-events: none !important;
 }
 
+/* ─── Hide Google Auto Ads "Related Search" / "Discover more" chips ─── */
+/* These are text-based keyword chips injected by Google's Auto Ads system   */
+/* that replace real banner ads. They show labels like "Jobs", "Career",     */
+/* "Find Recruiters" etc. We want actual image/graphical banners instead.    */
+.related-search-container,
+div[class*="related-search"],
+div[data-google-query-id] > div:not(.adsbygoogle):not([data-ad-client]) {
+  /* Don't hide — let Google handle via AdSense dashboard settings */
+}
 
+/* Force Google auto-inserted related search (rscontainer) to not show */
+.rscontainer,
+div.rscont_right,
+div.rscont_left,
+div[id^="aswift_"][style*="position: fixed"],
+div[id^="google_ads_iframe_"] iframe[id*="_relatedsearch"] {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Ensure in-column ads inside narrow grid boxes get proper min-width */
+.in-column-ad-item .adsense-banner-wrapper {
+  min-width: 250px;
+  min-height: 100px;
+}

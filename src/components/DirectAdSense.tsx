@@ -15,7 +15,7 @@ export default function DirectAdSense({
   minHeight = '100px',
   height,
   showLabel = true,
-  adFormat = 'auto',
+  adFormat = 'rectangle, horizontal',
   adLayout,
   adLayoutKey,
   fullWidthResponsive = true,
