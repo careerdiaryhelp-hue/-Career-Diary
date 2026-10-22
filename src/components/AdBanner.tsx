@@ -19,7 +19,7 @@ import AdSenseBanner, {
 export default function AdBanner({
   adClient = 'ca-pub-2108299943580613',
   adSlot = '1202522135',
-  adFormat = 'rectangle, horizontal',
+  adFormat = 'auto',
   fullWidthResponsive = true,
   className = '',
   fallbackGamAdId = '',
