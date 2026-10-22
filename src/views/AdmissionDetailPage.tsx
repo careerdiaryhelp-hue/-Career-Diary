@@ -26,7 +26,7 @@ export default function AdmissionDetailPage({ job, onBack }) {
 
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
   const primaryApplyUrl = getLinkUrl('apply', 'counseling', 'counselling', 'form', 'registration', 'login') || officialWebUrl;
-  const notificationUrl = getLinkUrl('notification', 'prospectus', 'brochure', 'pdf', 'notice') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'prospectus', 'brochure', 'pdf', 'notice') || job?.notificationUrl || ((job?.notificationPdfData || job?.pdfData) ? `/api/post-pdf/${job.slug || job.id}` : null) || officialWebUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>

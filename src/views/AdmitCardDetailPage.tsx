@@ -26,7 +26,7 @@ export default function AdmitCardDetailPage({ job, onBack }) {
 
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
   const admitCardUrl = getLinkUrl('admit', 'status', 'city', 'download', 'hall', 'login') || officialWebUrl;
-  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'brochure') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'brochure') || job?.notificationUrl || ((job?.notificationPdfData || job?.pdfData) ? `/api/post-pdf/${job.slug || job.id}` : null) || officialWebUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>

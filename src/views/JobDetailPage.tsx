@@ -29,7 +29,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
 
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
   const primaryApplyUrl = getLinkUrl('apply', 'registration', 'counselling', 'counseling', 'form', 'login') || job.applyUrl || officialWebUrl;
-  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || job.notificationUrl || officialWebUrl;
+  const pdfRouteUrl = (job.notificationPdfData || job.pdfData || job.officialPdfData) ? `/api/post-pdf/${job.slug || job.id}` : null;
+  const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || job.notificationUrl || pdfRouteUrl || officialWebUrl;
   const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || officialWebUrl;
 
   const importantDates = job.importantDates || job.important_dates || {};

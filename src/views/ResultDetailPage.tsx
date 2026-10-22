@@ -26,7 +26,7 @@ export default function ResultDetailPage({ job, onBack }) {
 
   const officialWebUrl = getLinkUrl('official website', 'website', 'portal', 'home') || 'https://www.careerdiary.in';
   const resultUrl = getLinkUrl('result', 'scorecard', 'key', 'answer', 'marks', 'merit') || officialWebUrl;
-  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'cutoff') || officialWebUrl;
+  const notificationUrl = getLinkUrl('notification', 'notice', 'pdf', 'cutoff') || job?.notificationUrl || ((job?.notificationPdfData || job?.pdfData) ? `/api/post-pdf/${job.slug || job.id}` : null) || officialWebUrl;
 
   return (
     <div className="container" style={{ paddingTop: '24px', paddingBottom: '40px' }}>

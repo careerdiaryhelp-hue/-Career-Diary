@@ -64,6 +64,7 @@ const EMPTY_FORM = {
   seoDescription: '',
   applyUrl: '',
   notificationUrl: '',
+  notificationPdfData: '',
   officialUrl: '',
   feeGen: '',
   feeSc: '',
@@ -226,6 +227,21 @@ export default function AdminDashboardPage({
     value: '',
     text: '',
   });
+
+  // Dedicated PDF & Table Link Row Modal State
+  const [pdfModal, setPdfModal] = useState({
+    isOpen: false,
+    label: 'Download Official Notification',
+    url: '',
+    linkText: 'Click Here',
+    fileName: '',
+    fileSize: '',
+    pdfData: '',
+    isUploading: false,
+    targetLinkKey: null,
+    isNotificationLink: true,
+  });
+  const pdfFileInputRef = useRef(null);
   const savedSelectionRef = useRef(null);
 
   const saveSelection = () => {
@@ -735,6 +751,7 @@ export default function AdminDashboardPage({
       seoDescription: job.seoDescription || job.description || '',
       applyUrl: finalApply,
       notificationUrl: finalNotif,
+      notificationPdfData: job.notificationPdfData || job.pdfData || job.officialPdfData || '',
       officialUrl: finalOfficial,
       feeGen: job.feeGen || job.applicationFee?.General || '',
       feeSc: job.feeSc || job.applicationFee?.['SC / ST'] || '',
@@ -1241,60 +1258,197 @@ export default function AdminDashboardPage({
     showToast(`✅ Row added ${position}!`, 'success');
   };
 
-  const handleAddLinkRow = () => {
-    let table = activeTableElementRef.current;
-    if (!table) {
-      const tables = visualEditorRef.current?.querySelectorAll('table');
-      if (tables && tables.length > 0) {
-        for (const t of tables) {
-          const txt = (t.textContent || '').toLowerCase();
-          if (txt.includes('important link') || txt.includes('useful link') || txt.includes('some useful') || txt.includes('click here')) {
-            table = t;
-            break;
-          }
-        }
-        if (!table) table = tables[tables.length - 1];
-      }
-    }
-    if (!table) {
-      showToast('⚠️ Please click inside a table to add a link row.', 'info');
+  const handlePdfFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      showToast('⚠️ Please select a valid PDF file (.pdf)', 'info');
       return;
     }
 
-    const newTr = document.createElement('tr');
-    
-    // Cell 1: Label
-    const tdLabel = document.createElement('td');
-    tdLabel.style.border = '1px solid #000';
-    tdLabel.style.padding = '8px 12px';
-    tdLabel.style.fontSize = '0.9rem';
-    tdLabel.innerHTML = 'Result Out';
-    newTr.appendChild(tdLabel);
+    const sizeInKb = (file.size / 1024).toFixed(1);
+    const sizeInMb = (file.size / (1024 * 1024)).toFixed(2);
 
-    // Cell 2: Clickable Link
-    const tdLink = document.createElement('td');
-    tdLink.style.border = '1px solid #000';
-    tdLink.style.padding = '8px 12px';
-    tdLink.style.fontSize = '0.9rem';
-    tdLink.style.textAlign = 'center';
-    tdLink.innerHTML = '<a href="https://" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">Click Here</a>';
-    newTr.appendChild(tdLink);
-
-    let tr = activeRowElementRef.current;
-    if (tr && tr.parentNode) {
-      tr.parentNode.insertBefore(newTr, tr.nextSibling);
-    } else {
-      const tbody = table.querySelector('tbody') || table;
-      tbody.appendChild(newTr);
+    if (file.size > 850 * 1024) {
+      showToast(`⚠️ PDF size (${sizeInMb} MB) exceeds Firestore document limit (~800KB). Please use a Google Drive or direct web link.`, 'info');
     }
 
-    activeRowElementRef.current = newTr;
-    activeCellElementRef.current = tdLabel;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result;
+      const slugLink = form.slug ? `/api/post-pdf/${form.slug}` : base64Data;
+      setPdfModal(prev => ({
+        ...prev,
+        pdfData: base64Data,
+        fileName: file.name,
+        fileSize: `${sizeInKb} KB`,
+        url: prev.url || slugLink,
+      }));
+      showToast(`📄 PDF "${file.name}" (${sizeInKb} KB) loaded!`, 'success');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
-    const updated = visualEditorRef.current.innerHTML;
-    setForm(prev => ({ ...prev, content: updated }));
-    updateActiveTableInfo();
-    showToast('🔗 New Link Row added! Title and "Click Here" are ready.', 'success');
+  const openPdfModalForLink = (initialLabel = '', initialUrl = '', targetKey = null) => {
+    let defaultLabel = initialLabel || '';
+    if (!defaultLabel) {
+      const sel = window.getSelection();
+      const selText = sel ? sel.toString().trim() : '';
+      if (selText && selText.length < 60) {
+        defaultLabel = selText;
+      } else {
+        defaultLabel = 'Download Official Notification';
+      }
+    }
+
+    let defaultUrl = initialUrl || '';
+    const isNotif = defaultLabel.toLowerCase().includes('notif') || defaultLabel.toLowerCase().includes('pdf');
+    if (!defaultUrl && isNotif) {
+      defaultUrl = form.notificationUrl || (form.notificationPdfData ? `/api/post-pdf/${form.slug || 'download'}` : '');
+    }
+
+    setPdfModal({
+      isOpen: true,
+      label: defaultLabel,
+      url: defaultUrl,
+      linkText: 'Click Here',
+      fileName: '',
+      fileSize: '',
+      pdfData: form.notificationPdfData || '',
+      isUploading: false,
+      targetLinkKey: targetKey,
+      isNotificationLink: isNotif,
+    });
+  };
+
+  const handleConfirmPdfRow = () => {
+    const targetLabel = (pdfModal.label || 'Download Official Notification').trim();
+    const linkText = (pdfModal.linkText || 'Click Here').trim();
+    let finalUrl = (pdfModal.url || '').trim();
+
+    if (!finalUrl && pdfModal.pdfData) {
+      finalUrl = form.slug ? `/api/post-pdf/${form.slug}` : pdfModal.pdfData;
+    }
+
+    if (!finalUrl) {
+      showToast('⚠️ Please upload a PDF file or enter a valid URL / Link.', 'info');
+      return;
+    }
+
+    // 1. Update Form State & Important Links
+    setForm(prev => {
+      const nextLinks = { ...(prev.importantLinks || {}) };
+      if (pdfModal.targetLinkKey && pdfModal.targetLinkKey !== targetLabel) {
+        delete nextLinks[pdfModal.targetLinkKey];
+      }
+      nextLinks[targetLabel] = finalUrl;
+      const updates = { importantLinks: nextLinks };
+      if (pdfModal.isNotificationLink || targetLabel.toLowerCase().includes('notif') || targetLabel.toLowerCase().includes('pdf')) {
+        updates.notificationUrl = finalUrl;
+        if (pdfModal.pdfData) {
+          updates.notificationPdfData = pdfModal.pdfData;
+        }
+      }
+      return { ...prev, ...updates };
+    });
+
+    // 2. Insert or update into the visual editor table
+    if (visualEditorRef.current) {
+      let table = activeTableElementRef.current;
+      if (!table) {
+        const tables = visualEditorRef.current.querySelectorAll('table');
+        if (tables && tables.length > 0) {
+          for (const t of tables) {
+            const txt = (t.textContent || '').toLowerCase();
+            if (txt.includes('important link') || txt.includes('useful link') || txt.includes('some useful') || txt.includes('click here')) {
+              table = t;
+              break;
+            }
+          }
+          if (!table) table = tables[tables.length - 1];
+        }
+      }
+
+      // If no table exists at all, create a default Important Links table
+      if (!table) {
+        const tableHtml = `
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px; font-family:sans-serif; border:1px solid #cbd5e1;">
+  <tbody>
+    <tr style="background-color:#a80000; color:#ffffff; font-weight:bold; text-align:center;">
+      <td colspan="2" style="font-size:1rem; padding:10px;">Some Useful Important Links</td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold; width:45%; text-align:center; padding:8px; border:1px solid #cbd5e1;">${targetLabel}</td>
+      <td style="text-align:center; padding:8px; border:1px solid #cbd5e1;"><a href="${finalUrl}" target="_blank" rel="noopener noreferrer" style="color:#0000ff; font-weight:bold; text-decoration:underline;">${linkText}</a></td>
+    </tr>
+  </tbody>
+</table>
+        `.trim();
+        execCmd('insertHTML', tableHtml);
+      } else {
+        // Search if a row with this label already exists
+        let existingTr = null;
+        for (const r of table.rows) {
+          if (r.cells && r.cells.length >= 2) {
+            const c0 = (r.cells[0].textContent || '').trim().toLowerCase();
+            if (c0 === targetLabel.toLowerCase()) {
+              existingTr = r;
+              break;
+            }
+          }
+        }
+
+        if (existingTr) {
+          existingTr.cells[1].innerHTML = `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">${linkText}</a>`;
+          existingTr.cells[1].style.textAlign = 'center';
+        } else {
+          const newTr = document.createElement('tr');
+          
+          // Cell 1: Label
+          const tdLabel = document.createElement('td');
+          tdLabel.style.border = '1px solid #cbd5e1';
+          tdLabel.style.padding = '8px 12px';
+          tdLabel.style.fontSize = '0.9rem';
+          tdLabel.style.fontWeight = 'bold';
+          tdLabel.style.textAlign = 'center';
+          tdLabel.style.width = '45%';
+          tdLabel.innerHTML = targetLabel;
+          newTr.appendChild(tdLabel);
+
+          // Cell 2: Clickable Link
+          const tdLink = document.createElement('td');
+          tdLink.style.border = '1px solid #cbd5e1';
+          tdLink.style.padding = '8px 12px';
+          tdLink.style.fontSize = '0.9rem';
+          tdLink.style.textAlign = 'center';
+          tdLink.innerHTML = `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" style="color: #0000ff; font-weight: bold; text-decoration: underline;">${linkText}</a>`;
+          newTr.appendChild(tdLink);
+
+          let tr = activeRowElementRef.current;
+          if (tr && tr.parentNode && tr.parentNode.parentNode === table) {
+            tr.parentNode.insertBefore(newTr, tr.nextSibling);
+          } else {
+            const tbody = table.querySelector('tbody') || table;
+            tbody.appendChild(newTr);
+          }
+          activeRowElementRef.current = newTr;
+          activeCellElementRef.current = tdLabel;
+        }
+
+        const updated = visualEditorRef.current.innerHTML;
+        setForm(prev => ({ ...prev, content: updated }));
+        updateActiveTableInfo();
+      }
+    }
+
+    setPdfModal(prev => ({ ...prev, isOpen: false }));
+    showToast(`✅ "${targetLabel}" -> "${linkText}" link row saved successfully!`, 'success');
+  };
+
+  const handleAddLinkRow = () => {
+    openPdfModalForLink();
   };
 
   const handleDeleteRow = () => {
@@ -3959,6 +4113,7 @@ export default function AdminDashboardPage({
       seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
       applyUrl: form.applyUrl.trim() || (existingJob?.applyUrl ?? ''),
       notificationUrl: form.notificationUrl.trim() || (existingJob?.notificationUrl ?? ''),
+      notificationPdfData: (form.notificationPdfData || existingJob?.notificationPdfData || '').trim(),
       officialUrl: form.officialUrl.trim() || (existingJob?.officialUrl ?? ''),
       state: form.state.trim() || (existingJob?.state ?? 'All India'),
       feeGen: form.feeGen.trim() || (existingJob?.feeGen ?? '₹100'),
@@ -4151,6 +4306,7 @@ export default function AdminDashboardPage({
       seoDescription: form.seoDescription.trim() || form.description.trim() || (existingJob?.seoDescription ?? ''),
       applyUrl: form.applyUrl.trim() || (existingJob?.applyUrl ?? ''),
       notificationUrl: form.notificationUrl.trim() || (existingJob?.notificationUrl ?? ''),
+      notificationPdfData: (form.notificationPdfData || existingJob?.notificationPdfData || '').trim(),
       officialUrl: form.officialUrl.trim() || (existingJob?.officialUrl ?? ''),
       state: form.state.trim() || (existingJob?.state ?? 'All India'),
       feeGen: form.feeGen.trim() || (existingJob?.feeGen ?? '₹100'),
@@ -6151,17 +6307,27 @@ export default function AdminDashboardPage({
 
                   {/* Section D: Useful Important Links */}
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
                       <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
                         🔗 USEFUL IMPORTANT LINKS ({Object.keys(form.importantLinks || {}).length})
                       </label>
-                      <button
-                        type="button"
-                        onClick={addCustomLink}
-                        style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                      >
-                        + Add Custom Link
-                      </button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => openPdfModalForLink('Download Official Notification')}
+                          style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          title="Upload Notification PDF or Link with Click Here"
+                        >
+                          📄 + Upload PDF / Notice Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addCustomLink}
+                          style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          + Add Link
+                        </button>
+                      </div>
                     </div>
 
                     {Object.entries(form.importantLinks || {}).length === 0 ? (
@@ -6185,6 +6351,14 @@ export default function AdminDashboardPage({
                             placeholder="https://..."
                             style={{ flex: 1, padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.82rem' }}
                           />
+                          <button
+                            type="button"
+                            onClick={() => openPdfModalForLink(lbl, u, lbl)}
+                            style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}
+                            title="Upload PDF or edit link in modal"
+                          >
+                            📎 PDF
+                          </button>
                           <button
                             type="button"
                             onClick={() => removeCustomLink(lbl)}
@@ -6244,8 +6418,17 @@ export default function AdminDashboardPage({
                       <input type="url" placeholder="https://..." value={form.applyUrl} onChange={e => set('applyUrl', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.84rem' }} />
                     </div>
                     <div style={{ marginBottom: '10px' }}>
-                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px' }}>OFFICIAL NOTIFICATION PDF</label>
-                      <input type="url" placeholder="https://..." value={form.notificationUrl} onChange={e => set('notificationUrl', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.84rem' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>OFFICIAL NOTIFICATION PDF</label>
+                        <button
+                          type="button"
+                          onClick={() => openPdfModalForLink('Download Official Notification', form.notificationUrl)}
+                          style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '4px', padding: '2px 7px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          📁 Upload / Choose PDF
+                        </button>
+                      </div>
+                      <input type="url" placeholder="https://... or click Upload" value={form.notificationUrl} onChange={e => set('notificationUrl', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.84rem' }} />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px' }}>OFFICIAL PORTAL WEBSITE</label>
@@ -6540,6 +6723,9 @@ export default function AdminDashboardPage({
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleAddLinkRow} title="Add New Row with 'Click Here' Link" style={{ padding: '3px 6px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>
                 <Link2 size={11} /> +Link Row
               </button>
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => openPdfModalForLink('Download Official Notification')} title="Upload Notification PDF or Link (Download Official Notification / Click Here)" style={{ padding: '3px 7px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', fontWeight: 700, color: '#dc2626' }}>
+                <FileText size={11} /> + PDF / Notice Row
+              </button>
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleDeleteRow} title="Delete Selected Row" style={{ padding: '3px 6px', background: '#fff', border: '1px solid #fecaca', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.72rem', fontWeight: 600, color: '#dc2626' }}>
                 <Minus size={11} /> -Row
               </button>
@@ -6618,6 +6804,14 @@ export default function AdminDashboardPage({
                   title="Add New Row with 'Click Here' Link"
                   style={{ padding: '4px 9px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700, color: '#15803d' }}>
                   <Link2 size={12} /> + Link Row
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => openPdfModalForLink('Download Official Notification')}
+                  title="Upload Official Notification PDF or Add Click Here Link"
+                  style={{ padding: '4px 9px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700, color: '#dc2626' }}>
+                  <FileText size={12} /> + PDF / Notice Row
                 </button>
                 <button
                   type="button"
@@ -8844,6 +9038,337 @@ export default function AdminDashboardPage({
                   cursor: 'pointer'
                 }}>
                 {insertModal.type === 'import' ? 'Import Data' : 'Insert'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Hidden file input for official notification PDF uploads */}
+      <input
+        ref={pdfFileInputRef}
+        type="file"
+        accept="application/pdf"
+        style={{ display: 'none' }}
+        onChange={handlePdfFileSelected}
+      />
+
+      {/* Modern PDF & Table Link Row Modal */}
+      {pdfModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.68)',
+          backdropFilter: 'blur(5px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setPdfModal(prev => ({ ...prev, isOpen: false }));
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '560px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+            border: '1px solid #cbd5e1',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '92vh'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#991b1b' }}>
+                    Official Notification / Link Row
+                  </h3>
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                    Left me Notice Title aur Right me &quot;Click Here&quot; link (PDF Upload ya Direct URL)
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPdfModal(prev => ({ ...prev, isOpen: false }))}
+                style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Preset Chips */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  ⚡ Quick Select Title (चुनें या खुद टाइप करें):
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {[
+                    'Download Official Notification',
+                    'Download Official Notification PDF',
+                    'Download Short Notice',
+                    'Download Syllabus',
+                    'Download Admit Card',
+                    'Apply Online',
+                    'Official Website',
+                    'Download Result'
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setPdfModal(prev => ({
+                        ...prev,
+                        label: preset,
+                        isNotificationLink: preset.toLowerCase().includes('notif') || preset.toLowerCase().includes('pdf')
+                      }))}
+                      style={{
+                        padding: '4px 9px',
+                        borderRadius: '6px',
+                        border: pdfModal.label === preset ? '1.5px solid #dc2626' : '1px solid #e2e8f0',
+                        background: pdfModal.label === preset ? '#fee2e2' : '#f8fafc',
+                        color: pdfModal.label === preset ? '#991b1b' : '#334155',
+                        fontSize: '0.74rem',
+                        fontWeight: pdfModal.label === preset ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}>
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title & Link Text Inputs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    NOTICE / ROW TITLE (Left):
+                  </label>
+                  <input
+                    type="text"
+                    value={pdfModal.label}
+                    onChange={e => setPdfModal(prev => ({ ...prev, label: e.target.value }))}
+                    placeholder="e.g. Download Official Notification"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: '#0f172a',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    LINK TEXT (Right):
+                  </label>
+                  <input
+                    type="text"
+                    value={pdfModal.linkText}
+                    onChange={e => setPdfModal(prev => ({ ...prev, linkText: e.target.value }))}
+                    placeholder="Click Here"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                      color: '#2563eb',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* PDF File Upload Box */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px dashed #cbd5e1',
+                borderRadius: '10px',
+                padding: '14px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <UploadCloud size={16} style={{ color: '#dc2626' }} />
+                  <span>Device se PDF File Upload Karein:</span>
+                </div>
+
+                {pdfModal.fileName ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '8px 12px', borderRadius: '8px', margin: '6px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <FileText size={16} style={{ color: '#059669', flexShrink: 0 }} />
+                      <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#065f46' }}>{pdfModal.fileName}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#047857' }}>{pdfModal.fileSize} • Uploaded Ready</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => pdfFileInputRef.current?.click()}
+                        style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>
+                        Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPdfModal(prev => ({ ...prev, fileName: '', fileSize: '', pdfData: '', url: '' }))}
+                        style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: '4px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => pdfFileInputRef.current?.click()}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#dc2626',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.25)'
+                      }}>
+                      <UploadCloud size={14} /> Choose PDF File (.pdf)
+                    </button>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>
+                      Directly uploads &amp; serves PDF on website (Limit: ≤ 800 KB for direct storage)
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Direct PDF Link / External URL Box */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                  🔗 YA DIRECT PDF URL / LINK PASTE KAREIN:
+                </label>
+                <input
+                  type="url"
+                  value={pdfModal.url}
+                  onChange={e => setPdfModal(prev => ({ ...prev, url: e.target.value }))}
+                  placeholder="http://sarkariresult.com.cm/wp-content/uploads/2026/09/...pdf or Google Drive link"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.84rem',
+                    fontFamily: 'monospace',
+                    color: '#0f172a',
+                    outline: 'none'
+                  }}
+                />
+                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                  Official website PDF links, Sarkari Result PDF links, ya Google Drive links paste kar sakte hain.
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div>
+                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>
+                  👀 Table Live Preview:
+                </div>
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <tbody>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', width: '50%', textAlign: 'center', color: '#0f172a' }}>
+                          {pdfModal.label || 'Download Official Notification'}
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                          <span style={{ color: '#0000ff', fontWeight: 'bold', textDecoration: 'underline' }}>
+                            {pdfModal.linkText || 'Click Here'}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Notification Sync Option */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: '#334155', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={pdfModal.isNotificationLink}
+                  onChange={e => setPdfModal(prev => ({ ...prev, isNotificationLink: e.target.checked }))}
+                  style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                />
+                <span>Set as Official Notification PDF for this post (Top buttons &amp; Schema metadata)</span>
+              </label>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '14px 20px',
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px'
+            }}>
+              <button
+                type="button"
+                onClick={() => setPdfModal(prev => ({ ...prev, isOpen: false }))}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#fff',
+                  color: '#475569',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
+                }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmPdfRow}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#dc2626',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)'
+                }}>
+                <CheckCircle2 size={16} /> Insert into Table &amp; Links
               </button>
             </div>
           </div>
