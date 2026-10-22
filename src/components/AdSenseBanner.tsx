@@ -69,7 +69,7 @@ export default function AdSenseBanner({
       if (timer) clearTimeout(timer);
       observer.disconnect();
     };
-  }, [slot, layout, layoutKey, isAdmin]);
+  }, [slot, layout, layoutKey, isAdmin, pathname]);
 
   // Hide wrapper completely on admin routes
   if (pathname && pathname.startsWith('/admin')) {
@@ -80,6 +80,7 @@ export default function AdSenseBanner({
 
   return (
     <div
+      key={pathname ? `${pathname}-${slot}` : slot}
       className="adsense-banner-wrapper"
       suppressHydrationWarning
       style={{

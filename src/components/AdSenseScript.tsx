@@ -36,5 +36,24 @@ export default function AdSenseScript() {
     }
   }, [isAdmin]);
 
+  // Next.js App Router: re-scan and push unrendered ad units on route transitions
+  useEffect(() => {
+    if (isAdmin || typeof window === 'undefined') return;
+
+    const timer = setTimeout(() => {
+      try {
+        const unpushed = document.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])');
+        unpushed.forEach((ins: any) => {
+          if (!ins.dataset.adPushDone) {
+            ins.dataset.adPushDone = 'true';
+            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+          }
+        });
+      } catch (_) {}
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [pathname, isAdmin]);
+
   return null;
 }
