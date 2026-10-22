@@ -49,8 +49,8 @@ export default function JobDetailWrapper({ job: initialJob, allJobs = [], slug =
       window.location.search.includes('admin')
     );
 
-    // Fetch live Firestore document if admin, or if initialJob is missing, or if image is missing
-    const needsLiveFetch = isAdminUser || !initialJob || (!initialJob?.faqImage && !initialJob?.postImage && !initialJob?.bannerImage);
+    // Fetch live Firestore document only if admin, or if initialJob is missing
+    const needsLiveFetch = isAdminUser || !initialJob;
 
     if (needsLiveFetch) {
       import('../firebase').then(({ fetchFirestoreJobById }) => {
