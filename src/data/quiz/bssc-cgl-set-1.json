@@ -1,0 +1,2268 @@
+{
+  "exam": "BSSC CGL",
+  "subject": "Set 1",
+  "total_questions": 150,
+  "questions": [
+    {
+      "id": "BSSC-001",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Hard",
+      "question": "भारतीय संविधान के 42वें संशोधन के सम्बन्ध में, निम्नलिखित कथनों पर विचार कीजिए (With reference to the 42nd Amendment of the Indian Constitution, consider the following statements):\n\n1. इसने प्रस्तावना में तीन शब्द जोड़े—‘समाजवादी’, ‘धर्मनिरपेक्ष’ और ‘अखंडता’। (It added three words to the Preamble—‘Socialist’, ‘Secular’ and ‘Integrity’.)\n\n2. इसने संविधान में आठ मौलिक कर्तव्य जोड़े। (It added eight Fundamental Duties to the Constitution.)\n\n3. इनमें नए निदेशक-सिद्धान्त जोड़े, यानी, अनुच्छेद-39A, अनुच्छेद-43A और अनुच्छेद-47 (It added new Directive Principles, namely, Articles 39A, 43A and 47.)\n\n4. इसके द्वारा राष्ट्रपति को चुनाव आयोग के परामर्श से राज्य विधान-सभाओं/मंडलों के सदस्यों को अयोग्य घोषित करने का अधिकार प्रदान किया गया। (It empowered the President to disqualify members of State Legislative Assemblies/Councils in consultation with the Election Commission.)\n\nउपर्युक्त में से कौन-से कथन गलत हैं? (Which of the above statements is/are incorrect?)",
+      "options": {
+        "A": "1 और 4 (1 and 4)",
+        "B": "1 और 2 (1 and 2)",
+        "C": "3 और 4 (3 and 4)",
+        "D": "2 और 3 (2 and 3)"
+      },
+      "correct_answer": "D",
+      "solution": "42वें संविधान संशोधन द्वारा प्रस्तावना में समाजवादी, धर्मनिरपेक्ष और अखंडता जोड़े गए। इसके द्वारा 10 मौलिक कर्तव्य जोड़े गए थे (8 नहीं) तथा अनुच्छेद 39A, 43A और 48A जोड़े गए (47 नहीं)। अतः कथन 2 और 3 गलत हैं।"
+    },
+    {
+      "id": "BSSC-002",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Easy",
+      "question": "उत्तराखणड का कौन-सा जिला तिब्बत सीमा से नहीं ल\nगा है? (Which \ndistrict of Uttarakhand does not share a border with Tibet?)",
+      "options": {
+        "A": "अलमोड़ा (Almora)",
+        "B": "उत्तरकाशी (Uttarkashi)",
+        "C": "चमोली (Chamoli)",
+        "D": "उपर्युक्त में से कोई नहीं (None of the above)"
+      },
+      "correct_answer": "A",
+      "solution": "उत्तराखंड के उत्तरकाशी, चमोली और पिथौरागढ़ जिले तिब्बत (चीन) सीमा से लगते हैं, जबकि अल्मोड़ा एक आंतरिक जिला है जो तिब्बत सीमा से नहीं लगता है।"
+    },
+    {
+      "id": "BSSC-003",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Easy",
+      "question": "भारत के योजना आयोग के प्रथम उपाधयक्ष कौन थे? (Who was the first \nDeputy Chairman of the Planning Commission of India?)",
+      "options": {
+        "A": "गुलजारी लाल नंददा (Gulzarilal Nanda)",
+        "B": "चिंतामन ददेशमुख (Chintaman Deshmukh)",
+        "C": "आर०के० पाटिल (R. K. Patil)",
+        "D": "एन०आर० पिल्लई (N. R. Pillai)"
+      },
+      "correct_answer": "A",
+      "solution": "योजना आयोग के प्रथम अध्यक्ष प्रधानमंत्री जवाहरलाल नेहरू तथा प्रथम उपाध्यक्ष गुलजारी लाल नंदा थे।"
+    },
+    {
+      "id": "BSSC-004",
+      "topic": "General Studies",
+      "subtopic": "Medieval History",
+      "difficulty": "Easy",
+      "question": "इनमें से किसने भारत में फारसी तयोहार नौरोज की शुरूआत की? (Who \namong the following introduced the Persian festival of \nNowruz in India?)",
+      "options": {
+        "A": "इलतुतमिश (Iltutmish)",
+        "B": "फिरोज शाह तुगलक (Firoz Shah Tughlaq)",
+        "C": "अलाउद्ीन खिलजी (Alauddin Khalji)",
+        "D": "बलबबन (Balban)"
+      },
+      "correct_answer": "D",
+      "solution": "दिल्ली सल्तनत के शासक गयासुद्दीन बलबन ने दरबार में ईरानी परंपरा 'सिजदा एवं पैबोस' तथा फारसी नववर्ष त्योहार 'नौरोज' की शुरुआत की थी।"
+    },
+    {
+      "id": "BSSC-005",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "राजय विधान सभा में ……… की पूर्व अनुमति के बिना कोई धन \nविधेयक प्रसतुत नहीं किया जा सकता है। (No Money Bill can be \nintroduced in the State Legislative Assembly without the \nprior permission of ……….)",
+      "options": {
+        "A": "उपमुख्यमंत्री (Deputy Chief Minister)",
+        "B": "स्पीकर (Speaker)",
+        "C": "राजयपाल (Governor)",
+        "D": "मुख्यमंत्री (Chief Minister)"
+      },
+      "correct_answer": "C",
+      "solution": "अनुच्छेद 199/207 के तहत राज्य विधानसभा में कोई भी धन विधेयक केवल राज्यपाल की पूर्व अनुमति / सिफारिश पर ही प्रस्तुत किया जा सकता है।"
+    },
+    {
+      "id": "BSSC-006",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Medium",
+      "question": "द्वितीय पंचवर्षीय योजना निम्नलिखित में से किस सांख्यिकीविदद् के विचारों \nपर आधारित थी? (The Second Five-Year Plan was based on \nthe ideas of which of the following statisticians?)",
+      "options": {
+        "A": "प्रशांत चंद्र महालनोबिस (Prasanta Chandra Mahalanobis)",
+        "B": "ददेबबब्रत बबसु (Debabrata Basu)",
+        "C": "समरेन्द्र नाथ राय (Samarendra Nath Roy)",
+        "D": "जयनत कुमार घोष (Jayanta Kumar Ghosh)"
+      },
+      "correct_answer": "A",
+      "solution": "द्वितीय पंचवर्षीय योजना (1956-61) प्रसिद्ध भारतीय सांख्यिकीविद् प्रशांत चंद्र महालनोबिस (P.C. Mahalanobis) के 4-सेक्टर मॉडल पर आधारित थी।"
+    },
+    {
+      "id": "BSSC-007",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "एल नीनो धारा कहाँ प्रवाहित होता है? (Where does the El Niño \ncurrent flow?)",
+      "options": {
+        "A": "बबंगाल की खाड़ी (Bay of Bengal)",
+        "B": "प्रशांत महासागर (Pacific Ocean)",
+        "C": "हिन्द महासागर (Indian Ocean)",
+        "D": "उपर्युक्त में से एक से अधिक (More than one of the above)"
+      },
+      "correct_answer": "B",
+      "solution": "एल नीनो (El Niño) एक गर्म समुद्री जलधारा है जो प्रशांत महासागर में पेरू के तट के पास दिसंबर महीने के आसपास प्रवाहित होती है।"
+    },
+    {
+      "id": "BSSC-008",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Easy",
+      "question": "सूर्य का चककर लगाने वाले सभी आठ ग्रहों के निश्चित पथ को कया कहते \nहैं? (What is the fixed path of all eight planets revolving \naround the Sun called?)",
+      "options": {
+        "A": "भू-आभ (Geo-orbit)",
+        "B": "परिधि (Circumference)",
+        "C": "कक्षा (Orbit)",
+        "D": "परिमाप (Perimeter)"
+      },
+      "correct_answer": "C",
+      "solution": "सूर्य के चारों ओर सभी ग्रह एक निश्चित दीर्घवृत्ताकार (elliptical) मार्ग पर परिक्रमा करते हैं, जिसे कक्षा (Orbit) कहा जाता है।"
+    },
+    {
+      "id": "BSSC-009",
+      "topic": "General Studies",
+      "subtopic": "Bihar Special",
+      "difficulty": "Hard",
+      "question": "निम्नलिखित युगमों का सही मिलान करें (जलप्रपात/गर्म जलस्ोत और जिला): \n(Match the following pairs correctly (waterfall/hot spring \nand district):) \n \nA.  \nकाकोलत जलप्रपात  \n1.  \nकैमूर (Kaimur)\n \n \n(Kakolat Waterfall) \n \nB.  \nधुआँ कुंड जलप्रपात  \n2.  \nराजगीर (नालंददा)\n \n \n(Dhuan Kund Waterfall)  \n(Rajgir (Nalanda))\n \nC.  \nसपतधारा/ब्रह्मकुंड   \n3.  \nनवाददा (Nawada)\n \n \n(Saptadhara/Brahmakund)\n \nD.  \nतेलहार झरना \n \n4.  \nरोहतास (Rohtas)\n \n \n(Telhar Waterfall) \n\t\nकूट (Code) :",
+      "options": {
+        "A": "A-1, B-3, C-2, D-4",
+        "B": "A-3, B-1, C-4, D-2",
+        "C": "A-4, B-2, C-1, D-3",
+        "D": "A-3, B-4, C-2, D-1"
+      },
+      "correct_answer": "B",
+      "solution": "सही मिलान: ककोलत जलप्रपात - नवादा, ब्रह्मकुंड - राजगीर, मंझर कुंड - सासाराम (रोहतास), धुआं कुंड - सासाराम (रोहतास)। अतः विकल्प (B) सही है।"
+    },
+    {
+      "id": "BSSC-010",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Hard",
+      "question": "निम्नलिखित भारत की पर्वत श्रेणियॉं हैं (The following are the \nmountain ranges of India.)\n \n1.  \nगारों पहाडि़यॉं (Garo Hills) \n \n2. \nनन्दा ददेवी (Nanda Devi)\n \n3. \nकामेत (Kamet)  \n \n4. \nK2\n \nनिम्नलिखित में से इनका पूर्व से पश्चिम सही क्रम कया है ? (What is the \ncorrect sequence of the following from east to west?)",
+      "options": {
+        "A": "4 3 1 2",
+        "B": "3 4 2 1",
+        "C": "1 2 3 4",
+        "D": "2 1 4 3"
+      },
+      "correct_answer": "A",
+      "solution": "पर्वत श्रेणियों का भौगोलिक क्रम: गारो, राजमहल, मिरीक आदि पहाड़ियों का सही क्रम विकल्प (A) 4, 3, 1, 2 है।"
+    },
+    {
+      "id": "BSSC-011",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Easy",
+      "question": "जैसे दूसरा पद द पहले पद द से संबबंधित है समान रूप से तीसरे पद द से संबबंधित \nपद द का चुनाव करें (Choose the term that is related to the third \nterm in the same way as the second term is related to the \nfirst term.)\n\n \nचुम्बकीय क्षेत्र  : ओस्टैंड : : शक्ति\n : ? (Magnetic field : Oersted : : \nPower : ?)",
+      "options": {
+        "A": "वोल्ट  (Volt)",
+        "B": "लीटर (Litre)",
+        "C": "वाट (Watt)",
+        "D": "मीटर (Metre)"
+      },
+      "correct_answer": "C",
+      "solution": "चुंबकीय क्षेत्र की तीव्रता का मात्रक ओर्स्टेड (Oersted) है, उसी प्रकार शक्ति (Power) का SI मात्रक वाट (Watt) है।"
+    },
+    {
+      "id": "BSSC-012",
+      "topic": "Reasoning",
+      "subtopic": "Venn Diagram",
+      "difficulty": "Medium",
+      "question": "निमन के लिए सर्वाधिक उपयुक्त वेन आरेख चुनें : (Select the most \nappropriate Venn diagram for the following:)\n \n\"धातु, सोना, प्लैटिनम\" (\"Metal, gold, platinum\")",
+      "options": {
+        "A": "आकृति (A) / Figure (A)",
+        "B": "आकृति (B) / Figure (B)",
+        "C": "आकृति (C) / Figure (C)",
+        "D": "आकृति (D) / Figure (D)"
+      },
+      "correct_answer": "C",
+      "solution": "वेन आरेख (C) में दो अलग-अलग वृत्त (सोना और प्लैटिनम) एक बड़े वृत्त (धातु) के भीतर स्थित हैं। सोना और प्लैटिनम दोनों स्वतंत्र धातुएँ हैं, इसलिए विकल्प (C) सही वेन आरेख है।",
+      "image": "/test-series-images/q12.png"
+    },
+    {
+      "id": "BSSC-013",
+      "topic": "Reasoning",
+      "subtopic": "Embedded Figures",
+      "difficulty": "Medium",
+      "question": "उस विकलप आकृति का चयन कीजिए, जिसमें ददी गई आकृति (X) उसके \nभाग के रूप में निहित है (घूर्णन की अनुमति नहीं है)। (Select the \noption figure in which the given figure (X) is embedded as \na part (rotation is not allowed).)",
+      "options": {
+        "A": "आकृति (A) / Figure (A)",
+        "B": "आकृति (B) / Figure (B)",
+        "C": "आकृति (C) / Figure (C)",
+        "D": "आकृति (D) / Figure (D)"
+      },
+      "correct_answer": "B",
+      "solution": "दी गई आकृति (X) विकल्प आकृति (B) में बिना घूर्णन के समाहित है।",
+      "image": "/test-series-images/q13.png"
+    },
+    {
+      "id": "BSSC-014",
+      "topic": "Reasoning",
+      "subtopic": "Syllogism",
+      "difficulty": "Medium",
+      "question": "दिए गए कथनों और निष्कर्षों को धयानपूर्वक पढ़ि़ए। यह मानते हुए कि  \nकथनों में ददी गई ज\nानकारी सतय है, चाहे वह सामानयतः ज्ात तथयों से \nभिन्न प्रतीत होती हो और निर्णय लीजिए कि दिए गए निष्कर्षों में से कौन-\nसा/कौन-से निष्कर्ष कथनों का तार्किक रूप से अनुसरण करता है/करते \nहैं? (Read the given statements and conclusions carefully. \nAssuming that the information given in the statements is \ntrue, even if it appears to differ from generally known facts, \ndecide which of the given conclusions logically follows \nfrom the statements.)\n\t\nकथन: (Statements:)\n \nसभी अभिनेता, लेखक हैं। (All actors are writers.)\n \nकुछ लेखक, नर्तक हैं। (Some writers are dancers.)\n \nकुछ नर्तक, सितारे हैं। (Some dancers are stars.)\n\t\nनिषकर्ष: (Conclusions:)\n \n(I)  \nकुछ सितारे, अभिनेता हैं। (Some stars are actors.)\n \n(II)  कुछ नर्तक, अभिनेता हैं। (Some dancers are actors.)",
+      "options": {
+        "A": "निष्कर्ष (I) और (II) दोनों अनुसरण करते हैं। (Both conclusions \n\n(I) and (II) follow.)",
+        "B": "केवल निष्कर्ष (I) अनुसरण करता है। (Only conclusion (I) \n\nfollows.)",
+        "C": "न तो निष्कर्ष (I) और न ही (II) अनुसरण करता है। (Neither \n\nconclusion (I) nor (II) follows.)",
+        "D": "केवल निष्कर्ष (II) अनुसरण करता है। (Only conclusion (II) \n\nfollows.)"
+      },
+      "correct_answer": "C",
+      "solution": "कथनों का विश्लेषण करने पर न तो निष्कर्ष (I) और न ही (II) तार्किक रूप से अनुसरण करता है।"
+    },
+    {
+      "id": "BSSC-015",
+      "topic": "Reasoning",
+      "subtopic": "Dice",
+      "difficulty": "Medium",
+      "question": "एक पासे की दो अलग-अलग स्थितियॉं दर्शाई गई हैं, जिसके 6 फलकों \nपर €, ₭, ₮, ₴, ₹ ₾ में से एक-एक प्रतीक चिह्न अंकित है। उस प्रतीक \nचिह्न का चयन कीजिए जो ‘₾’ दर्शाने वाले फलक के विपरीत फलक पर \nहोगा। (Two different positions of a die are shown, with one \nof the symbols €, ₭, ₮, ₴, ₹, or ₾ marked on each of its \nsix faces. Select the symbol that will appear on the face \nopposite the face showing ‘₾’.)\n\n`\n`",
+      "options": {
+        "A": "₴",
+        "B": "₮",
+        "C": "₭",
+        "D": "€"
+      },
+      "correct_answer": "C",
+      "solution": "पासे की दोनों स्थितियों में उभयनिष्ठ फलक '₾' के विपरीत बचा हुआ प्रतीक '₭' होगा।",
+      "image": "/test-series-images/q15.png"
+    },
+    {
+      "id": "BSSC-016",
+      "topic": "Reasoning",
+      "subtopic": "Coding-Decoding",
+      "difficulty": "Medium",
+      "question": "एक निश्चित कूट भाषा में, ‘YORK’ को ‘0834’ और ‘KRAY’ को \n‘3458’ के रूप में कूटबद्ध किया जाता है। ददी गई कूट भाषा में ‘A’ का कूट \nकया होगा? (In a certain code language, ‘YORK’ is coded as \n‘0834’ and ‘KRAY’ as ‘3458’. What will be the code for ‘A’ \nin the given code language?)",
+      "options": {
+        "A": "5",
+        "B": "8",
+        "C": "3",
+        "D": "4"
+      },
+      "correct_answer": "A",
+      "solution": "YORK = 0834 तथा KRAY = 3458। दोनों में Y, R, K उभयनिष्ठ हैं जिनके कोड 3, 4, 8 हैं। O का कोड 0 तथा A का कोड 5 है। अतः A = 5।"
+    },
+    {
+      "id": "BSSC-017",
+      "topic": "Reasoning",
+      "subtopic": "Dictionary Order",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित शब्दों को शब्दकोश में आने वाले क्रम के अनुसार लिखें। \n(Arrange the following words in dictionary order.)\n \n(1) \nStumped \n \n(2) \nSlumped\n \n(3) \nSlowly  \n \n(4) \nStorm\n \n(5) \nStock",
+      "options": {
+        "A": "35214",
+        "B": "32541",
+        "C": "35241",
+        "D": "32514"
+      },
+      "correct_answer": "C",
+      "solution": "शब्दों को शब्दकोश क्रम में व्यवस्थित करने पर सही क्रम 3, 5, 2, 4, 1 प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-018",
+      "topic": "Reasoning",
+      "subtopic": "Ranking",
+      "difficulty": "Medium",
+      "question": "G, L, O, F और S में से प्रतयेक की आयु अलग-अलग है। केवल S की \nआयु, G की आयु से अधिक है। G और O की आयु के बबीच केवल दो \nव्यक्तियों की आयु है। F की आयु, L की आयु से कम है। तीसरा सबबसे \nकम आयु वाला कौन है? (The ages of G, L, O, F, and S are all \ndifferent. Only S is older than G. There are exactly two \npeople whose ages fall between those of G and O. F is \nyounger than L. Who is the third youngest?)",
+      "options": {
+        "A": "L",
+        "B": "G",
+        "C": "F",
+        "D": "O"
+      },
+      "correct_answer": "A",
+      "solution": "आयु के क्रम में व्यवस्थित करने पर L समूह में सबसे अधिक आयु वाला (सबसे बड़ा) व्यक्ति है।"
+    },
+    {
+      "id": "BSSC-019",
+      "topic": "Reasoning",
+      "subtopic": "Series",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित संखयाओं और प्रतीकों की शृंखला को ददेखिए और नीचे \nदिए गए प्रश्न का उत्तर ददीजिए। संखयाओं और प्रतीकों की गिनती केवल \nबबाऍं से ददाऍं ही की जानी चाहिए। (Look at the following series \nof numbers and symbols and answer the question given \nbelow. The counting of numbers and symbols should be \ndone only from left to right.)\n \n(बबाऍं) 9 # 1 2 @ 8 $ 7 & 3 Ω & % 4 6 * £ 5 (ददाऍं) \n \n(Left) 9 # 1 2 @ 8 $ 7 & 3 Ω & % 4 6 * £ 5 (Right)\n \nउपरोक्त शृंखला में ऐसे कितने प्रतीक हैं, जिनमें से प्रतयेक के ठीक पहले एक \nसम संखया है लेकिन ठीक बाद एक विषम संखया नहीं है? (How many \nsuch symbols are there in the above series, each of which \nis immediately preceded by an even number but is not \nimmediately followed by an odd number?)",
+      "options": {
+        "A": "शूनय (Zero)",
+        "B": "दो (Two)",
+        "C": "एक (One)",
+        "D": "दो से अधिक (More than two)"
+      },
+      "correct_answer": "B",
+      "solution": "दी गई शर्त के अनुसार शृंखला में ऐसे दो (2) संयोजन उपस्थित हैं।"
+    },
+    {
+      "id": "BSSC-020",
+      "topic": "Reasoning",
+      "subtopic": "Alphabet Test",
+      "difficulty": "Medium",
+      "question": "यदि शब्द ENGLISH के प्रतयेक स्वर को अंग्रेजी वर्णमाला क्रम में उसके \nबबाद वाले अक्षर से बदल दि\nया जाए और प्रतयेक व्यंजन को अंग्रेजी वर्णमाला \nक्रम में उसके पहले वाले अक्षर से बदल दि\nया जाए,  तो इस प्रकार बबने अक्षरों \nके नए समूह में, बबाईं ओर से दूसरे स्\nथाान पर कौन-सा अक्षर होगा? (If each \nvowel in the word ENGLISH is replaced by the next letter \nin the English alphabetical order and each consonant is \nreplaced by the previous letter in the English alphabetical \norder, then which letter will appear at the second position \nfrom the left in the new group of letters thus formed?)",
+      "options": {
+        "A": "J",
+        "B": "M",
+        "C": "F",
+        "D": "R"
+      },
+      "correct_answer": "C",
+      "solution": "निर्देशानुसार ENGLISH के स्वरों को परिवर्तित करने पर अभीष्ट वर्ण 'F' प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-021",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "एक उत्तल लेंस -1 आवर्धन का वासतविक, उल्टा ा प्रतिबिंब बनाता है। वसतु \nकहाँ रखी गई है? (A convex lens forms a real, inverted image \nof magnification -1. Where is the object placed?)",
+      "options": {
+        "A": "F पर (At F)",
+        "B": "F और 2F के बबीच (Between F and 2F)",
+        "C": "2F पर (At 2F)",
+        "D": "2F से परे (Beyond 2F)"
+      },
+      "correct_answer": "C",
+      "solution": "उत्तल लेंस द्वारा -1 आवर्धन (वास्तविक, उल्टा तथा समान आकार) तब प्राप्त होता है जब वस्तु वक्रता केंद्र (2F) पर रखी हो।"
+    },
+    {
+      "id": "BSSC-022",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Medium",
+      "question": "यौगिक CH3−CH\n\n −CH3 का सही IUPAC नाम कया है? \n\nCH3\n\n \n(What is the correct IUPAC name of the compound \nCH3− CH\n\n−CH3?)\n\nCH3",
+      "options": {
+        "A": "ब्यूटेन (Butane)",
+        "B": "2-मिथाइलब्यूटेन (2-Methylbutane)",
+        "C": "2,2-डाइमिथाइलप्रोप्रोपेन (2,2-Dimethylpropane)",
+        "D": "2-मिथाइलप्रोप्रोपेन (2-Methylpropane)"
+      },
+      "correct_answer": "D",
+      "solution": "यौगिक CH3-CH(CH3)-CH3 में तीन कार्बन की मुख्य शृंखला और दूसरे कार्बन पर मिथाइल समूह है, अतः इसका IUPAC नाम 2-मिथाइलप्रोपेन (2-Methylpropane) है।"
+    },
+    {
+      "id": "BSSC-023",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित को सुमेलित करें: (Match the following:)\n\t\n\t\nरोग (Disease)  \n \nकारक जीव का प्रकार\n\t\n\t\n\t\n     (Type of causative organism)\n \n(i) \nटाइफाइड (Typhoid) \n(a)  विषाणु (Virus)\n \n(ii) \nसामान्य जुकाम   \n(b) \nप्रोटोजोआ (Protozoa)\n \n \n(Common cold) \n \n(iii) ददाद द (Ringworm)  \n(c) \nजीवाणु (Bacterium)  \n \n(iv) मलेरिया (Malaria) \n(d) \nकवक (Fungus)",
+      "options": {
+        "A": "(i)-c, (ii)-a, (iii)-d, (iv)-b",
+        "B": "(i)-a, (ii)-c, (iii)-b, (iv)-d",
+        "C": "(i)-c, (ii)-d, (iii)-a, (iv)-b",
+        "D": "(i)-b, (ii)-a, (iii)-d, (iv)-c"
+      },
+      "correct_answer": "C",
+      "solution": "रोग और उनके रोगकारक जीवाणु/विषाणु का सही सुमेलन विकल्प (C) है।"
+    },
+    {
+      "id": "BSSC-024",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "कायिक प्रवर्धन की कलम बबंधन (grafting) विधि में, पौधे का वह भाग \nजो दूसरे पौधे पर लगाया जाता है, कया कहलाता है? (In the grafting \nmethod of vegetative propagation, what is the part of the \nplant called that is attached to another plant?)",
+      "options": {
+        "A": "सकंध (Stock)",
+        "B": "कलम (Scion)",
+        "C": "कलिका (Bud)",
+        "D": "मूल (Root)"
+      },
+      "correct_answer": "B",
+      "solution": "ग्राफ्टिंग (कलम बंधन) में ऊपर लगाया जाने वाला तना/टहनी वाला भाग 'कलम' (Scion) कहलाता है, जबकि जड़ वाला आधार 'स्कंध' (Stock) कहलाता है।"
+    },
+    {
+      "id": "BSSC-025",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Easy",
+      "question": "एक सूचक एक रासायनिक पददार्थ है जो: (An indicator is a chemical \nsubstance that:)",
+      "options": {
+        "A": "अभिक्रिया की ददर को बढ़ाता है। (Increases the rate of a \n\nreaction.)",
+        "B": "अम्लीय और क्षारीय विलयनों में अलग-अलग रंग ददेता है। (Gives \n\ndifferent colours in acidic and basic solutions.)",
+        "C": "केवल अम्लों के साथ अभिक्रिया करता है। (Reacts only with \n\nacids.)",
+        "D": "केवल क्षा क्षारों के साथ अभिक्रिया करता है। (Reacts only with \n\nbases.)"
+      },
+      "correct_answer": "B",
+      "solution": "सूचक (Indicator) वह रासायनिक पदार्थ है जो अम्लीय और क्षारीय विलयनों में अपना रंग बदलकर माध्यम की प्रकृति दर्शाता है।"
+    },
+    {
+      "id": "BSSC-026",
+      "topic": "Mathematics",
+      "subtopic": "Percentage",
+      "difficulty": "Medium",
+      "question": "यदि चावल का मूलय, गेहँ के मूलय से 30% कम है, तो गेहँ का मूलय, चावल \nके मूलय से लगभग कितने प्रतिशत अधिक है? (If the price of rice is \n30% less than the price of wheat, then by approximately \nwhat percentage is the price of wheat higher than the price \nof rice?)",
+      "options": {
+        "A": "42.86%",
+        "B": "40.65%",
+        "C": "37.5%",
+        "D": "45%"
+      },
+      "correct_answer": "A",
+      "solution": "यदि गेहूँ = 100, तो चावल = 70। गेहूँ का मूल्य चावल से (30 / 70) × 100 = 42.86% अधिक है।"
+    },
+    {
+      "id": "BSSC-027",
+      "topic": "Mathematics",
+      "subtopic": "Algebra",
+      "difficulty": "Easy",
+      "question": "यदि दो संखयाओं का योग 24 और अंतर 10 है, उन संखयाओं के गुणनफल \nके दोगुने का मान ज्ात कीजिए। (If the sum of two numbers is \n24 and their difference is 10, find the value of twice the \nproduct of those numbers.)",
+      "options": {
+        "A": "832",
+        "B": "328",
+        "C": "238",
+        "D": "239"
+      },
+      "correct_answer": "C",
+      "solution": "x + y = 24 तथा x - y = 10 जोड़ने पर 2x = 34 ⇒ x = 17, y = 7। गुणनफल का दोगुना = 2 × (17 × 7) = 2 × 119 = 238।"
+    },
+    {
+      "id": "BSSC-028",
+      "topic": "Mathematics",
+      "subtopic": "Ratio & Proportion",
+      "difficulty": "Easy",
+      "question": "यदि 9 : 12 :: 12 : k है, तो k + 1 का मान ज्ात कीजिए। (If 9 : 12 \n:: 12 : k, find the value of k + 1.)",
+      "options": {
+        "A": "16",
+        "B": "15",
+        "C": "18",
+        "D": "17"
+      },
+      "correct_answer": "D",
+      "solution": "9 : 12 :: 12 : k ⇒ 9/12 = 12/k ⇒ 9k = 144 ⇒ k = 16। अतः k + 1 = 16 + 1 = 17।"
+    },
+    {
+      "id": "BSSC-029",
+      "topic": "Mathematics",
+      "subtopic": "Simple & Compound Interest",
+      "difficulty": "Medium",
+      "question": "यदि समान ब्याज ददर पर, 2 वर्ष में, साधारण ब्याज  ₹ 40 तथा चक्रवृद्धि  \nब्याज  ₹ 65 है, तो मूलधन (₹ में) ज्ात कीजिए। (If, at the same rate \nof interest, the simple interest is ₹40 and the compound \ninterest is ₹65 over 2 years, find the principal (in ₹).)",
+      "options": {
+        "A": "11",
+        "B": "16",
+        "C": "20",
+        "D": "9"
+      },
+      "correct_answer": "C",
+      "solution": "2 वर्ष का SI = ₹ 40 ⇒ 1 वर्ष का SI = ₹ 20। दूसरे वर्ष का अंतर CI - SI = ₹ 2 (ब्याज पर ब्याज)। अतः दर R = (2 / 20) × 100 = 10%।"
+    },
+    {
+      "id": "BSSC-030",
+      "topic": "Mathematics",
+      "subtopic": "Percentage",
+      "difficulty": "Medium",
+      "question": "दो उम्मीदवारों के बबीच एक चुनाव में, 75% मतददाताओं ने अपना मत \nडाला। 2% मतददाताओं को अवैध घोषित कर दिया गया। एक उम्मीदवार \nको 9261 मत मिले जो कुल वैध मतों का 75% थे। उस चुनाव में नामांकित \nमतददाताओं की कुल संख्या कितनी थी? (In an election between \ntwo candidates, 75% of the voters cast their votes. 2% of \nthe votes were declared invalid. One candidate received \n9,261 votes, which constituted 75% of the total valid \nvotes. What was the total number of registered voters in \nthat election?)",
+      "options": {
+        "A": "18000",
+        "B": "16800",
+        "C": "10000",
+        "D": "16400"
+      },
+      "correct_answer": "B",
+      "solution": "कुल मतदाता मान लें x। डाले गए मत = 0.75x। वैध मत = 0.75x × 0.98। प्रश्न की शर्तों से हल करने पर कुल मतदाताओं की संख्या 16,800 प्राप्त होती है।"
+    },
+    {
+      "id": "BSSC-031",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Hard",
+      "question": "निमन में से कौन-सा वक्तवय 'लेपीज' शब्द को परिभाषित करता है? (Which \nof the following statements defines the term 'Lapies'?)",
+      "options": {
+        "A": "छोटे से मधयम आकार के उथले गर्त (Small to medium-sized \n\nshallow depressions)",
+        "B": "ऐसे स्थल  रूप िजनके ऊपरी मुख वृत्ताकार तथा नीचे से कीप के \n\nआकार के होते हैं (Landforms whose upper openings are \ncircular and funnel-shaped at the bottom)",
+        "C": "ऐसे स्थल जो धरातल से जल टपकने के िलए बबनते हैं (Landforms \n\nformed for water to drip from the surface)",
+        "D": "अनियमित धरातल िजनके तीखे कटक व ख\nॉंच हों (Irregular \nsurfaces having sharp ridges and grooves)"
+      },
+      "correct_answer": "B",
+      "solution": "लेपीज (Lapies) कार्स्ट स्थलाकृति का एक रूप है जो चूना पत्थर की चट्टानों में जल द्वारा घुलन क्रिया से नुकीले खांचों व कटकों के रूप में निर्मित होता है।"
+    },
+    {
+      "id": "BSSC-032",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Hard",
+      "question": "निमन में से कौन-सी िवशेषता ध्रुवीय वाताग्री जे\nट वायुधारा के संबबंध में \nसही नहीं है ? (Which of the following features is not correct \nregarding the polar front jet stream?)",
+      "options": {
+        "A": "मधय अक्षांशीय या ध्रुवीय वाताग्री जेट वायुधारा वायुददाब ब में अंतर के \n\nकारण उतपन्न होती है (The mid-latitude or polar front jet \nstream is generated due to differences in air pressure)",
+        "B": "जेट वायुधाराओं का मौसमी ददशाओं पर महत्त्वपूर्ण व व्यापक प्रभाव \n\nपड़ता है (Jet streams have a significant and widespread \ninfluence on seasonal conditions)",
+        "C": "वायुयानचालक भी जेट वायुधाराओं का उपयोग वायुयान के अनुकूल \n\nदिशा में उड़ान भरने के िलए करते है (Pilots also use jet \nstreams to fly aircraft in a favourable direction)",
+        "D": "उपर्युक्त सभी (All of the above)"
+      },
+      "correct_answer": "A",
+      "solution": "ध्रुवीय वाताग्री जेट वायुधारा मध्य एवं उच्च अक्षांशों के मध्य तीव्र गति से पश्चिम से पूर्व प्रवाहित होने वाली ऊपरी क्षोभमंडलीय हवा है।"
+    },
+    {
+      "id": "BSSC-033",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "निमन में से कौन-सा कथन सही है ? (Which of the following \nstatements is not correct?)",
+      "options": {
+        "A": "समुद्री तरंगों का तरंग काल दो लगातार तरंग शिखरों या गर्तों ों के \n\nबबीच का समय अंतराल होता है (The wave period of sea \nwaves is the time interval between two consecutive \nwave crests or troughs)",
+        "B": "तरंग आयाम, तरंग की ऊँचाई का आधा होता है (Wave amplitude \n\nis half of the wave height)",
+        "C": "तरंगों की गति की ददर को मीटर प्रति सेकंड में मापा जाता है (The \n\nspeed of waves is measured in metres per second)",
+        "D": "उपर्युक्त सभी (All of the above)"
+      },
+      "correct_answer": "B",
+      "solution": "भौगोलिक वितरण के संदर्भ में विकल्प (B) सही कथन है।"
+    },
+    {
+      "id": "BSSC-034",
+      "topic": "General Studies",
+      "subtopic": "World Geography",
+      "difficulty": "Medium",
+      "question": "संयुक्त राजय अमेरिका के ग्रेट-लेक क्षेत्र  में कौन-सा उद्ोग मुखय रूप से \nअवस्थित है ? (Which industry is mainly located in the Great \n\nLakes region of the United States of America?)",
+      "options": {
+        "A": "सूती वस्त्र उद्ोग (Cotton textile industry)",
+        "B": "रेल उद्ोग (Railway industry)",
+        "C": "लौह-इसपात उद्ोग (Iron and steel industry)",
+        "D": "वायुयान निर्माण उद्ोग (Aircraft manufacturing industry)"
+      },
+      "correct_answer": "A",
+      "solution": "संयुक्त राज्य अमेरिका का ग्रेट लेक्स क्षेत्र (सुपीरियर, मिशिगन, ह्यूरॉन, एरी, ओंटारियो) लौह एवं इस्पात उद्योग तथा ऑटोमोबाइल निर्माण का प्रमुख केंद्र है।"
+    },
+    {
+      "id": "BSSC-035",
+      "topic": "General Studies",
+      "subtopic": "World Geography",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से कौन सकैंडिनेवियन ददेशों के समूह में सम्मिलित नहीं हैं \n? (Which of the following is not included in the group of \nScandinavian countries?)",
+      "options": {
+        "A": "डेनमार्क (Denmark)",
+        "B": "फिनलैंड (Finland)",
+        "C": "नॉर्वें (Norway)",
+        "D": "स्वीीडन (Sweden)"
+      },
+      "correct_answer": "B",
+      "solution": "स्कैंडिनेवियाई देशों में भौगोलिक व सांस्कृतिक रूप से नॉर्वे, स्वीडन और डेनमार्क शामिल हैं। फिनलैंड नॉर्डिक देश है परंतु पारंपरिक स्कैंडिनेवियाई नहीं।"
+    },
+    {
+      "id": "BSSC-036",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "निर्वाचन आयोग के कार्यों ों के संदर्भ में निम्नलिखित कथनों पर विचार \nकीजिए। (With reference to the functions of the Election \nCommission, consider the following statements.) \n \n1. \nमतददाता सूचियॉं बबनाना (Preparing electoral rolls) \n \n2. \nआचार संहिता लागू करवाना (Enforcing the Model Code of \nConduct) \n \n3. \nमतददान तथा मतगणना की तिथि  घोषित करना (Announcing \nthe dates of polling and counting) \n \n4. \nचुनाव परिणामाें की घोषणा करना (Announcing the election \nresults) \n \nउपर्युक्त कथनों में से कौन-सा/से कथन सही हैं ? (Which of the above \nstatements is/are correct?)",
+      "options": {
+        "A": "1, 3 और 4 (1, 3 and 4)",
+        "B": "1 और 2 (1 and 2)",
+        "C": "1, 2, 3 (1, 2, 3)",
+        "D": "ये सभी (All of these)"
+      },
+      "correct_answer": "D",
+      "solution": "निर्वाचन क्षेत्रों का परिसीमन, मतदाता सूची तैयार करना और राजनीतिक दलों को मान्यता देना ये सभी निर्वाचन आयोग के कार्य हैं।"
+    },
+    {
+      "id": "BSSC-037",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "पंचायती राज संस्\nथााओं की 29 कार्यों ों की सूची िकस अनुच्छेद द के अंतर्गत \nददी गई है ? (Under which Article is the list of 29 functions of \nPanchayati Raj Institutions given?)",
+      "options": {
+        "A": "अनुच्छेद द 243 (H) (Article 243 (H))",
+        "B": "अनुच्छेद द 243 (E) (Article 243 (E))",
+        "C": "अनुच्छेद द 243 (F) (Article 243 (F))",
+        "D": "अनुच्छेद द 243 (G) (Article 243 (G))"
+      },
+      "correct_answer": "D",
+      "solution": "संविधान के 73वें संशोधन द्वारा 11वीं अनुसूची में पंचायती राज संस्थाओं को सौंपे गए 29 विषयों की सूची अनुच्छेद 243 (G) में वर्णित है।"
+    },
+    {
+      "id": "BSSC-038",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "संघ लोक सेवा आयोग के संदर्भ में निम्नलिखित कथनों पर विचार कीजिए। \n(With reference to the Union Public Service Commission, \nconsider the following statements.) \n \n1. \nयह भारत सरकार की सेवाओं में नियुक्ति\n के िलए परीक्षाओं का \nसंचालन करता है। (It conducts examinations for \nappointment to the services of the Government of \nIndia.) \n \n2. \nयह सिविल सेवा में पदोन्नति तथा एक सेवा से दूसरी सेवा में \nस्\nथाानांतरण के संबबंध में परामर्श ददेता है। (It advises on \npromotions in civil services and transfers from one \nservice to another.) \n \n3. \nयह भारत सरकार के अधीन कार्यारत् व्यक्तियों के अनुशासन से \nसंबबंधित िवष\nयों पर परामर्श ददेता है। (It advises on matters \nrelating to the discipline of persons serving under the \nGovernment of India.) \n \n.उपर्युक्त में से कौन-सा/से कथन सही है/हैं ? (Which of the above \nstatement(s) is/are correct?)",
+      "options": {
+        "A": "केवल 2 (Only 2)",
+        "B": "1 और 2 (1 and 2)",
+        "C": "1, 2 और 3 (1, 2 and 3)",
+        "D": "1 और 3 (1 and 3)"
+      },
+      "correct_answer": "B",
+      "solution": "संघ लोक सेवा आयोग (UPSC) के संबंध में कथन 1 और 2 सही हैं। आयोग के सदस्यों का कार्यकाल 6 वर्ष या 65 वर्ष की आयु तक होता है।"
+    },
+    {
+      "id": "BSSC-039",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "नीचे दो कथन दिए गए हैं, एक को अभिकथन (A) के रूप में और दूसरे \nको कारण (R) के रूप में रखा गया है। (Two statements are given \nbelow, one as Assertion (A) and the other as Reason (R).) \n \nअभिकथन (A) हाल के वर्षों में भारतीय संघवाद द सहयोगी संघवाद द से \n\nसौददेबबाजी के संघवाद द की ओर प्रवृत्त है। (Assertion (A) In recent \nyears, Indian federalism has tended to move from \ncooperative federalism towards bargaining federalism.)\n \nकारण (R) विधान की अवशिष्ट शक्ति\nयॉं केन्द्र में निहित है। (Reason \n(R) The residuary powers of legislation are vested in the \nCentre.)\n\t\nकूट: (Code:)",
+      "options": {
+        "A": "A और R दोनों सही हैं तथा R, A की सही वयाखया करता है (Both \n\nA and R are correct and R is the correct explanation \nof A)",
+        "B": "A और R दोनों सही हैं, परनतु R, A की सही वयाखया नहीं है। \n\n(Both A and R are correct, but R is not the correct \nexplanation of A.)",
+        "C": "A सही है, िकनतु R गलत है (A is correct, but R is incorrect)",
+        "D": "A गलत है, िकनतु R सही है (A is incorrect, but R is correct)"
+      },
+      "correct_answer": "A",
+      "solution": "अभिकथन (A) और कारण (R) दोनों सत्य हैं और R, A का सही स्पष्टीकरण है।"
+    },
+    {
+      "id": "BSSC-040",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Hard",
+      "question": "राजय विधानपरिषदद् के संदर्भ में निम्नलिखित कथनों पर विचार कीजिए। \n(With reference to the State Legislative Council, consider \nthe following statements.) \n \n1. \nइसके सदस्यों का निर्वाचन अनुपातिक प्रतिनिधित्व  की एकल \nसंक्रमणीय मत पद्धति  द्ारा िकया जाता है। (Its members are \nelected by the system of proportional representation \nby means of the single transferable vote.) \n \n2. \nइसके सदस्यों का कार्यकाल 6 वर्ष का होता है तथा एक-तिहाई \nसददसय प्रति दूसरे वर्ष अवकाश ग्रहण करते हैं। (Its members \nhave a term of 6 years and one-third of the members \nretire every second year.) \n \n3. \nकोई विधानसभा जहॉं विधानपरिषदद् नहीं है। अपनी कुल सददसय \nसंखया के दो-तिहाई बबहुमत से प्रस्ताव  पारित कर विधान परिषदद् का \nसृजन कर सकती है। (A Legislative Assembly where there \nis no Legislative Council can create a Legislative \nCouncil by passing a resolution with a two-thirds \nmajority of its total membership.) \n \nउपर्युक्त में से िकतने कथन सही हैं? (How many of the above \nstatements are correct?)",
+      "options": {
+        "A": "केवल एक (Only one)",
+        "B": "केवल दो (Only two)",
+        "C": "सभी तीन (All three)",
+        "D": "इनमें से कोई नहीं (None of these)"
+      },
+      "correct_answer": "B",
+      "solution": "राज्य विधानपरिषद के संदर्भ में दिए गए कथनों में से केवल दो कथन सत्य हैं।"
+    },
+    {
+      "id": "BSSC-041",
+      "topic": "Reasoning",
+      "subtopic": "Paper Folding",
+      "difficulty": "Medium",
+      "question": "एक कागज को नीचे दर्शाए गए अनुसार मोड़़कर पंच किया जाता है। खोले \nजाने पर यह कैसा दिखाई ददेगा? (A piece of paper is folded and \npunched as shown below. How will it look when unfolded?)",
+      "options": {
+        "A": "आकृति (A) / Figure (A)",
+        "B": "आकृति (B) / Figure (B)",
+        "C": "आकृति (C) / Figure (C)",
+        "D": "आकृति (D) / Figure (D)"
+      },
+      "correct_answer": "A",
+      "solution": "कागज को खोलने पर चारों कोनों पर सममित छिद्र दिखाई देंगे जो विकल्प आकृति (A) से मेल खाते हैं।",
+      "image": "/test-series-images/q41.png"
+    },
+    {
+      "id": "BSSC-042",
+      "topic": "Reasoning",
+      "subtopic": "Series",
+      "difficulty": "Medium",
+      "question": "अंग्रेजी वर्णानुक्रम के आधार पर ददी गई शृंखला में (?) के स्\nथाान पर कया \nआएगा? ((What will replace the (?) in the given series based \non the English alphabetical order?)\n \nDMW, GPZ, JSC, MVF, ?",
+      "options": {
+        "A": "NZK",
+        "B": "MWJ",
+        "C": "QAL",
+        "D": "PYI"
+      },
+      "correct_answer": "A",
+      "solution": "अंग्रेजी वर्णमाला शृंखला के अंतर नियम के अनुसार रिक्त स्थान पर 'NZK' आएगा।"
+    },
+    {
+      "id": "BSSC-043",
+      "topic": "Reasoning",
+      "subtopic": "Alphabet Test",
+      "difficulty": "Medium",
+      "question": "यदि शब्द MODULES के प्रतयेक अक्षर को अंग्रेजी वर्णमाला क्रम में \nव्यवस्थित किया ज\nाए, तो कितने अक्षरों का स्\nथाान अपरिवर्तित रहेगा? \n(If each letter of the word MODULES is arranged in \nalphabetical order, how many letters will remain in their \n\noriginal positions?)",
+      "options": {
+        "A": "दो (Two)",
+        "B": "एक (One)",
+        "C": "एक का भी नहीं (None)",
+        "D": "तीन (Three)"
+      },
+      "correct_answer": "B",
+      "solution": "MODULES को वर्णमाला क्रम में लिखने पर D, E, L, M, O, S, U बनता है। केवल एक अक्षर अपनी पूर्व स्थिति पर रहता है।"
+    },
+    {
+      "id": "BSSC-044",
+      "topic": "Reasoning",
+      "subtopic": "Seating Arrangement",
+      "difficulty": "Medium",
+      "question": "G, H, I, J, M, N और O, एक पंक्ति\n में उत्तर की ओर अभिमुख होकर बबैठे \nहैं। J के बाएँ केवल G बबैठा है। G और H के बबीच केवल चार व्यक्ति बबैठे \nहैं। N और I के बबीच केवल O बबैठा है, तथा N, H का निकटतम पड़ोसी \nनहीं है। पंक्ति\n के दाएँ छोर पर कौन बबैठा है? (G, H, I, J, M, N, and O \nare sitting in a row, facing north. Only G is sitting to the left \nof J. Only four people are sitting between G and H. Only \nO is sitting between N and I, and N is not an immediate \nneighbor of H. Who is sitting at the right end of the row?)",
+      "options": {
+        "A": "G",
+        "B": "I",
+        "C": "O",
+        "D": "M"
+      },
+      "correct_answer": "B",
+      "solution": "पंक्ति में व्यक्तियों को उत्तर की ओर मुख करके बैठाने पर अभीष्ट स्थिति में 'I' बैठता है।"
+    },
+    {
+      "id": "BSSC-045",
+      "topic": "Reasoning",
+      "subtopic": "Counting Figures",
+      "difficulty": "Medium",
+      "question": "ददी गई आकृति में कितने त्रिभुज हैं? (How many triangles are there \nin the given figure?)",
+      "options": {
+        "A": "28",
+        "B": "24",
+        "C": "26",
+        "D": "22"
+      },
+      "correct_answer": "A",
+      "solution": "दी गई संयुक्त ज्यामितीय आकृति में कुल 28 त्रिभुज बनते हैं।",
+      "image": "/test-series-images/q45.png"
+    },
+    {
+      "id": "BSSC-046",
+      "topic": "Reasoning",
+      "subtopic": "Mathematical Operations",
+      "difficulty": "Medium",
+      "question": "नीचे दिए गए समीकरण में * चिह्नों ह्नों को बदल\nने और समीकरण को संतुलित \nकरने के लिए गणितीय चिह्नों ह्नों के सही संयोजन का चयन कीजिए। (Select \nthe correct combination of mathematical signs to replace \nthe * symbols and balance the equation given below.)\n \n41 * 3 * 53 * 48 * 3 * 18 * 5 * 36",
+      "options": {
+        "A": "×, –, =, ¸, +, ×, –",
+        "B": "+, –, ×, +, =, ×, ¸",
+        "C": "–, ×, –, =, +, ×, –",
+        "D": "–, =, +, ×, –, ¸, +"
+      },
+      "correct_answer": "A",
+      "solution": "विकल्प (A) के गणितीय चिह्नों को प्रतिस्थापित करने पर समीकरण संतुलित हो जाता है।"
+    },
+    {
+      "id": "BSSC-047",
+      "topic": "Reasoning",
+      "subtopic": "Missing Number",
+      "difficulty": "Medium",
+      "question": "दिए गए पैटर्न का धयानपूर्वक अधययन करें और उस संखया का चयन करें, \nजो इसमें प्रश्नचिह्न (?) के स्\nथाान पर आ सकती है। (Carefully study the \ngiven pattern and select the number that can replace the \nquestion mark (?).)\n\n3\n\n7\n5\n\n7\n\n12\n6\n8\n?\n\n4\n4\n13\n3",
+      "options": {
+        "A": "4",
+        "B": "60",
+        "C": "9",
+        "D": "12"
+      },
+      "correct_answer": "D",
+      "solution": "स्तंभ/पंक्ति पैटर्न के अनुसार अज्ञात संख्या 12 है।"
+    },
+    {
+      "id": "BSSC-048",
+      "topic": "Reasoning",
+      "subtopic": "Blood Relations",
+      "difficulty": "Easy",
+      "question": "अनु, बबाली की बबहन है। कोमल, बबाली की माँ है। ददीनू, कोमल का पिता \nहै। इयान, ददीनू की माँ है। तो अनु, ददीनू से किस प्रकार संबबंधित है? (Anu \nis Bali's sister. Komal is Bali's mother. Deenu is Komal's \nfather. Ian is Deenu's mother. Then, how is Anu related to \nDeenu?)",
+      "options": {
+        "A": "माँ (Mother)",
+        "B": "ददाददी/नानी (Grandmother)",
+        "C": "बेटी (Daughter)",
+        "D": "पोती/नातिन (Granddaughter)"
+      },
+      "correct_answer": "D",
+      "solution": "अनु बाली की बहन है और कोमल बाली की माँ है। दीनू कोमल का पिता है, अतः अनु दीनू की नातिन/पोती (Granddaughter) है।"
+    },
+    {
+      "id": "BSSC-049",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Medium",
+      "question": "दिए गए विकलपों में से उस पद द का चयन करें, जो तीसरे पद द से उसी प्रकार \nसंबबंधित है, जिस प्रकार दूसरा पद द पहले पद द से संबबंधित है— (Select the \nterm from the given options that is related to the third term \nin the same way as the second term is related to the first \nterm—)\n \nकुवैत : दिनार : : तुर्की : ? (Kuwait : Dinar : : Turkey : ?)",
+      "options": {
+        "A": "रियाल (Riyal)",
+        "B": "कयात (Kyat)",
+        "C": "येन (Yen)",
+        "D": "लीरा (Lira)"
+      },
+      "correct_answer": "D",
+      "solution": "तुर्की की राष्ट्रीय मुद्रा लीरा (Lira) है, जिस प्रकार म्यांमार की क्यात और जापान की येन है।"
+    },
+    {
+      "id": "BSSC-050",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Easy",
+      "question": "जिस प्रकार ‘उल्लूू’ ‘उड़ने’ से संबबंधित है, उसी प्रकार ‘मेमने’ से संबबंधित \nहै— (Just as ‘Owl’ is related to ‘Flying’, in the same way \n‘Lamb’ is related to—)",
+      "options": {
+        "A": "क्रीड़ा करना (Playing)",
+        "B": "अकड़ (Strutting)",
+        "C": "उड़ना (Flying)",
+        "D": "छिपना (Hiding)"
+      },
+      "correct_answer": "A",
+      "solution": "उल्लू का स्वभाव उड़ना है, उसी प्रकार मेमना (Lamb) उछल-कूद और क्रीड़ा करने (Playing/Frisking) के लिए जाना जाता है।"
+    },
+    {
+      "id": "BSSC-051",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "एक प्रतिवर्ती ी चाप (reflex arc) का सही मार्ग कौन-सा है? (Which is \nthe correct pathway of a reflex arc?)",
+      "options": {
+        "A": "ग्राही → प्रेरक नयूरॉन → मेरुरज्जु ु → संवेदी नयूरॉन → प्रभावक \n\n(Receptor → Motor neuron → Spinal cord → \nSensory neuron → Effector)",
+        "B": "प्रभावक → प्रेरक नयूरॉन → मस्तिष्क ष्क → संवेदी नयूरॉन → ग्राही \n\n(Effector → Motor neuron → Brain → Sensory \nneuron → Receptor)",
+        "C": "ग्राही → संवेदी नयूरॉन → मेरुरज्जु ु → प्रेरक नयूरॉन → प्रभावक \n\n(Receptor → Sensory neuron → Spinal cord → \nMotor neuron → Effector)",
+        "D": "ग्राही → संवेदी नयूरॉन → मस्तिष्क ष्क → प्रेरक नयूरॉन → प्रभावक \n\n(Receptor → Sensory neuron → Brain → Motor \nneuron → Effector)"
+      },
+      "correct_answer": "C",
+      "solution": "प्रतिवर्ती चाप का सही पथ: संवेदी अंग/ग्राही → संवेदी न्यूरॉन → मेरुरज्जु (Spinal Cord) → प्रेरक न्यूरॉन → प्रभावक पेशी (Effector)।"
+    },
+    {
+      "id": "BSSC-052",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "गोलीय दर्पणों द्ारा परावर्तन के संबबंध में निमन में से कौन-से सही हैं? \n(Which of the following are correct regarding reflection by \nspherical mirrors?)",
+      "options": {
+        "A": "यदि वसतु को ध्रुव  और फोकस के बबीच रखा जाता है, तो अवतल \n\nदर्पण प्रकाश किरणों को अपसारित कर ददेगा। (If the object is \nplaced between the pole and the focus, a concave \nmirror will diverge the light rays.)",
+        "B": "उत्तल दर्पण किरण-पुंज को अभिसरित कर सकता है। (A convex \n\nmirror can converge a beam of rays.)",
+        "C": "केवल",
+        "D": "सही है। (Only (b) is correct.)\n \n(B)  (a) और (b) दोनों गलत है। (Both (a) and (b) are incorrect.)\n \n(C)  केवल (a) सही है। (Only (a) is correct.)\n \n(D)  (a) और (b) दोनों सही हैं। (Both (a) and (b) are correct.)"
+      },
+      "correct_answer": "A",
+      "solution": "अवतल दर्पण में वस्तु ध्रुव और फोकस के बीच होने पर आभासी, सीधा तथा बड़ा प्रतिबिंब बनता है।"
+    },
+    {
+      "id": "BSSC-053",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से कौन-सा ख\nाद्य  संरक्षण का एक सामानय तरीका है? \n(Which of the following is a common method of food \npreservation?)\n \n(i)  \nनमक मिलाना (Salting)\n \n(ii)  चीनी मिलाना (Sugaring)\n \n(iii)  निर्जलीकरण (Dehydration)",
+      "options": {
+        "A": "केवल (i) और (ii) (Only (i) and (ii))",
+        "B": "केवल (ii) और (iii) (Only (ii) and (iii))",
+        "C": "केवल (i) और (iii) (Only (i) and (iii))",
+        "D": "(i), (ii) और (iii) सभी (All of (i), (ii) and (iii))"
+      },
+      "correct_answer": "D",
+      "solution": "सुखाना (Drying), प्रशीतन (Refrigeration) तथा डिब्बाबंदी (Canning) सभी खाद्य संरक्षण के सामान्य तरीके हैं।"
+    },
+    {
+      "id": "BSSC-054",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Easy",
+      "question": "एक अर्धचालक (semiconductor) की विद्ुत चालकता: (The electrical \nconductivity of a semiconductor:)",
+      "options": {
+        "A": "तापमान बढ़ने पर घटती है। (Decreases as temperature \n\nincreases.)",
+        "B": "तापमान बढ़ने पर बढ़ती है। (Increases as temperature \n\nincreases.)",
+        "C": "तापमान से अप्रभावित रहती है। (Remains unaffected by \n\ntemperature.)",
+        "D": "पहले बढ़ती है फिर घटती है। (First increases and then \n\ndecreases.)"
+      },
+      "correct_answer": "B",
+      "solution": "तापमान बढ़ने पर अर्धचालक (Semiconductor) में सहसंयोजक बंध टूटते हैं और मुक्त इलेक्ट्रॉन बढ़ते हैं, जिससे चालकता बढ़ती है।"
+    },
+    {
+      "id": "BSSC-055",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "मानव कान का कौन-सा भाग ददाब भिन्नताओं (ध्वनि तरंगों) को विद्ुत \nसंकेतों में परिवर्तित करता है? (Which part of the human ear \nconverts pressure variations (sound waves) into electrical \nsignals?)",
+      "options": {
+        "A": "कर्ण पटल (Eardrum) (Eardrum)",
+        "B": "मधय कर्ण की अस्थिकाएँ (Middle ear ossicles)",
+        "C": "कर्णावर्त (Cochlea) (Cochlea)",
+        "D": "यूस्टेशियन नलिका (Eustachian tube)"
+      },
+      "correct_answer": "C",
+      "solution": "आंतरिक कान का कर्णावर्त (Cochlea) तरल कंपन व ध्वनि दाब भिन्नताओं को तंत्रिका विद्युत संकेतों में रूपांतरित करता है।"
+    },
+    {
+      "id": "BSSC-056",
+      "topic": "Mathematics",
+      "subtopic": "Simplification",
+      "difficulty": "Hard",
+      "question": "निम्नांकित का मान ज्ात कीजिए— (Find the value of the \nfollowing—)\n\n \n2.5 × 4 + 3.68 ¸ 4 – 8.46 × 2 + 7.365 × 4 + 2.8 × 3 – \n1.675 × 2",
+      "options": {
+        "A": "28.51",
+        "B": "28.96",
+        "C": "27.21",
+        "D": "27.98"
+      },
+      "correct_answer": "A",
+      "solution": "दशमलव संक्रियाओं को BODMAS नियमानुसार हल करने पर मान 28.51 प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-057",
+      "topic": "Mathematics",
+      "subtopic": "LCM & Square",
+      "difficulty": "Medium",
+      "question": "यदि ‘M’ सबबसे छोटी पूर्ण वर्ग संखया है, जो 12, 15 और 18 से पूर्णतः \nविभाजय है, तो M को 25 से विभाजित करने पर प्राप्त भागफल के अंकों \nका योग ज्ात कीजिए। (If ‘M’ is the smallest perfect square \nnumber that is perfectly divisible by 12, 15, and 18, find \nthe sum of the digits of the quotient obtained when M is \ndivided by 25.)",
+      "options": {
+        "A": "7",
+        "B": "9",
+        "C": "8",
+        "D": "6"
+      },
+      "correct_answer": "B",
+      "solution": "12, 15, 18 का LCM = 180 = 2² × 3² × 5। पूर्ण वर्ग बनाने हेतु 5 से गुणा करेंगे = 900। अंकों का योग 9 + 0 + 0 = 9।"
+    },
+    {
+      "id": "BSSC-058",
+      "topic": "Mathematics",
+      "subtopic": "Data Interpretation",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित तालिका का अधययन कीजिए और प्रश्न का उत्तर ददीजिए। \n(Study the following table and answer the question.)\n \nतालिका एक कंपनी द्ारा वर्ष 2012 और 2013 में निर्मित कारों और \nबबाइकों की संख्या दर्शाती है। (The table shows the number of \ncars and bikes manufactured by a company in the years \n2012 and 2013.)\n\nवर्ष\n(Year)\n\nकारों की संख्ा \n\nबाइकों की संख्ा \n\n(हजार में)\n\n(हजार में)\n\n2012\n45\n50\n\n2013\n40\n60\n\n \nवर्ष 2012 और 2013 में मिलाकर कितनी कारों (हजारों में) का \nनिर्माण किया गया? (How many cars (in thousands) were \nmanufactured in the years 2012 and 2013 combined?)",
+      "options": {
+        "A": "85",
+        "B": "105",
+        "C": "75",
+        "D": "95"
+      },
+      "correct_answer": "D",
+      "solution": "तालिका के आंकड़ों के अनुसार अभीष्ट मान 95 प्राप्त होता है।",
+      "image": "/test-series-images/q58.png"
+    },
+    {
+      "id": "BSSC-059",
+      "topic": "Mathematics",
+      "subtopic": "Probability",
+      "difficulty": "Easy",
+      "question": "एक बबार में तीन सिकके उछालने पर, कम से कम एक हेड आने की \nप्रायिकता ज्ात कीजिए। (Find the probability of getting at least \none head when tossing three coins at once.)",
+      "options": {
+        "A": "1\n2",
+        "B": "1\n8",
+        "C": "3\n8",
+        "D": "7\n8"
+      },
+      "correct_answer": "D",
+      "solution": "कुल परिणाम = 2³ = 8। कोई हेड नहीं (TTT) की संख्या = 1। कम-से-कम एक हेड की प्रायिकता = 1 - 1/8 = 7/8।"
+    },
+    {
+      "id": "BSSC-060",
+      "topic": "Mathematics",
+      "subtopic": "Time & Distance",
+      "difficulty": "Medium",
+      "question": "चेतन शहर A से शहर B तक यात्ा करता है। यदि चेतन अपनी कार को \n\nअपनी सामानय चाल की 3\n\n4\n चाल पर चलाता है, तो वह शहर B तक 33 \n\nमिनट ददेरी से पहुँचता है। यदि चेतन अपनी कार सामानय चाल से चलाता, \nतो शहर A से शहर B तक यात्ा करने में उसे कितना समय (मिनट में) \nलगता? (Chetan travels from City A to City B. If Chetan \n\ndrives his car at 3\n\n4\n of his usual speed, he reaches City B \n\nwith a delay of 33 minutes. If Chetan were to drive his car \nat his usual speed, how long (in minutes) would it take him \nto travel from City A to City B?)",
+      "options": {
+        "A": "100",
+        "B": "93",
+        "C": "99",
+        "D": "97"
+      },
+      "correct_answer": "A",
+      "solution": "समय और दूरी के सूत्र गति = दूरी / समय द्वारा हल करने पर अभीष्ट चाल 100 किमी/घंटा प्राप्त होती है।"
+    },
+    {
+      "id": "BSSC-061",
+      "topic": "General Studies",
+      "subtopic": "Ancient History",
+      "difficulty": "Medium",
+      "question": "'गल्लाा-बबखशी' प्रणाली के संबबंध में निम्नलिखित कथनों पर विचार कीजिए। \n(Consider the following statements regarding the 'Galla-\nBakhshi' system.) \n \n1. \nइसे बबँटाई प्रणाली के नाम से भी जाना जाता है। (It was also \nknown as the Batai system.) \n \n2. \nइस प्रणाली में उपज निर्धारित अनुपात में िकसानों और राजय में नहीं \nबबॉंटी जाती थी। (Under this system, the produce was not \ndivided between the farmers and the state in a fixed \nproportion.) \n \n3. \nइस प्रणाली को बबहुत नयायपूर्ण माना जाता था। (This system \nwas considered very fair.)\n \nउपर्युक्त में से कौन-सा/से कथन सतय है/हैं ? (Which of the above \nstatement(s) is/are true?)",
+      "options": {
+        "A": "1 और 3 (1 and 3)",
+        "B": "1 और 2 (1 and 2)",
+        "C": "1, 2 और 3 (1, 2 and 3)",
+        "D": "केवल 2 (Only 2)"
+      },
+      "correct_answer": "C",
+      "solution": "संगम काल में दक्षिण भारत में तीन प्रमुख राजवंश चेर, चोल और पांड्य फले-फूले।"
+    },
+    {
+      "id": "BSSC-062",
+      "topic": "General Studies",
+      "subtopic": "Medieval History",
+      "difficulty": "Medium",
+      "question": "आतम सममान आंदोलन के संबबंध में कौन-सा/से कथन सही है/हैं ? (Which \nof the following statement(s) is/are correct regarding the \nSelf-Respect Movement?) \n \n1. \nइसका आधार उत्तर पश्चिम भारत में था। (It was based in north-\nwestern India.) \n \n2. \nइसका सबबसे प्रमुख उद्ेशय महिला अधिकारों के िलए लड़ना था। (Its \nmost prominent objective was to fight for women's \nrights.)\n\t\nकूट: (Code:)",
+      "options": {
+        "A": "केवल 1 (Only 1)",
+        "B": "केवल 2 (Only 2)",
+        "C": "1 और 2 दोनों (Both 1 and 2)",
+        "D": "न तो 1 और न ही 2 (Neither 1 nor 2)"
+      },
+      "correct_answer": "B",
+      "solution": "मध्यकालीन भारत में भूमि राजस्व एवं प्रशासन संबंधी व्यवस्था का सही उत्तर विकल्प (B) है।"
+    },
+    {
+      "id": "BSSC-063",
+      "topic": "General Studies",
+      "subtopic": "Ancient History",
+      "difficulty": "Medium",
+      "question": "अलबबरूनी के संबबंध में निम्नलिखित कथनों पर विचार कीजिए। (Consider \nthe following statements regarding Al-Biruni.) \n \n1. \nअलबबरूनी का गणित की ओर झुकाव था। (Al-Biruni had an \ninclination towards mathematics.) \n \n2. \nउसका यात्रा वृत्तांत पश्चिम में सहारा रेगिसतान से लेकर उत्तर में वोलगा \nनददी तक फैला हुआ था। (His travel account extended \nfrom the Sahara Desert in the west to the Volga River \nin the north.) \n \n3. \nभारतीय ग्रंथों के प्रति उसकी ददृष्टि आलोचनातमक थी। (His \napproach towards Indian texts was critical.)\n \nउपर्युक्त में से िकतने कथन सही हैं ? (How many of the above \nstatements are correct?)",
+      "options": {
+        "A": "केवल एक (Only one)",
+        "B": "केवल दो (Only two)",
+        "C": "सभी तीन (All three)",
+        "D": "उपयुक्त में से कोई नहीं (None of the above)"
+      },
+      "correct_answer": "A",
+      "solution": "मौर्यकालीन एवं बौद्ध वास्तुकला में स्तूप के अंगों (अंड, हर्मिका, छत्र) का संबंध स्तूप से है।"
+    },
+    {
+      "id": "BSSC-064",
+      "topic": "General Studies",
+      "subtopic": "Modern History",
+      "difficulty": "Medium",
+      "question": "चेर शासक शेनगुट्टवन के संबबंध में कौन-सा कथन सही नहीं है ? \n(Which statement is not correct regarding the Chera ruler \nSenguttuvan?)",
+      "options": {
+        "A": "उसे लाल चेर के नाम से जाना जाता था। (He was known as \n\nthe Red Chera.)",
+        "B": "उसने अपने भाई को राजसिंहासन पर बबैठाया था। (He placed his \n\nbrother on the throne.)",
+        "C": "उसने यमुना को पार कर उत्तर में चढ़ाई की थी। (He crossed the \n\nYamuna and invaded the north.)",
+        "D": "ईसा की दूसरी सददी के बाद चेर शक्ति\n का ह्ास हो गया। (Chera \npower declined after the second century CE.)"
+      },
+      "correct_answer": "C",
+      "solution": "भारतीय राष्ट्रीय आंदोलन में क्रांतिकारी आंदोलनों से संबंधित सही तथ्य विकल्प (C) है।"
+    },
+    {
+      "id": "BSSC-065",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Medium",
+      "question": "शक-कुषाण काल में भवन-निर्माण के संबबंध में निम्नलिखित कथनों पर \nविचार कीजिए। (Consider the following statements regarding \nconstruction during the Shaka-Kushana period.) \n \n1. \nपककी ईंटों का प्रयोग फर्श बबनाने में िकया जाता था। (Baked \nbricks were used for making floors.) \n \n2. \nखपरों (टाइलों) का प्रयोग फर्श और छत दोनों में िकया जाता था \n(Tiles were used for both floors and roofs.) \n \n3. \nसुर्खीं और ख\nपरा बबाहर से अपनाई गई वसतु थी। (Surkhi and \ntiles were materials adopted from outside.)\n \nउपर्युक्त में से कौन-सा/से कथन सही है/हैं ? (Which of the above \nstatement(s) is/are correct?)",
+      "options": {
+        "A": "केवल 1 (Only 1)",
+        "B": "केवल 2 (Only 2)",
+        "C": "1 और 2 (1 and 2)",
+        "D": "1, 2 और 3 (1, 2 and 3)"
+      },
+      "correct_answer": "B",
+      "solution": "बैंकिंग सुधारों हेतु नरसिम्हम समिति का गठन 1991 एवं 1998 में किया गया था।"
+    },
+    {
+      "id": "BSSC-066",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Medium",
+      "question": "भारत में 5 ट्रिलियन डॉलर अर्थव्यवस्था ा का ल\nक्ष्य कब ब तक प्राप्त कर \nलेने का लक्ष्य रखा है ? (By when has India set the target of \nachieving a 5 trillion dollar economy?)",
+      "options": {
+        "A": "वर्ष 2022 (Year 2022)",
+        "B": "वर्ष 2024 (Year 2024)",
+        "C": "वर्ष 2026 (Year 2026)",
+        "D": "वर्ष 2030 (Year 2030)"
+      },
+      "correct_answer": "C",
+      "solution": "भारत सरकार द्वारा 5 ट्रिलियन डॉलर की अर्थव्यवस्था बनाने का लक्ष्य निर्धारित किया गया था।"
+    },
+    {
+      "id": "BSSC-067",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "हरित क्रान्ति  से भारत के कौन-से राजय सर्वाधिक ल\nाभान्विित हुए? \n(Which states of India benefited the most from the Green \nRevolution?)",
+      "options": {
+        "A": "िबबहार, पश्चिमी बबंगाल और असम (Bihar, West Bengal and \n\nAssam)",
+        "B": "राजस्\nथाान, गुजरात और महाराष्ट्र (Rajasthan, Gujarat and \nMaharashtra)",
+        "C": "पंजाबब, हरियाणा और पश्चिमी उत्तर प्रददेश (Punjab, Haryana \n\nand Western Uttar Pradesh)",
+        "D": "तमिलनाडु, आन्ध्र  प्रददेश और केरल (Tamil Nadu, Andhra \n\nPradesh and Kerala)"
+      },
+      "correct_answer": "C",
+      "solution": "1960 के दशक में हरित क्रांति का सर्वाधिक लाभ पंजाब, हरियाणा और पश्चिमी उत्तर प्रदेश के गेहूं उत्पादक क्षेत्रों को मिला।"
+    },
+    {
+      "id": "BSSC-068",
+      "topic": "General Studies",
+      "subtopic": "Govt Schemes",
+      "difficulty": "Medium",
+      "question": "'प्रधानमंत्ी फसल बबीमा योजना' के सन्दर्भ में निम्नलिखित कथनों पर विचार \nकीजिए। ('Pradhan Mantri Fasal Bima Yojana' consider the \nfollowing statements.) \n \n1. \nइस योजना के अन्तर्गत कृषकों को वर्ष के िकसी भी मौसम में \nउनके द्ारा िकसी भी फसल की खेती करने पर दो प्रतिशत की एक \nसमान ददर से बबीमा िकसत का भुगतान करना होगा। (Under this \nscheme, farmers have to pay an insurance premium \nat a uniform rate of two percent for cultivating any \ncrop in any season of the year.) \n \n2. \nयह योजना, चक्रवात एवं गैर-मौसमी वर्षा से होने वाली कटाई-\nउपरानत घाटे को बबीमाकृत करती है। (This scheme insures \npost-harvest losses caused by cyclones and \nunseasonal rainfall.) \n\t\nकूट: (Code:)",
+      "options": {
+        "A": "केवल 1 (Only 1)",
+        "B": "केवल 2 (Only 2)",
+        "C": "1 और 2 दोनों (Both 1 and 2)",
+        "D": "न तो 1 और न ही 2 (Neither 1 nor 2)"
+      },
+      "correct_answer": "C",
+      "solution": "प्रधानमंत्री फसल बीमा योजना के तहत किसानों को न्यूनतम प्रीमियम पर व्यापक जोखिम सुरक्षा दी जाती है। दोनों कथन 1 और 2 सत्य हैं।"
+    },
+    {
+      "id": "BSSC-069",
+      "topic": "General Studies",
+      "subtopic": "Business & Economy",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से कौन-सी भारत की सबबसे बबड़ी ई-कॉमर्स कमपनी \nहै ? (Which of the following is the largest e-commerce \ncompany in India?)",
+      "options": {
+        "A": "फ्लिपकार्ट (Flipkart)",
+        "B": "जबांग (Jabong)",
+        "C": "एम-जंकशन (m-junction)",
+        "D": "भारती एयरटेल (Bharti Airtel)"
+      },
+      "correct_answer": "A",
+      "solution": "फ्लिपकार्ट (Flipkart) भारत की सबसे बड़ी प्रमुख घरेलू ई-कॉमर्स कंपनियों में से एक है जिसकी स्थापना 2007 में सचिन बंसल और बिन्नी बंसल ने की थी।"
+    },
+    {
+      "id": "BSSC-070",
+      "topic": "General Studies",
+      "subtopic": "Social Issues",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से िकस ददेश ने सरकारी रूप में परिवार िनयोजन कार्यक्रम \nको सर्वप्रथम अपनाया ? (Which of the following countries first \nadopted a family planning programme as a government \npolicy?)",
+      "options": {
+        "A": "ब्राजील ने (Brazil)",
+        "B": "यू०एस०ए० ने (USA)",
+        "C": "भारत ने (India)",
+        "D": "चीन ने (China)"
+      },
+      "correct_answer": "C",
+      "solution": "भारत विश्व का पहला देश है जिसने 1952 में आधिकारिक तौर पर राष्ट्रीय परिवार नियोजन कार्यक्रम शुरू किया था।"
+    },
+    {
+      "id": "BSSC-071",
+      "topic": "Reasoning",
+      "subtopic": "Coding-Decoding",
+      "difficulty": "Medium",
+      "question": "शब्द SHOCKED के प्रतयेक अक्षर को अंग्रेजी वर्णमाला क्रम में उसके \nठीक पहले आने वाले अक्षर से बदल दि\nया जाता है, और फिर इस प्रकार \nप्राप्त सभी अक्षरों को अंग्रेजी वर्णमाला क्रम में व्यवस्थित किया जाता है। इस \nप्रकार बबने अक्षरों के नए समूह में निम्नलिखित में से कौन-सा अक्षर दाएँ से \nदूसरा होगा? (Each letter of the word SHOCKED is replaced \nby the letter immediately preceding it in the English \nalphabetical order, and then all the letters obtained in this \nmanner are arranged in English alphabetical order. Which \n\nof the following letters will be the second from the right in \nthe new group of letters thus formed?)",
+      "options": {
+        "A": "G",
+        "B": "N",
+        "C": "D",
+        "D": "J"
+      },
+      "correct_answer": "D",
+      "solution": "शब्द SHOCKED के अक्षरों को वर्णमाला स्थिति के अनुसार बदलने पर अभीष्ट अक्षर 'J' प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-072",
+      "topic": "Reasoning",
+      "subtopic": "Syllogism",
+      "difficulty": "Medium",
+      "question": "दिए गए कथनों और निष्कर्षों को धयानपूर्वक पढ़ें। यह मानते हुए कि  कथनों \nमें ददी गई जानकारी सतय है, भले ही वह सामानयतः ज्ात तथयों से भिन्न प्रतीत \nहोती हो, निर्णय कीजिए कि दिए गए निष्कर्षों में से कौन-से निष्कर्ष कथनों \nका तार्किक रूप से अनुसरण करते हैं? (Read the given statements \nand conclusions carefully. Assuming that the information \ngiven in the statements is true, even if it appears to differ \nfrom generally known facts, decide which of the given \nconclusions logically follow from the statements?) \n\t\nकथन: (Statements:)\n \nकोई गलीचा, लैंप नहीं है। (No carpet is a lamp.)\n \nकोई ददरवाजा, गलीचा नहीं है। (No door is a carpet.)\n\t\nनिषकर्ष: (Conclusions:)\n \n(I)  \nकोई ददरवाजा, लैंप नहीं है। (No door is a lamp.)\n \n(II)  कुछ लैंप, ददरवाजे हैं। (Some lamps are doors.)",
+      "options": {
+        "A": "केवल निष्कर्ष (I) अनुसरण करता है। (Only conclusion (I) \n\nfollows.)",
+        "B": "केवल निष्कर्ष (II) अनुसरण करता है। (Only conclusion (II) \n\nfollows.)",
+        "C": "निष्कर्ष (I) और (II) दोनों अनुसरण करते हैं। (Both conclusions \n\n(I) and (II) follow.)",
+        "D": "न तो निष्कर्ष (I) और न ही (II) अनुसरण करता है। (Neither \n\nconclusion (I) nor (II) follows.)"
+      },
+      "correct_answer": "A",
+      "solution": "कथनों का वेन आरेख बनाकर परीक्षण करने पर केवल निष्कर्ष (I) अनुसरण करता है।"
+    },
+    {
+      "id": "BSSC-073",
+      "topic": "Reasoning",
+      "subtopic": "Direction Sense",
+      "difficulty": "Medium",
+      "question": "परितोष बिंदु A से चलना शुरू करता है और दक्षिण दि\nशा में 22 किमी० \nचलता है। फिर वह दाएँ मुड़ता है, 12 किमी० चलता है, फिर दाएँ मुड़कर \n26 किमी० चलता है। इसके बबाद वह दाएँ मुड़कर 23 किमी० चलता है। \nअंत में वह दाएँ मुड़कर 4 किमी० चलता है और बिंदु P पर रुक जाता है। \nबिंदु A पर वापस पहुँचने के लिए उसे कितनी दूर (सबबसे कम दूरी) और \nकिस दिशा में चलना चाहिए? (जब ब तक अनयथा निर्दिष्ट न हो, सभी मोड़ \nकेवल 90 डिग्री ग्री के हैं।) (Paritosh starts walking from point A \nand walks 22 km in the south direction. Then he turns right \nand walks 12 km, then turns right and walks 26 km. After \nthis, he turns right and walks 23 km. Finally, he turns right \nand walks 4 km and stops at point P. How far (shortest \ndistance) and in which direction should he walk to reach \npoint A again? (Unless otherwise specified, all turns are \nonly 90 degrees.))",
+      "options": {
+        "A": "11 किमी०, पश्चिम की ओर (11 km, towards the west)",
+        "B": "10 किमी०, पूर्व की ओर (10 km, towards the east)",
+        "C": "10 किमी०, पश्चिम की ओर (10 km, towards the west)",
+        "D": "11 किमी०, पूर्व की ओर (11 km, towards the east)"
+      },
+      "correct_answer": "C",
+      "solution": "परितोष की दिशा और दूरी का निर्धारण करने पर वह प्रारंभिक बिंदु से 10 किमी पश्चिम दिशा में है।"
+    },
+    {
+      "id": "BSSC-074",
+      "topic": "Reasoning",
+      "subtopic": "Puzzle",
+      "difficulty": "Medium",
+      "question": "सात बॉक्स M, N, O, P, Q, R और S एक के ऊपर एक रखे गए हैं, \nलेकिन आवशयक नहीं कि वे इसी क्रम में हों । P को नीचे से तीसरे स्\nथाान \nपर रखा गया है। P और M के बबीच केवल एक बॉक्स रखा गया है, लेकिन \nM को सबबसे निचले स्\nथाान पर नहीं रखा गया है। M और R के बबीच केवल \nतीन बॉक्स रखे गए हैं। O को Q के ठीक नीचे रखा गया है। O और N के \nबबीच केवल एक बॉक्स रखा गया है। कौन-सा बॉक्स ऊपर से दूसरे स्\nथाान पर \nरखा गया है? (Seven boxes M, N, O, P, Q, R and S are placed \none above another, but not necessarily in the same order. \nP is placed third from the bottom. Only one box is placed \nbetween P and M, but M is not placed at the bottommost \nposition. Only three boxes are placed between M and R. \nO is placed immediately below Q. Only one box is placed \nbetween O and N. Which box is placed second from the \ntop?)",
+      "options": {
+        "A": "N",
+        "B": "O",
+        "C": "Q",
+        "D": "R"
+      },
+      "correct_answer": "B",
+      "solution": "सात बॉक्सों को दी गई शर्तों के अनुसार ऊपर से नीचे क्रमबद्ध करने पर अभीष्ट स्थान पर बॉक्स 'O' आता है।"
+    },
+    {
+      "id": "BSSC-075",
+      "topic": "Reasoning",
+      "subtopic": "Series",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित अक्षर, संखया और प्रतीक शृंखला का संदर्भ लीजिए और दिए \nगए प्रश्न का उत्तर ददीजिए। गिनती केवल बाएँ से दाएँ की जानी चाहिए। \n(Refer to the following series of letters, numbers and \nsymbols and answer the given question. Counting should \nbe done only from left to right.) \n \n(बाएँ) K A T & 4 @ Y # 6 K & 2 R % 7 D 3 5 E * S (दाएँ) \n \n(Left) K A T & 4 @ Y # 6 K & 2 R % 7 D 3 5 E * S (Right)\n \nऐसे कितने प्रतीक हैं जिनके ठीक पहले एक संखया और ठीक बाद में \nएक अक्षर है? (How many such symbols are there which \nare immediately preceded by a number and immediately \nfollowed by a letter?)",
+      "options": {
+        "A": "तीन (Three)",
+        "B": "एक (One)",
+        "C": "दो (Two)",
+        "D": "चार (Four)"
+      },
+      "correct_answer": "C",
+      "solution": "शृंखला में दिए गए प्रतीकों और अक्षरों के जोड़े की गणना करने पर ऐसे दो (2) उदाहरण मिलते हैं।"
+    },
+    {
+      "id": "BSSC-076",
+      "topic": "Reasoning",
+      "subtopic": "Coding-Decoding",
+      "difficulty": "Medium",
+      "question": "एक निश्चित कूट भाषा में, ‘BORE’ को ‘8624’ के रूप में कूटबद्ध किया \nगया है और ‘TABS’ को ‘3217’ के रूप में कूटबद्ध किया गया है। ददी गई \nकूट भाषा में ‘B’ के लिए कूट कया है? (In a certain code language, \n‘BORE’ is coded as ‘8624’ and ‘TABS’ is coded as ‘3217’. \nWhat is the code for ‘B’ in the given code language?)",
+      "options": {
+        "A": "1",
+        "B": "7",
+        "C": "8",
+        "D": "2"
+      },
+      "correct_answer": "D",
+      "solution": "BORE = 8624। कूट भाषा के विश्लेषण के अनुसार अभीष्ट अक्षर का कोड 2 है।"
+    },
+    {
+      "id": "BSSC-077",
+      "topic": "Reasoning",
+      "subtopic": "Blood Relations",
+      "difficulty": "Medium",
+      "question": "एक निश्चित कूट भाषा में— (In a certain code language—)\n \n‘A × B’ का अर्थ है कि  ‘A, B का पुत्र  है’। (‘A × B’ means that ‘A \nis the son of B’.)\n \n‘A − B’ का अर्थ है कि  ‘A, B का भाई है’। (‘A − B’ means that ‘A \nis the brother of B’.)\n \n‘A + B’ का अर्थ है कि  ‘A, B की पतनी है’। (‘A + B’ means that ‘A \nis the wife of B’.)\n \n‘A % B’ का अर्थ है कि  ‘A, B का पिता है’। (‘A % B’ means that ‘A \nis the father of B’.) \n \nयदि ‘M × N % P + S − T’ है, तो M का T से कया संबबंध है? (If ‘M \n× N % P + S − T’, then how is M related to T?)",
+      "options": {
+        "A": "भाई की पतनी का पिता (Father of brother's wife)",
+        "B": "भाई की पतनी के पिता का पिता (Father of the father of \n\nbrother's wife)",
+        "C": "भाई की पतनी के पिता का भाई (Brother of the father of \n\nbrother's wife)",
+        "D": "भाई की पतनी का भाई (Brother of brother's wife)"
+      },
+      "correct_answer": "A",
+      "solution": "दिए गए सांकेतिक संबंधों का विस्तार करने पर व्यक्ति का संबंध 'भाई की पत्नी का पिता' (Father of brother's wife) बनता है।"
+    },
+    {
+      "id": "BSSC-078",
+      "topic": "Reasoning",
+      "subtopic": "Number Series",
+      "difficulty": "Medium",
+      "question": "ददी गई शृंखला में प्रश्न चिह्न (?) के स्\nथाान पर कया आना चाहिए? (What \nshould come in place of the question mark (?) in the given \nseries?) \n \n87 118 149 ? 211 242",
+      "options": {
+        "A": "171",
+        "B": "180",
+        "C": "188",
+        "D": "199"
+      },
+      "correct_answer": "B",
+      "solution": "शृंखला के उत्तरोत्तर अंतरों का विश्लेषण करने पर प्रश्नवाचक चिह्न (?) के स्थान पर 180 आता है।"
+    },
+    {
+      "id": "BSSC-079",
+      "topic": "Reasoning",
+      "subtopic": "Scheduling Puzzle",
+      "difficulty": "Medium",
+      "question": "I, J, K, L, U, V और W में से प्रतयेक की परीक्षा सोमवार से शुरू होकर \nरविवार को समापत होने वाले एक ही सपताह के अलग-अलग दिन है। \nJ की परीक्षा शुक्रवार को है। V और J के बबीच केवल दो व्यक्तियों की \nपरीक्षा है। L और V के बबीच केवल चार व्यक्तियों की परीक्षा है। U की \nपरीक्षा W के ठीक बाद है। K की परीक्षा सोमवार को नहीं है। K से पहले \nऔर I के बबाद कितने व्यक्तियों की परीक्षा है? (Each of I, J, K, L, U, \nV and W has an examination on a different day of the \nsame week, starting from Monday and ending on Sunday. \nJ's examination is on Friday. There are only two persons' \nexaminations between V and J. There are only four \npersons' examinations between L and V. U's examination is \nimmediately after W's. K's examination is not on Monday. \nHow many persons have their examinations before K and \nafter I?)",
+      "options": {
+        "A": "तीन (Three)",
+        "B": "दो (Two)",
+        "C": "एक (One)",
+        "D": "चार (Four)"
+      },
+      "correct_answer": "B",
+      "solution": "सोमवार से रविवार की परीक्षा समय सारिणी के अनुसार दोनों शर्तों के बीच दो (2) व्यक्तियों की परीक्षा है।"
+    },
+    {
+      "id": "BSSC-080",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Medium",
+      "question": "उस त्रिक का चयन कीजिए जो नीचे दिए गए दो त्रिकों के समान पैटर्न का \nअनुसरण करता है। दोनों त्रिक समान पैटर्न का अनुसरण करते हैं। (Select \nthe triplet that follows the same pattern as the two triplets \ngiven below. Both triplets follow the same pattern.)\n \nJK - LM - NO\n \nTU - VW - XY",
+      "options": {
+        "A": "DE - FG - HI",
+        "B": "DE - FB - DF",
+        "C": "WE - DF - HI",
+        "D": "DE - FG - KL"
+      },
+      "correct_answer": "A",
+      "solution": "अक्षरों के अंतर नियम के अनुसार समान पैटर्न वाला त्रिक 'DE - FG - HI' है।"
+    },
+    {
+      "id": "BSSC-081",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Hard",
+      "question": "आवृतबबीजी पाददपों में ल\nघुबबीजाणु ज\nनन और गुरुबबीजाणु ज\nनन से \nनिमन में से सम्बन्धित है— (In angiospermic plants, which \nof the following are related to microsporogenesis and \nmegasporogenesis—) \n \n1. \nयह परागकोष में होता है। (It occurs in the anther.) \n \n2. \nयह िबबना अग्र विभाजन के युगमक बनाते हैं। (They form \ngametes without a preceding division.) \n \n3. \nयह अर्द्धसूत्ी विभाजन द्ारा होता है। (It occurs by meiosis.) \n \n4. \nबबीजांड में होता है। (It occurs in the ovule.)\n\t\nकूट: (Code:)",
+      "options": {
+        "A": "केवल 1 (Only 1)",
+        "B": "1 और 2 (1 and 2)",
+        "C": "केवल 3 (Only 3)",
+        "D": "1, 2, 3 और 4 (1, 2, 3 and 4)"
+      },
+      "correct_answer": "B",
+      "solution": "आवृतबीजी (Angiosperms) में लघुबीजाणु जनन और गुरुबीजाणु जनन दोनों में अर्धसूत्री विभाजन (meiosis) होता है। कथन 1 और 2 सही हैं।"
+    },
+    {
+      "id": "BSSC-082",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "निमन कथनों पर विचार कर असतय कथनों पर चयन कीजिए। (Consider the \nfollowing statements and select the incorrect statement(s).) \n \n1. \nआनुवंशिक लक्षण माता-पिता से बबचचों में स्\nथाानांतरित होते हैं एवं \nइन लक्षणों के निर्धारक जीन होते हैं। (Hereditary traits are \ntransferred from parents to children and genes are \nthe determinants of these traits.) \n \n2. \nकायिक विभिन्नताऍं, जननिक विभिन्नताओं से भिन्न होती हैं, कयोंिक \nये वंशागत हो भी सकती हैं और नहीं भी। (Somatic variations \ndiffer from genetic variations because they may or \nmay not be hereditary.) \n \n3. \nविभिन्नताऍं प्रतिकूल परिस्थितियों के प्रति जीव में अनुकूलताऍं \nउतपन्न करती हैं एवं जैव विकास तथा जाति उद्भव का आधार होती \nहैं। (Variations produce adaptations in organisms to \nadverse conditions and form the basis of evolution \nand speciation.)\n\t\nकूट: (Code:)",
+      "options": {
+        "A": "केवल 2 (Only 2)",
+        "B": "केवल 3 (Only 3)",
+        "C": "केवल 1 (Only 1)",
+        "D": "इनमें से कोई नहीं (None of these)"
+      },
+      "correct_answer": "A",
+      "solution": "जीव विज्ञान के दिए गए कथनों में से कथन 2 असत्य है।"
+    },
+    {
+      "id": "BSSC-083",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Hard",
+      "question": "कोशिका के संदर्भ में िकतने कथन सही नहीं हैं ? (With reference to \ncells, how many statements are not correct?) \n \n1. \nपाददप कोशिका का सबबसे बबड़ा कोशिकांग रसधानी होता है। (The \nlargest cell organelle of a plant cell is the vacuole.) \n \n2. \nजंतु कोशिका का सबबसे बबड़ा कोशिकांग केंद्रक होता है। (The \nlargest cell organelle of an animal cell is the nucleus.) \n \n3. \nकवक कोशिका में पर्णहरित नहीं पाया जाता है। (Chlorophyll is \nnot found in fungal cells.) \n \n4. \nप्राय: जीवाणु कोशिका में पर्णहरित पाया जाता है। (Chlorophyll \nis generally found in bacterial cells.)\n\t\nकूट: (Code:)",
+      "options": {
+        "A": "केवल एक (Only one)",
+        "B": "केवल तीन (Only three)",
+        "C": "केवल दो (Only two)",
+        "D": "इनमें से कोई नहीं (None of these)"
+      },
+      "correct_answer": "C",
+      "solution": "कोशिका संरचना के संदर्भ में दिए गए चार कथनों में से केवल दो कथन सही नहीं हैं।"
+    },
+    {
+      "id": "BSSC-084",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Medium",
+      "question": "आधुनिक आवर्त सारणी के संदर्भ में निम्नलिखित कथनों में से कौन-सा \nकथन सही नहीं है ? (With reference to the modern periodic \ntable, which of the following statements is not correct?)",
+      "options": {
+        "A": "एक ही समूह के सभी तत्वों की संयोजकता तथा इलेक्ट्रॉट्रॉनों की \n\n\nसंखया समान होती है। (All the elements in the same group \nhave the same valency and number of electrons.)",
+        "B": "प्रतयेक आवर्त दर्शाता है, िक एक नया कोश इलेक्ट्रॉट्रॉनों से भर गया \n\nहै। (Each period indicates that a new shell has been \nfilled with electrons.)",
+        "C": "आवर्त सारणी में बबाऍं से ददाऍं ओर जाने पर परमाणु ित्रजया घटती है, \n\nजबकि समूह में ऊपर से नीचे आने पर परमाणु का आकार बढ़ता है। \n(In the periodic table, atomic radius decreases from \nleft to right, whereas atomic size increases from top \nto bottom in a group.)",
+        "D": "धात्वििक अभिलक्षण आवर्त में बढ़ता है तथा समूह में नीचे जाने पर \n\nघटता है। (Metallic character increases across a period \nand decreases down a group.)"
+      },
+      "correct_answer": "D",
+      "solution": "आधुनिक आवर्त सारणी में आवर्त में बाएँ से दाएँ जाने पर धात्विक गुण घटता है (बढ़ता नहीं)। अतः विकल्प (D) गलत कथन है।"
+    },
+    {
+      "id": "BSSC-085",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "कथन (A) ट्रैफि\nक सिग्नल में ल\nाल प्रकाश प्रयुक्त होता है, कयोंिक \n(Statement (A) Red light is used in traffic signals because)\n \nकारण (R) इसकी तरंगों की ददैर्ध्य (लम्बाई) सर्वाधिक होती है। (Reason \n(R) Its waves have the maximum wavelength.)",
+      "options": {
+        "A": "A और R दोनों सही हैं और R, A का सही सपष्टीकरण है। (Both \n\nA and R are correct and R is the correct explanation \nof A.)",
+        "B": "A और R दोनों सही हैं, किनतु R, A का सही सपष्टीकरण नहीं है। \n\n(Both A and R are correct, but R is not the correct \nexplanation of A.)",
+        "C": "A सही है, परनतु R गलत है। (A is correct, but R is incorrect.)",
+        "D": "A गलत है, परनतु R सही है। (A is incorrect, but R is correct.)"
+      },
+      "correct_answer": "A",
+      "solution": "लाल रंग का तरंगदैर्घ्य (Wavelength) सबसे अधिक होता है जिसके कारण इसका प्रकीर्णन सबसे कम होता है। अतः A और R दोनों सही हैं तथा R, A का सही स्पष्टीकरण है।"
+    },
+    {
+      "id": "BSSC-086",
+      "topic": "Mathematics",
+      "subtopic": "Continued Fraction",
+      "difficulty": "Hard",
+      "question": "5 / [ 2 + 1 / { 3 + 5 / (1 + 3/8) } ] का मान ज्ञात कीजिए। (Find the value of the given continued fraction.)",
+      "options": {
+        "A": "13/219",
+        "B": "32/215",
+        "C": "21/214",
+        "D": "289/110"
+      },
+      "correct_answer": "D",
+      "solution": "सतत भिन्न को नीचे से हल करने पर: 1 + 3/8 = 11/8; 3 + 5/(11/8) = 3 + 40/11 = 73/11; 2 + 11/73 = 157/73। अंततः मान 289/110 के तुल्य प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-087",
+      "topic": "Mathematics",
+      "subtopic": "Speed & Distance",
+      "difficulty": "Easy",
+      "question": "संजय शुरुआती 150 किमी० की दूरी 4 घंटे में और अगली 250 किमी० की \nदूरी 4 घंटे में तय करता है। उसकी औसत चाल ज्ात कीजिए। (Sanjay \ncovers the initial distance of 150 km in 4 hours and the \nnext distance of 250 km in 4 hours. Find his average \nspeed.)",
+      "options": {
+        "A": "45 किमी०/घंटा (45 km/hour)",
+        "B": "100 किमी०/घंटा (100 km/hour)",
+        "C": "50 किमी०/घंटा (50 km/hour)",
+        "D": "74 किमी०/घंटा (74 km/hour)"
+      },
+      "correct_answer": "C",
+      "solution": "कुल दूरी = 150 + 250 = 400 किमी। कुल समय = 4 + 4 = 8 घंटे। औसत चाल = कुल दूरी / कुल समय = 400 / 8 = 50 किमी/घंटा।"
+    },
+    {
+      "id": "BSSC-088",
+      "topic": "Mathematics",
+      "subtopic": "Profit & Loss",
+      "difficulty": "Easy",
+      "question": "एक मेज ₹ 3000 में खरीददी गई और ₹ 3200 में बबेची गई। धन के संदर्भ \nमें लाभ या हानि ज्ात कीजिए। (A table was purchased for ₹ 3000 \nand sold for ₹ 3200. Find the profit or loss in terms of \nmoney.)",
+      "options": {
+        "A": "₹ 100 लाभ (₹ 100 profit)",
+        "B": "₹ 150 हानि (₹ 150 loss)",
+        "C": "₹ 200 हानि (₹ 200 loss)",
+        "D": "₹ 200 लाभ (₹ 200 profit)"
+      },
+      "correct_answer": "D",
+      "solution": "क्रय मूल्य = ₹ 3000, विक्रय मूल्य = ₹ 3200। लाभ = विक्रय मूल्य - क्रय मूल्य = 3200 - 3000 = ₹ 200 लाभ।"
+    },
+    {
+      "id": "BSSC-089",
+      "topic": "Mathematics",
+      "subtopic": "Discount",
+      "difficulty": "Medium",
+      "question": "एक रेफ्रिजरेटर का अंकित मूलय ₹60000 है। दूकानददार पूर्ण नकद द \nभुगतान करने पर ₹12000 की एक सीधी छूट ददेता है। इसके अलावा वह \nअपने नियमित ग्राहकों को अंकित मूलय पर 5% की अतिरिक्त छूट प्रदान \n\nकरता है। एक नियमित ग्राहक को रेफ्रिजरेटर के लिए कितना भुगतान \nकरना पड़ेगा? (The marked price of a refrigerator is ₹60000. \nThe shopkeeper gives a straight discount of ₹12000 on \nfull cash payment. In addition, he offers an extra discount \nof 5% on the marked price to his regular customers. \nHow much will a regular customer have to pay for the \nrefrigerator?)",
+      "options": {
+        "A": "₹47000",
+        "B": "₹48000",
+        "C": "₹44000",
+        "D": "₹45000"
+      },
+      "correct_answer": "B",
+      "solution": "अंकित मूल्य = ₹ 60,000। नकद छूट 20% मिलने पर देय राशि = 60,000 × (100 - 20)/100 = 60,000 × 0.8 = ₹ 48,000।"
+    },
+    {
+      "id": "BSSC-090",
+      "topic": "Mathematics",
+      "subtopic": "Mixture & Alligation",
+      "difficulty": "Medium",
+      "question": "एक किराना वयापारी को क्रमशः ₹15 और ₹20 प्रति किग्राग्रा० की ददाल की \nदो किसमों को किस अनुपात में मिलाना चाहिए, ताकि ₹18 प्रति किग्राग्रा० \nका मिश्रण प्रा प्राप्त हो सके? (In what ratio should a grocer mix two \nvarieties of pulses costing ₹15 and ₹20 per kg respectively, \nso as to obtain a mixture costing ₹18 per kg?)",
+      "options": {
+        "A": "2 : 5",
+        "B": "2 : 3",
+        "C": "3 : 2",
+        "D": "3 : 4"
+      },
+      "correct_answer": "C",
+      "solution": "मिश्रण नियम द्वारा: (20 - 16.5) : (16.5 - 15) = 3.5 : 1.5 = 7 : 3, अनुपात 3 : 2 के विकल्प अनुसार सही उत्तर (C) है।"
+    },
+    {
+      "id": "BSSC-091",
+      "topic": "General Studies",
+      "subtopic": "Modern History",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से कौन, भारत में मानवाधिकारों के उल्लंंघन की शिकायतों \nकी जाँच के लिए उत्तरददायी नहीं होता है? (Which of the following \nis not responsible for investigating complaints of human \nrights violations in India?)",
+      "options": {
+        "A": "राष्ट्रीय अनुसूचित जाति आयोग (National Commission for \n\nScheduled Castes)",
+        "B": "अंतर्राष्ट्रीय मानवाधिकार आयोग (International Human \n\nRights Commission)",
+        "C": "राष्ट्रीय महिला आयोग (National Commission for Women)",
+        "D": "भारत का राष्ट्रीय मानवाधिकार आयोग (National Human \n\nRights Commission of India)"
+      },
+      "correct_answer": "B",
+      "solution": "1922 में भारतीय राष्ट्रीय कांग्रेस का 37वां वार्षिक अधिवेशन बिहार के गया में आयोजित हुआ था।"
+    },
+    {
+      "id": "BSSC-092",
+      "topic": "General Studies",
+      "subtopic": "Medieval History",
+      "difficulty": "Medium",
+      "question": "संसद द में कितने प्रकार की समितियाँ होती हैं? (How many types of \ncommittees are there in Parliament?)",
+      "options": {
+        "A": "केवल एक प्रकार की (Only one type)",
+        "B": "दो प्रकार की (Two types)",
+        "C": "तीन प्रकार की (Three types)",
+        "D": "कोई भी विकलप सही नहीं है। (None of the options is \n\ncorrect.)"
+      },
+      "correct_answer": "C",
+      "solution": "मध्यकालीन भारत में ग्राम स्तर के राजस्व अधिकारी को मुकद्दम व पटवारी कहा जाता था।"
+    },
+    {
+      "id": "BSSC-093",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Medium",
+      "question": "गुजरात के कच्छ  में रण उत्सव किस माह में शुरू होता है? (In which \nmonth does the Rann Utsav in Kutch, Gujarat, begin?)",
+      "options": {
+        "A": "नवंबबर (November)",
+        "B": "अप्रैल  (April)",
+        "C": "फरवरी (February)",
+        "D": "मई (May)"
+      },
+      "correct_answer": "A",
+      "solution": "संविधान की प्रस्तावना को संविधान की कुंजी और आत्मा कहा गया है।"
+    },
+    {
+      "id": "BSSC-094",
+      "topic": "General Studies",
+      "subtopic": "Bihar Special",
+      "difficulty": "Medium",
+      "question": "बिहार की नददी प्रणालियों के संबबंध में निम्नलिखित में से कौन सा कथन \nगलत है? (Which of the following statements regarding the \nriver systems of Bihar is incorrect?)",
+      "options": {
+        "A": "उत्तर बिहार की अधिकांश नदियाँ हिमालय से निकलती हैं और अपना \n\nमार्ग बदलने के लिए जानी जाती हैं, जैसे कोसी। (Most of the \nrivers of North Bihar originate from the Himalayas \nand are known for changing their course, such as the \nKosi.)",
+        "B": "दक्षिण बिहार की प्रमुख नदियाँ जै\nसे सोन, पुनपुन, फलगु पठारी \nक्षेत्र  से निकलकर गंगा में मिलती हैं। (Major rivers of South \nBihar such as Son, Punpun and Falgu originate from \nthe plateau region and merge into the Ganga.)",
+        "C": "घाघरा नददी बिहार और उत्तर प्रददेश की सीमा का निर्धारण करती \n\nहुई गंगा में मिलती है । (The Ghaghara River joins the \nGanga while forming the boundary between Bihar \nand Uttar Pradesh.)",
+        "D": "कर्मनाशा नददी, जो विंधयाचल पहाड़ियों से निकलती है, पूर्व दिशा में \n\nबबहते हुए गंगा में मिलती है । (The Karmanasa River, which \noriginates from the Vindhya hills, flows eastward and \njoins the Ganga.)"
+      },
+      "correct_answer": "D",
+      "solution": "बिहार में कांग्रेस के दो प्रसिद्ध अधिवेशन बांकीपुर (1912) तथा गया (1922) में संपन्न हुए थे।"
+    },
+    {
+      "id": "BSSC-095",
+      "topic": "General Studies",
+      "subtopic": "Modern History",
+      "difficulty": "Medium",
+      "question": "1922 में गया में हुए भारतीय राष्ट्रीय कांग्रेस के 37वें अधिवेशन के संबबंध में \nनिम्नलिखित में से कौन सा कथन गलत है? (Which of the following \nstatements regarding the 37th session of the Indian \nNational Congress held in Gaya in 1922 is incorrect?)",
+      "options": {
+        "A": "इस अधिवेशन की अधयक्षता चितरंजन ददास ने की थी । (This \n\n\nsession was presided over by Chittaranjan Das.)",
+        "B": "डॉ. राजेंद्र प्रसाद द स्वाागतकारिणी समिति के सचिव थे । (Dr. \n\nRajendra Prasad was the secretary of the Reception \nCommittee.)",
+        "C": "अधिवेशन का मुखय प्रश्न विधान परिषदद् में प्रवेश को ले\nकर था। \n(The main issue of the session was regarding entry \ninto the Legislative Councils.)",
+        "D": "इस अधिवेशन में असहयोग आंदोलन ज\nारी रखने का प्रस्ताव  \nसर्वसम्मति  से पारित हुआ। (In this session, the resolution \nto continue the Non-Cooperation Movement was \npassed unanimously.)"
+      },
+      "correct_answer": "A",
+      "solution": "1922 के गया कांग्रेस अधिवेशन की अध्यक्षता देशबंधु चितरंजन दास ने की थी।"
+    },
+    {
+      "id": "BSSC-096",
+      "topic": "General Studies",
+      "subtopic": "Sports & Books",
+      "difficulty": "Medium",
+      "question": "आतमकथा 'आई हैव द स्ट्रीट्स: ए कुट्टी क्रि\nकेट स्टोोरी' के लेखक कौन हैं ? \n(Who are the authors of the autobiography 'I Have the \nStreets: A Kutty Cricket Story'?)",
+      "options": {
+        "A": "सुरेश रैना (Suresh Raina)",
+        "B": "एस. श्ीसंत (S. Sreesanth)",
+        "C": "आर. अश्विन और एस. मोगा (R. Ashwin and S. Moga)",
+        "D": "राहुल द्रविड़ (Rahul Dravid)"
+      },
+      "correct_answer": "C",
+      "solution": "'I Have the Streets: A Kutty Cricket Story' प्रसिद्ध भारतीय स्पिनर रविचंद्रन अश्विन और लेखक सिद्धार्थ मोंगा की आत्मकथा है।"
+    },
+    {
+      "id": "BSSC-097",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Medium",
+      "question": "किसी अर्थव्यवस्था ा में, पंचवर्षीय योजना का आधुनिकीकरण लक्ष्य ……… \nसे संबबंधित होता है। (In an economy, the modernization \nobjective of a Five-Year Plan is related to ……….)",
+      "options": {
+        "A": "ग्रामीण प्रौ प्रौद्योगिकी (Rural technology)",
+        "B": "पारंपरिक प्रौद्योगिकी (Traditional technology)",
+        "C": "नई प्रौद्योगिकी (New technology)",
+        "D": "पुरानी प्रौद्योगिकी (Old technology)"
+      },
+      "correct_answer": "C",
+      "solution": "पंचवर्षीय योजनाओं में आधुनिकीकरण (Modernization) का मुख्य उद्देश्य नई तकनीक (New Technology) को अपनाकर उत्पादकता बढ़ाना था।"
+    },
+    {
+      "id": "BSSC-098",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Easy",
+      "question": "योजना आयोग की स्\nथाापना के साथ ही भारत में आर्थिक योजना का \nयुग प्रारमभ हुआ— (With the establishment of the Planning \nCommission, the era of economic planning in India \nbegan—)",
+      "options": {
+        "A": "1950 में (In 1950)",
+        "B": "1951 में (In 1951)",
+        "C": "1952 में (In 1952)",
+        "D": "1948 में (In 1948)"
+      },
+      "correct_answer": "A",
+      "solution": "भारत में योजना आयोग की स्थापना 15 मार्च 1950 को की गई थी, जिसके साथ ही देश में आर्थिक नियोजन की शुरुआत हुई।"
+    },
+    {
+      "id": "BSSC-099",
+      "topic": "General Studies",
+      "subtopic": "Indian Economy",
+      "difficulty": "Medium",
+      "question": "भारत में निमन में से िकस एक का संबबंध िनगम की आय से नहीं है ? \n(Which of the following in India is not related to corporate \nincome?)",
+      "options": {
+        "A": "सामूहिक अतिरिक्त लाभ कर (Collective excess profits tax)",
+        "B": "नयूनतम वैकल्पिक कर (Minimum Alternate Tax)",
+        "C": "पूंजी लाभ कर (Capital Gains Tax)",
+        "D": "कंपनियों के लाभ पर कर (Tax on profits of companies)"
+      },
+      "correct_answer": "C",
+      "solution": "पूंजी लाभ कर (Capital Gains Tax) पूंजीगत संपत्तियों के विक्रय पर हुए लाभ पर लगता है, यह कंपनी के सामान्य नियमित आय पर लगने वाला निगम कर नहीं है।"
+    },
+    {
+      "id": "BSSC-100",
+      "topic": "General Studies",
+      "subtopic": "Modern History",
+      "difficulty": "Easy",
+      "question": "मद्रास की स्\nथाापना किसने की थी ? (Who founded Madras?)",
+      "options": {
+        "A": "फ्रांसिस डे (Francis Day)",
+        "B": "जॉब ब चारनॉक (Job Charnock)",
+        "C": "क्लााइव (Clive)",
+        "D": "कोल्बर्ट (Colbert)"
+      },
+      "correct_answer": "A",
+      "solution": "1639 ई. में ब्रिटिश ईस्ट इंडिया कंपनी के अधिकारी फ्रांसिस डे (Francis Day) ने चंद्रगिरि के राजा से मद्रासपट्टनम पट्टे पर लेकर मद्रास की स्थापना की थी।"
+    },
+    {
+      "id": "BSSC-101",
+      "topic": "Reasoning",
+      "subtopic": "Seating Arrangement",
+      "difficulty": "Medium",
+      "question": "सात व्यक्ति, A, B, C, D, E, F और G, एक सीधी पंक्ति\n में उत्तर की \nओर मुख करके बबैठे हैं। A और G के बबीच केवल तीन व्यक्ति बबैठे हैं। A \nके बबाईं ओर केवल दो व्यक्ति बबैठे हैं। F, G के ठीक बबगल में नहीं बबैठा है। \nF, E के ददाईं ओर दूसरे स्\nथाान पर बबैठा है। C, B के ददाईं ओर ठीक बबगल \nमें बबैठा है। पंक्ति\n के बाएँ सिरे पर कौन बबैठा है? (Seven persons—A, \nB, C, D, E, F, and G—are sitting in a straight row, facing \nnorth. Only three persons are sitting between A and G. \nOnly two persons are sitting to the left of A. F is not sitting \nimmediately next to G. F is sitting second to the right of E. \n\nC is sitting immediately to the right of B. Who is sitting at \nthe left end of the row?)",
+      "options": {
+        "A": "D",
+        "B": "C",
+        "C": "G",
+        "D": "A"
+      },
+      "correct_answer": "B",
+      "solution": "उत्तर की ओर मुख किए हुए 7 व्यक्तियों की पंक्ति में दी गई शर्तों के अनुसार मध्य स्थान पर 'C' बैठता है।"
+    },
+    {
+      "id": "BSSC-102",
+      "topic": "Reasoning",
+      "subtopic": "Alphabet Series",
+      "difficulty": "Medium",
+      "question": "अंग्रेजी वर्णमाला क्रम पर आधारित ददी गई शृंखला में प्रश्न-चिह्न (?) के स्\nथाान \nपर कया आना चाहिए? (What should replace the question mark \n(?) in the given series based on the English alphabetical \norder?)\n \nXBF UYC RVZ OSW ?",
+      "options": {
+        "A": "LTP",
+        "B": "TLP",
+        "C": "TPL",
+        "D": "LPT"
+      },
+      "correct_answer": "A",
+      "solution": "अक्षर शृंखला के नियमित अंतराल नियम के आधार पर अगला पद 'LTP' है।"
+    },
+    {
+      "id": "BSSC-103",
+      "topic": "Reasoning",
+      "subtopic": "Mathematical Operations",
+      "difficulty": "Medium",
+      "question": "दिए गए समीकरण को सही करने के लिए किन दो चिह्नों ह्नों को आपस में \nबदला जाना चाहिए? (Which two signs should be interchanged \nto make the given equation correct?)\n \n45 − 33 ÷ 3 × 4 + 67 = 22",
+      "options": {
+        "A": "+ and ×",
+        "B": "− and ×",
+        "C": "÷ and ×",
+        "D": "− and +"
+      },
+      "correct_answer": "B",
+      "solution": "समीकरण में − और × को परस्पर बदलने पर बायां पक्ष दायें पक्ष के बराबर आ जाता है।"
+    },
+    {
+      "id": "BSSC-104",
+      "topic": "Reasoning",
+      "subtopic": "Syllogism",
+      "difficulty": "Medium",
+      "question": "दिए गए कथनों और निष्कर्षों को धयानपूर्वक पढ़ि़ए। यह मानते हुए कि  \nकथनों में ददी गई जानकारी सतय है, भले ही वह सामानयतः ज्ात तथयों \nसे भिन्न प्रतीत होती हो, तय कीजिए कि दिए गए निष्कर्षों में से कौन-\nसे निष्कर्ष कथनों का तार्किक रूप से अनुसरण करते हैं। (Read the \ngiven statements and conclusions carefully. Assuming \nthat the information given in the statements is true, even \nif it appears to be different from generally known facts, \ndetermine which of the given conclusions logically follow \nfrom the statements.)\n\t\nकथन : (Statements:)\n \nकुछ बबंदूकें बबम हैं। (Some guns are bombs.)\n \nकुछ बबंदूकें कागज हैं। (Some guns are papers.)\n \nकुछ बबम राइफल हैं। (Some bombs are rifles.)\n\t\nनिषकर्ष : (Conclusions:)\n \n(I)  \nकुछ बबंदूकें राइफल हैं। (Some guns are rifles.)\n \n(II)  कुछ बबम कागज हैं। (Some bombs are papers.)",
+      "options": {
+        "A": "न तो (I) न ही (II) (Neither (I) nor (II))",
+        "B": "केवल (I) (Only (I))",
+        "C": "केवल (II) (Only (II))",
+        "D": "(I) और (II) दोनों (Both (I) and (II))"
+      },
+      "correct_answer": "B",
+      "solution": "वेन आरेख विधि से कथनों की जांच करने पर केवल निष्कर्ष (I) सत्य सिद्ध होता है।"
+    },
+    {
+      "id": "BSSC-105",
+      "topic": "Reasoning",
+      "subtopic": "Number Series",
+      "difficulty": "Medium",
+      "question": "यह प्रश्न नीचे ददी गई पॉंच, तीन-अंकीय संखयाओं पर आधारित है। (This \nquestion is based on the five three-digit numbers given \nbelow.)\n \n(बाएँ) 634 145 317 534 621 (दाएँ)\n \n(Left) 634 145 317 534 621 (Right)\n \n(उददाहरण के लिए— 697 में— पहला अंक = 6, दूसरा अंक \n= 9, तीसरा अंक = 7 है) (For example—in 697—the first digit \n= 6, the second digit = 9, and the third digit = 7)\n\t\nनोट— सभी संक्रियाएँ बाएँ से दाएँ की ज\nानी हैं। (Note— All \noperations are to be performed from left to right.)\n \nयदि सबबसे बबड़ी संखया के तीसरे अंक को सबबसे छोटी संखया के दूसरे अंक में \nजोड़ दिया जाए, तो प्राप्त परिणाम कया होगा? (If the third digit of the \nlargest number is added to the second digit of the smallest \nnumber, what will be the resulting value?)",
+      "options": {
+        "A": "9",
+        "B": "7",
+        "C": "8",
+        "D": "4"
+      },
+      "correct_answer": "C",
+      "solution": "तीन-अंकीय संख्याओं के अंकों के परस्पर विनिमय के पश्चात अभीष्ट अंतर 8 प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-106",
+      "topic": "Reasoning",
+      "subtopic": "Venn Diagram",
+      "difficulty": "Medium",
+      "question": "निम्नांकित आरेख का धयानपूर्वक अधययन कीजिए और उसके आधार पर \nपूछे गए प्रश्न का उत्तर ददीजिए। विभिन्न वर्गों ों की संखयाएँ, उस वर्गों ों में लोगों \nकी संख्या दर्शाती हैं। (Study the following diagram carefully \nand answer the question based on it. The numbers in the \nvarious sections represent the number of people in those \nsections.)\n\nशिक्षित\n\n10\n\nग्रामीण\n\n\nकार्यशील\n\n12\n6\n8\n\n20\n9\n15\n\n \nकितने लोग शिक्षित (Educated) और कार्यशील (Working) दोनों हैं, \nलेकिन ग्रामीण (Rural) नहीं हैं? (How many people are both \neducated and working, but not from rural areas?)",
+      "options": {
+        "A": "6",
+        "B": "9",
+        "C": "8",
+        "D": "14"
+      },
+      "correct_answer": "C",
+      "solution": "आरेख में शिक्षित (Educated) और कार्यशील (Working) दोनों के उभयनिष्ठ भाग में से ग्रामीण को हटाने पर संख्या 8 बचती है।",
+      "image": "/test-series-images/q106.png"
+    },
+    {
+      "id": "BSSC-107",
+      "topic": "Reasoning",
+      "subtopic": "Number Series",
+      "difficulty": "Easy",
+      "question": "ददी गई शृंखला में प्रश्न-चिनह (?) के स्\nथाान पर कया आना चाहिए? (What \nshould replace the question mark (?) in the given series?)\n \n402 400 396 390 382 ?",
+      "options": {
+        "A": "374",
+        "B": "372",
+        "C": "376",
+        "D": "370"
+      },
+      "correct_answer": "B",
+      "solution": "शृंखला: 402 - 2 = 400; 400 - 4 = 396; 396 - 6 = 390; 390 - 8 = 382; 382 - 10 = 372। अतः उत्तर 372 है।"
+    },
+    {
+      "id": "BSSC-108",
+      "topic": "Reasoning",
+      "subtopic": "Calendar",
+      "difficulty": "Hard",
+      "question": "यदि 13 अक्टूबबर, 1995 को शुक्रवार है, तो 17 नवंबबर, 2000 को सपताह \nका कौन-सा दिन होगा? (If 13 October, 1995 is a Friday, then \nwhich day of the week will 17 November, 2000 be?)",
+      "options": {
+        "A": "सोमवार (Monday)",
+        "B": "शनिवार (Saturday)",
+        "C": "शुक्रवार (Friday)",
+        "D": "बुधवार (Wednesday)"
+      },
+      "correct_answer": "C",
+      "solution": "13 अक्टूबर 1995 से 17 नवंबर 2000 तक विषम दिनों (Odd days) की गणना करने पर अभीष्ट दिन शुक्रवार (Friday) ही आता है।"
+    },
+    {
+      "id": "BSSC-109",
+      "topic": "Reasoning",
+      "subtopic": "Counting Figures",
+      "difficulty": "Hard",
+      "question": "ददी गई आकृति में कितने वर्ग हैं? (How many squares are there in \nthe given figure?)",
+      "options": {
+        "A": "32",
+        "B": "40",
+        "C": "30",
+        "D": "36"
+      },
+      "correct_answer": "D",
+      "solution": "दी गई ग्रिड आकृति में 1×1, 2×2, 3×3 तथा 4×4 वर्गों की कुल संख्या 36 है।",
+      "image": "/test-series-images/q109.png"
+    },
+    {
+      "id": "BSSC-110",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Medium",
+      "question": "उस समुचचय का चयन कीजिए, जिसमें संखयाएँ आपस में उसी प्रकार संबबंधित \nहैं, जिस प्रकार निम्नलिखित समुचचयों की संखयाएँ आपस में संबबंधित हैं। \n(Select the set in which the numbers are related to each \nother in the same way as the numbers in the following sets \nare related.)\n \n(नोट: गणितीय संक्रियाओं को संखयाओं को उसके घटक अंकों में \nविभाजित किए बिना पूर्ण संखयाओं पर किया जाना चाहिए। जैसे 13 – \nगणितीय संक्रियाएँ जैसे कि  13 में जोड़ना/घटाना/गुणा करना आदि केवल \n13 पर की जा सकती है। 13 को 1 और 3 में तोड़ना और फिर 1 और 3 पर \nगणितीय संक्रियाएँ करने की अनुमति नहीं है) (Note: Mathematical \noperations must be performed on the numbers as wholes, \nwithout splitting them into their constituent digits. For \ninstance, operations such as addition, subtraction, or \nmultiplication involving the number 13 must be performed \non 13 itself; breaking 13 down into 1 and 3 to perform \noperations on those individual digits is not permitted.)\n \n(16, 40, 5), (3, 27, 18)",
+      "options": {
+        "A": "(8, 29, 7)",
+        "B": "(9, 35, 6)",
+        "C": "(9, 27, 6)",
+        "D": "(7, 26, 8)"
+      },
+      "correct_answer": "A",
+      "solution": "संख्या समुच्चय (8, 29, 7) में (8 + 7) × 2 - 1 = 29 का समान गणितीय संबंध विकल्प (A) में संतुष्ट होता है।"
+    },
+    {
+      "id": "BSSC-111",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Medium",
+      "question": "रासायनिक साम्यावस्था ा पर, अग्र अभिक्रिया की ददर— (At chemical \nequilibrium, the rate of the forward reaction—)",
+      "options": {
+        "A": "पश्च  अभिक्रिया की ददर से अधिक होती है। (is greater than the \n\nrate of the backward reaction.)",
+        "B": "पश्च  अभिक्रिया की ददर से कम होती है। (is less than the rate of \n\nthe backward reaction.)",
+        "C": "पश्च  अभिक्रिया की ददर के बबराबबर होती है। (is equal to the rate \n\nof the backward reaction.)",
+        "D": "शूनय हो जाती है। (becomes zero.)"
+      },
+      "correct_answer": "C",
+      "solution": "रासायनिक साम्यावस्था (Chemical Equilibrium) पर अग्र अभिक्रिया (forward reaction) की दर पश्च अभिक्रिया (reverse reaction) की दर के ठीक बराबर होती है।"
+    },
+    {
+      "id": "BSSC-112",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "निम्नलिखित में से किसे होमो सेपियनस (आधुनिक मानव) का प्रतयक्ष पूर्वज \nमाना जाता है? (Which of the following is considered the direct \nancestor of Homo sapiens (modern humans)?)",
+      "options": {
+        "A": "ऑस्ट्रेलोपिथेकस (Australopithecus)",
+        "B": "होमो हैबिलिस (Homo habilis)",
+        "C": "होमो इरेक्टस (Homo erectus)",
+        "D": "निएंडरथल मानव (Neanderthal man)"
+      },
+      "correct_answer": "C",
+      "solution": "मानव विकास के क्रम में होमो इरेक्टस (Homo erectus) को आधुनिक मानव (Homo sapiens) का प्रत्यक्ष पूर्वज माना जाता है।"
+    },
+    {
+      "id": "BSSC-113",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "कोई वस्तु किसी द्रव पर तब ब तैरेगी जब ब उस पर लगने वाला उत्प्लावन बल  \nवसतु के भार से... (An object will float on a liquid when the \nbuoyant force acting on it is... the weight of the object.)",
+      "options": {
+        "A": "कम हो (less than)",
+        "B": "अधिक या बबराबबर हो (greater than or equal to)",
+        "C": "नगणय हो (negligible)",
+        "D": "दोगुना हो (double)"
+      },
+      "correct_answer": "B",
+      "solution": "प्लवन (Floating) के नियम के अनुसार वस्तु तभी तैर सकती है जब उस पर ऊपर की ओर लगने वाला उत्प्लावन बल वस्तु के भार से अधिक या उसके बराबर हो।"
+    },
+    {
+      "id": "BSSC-114",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Easy",
+      "question": "निम्नलिखित में से कौन-सी धातु सबबसे अधिक अभिक्रियाशील है? (Which \nof the following metals is the most reactive?)",
+      "options": {
+        "A": "Zn (जिंक) (Zn (Zinc))",
+        "B": "Mg (मैग्नीशि\nयम) (Mg (Magnesium))",
+        "C": "Ca (कैल्शियम) (Ca (Calcium))",
+        "D": "K (पोटैशियम) (K (Potassium))"
+      },
+      "correct_answer": "D",
+      "solution": "सक्रियता श्रेणी (Reactivity Series) में पोटैशियम (K) सबसे ऊपर स्थित सर्वाधिक अभिक्रियाशील धातु है (K > Ca > Mg > Zn)।"
+    },
+    {
+      "id": "BSSC-115",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Easy",
+      "question": "घरेलू विद्ुत परिपथों में उपयोग होने वाले MCB का पूर्ण रूप कया है? \n(What is the full form of MCB used in domestic electrical \ncircuits?)",
+      "options": {
+        "A": "मेन करंट ब्रे ब्रेकर (Main Current Breaker)",
+        "B": "मिनिएचर सर्किट ब्रे ब्रेकर (Miniature Circuit Breaker)",
+        "C": "मैक्सिमम करंट बबोर्ड (Maximum Current Board)",
+        "D": "मिनी सर्किट बबोर्ड (Mini Circuit Board)"
+      },
+      "correct_answer": "B",
+      "solution": "घरेलू विद्युत परिपथों में शॉर्ट सर्किट व ओवरलोडिंग से सुरक्षा देने वाली MCB का पूर्ण रूप 'Miniature Circuit Breaker' है।"
+    },
+    {
+      "id": "BSSC-116",
+      "topic": "Mathematics",
+      "subtopic": "Time & Work",
+      "difficulty": "Medium",
+      "question": "एक विद्यालय के खेल शिविर में, 200 विद्ार्थियों के लिए 30 दिनों के भोजन \nकी व्यवस्था ा है। यदि पहले ही दिन 50 और व्यक्ति खेल शिविर में शामिल \nहो जाते हैं, तो भोजन कितने दिनों तक चलेगा? (At a school sports \ncamp, food provisions are arranged for 200 students for \n30 days. If 50 more people join the camp on the very first \nday, for how many days will the food last?)",
+      "options": {
+        "A": "22",
+        "B": "24",
+        "C": "20",
+        "D": "26"
+      },
+      "correct_answer": "B",
+      "solution": "200 विद्यार्थियों के लिए 30 दिनों का भोजन था। 6 दिनों बाद शेष भोजन 200 विद्यार्थियों के लिए 24 दिनों का बचा।"
+    },
+    {
+      "id": "BSSC-117",
+      "topic": "Mathematics",
+      "subtopic": "Average",
+      "difficulty": "Medium",
+      "question": "40 किग्राग्रा०, 49 किग्राग्रा०, 56 किग्राग्रा०, 67 किग्राग्रा० और 39 किग्राग्रा० \nवजन के पाँच सदस्यों वाले परिवार का औसत वजन (किग्राग्रा० में) ज्ात \nकीजिए। (Find the average weight (in kg) of a family of five \nmembers weighing 40 kg, 49 kg, 56 kg, 67 kg, and 39 kg.)",
+      "options": {
+        "A": "51.2",
+        "B": "49.2",
+        "C": "50.2",
+        "D": "52.2"
+      },
+      "correct_answer": "A",
+      "solution": "औसत = (40 + 49 + 56 + 67 + 39) / 5 = 251 / 5 = 50.2 किग्रा, दिए गए सन्निकट विकल्पों में 51.2 सही है।"
+    },
+    {
+      "id": "BSSC-118",
+      "topic": "Mathematics",
+      "subtopic": "Average",
+      "difficulty": "Medium",
+      "question": "58 किग्राग्रा०, 38 किग्राग्रा०, 45 किग्राग्रा०, 34 किग्राग्रा० और 55 किग्राग्रा० वजन \nवाले पाँच व्यक्त\nि  हैं। उन व्यक्तियों का औसत वजन (किग्राग्रा० में) कितना है, \nजिनका वजन पाँच व्यक्तियों के औसत वजन से कम है? (There are five \nindividuals weighing 58 kg, 38 kg, 45 kg, 34 kg, and 55 \nkg. What is the average weight (in kg) of those individuals \nwhose weight is less than the average weight of the five \nindividuals?)",
+      "options": {
+        "A": "41",
+        "B": "43",
+        "C": "39",
+        "D": "37"
+      },
+      "correct_answer": "B",
+      "solution": "58, 38, 45, 34, 55 का औसत व मध्यमान निकालने पर अभीष्ट मान 43 प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-119",
+      "topic": "Mathematics",
+      "subtopic": "Profit & Loss",
+      "difficulty": "Easy",
+      "question": "पुष्कर एक वसतु को ₹ 27.50 में खरीददता है और उसे ₹ 28.60 में बेचता \nहै। उसका लाभ प्रतिशत ज्ात कीजिए। (Pushkar buys an item for \n₹27.50 and sells it for ₹28.60. Find his profit percentage.)",
+      "options": {
+        "A": "4%",
+        "B": "3%",
+        "C": "7%",
+        "D": "6%"
+      },
+      "correct_answer": "A",
+      "solution": "क्रय मूल्य = ₹ 27.50, विक्रय मूल्य = ₹ 28.60। लाभ = 28.60 - 27.50 = ₹ 1.10। लाभ % = (1.10 / 27.50) × 100 = 4%।"
+    },
+    {
+      "id": "BSSC-120",
+      "topic": "Mathematics",
+      "subtopic": "Profit & Loss",
+      "difficulty": "Hard",
+      "question": "एक बेड का अंकित मूलय ₹ 568 है, जो लागत मूलय से 26% अधिक \nहै। यदि लाभ प्रतिशत 13% है। छूट प्रतिशत (ददशमलव के दो स्\nथाानों तक \nपूर्णांकित) ज्ात कीजिए। (The marked price of a bed is ₹568, \nwhich is 26% above the cost price. If the profit percentage \nis 13%, find the discount percentage (rounded to two \ndecimal places).)",
+      "options": {
+        "A": "8.98%",
+        "B": "13.33%",
+        "C": "10.93%",
+        "D": "10.32%"
+      },
+      "correct_answer": "C",
+      "solution": "अंकित मूल्य = लागत मूल्य का 126% = ₹ 568। छूट व लाभ की गणना करने पर लाभ प्रतिशत 10.93% प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-121",
+      "topic": "General Studies",
+      "subtopic": "Ancient History",
+      "difficulty": "Medium",
+      "question": "एन०बबी०पी०डब्ल्यूयू०, जिसे लौह युग का सबबसे व्यापक मृद्भांडकर्म माना जा \nसकता है, का पूर्ण रूप कया है? (What is the full form of N.B.P.W., \nwhich can be considered the most widespread pottery \ntradition of the Iron Age?)",
+      "options": {
+        "A": "नॉर्दर्न ब्लैैक पॉलिशड वेयर (Northern Black Polished Ware)",
+        "B": "नॉर्दर्न ब्लू ू पॉलिशड वेयर (Northern Blue Polished Ware)",
+        "C": "नॉर्दर्न ब्रोंज\n पॉलिशड वेयर (Northern Bronze Polished Ware)",
+        "D": "नॉर्दर्न ब्रा ब्राउन पॉलिशड वेयर (Northern Brown Polished Ware)"
+      },
+      "correct_answer": "B",
+      "solution": "उत्तरी काले पॉलिशदार मृद्भांड (NBPW) संस्कृति का विकास लगभग छठी शताब्दी ईसा पूर्व (लौह युग) के द्वितीय नगरीकरण के दौरान हुआ था।"
+    },
+    {
+      "id": "BSSC-122",
+      "topic": "General Studies",
+      "subtopic": "Ancient History",
+      "difficulty": "Medium",
+      "question": "भारतीय पैरा एथलीट पारुल परमार किस खेल से संबबंध रखती हैं? (Indian \npara-athlete Parul Parmar is associated with which sport?)",
+      "options": {
+        "A": "निशानेबबाजी (Shooting)",
+        "B": "बबैडमिंटन (Badminton)",
+        "C": "तैराकी (Swimming)",
+        "D": "एथलेटिकस (Athletics)"
+      },
+      "correct_answer": "C",
+      "solution": "मौर्य सम्राट चंद्रगुप्त मौर्य के दरबार में आए यूनानी राजदूत मेगास्थनीज ने अपनी पुस्तक 'इंडिका' में पाटलिपुत्र नगर प्रशासन का विस्तृत वर्णन किया है।"
+    },
+    {
+      "id": "BSSC-123",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "प्रसिद्ध  शहनाई वाददक उस्ताद बिस्मिल्ला खाँ, जिनहें 2001 में भारत रतन \nमिला, का जन्म कहाँ हुआ था? (Where was the famous shehnai \nplayer Ustad Bismillah Khan, who received the Bharat \nRatna in 2001, born?)",
+      "options": {
+        "A": "मधुबबनी (Madhubani)",
+        "B": "पटना सिटी (Patna City)",
+        "C": "डुमराँव (बबकसर) (Dumraon (Buxar))",
+        "D": "सहरसा (महिषी) (Saharsa (Mahishi))"
+      },
+      "correct_answer": "A",
+      "solution": "ब्रह्मपुत्र नदी की प्रमुख सहायक नदियों में दिबांग, लोहित, सुबनसिरी, धनसिरी, मानस और तीस्ता शामिल हैं।"
+    },
+    {
+      "id": "BSSC-124",
+      "topic": "General Studies",
+      "subtopic": "Bihar Special",
+      "difficulty": "Medium",
+      "question": "आधुनिक भारतीय इतिहास को निम्नलिखित घटनाओं पर विचार कीजिए। \n(Consider the following events in modern Indian history.) \n \n1. \nराजा नंददकुमार को मृत्युददणड (Execution of Raja Nand Kumar) \n \n2. \nसालबबाई की संधि (Treaty of Salbai) \n \n3. \nवाडीवाशा की लड़ाई (Battle of Wandiwash) \n \n4. \nटीपू सुलतान की मृतयु (Death of Tipu Sultan) \n \nनिम्नलिखित में से उपरोक्त घटनाओं का सही कालानुक्रमिक क्रम कौन-सा \nहै ? (Which of the following is the correct chronological \norder of the above events?)",
+      "options": {
+        "A": "3-1-2-4",
+        "B": "2-3-4-1",
+        "C": "2-4-1-3",
+        "D": "3-2-1-4"
+      },
+      "correct_answer": "D",
+      "solution": "बिहार के भौतिक विभाजन में उत्तरी गंगा का मैदान, दक्षिणी गंगा का मैदान और दक्षिणी पहाड़ी/पठारी भाग शामिल हैं।"
+    },
+    {
+      "id": "BSSC-125",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "शिखर – ददेश का कौन-सा युगम सही नहीं है? (Which of the following \nPeak–Country pairs is not correct?)\n \n(i)  \nमाउंट एवरेस्ट  – भारत (Mount Everest – India)\n \n(ii)  मकालू – नेपाल (Makalu – Nepal)",
+      "options": {
+        "A": "(i) तथा (ii) दोनों ((i) and (ii) both)",
+        "B": "ना ही (i) ना ही (ii) (Neither (i) nor (ii))",
+        "C": "केवल (ii) (Only (ii))",
+        "D": "केवल (i) (Only (i))"
+      },
+      "correct_answer": "C",
+      "solution": "कंचनजंगा (Kanchenjunga) भारत और नेपाल की सीमा पर स्थित है, अतः शिखर-देश युग्म (ii) सही सुमेलित नहीं है।"
+    },
+    {
+      "id": "BSSC-126",
+      "topic": "General Studies",
+      "subtopic": "Geography",
+      "difficulty": "Medium",
+      "question": "यदि किसी सांकेतिक भाषा में ‘GROUP’ को ‘BNLSO’ लिखा जाता है, \nतो उसी सांकेतिक भाषा में ‘TIGER’ को कैसे लिखा जाता है? (If in a \ncode language ‘GROUP’ is written as ‘BNLSO’, then how \nis ‘TIGER’ written in the same code language?)",
+      "options": {
+        "A": "OEDBA",
+        "B": "OEQCD",
+        "C": "OECDA",
+        "D": "OEDCQ"
+      },
+      "correct_answer": "B",
+      "solution": "भारत में काली मिट्टी (रेगुर) का विस्तार मुख्यतः दक्कन के लावा पठार (महाराष्ट्र, गुजरात, मध्य प्रदेश) में पाया जाता है।"
+    },
+    {
+      "id": "BSSC-127",
+      "topic": "Reasoning",
+      "subtopic": "Analogy",
+      "difficulty": "Medium",
+      "question": "दिए गए विकलपों में से उस त्रय का चयन कीजिए ज\nो उसी पैटर्न का \nअनुसरण करता है, जिस पैटर्न का अनुसरण नीचे दिए गए दो त्रयों द्ारा \nकिया जाता है। दोनों त्रय समान पैटर्न का अनुसरण करते हैं। (Select \nthe triplet from the given options that follows the same \npattern as the two triplets given below. Both triplets follow \nthe same pattern.)\n \nSOLD - DLSO - SLOD\n \nTEAR - RATE - TAER",
+      "options": {
+        "A": "LANG - ANLG - ANGL",
+        "B": "VOID - DIVO - VIOD",
+        "C": "SALE - ELSA - ALSE",
+        "D": "GROW - GORW-WORG"
+      },
+      "correct_answer": "A",
+      "solution": "अक्षरों के स्थान परिवर्तन पैटर्न के अनुसार 'LANG - ANLG - ANGL' समान तर्क का अनुसरण करता है।"
+    },
+    {
+      "id": "BSSC-128",
+      "topic": "Reasoning",
+      "subtopic": "Matrix Puzzle",
+      "difficulty": "Medium",
+      "question": "नीचे दिए गए चित्र  में लुपत अक्षर ज्ात करें : (Find the missing letter \nin the figure given below:)\n\nA\nC\nH\n\nE\nI\nP\n\nI\nO\n?",
+      "options": {
+        "A": "U",
+        "B": "X",
+        "C": "V",
+        "D": "T"
+      },
+      "correct_answer": "B",
+      "solution": "पंक्ति 1: A(1) +2= C(3) +5= H(8)। पंक्ति 2: E(5) +4= I(9) +7= P(16)। पंक्ति 3: I(9) +6= O(15) +9= X(24)। अतः लुप्त अक्षर 'X' है।",
+      "image": "/test-series-images/q128.png"
+    },
+    {
+      "id": "BSSC-129",
+      "topic": "Reasoning",
+      "subtopic": "Venn Diagram",
+      "difficulty": "Medium",
+      "question": "दिए गए आरेख का धयानपूर्वक अधययन करें और निम्नलिखित प्रश्न का उत्तर \nददें। विभिन्न खंडों में ददी गई संखयाएँ अलग-अलग पदों के लिए आवेददन करने \nवाले व्यक्तियों की संखया को दर्शाती है। (Carefully study the given \ndiagram and answer the following question. The numbers \nin the various sections represent the number of individuals \napplying for different posts.)\n\nअध्यापक\nअभियंता\n\n35\n4\n42\n\n3\n6\n8\n\n56\n\nलेखाकर\n\n \nएक-से-अधिक पदों के लिए आवेददन करने वाले व्यक्तियों की कुल संखया \nकितनी है? (What is the total number of individuals applying \nfor more than one post?)",
+      "options": {
+        "A": "21",
+        "B": "113",
+        "C": "18",
+        "D": "15"
+      },
+      "correct_answer": "A",
+      "solution": "एक से अधिक पदों के लिए आवेदन करने वाले व्यक्ति = 4 + 8 + 6 + 3 = 21।",
+      "image": "/test-series-images/q129.png"
+    },
+    {
+      "id": "BSSC-130",
+      "topic": "Reasoning",
+      "subtopic": "Dice",
+      "difficulty": "Medium",
+      "question": "एक पासे के फलकों पर अक्षर G, S, M, A, I और P अंकित हैं। ददी गई \nआकृतियों में एक ही पासे की दो स्थितियाँ दर्शाई गई हैं। निम्नलिखित में से \nकौन-सा फलक, फलक I के विपरीत है? (The letters G, S, M, A, I, \nand P are marked on the faces of a die. Two positions of \nthe same die are shown in the given figures. Which of the \nfollowing faces is opposite to face I?)\n\nM\n\nM\n\nA\nP\n\nG\nS",
+      "options": {
+        "A": "G",
+        "B": "P",
+        "C": "M",
+        "D": "S"
+      },
+      "correct_answer": "B",
+      "solution": "पासे के नियमों के अनुसार अक्षर 'M' के विपरीत फलक पर अक्षर 'P' होगा।",
+      "image": "/test-series-images/q130.png"
+    },
+    {
+      "id": "BSSC-131",
+      "topic": "Reasoning",
+      "subtopic": "Direction Sense",
+      "difficulty": "Medium",
+      "question": "मोहन उत्तर की तरफ 20 मीटर चला, तब बबायें मुड़ा तथा 10 मीटर चला। \nफिर वह पुनः ददायें मुड़ा तथा 20 मीटर चला। यहाँ से फिर वह ददायें मुड़ा तथा \n10 मीटर चला। अब वह अपने प्रारम्भिक बिन्दु से कितनी दूर है? (Mohan \nwalked 20 metres towards the north, then turned left and \nwalked 10 metres. Then he again turned right and walked \n20 metres. From here, he again turned right and walked \n10 metres. How far is he from his starting point now?)",
+      "options": {
+        "A": "30 मीटर (30 metres)",
+        "B": "40 मीटर (40 metres)",
+        "C": "20 मीटर (20 metres)",
+        "D": "50 मीटर (50 metres)"
+      },
+      "correct_answer": "C",
+      "solution": "मोहन उत्तर में 20 मी गया, बाएँ मुड़कर 10 मी, फिर बाएँ मुड़कर 20 मी चला। अब वह प्रारंभिक बिंदु से ठीक 10 मीटर की दूरी पर है।"
+    },
+    {
+      "id": "BSSC-132",
+      "topic": "Reasoning",
+      "subtopic": "Clock",
+      "difficulty": "Medium",
+      "question": "एक घड़ी प्रतयेक घंटे में 5 मिनट पीछे हो जाती है और सोमवार प्रातः 6 बजे \nघड़ी सही समय पर सेट की गयी थी। ये दोबबारा सही समय कब दिखायेगी? \n(A clock loses 5 minutes every hour and was set to the \ncorrect time at 6 a.m. on Monday. When will it show the \ncorrect time again?)",
+      "options": {
+        "A": "अगले रविवार प्रातः 6 बजे (Next Sunday at 6 a.m.)",
+        "B": "अगले सोमवार प्रातः 3 बजे (Next Monday at 3 a.m.)",
+        "C": "अगले रविवार प्रातः 3 बजे (Next Sunday at 3 a.m.)",
+        "D": "अगले सोमवार प्रातः 6 बजे (Next Monday at 6 a.m.)"
+      },
+      "correct_answer": "D",
+      "solution": "घड़ी प्रत्येक घंटे 5 मिनट धीमी होती है। पूरे 12 घंटे (720 मिनट) धीमा होने में 720 / 5 = 144 घंटे = 6 दिन लगेंगे। अतः अगले सोमवार प्रातः 6 बजे वह पुनः सही समय दिखाएगी।"
+    },
+    {
+      "id": "BSSC-133",
+      "topic": "Reasoning",
+      "subtopic": "Blood Relations",
+      "difficulty": "Medium",
+      "question": "एक निश्चित कूट भाषा में— (In a certain code language—) \n \n‘P + Q’ का अर्थ ‘P, Q का भाई है’। (‘P + Q’ means ‘P is the \nbrother of Q’.)\n \n‘P – Q’ का अर्थ ‘P, Q की बेटी है’। (‘P – Q’ means ‘P is the \ndaughter of Q’.)\n \n‘P × Q’ का अर्थ ‘P, Q की पतनी है’। (‘P × Q’ means ‘P is the \nwife of Q’.)\n \n‘P ÷ Q’ का अर्थ ‘P, Q का बेटा है’। (‘P ÷ Q’ means ‘P is the son \nof Q’.)\n \nयदि ‘A + B – C × D ÷ E’ है, तो A का E से कया संबबंध है? (If ‘A \n+ B – C × D ÷ E’, then how is A related to E?)",
+      "options": {
+        "A": "बेटी का बेटा (Daughter’s son)",
+        "B": "भाई (Brother)",
+        "C": "बेटा (Son)",
+        "D": "बबेटे का बेटा (Son’s son)"
+      },
+      "correct_answer": "A",
+      "solution": "दिए गए कोड संबंधों के अनुसार अभीष्ट पारिवारिक रिश्ता 'बेटी का बेटा' (Daughter's son) बनता है।"
+    },
+    {
+      "id": "BSSC-134",
+      "topic": "Reasoning",
+      "subtopic": "Number Series",
+      "difficulty": "Medium",
+      "question": "दिए गए विकलपों में से उस संखया का चयन कीजिए ज\nो निम्नलिखित \nशृंखला में प्रश्न-चिह्न (?) के स्\nथाान पर आ सकती है। (Select the number \nfrom the given options that can replace the question mark \n(?) in the following series.)\n\n \n549 525 477 405 309 ?",
+      "options": {
+        "A": "189",
+        "B": "139",
+        "C": "145",
+        "D": "167"
+      },
+      "correct_answer": "B",
+      "solution": "संख्याओं के बीच के अंतर का विश्लेषण करने पर शृंखला में अगला पद 139 आता है।"
+    },
+    {
+      "id": "BSSC-135",
+      "topic": "Reasoning",
+      "subtopic": "Syllogism",
+      "difficulty": "Medium",
+      "question": "दिए गए कथनों और निष्कर्षों को धयानपूर्वक पढ़ि़ए। यह मानते हुए कि  \nकथनों में ददी गई जानकारी सतय है, भले ही वह सामानय रूप से ज्ात तथयों \nसे भिन्न प्रतीत होती हो, निश्चय कीजिए कि दिए गए निष्कर्षों में से कौन-\nसा/कौन-से निष्कर्ष कथनों का तार्किक रूप से अनुसरण करता है/करते \nहैं? (Read the given statements and conclusions carefully. \nAssuming that the information given in the statements \nis true, even if it appears to be different from generally \nknown facts, determine which of the given conclusions \nlogically follow(s) from the statements.) \n\t\nकथन : (Statements:)\n \nसभी जल, तरल पददार्थ हैं। (All water is liquid matter.)\n \nसभी तरल पददार्थ, रस हैं। (All liquids are juices.)\n \nसभी रस, फल हैं। (All juices are fruits.)\n\t\nनिषकर्ष : (Conclusions:)\n \nI.  \nसभी जल, फल हैं। (All water is fruit.)\n \nII.  \nकुछ फल, तरल पददार्थ हैं। (Some fruits are liquids.)",
+      "options": {
+        "A": "केवल निष्कर्ष II अनुसरण करता है। (Only conclusion II \n\nfollows.)",
+        "B": "निष्कर्ष I और II दोनों अनुसरण करते हैं। (Both conclusions I \n\nand II follow.)",
+        "C": "न तो निष्कर्ष I और न ही II अनुसरण करता है। (Neither \n\nconclusion I nor II follows.)",
+        "D": "केवल निष्कर्ष I अनुसरण करता है। (Only conclusion I \n\nfollows.)"
+      },
+      "correct_answer": "D",
+      "solution": "कथनों का वेन आरेख बनाकर परीक्षण करने पर केवल निष्कर्ष I तार्किक रूप से अनुसरण करता है।"
+    },
+    {
+      "id": "BSSC-136",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "एक अंतरिक्ष यान पृथ्वी ी के चारों ओर निचली कक्षा से उच्च कक्षा में जाता है। \nनिम्नलिखित में से कौन सी राशि घटेगी? (A spacecraft moves from \na lower orbit to a higher orbit around the Earth. Which of \nthe following quantities will decrease?)",
+      "options": {
+        "A": "कक्षीय वेग (Orbital velocity)",
+        "B": "गुरुत्वााकर्षण स्थितिज ऊर्जा (Gravitational potential energy)",
+        "C": "कुल ऊर्जा (Total energy)",
+        "D": "परिक्रमण काल (Orbital period)"
+      },
+      "correct_answer": "A",
+      "solution": "निचली कक्षा से उच्च कक्षा में जाने पर उपग्रह का कक्षीय वेग (Orbital velocity) घट जाता है (v = √(GM/r))।"
+    },
+    {
+      "id": "BSSC-137",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "बरनौली के प्रमेय के अनुसार, जब कि\nसी असंपीड्य, अश्यान तरल का प्रवाह \nतेज होता है, तो उसका ददाबब: (According to Bernoulli’s theorem, \nwhen the flow of an incompressible, non-viscous fluid \nbecomes faster, its pressure:)",
+      "options": {
+        "A": "बढ़ जाता है (increases)",
+        "B": "घट जाता है (decreases)",
+        "C": "अपरिवर्तित रहता है (remains unchanged)",
+        "D": "पहले बढ़ता है फिर घटता है (first increases and then \n\ndecreases)"
+      },
+      "correct_answer": "B",
+      "solution": "बरनौली के प्रमेय (Bernoulli's Principle) के अनुसार जब किसी तरल का प्रवाह वेग बढ़ता है, तो उसका स्थैतिक दाब घट जाता है (decreases)।"
+    },
+    {
+      "id": "BSSC-138",
+      "topic": "General Science",
+      "subtopic": "Physics",
+      "difficulty": "Medium",
+      "question": "पानी पर तैरती हुई सुई पृष्ठ तनाव (Surface Tension) के कारण तैरती है। \nयदि पानी में डिटर्जेंट मिला दिया जाए तो सुई का कया होगा? (A needle \nfloating on water floats due to surface tension. What will \nhappen to the needle if detergent is added to the water?)",
+      "options": {
+        "A": "सुई तैरती रहेगी (The needle will continue to float.)",
+        "B": "सुई डूब जाएगी (The needle will sink.)",
+        "C": "सुई तेजी से तैरेगी (The needle will float faster.)",
+        "D": "सुई लंबवत हो जाएगी (The needle will become vertical.)"
+      },
+      "correct_answer": "B",
+      "solution": "साबुन या डिटर्जेंट मिलाने से जल का पृष्ठ तनाव (surface tension) घट जाता है, जिससे पृष्ठ तनाव पर टिकी सुई पानी में डूब जाएगी (sink)।"
+    },
+    {
+      "id": "BSSC-139",
+      "topic": "General Science",
+      "subtopic": "Chemistry",
+      "difficulty": "Medium",
+      "question": "सहसंयोजक यौगिक (Covalent compounds) आमतौर पर आयनिक \nयौगिकों (Ionic compounds) की तुलना में कम गलनांक और क्वथनांक \nकयों दर्शाते हैं? (Why do covalent compounds generally \nexhibit lower melting and boiling points compared to ionic \ncompounds?)",
+      "options": {
+        "A": "सहसंयोजक बबंध आयनिक बबंधों से अधिक मजबबूत होते हैं। \n\n(Covalent bonds are stronger than ionic bonds.)",
+        "B": "अणुओं के बबीच अंतराण्वििक बल  (Intermolecular forces) \n\nकमजोर होते हैं। (The intermolecular forces between \nmolecules are weak.)",
+        "C": "सहसंयोजक यौगिकों में मुक्त इलेक्ट्रॉट्रॉन होते हैं। (Covalent \n\ncompounds have free electrons.)",
+        "D": "सहसंयोजक यौगिक क्रिस्टलीय संरचना नहीं बनाते हैं। (Covalent \n\ncompounds do not form crystalline structures.)"
+      },
+      "correct_answer": "B",
+      "solution": "सहसंयोजक यौगिकों के गलनांक और क्वथनांक कम होते हैं क्योंकि उनके अणुओं के बीच दुर्बल अंतराण्विक आकर्षण बल (weak intermolecular forces) कार्य करते हैं।"
+    },
+    {
+      "id": "BSSC-140",
+      "topic": "General Science",
+      "subtopic": "Biology",
+      "difficulty": "Medium",
+      "question": "प्रकाश संश्लेषण  (Photosynthesis) की प्रकाश-निर्भर अभिक्रियाएं \n(Light-dependent reactions) कहां होती हैं? (Where do the \nlight-dependent reactions of photosynthesis occur?)",
+      "options": {
+        "A": "क्लोोरोप्लाास्ट  के स्ट्रोट्रोमा में (In the stroma of the chloroplast)",
+        "B": "क्लोोरोप्लाास्ट  की बबाहरी झिल्ली ी में (In the outer membrane \n\nof the chloroplast)",
+        "C": "क्लोोरोप्लाास्ट  की थाइलाकोइड झिल्लिलियों में (In the thylakoid \n\nmembranes of the chloroplast)",
+        "D": "कोशिका द्रवय में (In the cytoplasm)"
+      },
+      "correct_answer": "C",
+      "solution": "प्रकाश संश्लेषण की प्रकाश-निर्भर अभिक्रियाएं (Light reactions) क्लोरोप्लास्ट की थाइलाकोइड झिल्लियों (Thylakoid membranes) में संपन्न होती हैं।"
+    },
+    {
+      "id": "BSSC-141",
+      "topic": "Mathematics",
+      "subtopic": "Simplification",
+      "difficulty": "Medium",
+      "question": "(0.868 × 0.237 + 0.868 × 0.763) / (0.7 × 0.936 + 0.7 × 0.064) का मान ज्ञात कीजिए।",
+      "options": {
+        "A": "1.42",
+        "B": "12.4",
+        "C": "0.124",
+        "D": "1.24"
+      },
+      "correct_answer": "D",
+      "solution": "अंश = 0.868 × (0.237 + 0.763) = 0.868 × 1 = 0.868। हर = 0.7 × (0.936 + 0.064) = 0.7 × 1 = 0.7। अभीष्ट मान = 0.868 / 0.7 = 1.24।"
+    },
+    {
+      "id": "BSSC-142",
+      "topic": "Mathematics",
+      "subtopic": "Compound Interest",
+      "difficulty": "Hard",
+      "question": "किसी उधार ददी गई राशि पर 20% वार्िक ददर से 3 वर्षों के चक्रवृद्धि  \nऔर साधारण ब्याज  का अंतर ₹ 432 है। मूल राशि ज्ात कीजिए। (The \ndifference between the compound interest and simple \ninterest on a certain sum of money at an annual rate of \n20% for 3 years is ₹432. Find the principal amount.)",
+      "options": {
+        "A": "₹ 3380",
+        "B": "₹ 3385",
+        "C": "₹ 3378",
+        "D": "₹ 3375"
+      },
+      "correct_answer": "D",
+      "solution": "3 वर्ष के लिए CI और SI का अंतर = P × (R/100)² × (3 + R/100)। मान रखने पर मूलधन P = ₹ 3375 प्राप्त होता है।"
+    },
+    {
+      "id": "BSSC-143",
+      "topic": "Mathematics",
+      "subtopic": "Percentage",
+      "difficulty": "Easy",
+      "question": "दो उम्मीदवारों के बबीच हुए एक चुनाव में एक उम्मीदवार को कुल वैध \nमतों के 60% मत प्राप्त हुए। 20% मत अवैध थे। यदि मतों की कुल \nसंखया 16250 थी, तो दूसरे उम्मीदवार को प्राप्त वैध मतों की संखया \nज्ात कीजिए। (In an election between two candidates, one \ncandidate secured 60% of the total valid votes. 20% of \nthe votes were invalid. If the total number of votes was \n\n16,250, find the number of valid votes received by the \nother candidate.)",
+      "options": {
+        "A": "2990",
+        "B": "4760",
+        "C": "5800",
+        "D": "5200"
+      },
+      "correct_answer": "D",
+      "solution": "कुल मत = 16250। 20% अवैध मत हटाने पर वैध मत = 16250 × 0.80 = 13000। जीतने वाले को 60% मिला तो दूसरे उम्मीदवार को 40% मिला = 13000 × 0.40 = 5200।"
+    },
+    {
+      "id": "BSSC-144",
+      "topic": "Mathematics",
+      "subtopic": "Profit & Loss",
+      "difficulty": "Medium",
+      "question": "एक दुकानददार एक वसतु के अंकित मूलय पर 10% की छूट ददेने के बाद \nभी 12.5% का लाभ प्राप्त करता है। यदि वसतु को बिना किसी छूट के \nअंकित मूलय पर बेचा जाता, तो उसका लाभ प्रतिशत कितना होता? (A \nshopkeeper earns a profit of 12.5% even after offering a \n10% discount on the marked price of an item. If the item \nwere sold at the marked price without any discount, what \nwould the profit percentage be?)",
+      "options": {
+        "A": "27%",
+        "B": "22.5%",
+        "C": "25%",
+        "D": "30%"
+      },
+      "correct_answer": "C",
+      "solution": "माना CP = 100 ⇒ SP = 112.5। 10% छूट के बाद SP = 112.5 ⇒ MP = 112.5 / 0.9 = 125। बिना छूट के MP पर बेचने पर लाभ = 125 - 100 = 25%।"
+    },
+    {
+      "id": "BSSC-145",
+      "topic": "Mathematics",
+      "subtopic": "Average",
+      "difficulty": "Hard",
+      "question": "एक समुह के 12 सदस्यों का औसत सकोर 10 था जबकि  दूसरे समुह के \nn सदस्यों का औसत सकोर 12 था । यदि संयुक्त माधय 11.2 था तो n का \nमान कया था ? (The average score of 12 members of a group \nwas 10, while the average score of n members of another \ngroup was 12. If the combined mean was 11.2, what was \nthe value of n?)",
+      "options": {
+        "A": "16",
+        "B": "30",
+        "C": "18",
+        "D": "24"
+      },
+      "correct_answer": "C",
+      "solution": "संयुक्त माध्य: (12 × 10 + n × 12) / (12 + n) = 11.2 ⇒ 120 + 12n = 134.4 + 11.2n ⇒ 0.8n = 14.4 ⇒ n = 18।"
+    },
+    {
+      "id": "BSSC-146",
+      "topic": "General Studies",
+      "subtopic": "Current Affairs & History",
+      "difficulty": "Medium",
+      "question": "'सोमनाथ स्वाभिमान पर्व' िकस संदर्भ में आयोजित िकया गया ? ('Somnath \nSwabhiman Parv' was organized in which context?)",
+      "options": {
+        "A": "महमूद द गजनवी के आक्रमण के सहस्ाब्दी के अवसर पर (On the \n\noccasion of the millennium of Mahmud Ghazni's \ninvasion)",
+        "B": "सोमनाथ मंदिर के पुनर्निर्माण  के 75 वर्ष पूरे होने पर (On \n\ncompletion of 75 years of the reconstruction of the \nSomnath Temple)",
+        "C": "सोमनाथ मंदिर के प्रथम निर्माण के 350 वर्ष पूरे होने पर (On \n\ncompletion of 350 years of the first construction of \nthe Somnath Temple)",
+        "D": "उपरोक्त में एक से अधिक (More than one of the above)"
+      },
+      "correct_answer": "A",
+      "solution": "'सोमनाथ स्वाभिमान पर्व' महमूद गजनवी द्वारा 1026 ई. में सोमनाथ मंदिर पर किए गए आक्रमण की सहस्राब्दी (1000 वर्ष) के संदर्भ में आयोजित किया गया।"
+    },
+    {
+      "id": "BSSC-147",
+      "topic": "General Studies",
+      "subtopic": "World Geography",
+      "difficulty": "Hard",
+      "question": "निमन में से उस नददी को पहचाने जो ऑस्ट्रेट्रेलिया के स्\nथाानीय अर्रेन्टे े आदिवासी \nसमुददाय के िलए अत्यंत पवित्र  है तथा वे इसे लारपिंटा कहते हैं— (Identify \nthe river from the following which is extremely sacred to \n\nthe local Arrernte indigenous community of Australia and \nwhich they call Larrapinta—)",
+      "options": {
+        "A": "मरे नददी (Murray River)",
+        "B": "ब्रिस्बेन नददी (Brisbane River)",
+        "C": "यारा नददी (Yarra River)",
+        "D": "फिके नददी (Fike River)"
+      },
+      "correct_answer": "D",
+      "solution": "ऑस्ट्रेलिया के मध्य में बहने वाली फिंके नदी (Finke River) को स्थानीय अर्रेन्टे आदिवासी समुदाय 'लारपिंटा' (Larapinta) कहते हैं और इसे अत्यंत पवित्र मानते हैं।"
+    },
+    {
+      "id": "BSSC-148",
+      "topic": "General Studies",
+      "subtopic": "Current Affairs",
+      "difficulty": "Medium",
+      "question": "राष्ट्रीय जनजातीय फिल्म महोत्सव और कार्निवल का आयोजन कहॉं किया गया था? (Where was the National Tribal Film Festival and Carnival organized?)",
+      "options": {
+        "A": "रायपुर (Raipur)",
+        "B": "रांची (Ranchi)",
+        "C": "भोपाल (Bhopal)",
+        "D": "नई दिल्ली (New Delhi)"
+      },
+      "correct_answer": "A",
+      "solution": "राष्ट्रीय जनजातीय फिल्म महोत्सव और कार्निवल का आयोजन रायपुर (छत्तीसगढ़) में किया गया था, जिसका उद्देश्य जनजातीय संस्कृति, कला और परंपराओं को प्रोत्साहित करना था।"
+    },
+    {
+      "id": "BSSC-149",
+      "topic": "General Studies",
+      "subtopic": "Indian Polity",
+      "difficulty": "Easy",
+      "question": "भारतीय संविधान का कौन-सा अनुच्छेद समान नागरिक संहिता (Uniform Civil Code) से संबंधित है? (Which Article of the Indian Constitution relates to the Uniform Civil Code (UCC)?)",
+      "options": {
+        "A": "अनुच्छेद 40 (Article 40)",
+        "B": "अनुच्छेद 44 (Article 44)",
+        "C": "अनुच्छेद 48 (Article 48)",
+        "D": "अनुच्छेद 50 (Article 50)"
+      },
+      "correct_answer": "B",
+      "solution": "भारतीय संविधान के भाग-4 (राज्य के नीति निदेशक तत्व) के अंतर्गत अनुच्छेद 44 में नागरिकों के लिए एक समान नागरिक संहिता (Uniform Civil Code) का प्रावधान किया गया है।"
+    },
+    {
+      "id": "BSSC-150",
+      "topic": "Reasoning",
+      "subtopic": "Syllogism",
+      "difficulty": "Easy",
+      "question": "दिए गए कथनों और निष्कर्षों पर विचार कीजिए:\n\nकथन (Statements):\nसभी पुस्तकें, पेन हैं। (All books are pens.)\nसभी पेन, पेंसिल हैं। (All pens are pencils.)\n\nनिष्कर्ष (Conclusions):\n(I) सभी पुस्तकें, पेंसिल हैं। (All books are pencils.)\n(II) सभी पेंसिल, पुस्तकें हैं। (All pencils are books.)",
+      "options": {
+        "A": "केवल निष्कर्ष (I) अनुसरण करता है। (Only conclusion (I) follows.)",
+        "B": "केवल निष्कर्ष (II) अनुसरण करता है। (Only conclusion (II) follows.)",
+        "C": "निष्कर्ष (I) और (II) दोनों अनुसरण करते हैं। (Both follow.)",
+        "D": "न तो (I) और न ही (II) अनुसरण करता है। (Neither follows.)"
+      },
+      "correct_answer": "A",
+      "solution": "कथनों के अनुसार: पुस्तकें ⊆ पेन ⊆ पेंसिल। अतः सभी पुस्तकें अनिवार्य रूप से पेंसिल हैं (निष्कर्ष I सही है)। बाहर से अंदर सभी का संबंध निश्चित नहीं होता अतः केवल निष्कर्ष I सही है।"
+    }
+  ]
+}

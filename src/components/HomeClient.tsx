@@ -249,6 +249,100 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
           />
         )}
 
+        {/* Featured Study & Quiz Banner */}
+        {currentCategory === 'all' && !searchQuery && (
+          <div className="container" style={{ marginTop: '16px', marginBottom: '8px' }}>
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #0f766e 100%)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                color: '#ffffff',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '14px',
+                boxShadow: '0 6px 20px rgba(30, 27, 75, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}
+            >
+              <div style={{ flex: '1 1 320px' }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    marginBottom: '6px',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#22c55e',
+                    }}
+                  />
+                  NEW • 100% FREE STUDY &amp; QUIZ
+                </div>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '0 0 4px 0', lineHeight: 1.3 }}>
+                  🎯 BSSC CGL 150 Questions Full Mock Test (Set 1)
+                </h3>
+                <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, lineHeight: 1.4 }}>
+                  GS (50) • Reasoning (50) • Science (25) • Maths (25) | 135 Mins CBT Timer, -1 Negative Marking &amp; Step-by-Step Solutions.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <a
+                  href="/study-quiz?mode=study"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  📖 Study Mode (Q&amp;A)
+                </a>
+                <a
+                  href="/study-quiz?mode=test"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#f59e0b',
+                    color: '#0f172a',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  ⚡ Start CBT Mock Test
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {(searchQuery || currentStateFilter !== 'all') && (
           <div className="container" style={{ marginTop: '16px' }}>
             <div className="search-indicator">
