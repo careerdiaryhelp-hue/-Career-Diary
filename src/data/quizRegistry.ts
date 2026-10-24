@@ -23,6 +23,9 @@ export interface QuizSet {
   id: string;
   slug: string;
   exam: string;
+  examSlug: string;
+  setSlug: string;
+  urlPath: string;
   subject: string;
   title: string;
   subtitle: string;
@@ -43,6 +46,9 @@ export const QUIZ_SETS: QuizSet[] = [
     id: 'bssc-cgl-set-1',
     slug: 'bssc-cgl-set-1',
     exam: 'BSSC CGL',
+    examSlug: 'bssc-cgl',
+    setSlug: 'set1',
+    urlPath: '/test-series/bssc-cgl/set1',
     subject: 'Practice Set 1',
     title: 'BSSC CGL Full Mock Test (Set 1)',
     subtitle: '150 Questions • Full Syllabus • Negative Marking • Official Pattern',
@@ -66,6 +72,9 @@ export const QUIZ_SETS: QuizSet[] = [
     id: 'bssc-cgl-set-2',
     slug: 'bssc-cgl-set-2',
     exam: 'BSSC CGL',
+    examSlug: 'bssc-cgl',
+    setSlug: 'set2',
+    urlPath: '/test-series/bssc-cgl/set2',
     subject: 'Practice Set 2',
     title: 'BSSC CGL Full Mock Test (Set 2)',
     subtitle: '150 Questions • Full Syllabus • Negative Marking • Official Pattern',
@@ -87,9 +96,38 @@ export const QUIZ_SETS: QuizSet[] = [
   }
 ];
 
+export function getQuizSetByExamAndSet(examSlug: string, setSlug: string): QuizSet | undefined {
+  const cleanExam = String(examSlug || '').toLowerCase().trim().replace(/_/g, '-');
+  const cleanSet = String(setSlug || '').toLowerCase().trim().replace(/[-_]/g, '');
+
+  return QUIZ_SETS.find(s => {
+    const sExam = s.examSlug.toLowerCase().replace(/_/g, '-');
+    const sSet = s.setSlug.toLowerCase().replace(/[-_]/g, '');
+    return sExam === cleanExam && sSet === cleanSet;
+  });
+}
+
+export function getQuizSetsByExam(examSlug: string): QuizSet[] {
+  const cleanExam = String(examSlug || '').toLowerCase().trim().replace(/_/g, '-');
+  return QUIZ_SETS.filter(s => s.examSlug.toLowerCase().replace(/_/g, '-') === cleanExam);
+}
+
+export function getAllExamSlugs(): string[] {
+  const set = new Set<string>();
+  QUIZ_SETS.forEach(s => set.add(s.examSlug));
+  return Array.from(set);
+}
+
 export function getQuizSetBySlug(slug: string): QuizSet | undefined {
   const clean = String(slug || '').toLowerCase().trim();
-  return QUIZ_SETS.find(s => s.slug.toLowerCase() === clean || s.id.toLowerCase() === clean);
+  const direct = QUIZ_SETS.find(s => s.slug.toLowerCase() === clean || s.id.toLowerCase() === clean);
+  if (direct) return direct;
+
+  const norm = clean.replace(/[-_]/g, '');
+  const bySet = QUIZ_SETS.find(s => s.setSlug.toLowerCase().replace(/[-_]/g, '') === norm);
+  if (bySet) return bySet;
+
+  return undefined;
 }
 
 export function getAllQuizSets(): QuizSet[] {

@@ -51,7 +51,7 @@ export default function Footer() {
             <li><a href="/results">Results &amp; Answer Key</a></li>
             <li><a href="/syllabus">Exam Pattern &amp; Syllabus</a></li>
             <li><a href="/admission">Admission Notifications</a></li>
-            <li><a href="/study-quiz">Study &amp; Mock Quiz</a></li>
+            <li><a href="/test-series">Test Series &amp; Mock Tests</a></li>
           </ul>
         </div>
 

@@ -19,7 +19,7 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
     { cat: 'ANSWER KEY', path: '/answer-key', label: 'Answer Key', icon: Key },
     { cat: 'SYLLABUS', path: '/syllabus', label: 'Syllabus', icon: FileText },
     { cat: 'ADMISSION', path: '/admission', label: 'Admission', icon: GraduationCap },
-    { cat: 'STUDY_QUIZ', path: '/study-quiz', label: 'Study & Quiz', icon: BookOpen, badge: 'NEW' },
+    { cat: 'TEST_SERIES', path: '/test-series', label: 'Test Series', icon: BookOpen, badge: 'NEW' },
   ];
 
   const isItemActive = (item: typeof navItems[0]) => {

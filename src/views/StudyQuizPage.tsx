@@ -350,7 +350,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     </div>
 
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                      {set.title}
+                      <a href={set.urlPath} style={{ color: 'inherit', textDecoration: 'none' }}>
+                        {set.title}
+                      </a>
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.45, margin: '0 0 16px 0' }}>
                       {set.subtitle}
@@ -389,10 +391,15 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
 
                   {/* Card Actions: Dual buttons (Study Mode vs Test Mode) */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
-                    <button
-                      onClick={() => {
+                    <a
+                      href={`${set.urlPath}?mode=study`}
+                      onClick={(e) => {
+                        e.preventDefault();
                         setSelectedSet(set);
                         setMode('study');
+                        if (typeof window !== 'undefined') {
+                          window.history.pushState({}, '', `${set.urlPath}?mode=study`);
+                        }
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       style={{
@@ -408,14 +415,20 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                         fontWeight: 600,
                         fontSize: '0.88rem',
                         cursor: 'pointer',
+                        textDecoration: 'none',
                         transition: 'all 0.15s'
                       }}
                     >
                       <BookOpen size={16} /> Study Mode
-                    </button>
-                    <button
-                      onClick={() => {
+                    </a>
+                    <a
+                      href={`${set.urlPath}?mode=test`}
+                      onClick={(e) => {
+                        e.preventDefault();
                         setSelectedSet(set);
+                        if (typeof window !== 'undefined') {
+                          window.history.pushState({}, '', `${set.urlPath}?mode=test`);
+                        }
                         startTest();
                       }}
                       style={{
@@ -431,12 +444,13 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                         fontWeight: 600,
                         fontSize: '0.88rem',
                         cursor: 'pointer',
+                        textDecoration: 'none',
                         boxShadow: '0 2px 4px rgba(37,99,235,0.2)',
                         transition: 'all 0.15s'
                       }}
                     >
                       <Clock size={16} /> Take Quiz
-                    </button>
+                    </a>
                   </div>
                 </div>
               ))}
@@ -456,7 +470,12 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
                 <button
-                  onClick={() => setMode('hub')}
+                  onClick={() => {
+                    setMode('hub');
+                    if (typeof window !== 'undefined') {
+                      window.history.pushState({}, '', '/test-series');
+                    }
+                  }}
                   style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                 >
                   ← All Sets

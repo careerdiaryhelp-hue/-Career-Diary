@@ -303,7 +303,7 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <a
-                  href="/study-quiz?mode=study"
+                  href="/test-series/bssc-cgl/set1?mode=study"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -318,10 +318,10 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
                     textDecoration: 'none',
                   }}
                 >
-                  📖 Study Mode (Q&amp;A)
+                  📖 Set 1 (Study Mode)
                 </a>
                 <a
-                  href="/study-quiz?mode=test"
+                  href="/test-series/bssc-cgl/set1?mode=test"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -337,6 +337,24 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
                   }}
                 >
                   ⚡ Start CBT Mock Test
+                </a>
+                <a
+                  href="/test-series/bssc-cgl/set2"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  🔥 Set 2 (New)
                 </a>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function QuizRedirect() {
-  redirect('/study-quiz');
+  redirect('/test-series');
 }
