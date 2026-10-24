@@ -173,7 +173,7 @@
       "topic": "Mental Ability",
       "subtopic": "Series & Pattern Completion",
       "difficulty": "Medium",
-      "question": "उस आकृति का चयन कीजिए, जो नीचे दी गई आकृति शृंखला में प्रश्न-चिह्न \n(?) को प्रतिस्थापित करेगी। (Select the figure that will replace \nthe question mark (?) in the figure series given below.)\n\n?\n\n \n(A) \n \n \n(B) \n\n \n(C) \n \n \n(D)",
+      "question": "उस आकृति का चयन कीजिए, जो नीचे दी गई आकृति शृंखला में प्रश्न-चिह्न (?) को प्रतिस्थापित करेगी। (Select the figure that will replace the question mark (?) in the figure series given below.)",
       "options": {
         "A": "आकृति (A) / Figure (A)",
         "B": "आकृति (B) / Figure (B)",
@@ -219,7 +219,7 @@
       "topic": "Mental Ability",
       "subtopic": "Series & Pattern Completion",
       "difficulty": "Medium",
-      "question": "उस आकृति का चयन कीजिए, जो नीचे दी गई आकृति शृंखला में प्रश्न-चिह्न \n(?) को प्रतिस्थापित करेगी। (Select the figure that will replace \nthe question mark (?) in the figure series given below.)\n\n=\n9\n\n=\n9\nV\n\n3\nT\nV\n=\n9\n3\nT\nV\n\nT\n3\n9\n=\n?\n\nT\n\n3\n\nV",
+      "question": "उस आकृति का चयन कीजिए, जो नीचे दी गई आकृति शृंखला में प्रश्न-चिह्न (?) को प्रतिस्थापित करेगी। (Select the figure that will replace the question mark (?) in the figure series given below.)",
       "options": {
         "A": "आकृति (A) / Figure (A)",
         "B": "आकृति (B) / Figure (B)",
@@ -250,7 +250,7 @@
       "topic": "Mental Ability",
       "subtopic": "Non-Verbal & Visual Reasoning",
       "difficulty": "Medium",
-      "question": "उस विकल्प आकृति का चयन करें, जो निम्न आकृति में अन्तःस्थापित \nहै। (घुुमाने की अनुुमति नहीं है) (Select the option figure that is \nembedded in the given figure. (Rotation is not allowed.)\n\n \n(A) \n \n(B) \n \n(C) \n (D)",
+      "question": "उस विकल्प आकृति का चयन करें, जो निम्न आकृति में अन्तःस्थापित है (घुमाने की अनुमति नहीं है)। (Select the option figure that is embedded in the given figure. (Rotation is not allowed.))",
       "options": {
         "A": "आकृति (A) / Figure (A)",
         "B": "आकृति (B) / Figure (B)",
@@ -656,7 +656,7 @@
       "topic": "Mental Ability",
       "subtopic": "Non-Verbal & Visual Reasoning",
       "difficulty": "Hard",
-      "question": "जब दर्पण को िनम्न आकृति के अनुसार XY पर रखा जाता है, तो दिए गए \nसंयोजन का दर्पण में िनर्मित सही प्रतिबिंब चयनित कीजिए। (When the \nmirror is placed along XY as shown in the figure, select the \ncorrect mirror image of the given combination.)\n\nX\n\n1 3 5 Z W T\n\nY\n \n(A) \n\nZ W T 1 3 5\n\n \n(B) \n\n1 3 5 Z W T\n\nZ W T 1 3 5\n\n1 3 5 Z W T\n\n \n(C) \n\n \n(D)",
+      "question": "जब दर्पण को निम्न आकृति के अनुसार XY पर रखा जाता है, तो दिए गए संयोजन का दर्पण में निर्मित सही प्रतिबिंब चयनित कीजिए। (When the mirror is placed along XY as shown in the figure, select the correct mirror image of the given combination.)",
       "options": {
         "A": "दर्पण प्रतिबिंब (A) / Mirror Image (A)",
         "B": "दर्पण प्रतिबिंब (B) / Mirror Image (B)",
@@ -882,7 +882,7 @@
       "topic": "Mathematics",
       "subtopic": "Data Interpretation (DI)",
       "difficulty": "Hard",
-      "question": "नीचे दिए गए रेखा आलेख में एक क्रिकेट मैच के पहले छ: ओवरों में टीम \nA द्वारा बनाए गए रनों को दर्शाया गया है। (The line graph below \nshows the runs scored by Team A in the first six overs of a \ncricket match.)\n\n0\n2\n4\n6\n8\n10\n12\n14\n16\n\nओवर\n1\n2\n3\n4\n5\n6\n\n \nटीम A द्वारा 7वें ओवर में बनाए गए रन, उनके द्वारा 8वें ओवर में बनाए गए \nरनों से 5 अधिक थे, लेकिन उनके द्वारा 9वें ओवर में बनाए गए रनों से 6 \nकम थे। यदि मैच के पहले नौ ओवरों में टीम A द्वारा प्रति ओवर बनाए गए \nऔसत रन 9 थे, तो टीम ने 8वें ओवर में कितने रन बनाए ? (The runs \nscored by Team A in the 7th over were 5 more than those \n\nscored in the 8th over, but 6 fewer than those scored in the \n9th over. If the average runs scored per over by Team A in \nthe first nine overs of the match was 9, how many runs did \nthe team score in the 8th over?)",
+      "question": "नीचे दिए गए रेखा आलेख में एक क्रिकेट मैच के पहले छ: ओवरों में टीम A द्वारा बनाए गए रनों को दर्शाया गया है।\n\nटीम A द्वारा 7वें ओवर में बनाए गए रन, उनके द्वारा 8वें ओवर में बनाए गए रनों से 5 अधिक थे, लेकिन उनके द्वारा 9वें ओवर में बनाए गए रनों से 6 कम थे। यदि मैच के पहले नौ ओवरों में टीम A द्वारा प्रति ओवर बनाए गए औसत रन 9 थे, तो टीम ने 8वें ओवर में कितने रन बनाए? (The line graph below shows the runs scored by Team A in the first six overs of a cricket match. The runs scored by Team A in the 7th over were 5 more than those scored in the 8th over, but 6 fewer than those scored in the 9th over. If the average runs scored per over by Team A in the first nine overs of the match was 9, how many runs did the team score in the 8th over?)",
       "options": {
         "A": "8",
         "B": "7",
