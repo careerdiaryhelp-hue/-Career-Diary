@@ -295,7 +295,7 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
                   NEW • 100% FREE STUDY &amp; QUIZ
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '0 0 4px 0', lineHeight: 1.3 }}>
-                  🎯 BSSC CGL 150 Questions Full Mock Test (Set 1)
+                  🎯 BSSC CGL 150 Questions Full Mock Tests (Set 1 &amp; Set 2)
                 </h3>
                 <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, lineHeight: 1.4 }}>
                   GS (50) • Reasoning (50) • Science (25) • Maths (25) | 135 Mins CBT Timer, -1 Negative Marking &amp; Step-by-Step Solutions.
