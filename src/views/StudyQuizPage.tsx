@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { DisplayAd } from '../components/AdSenseBanner';
+import { DisplayAd, MultiplexUt1963 } from '../components/AdSenseBanner';
 import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug } from '../data/quizRegistry';
 import {
   BookOpen,
@@ -1438,9 +1438,12 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               </button>
             </div>
 
-            {/* Display Ad Slot in Result View */}
+            {/* Display Ad & Multiplex Grid in Result View */}
             <div style={{ marginTop: '20px' }}>
               <DisplayAd label="ADVERTISEMENT" />
+            </div>
+            <div style={{ marginTop: '24px' }}>
+              <MultiplexUt1963 label="RECOMMENDED STUDY MATERIALS" />
             </div>
           </div>
         )}

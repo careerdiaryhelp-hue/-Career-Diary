@@ -8,47 +8,94 @@ import { canServeAds, isLocalDev } from '../utils/adShield';
 export default function ScrollPopupAd() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const insRef = useRef(null);
+  const insRef = useRef<HTMLModElement | null>(null);
   const hasTriggeredRef = useRef(false);
 
-  // Trigger popup when user scrolls down >= 250px or after 5s of reading
+  // Trigger popup within 5 seconds when user scrolls (or 5s fallback on page read)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (pathname && pathname.startsWith('/admin')) return;
 
-    // Check if already closed by the user in this session
-    try {
-      if (sessionStorage.getItem('careerdiary_scroll_popup_closed') === 'true') {
-        return;
-      }
-    } catch (_) {}
+    // Check if test parameter is present in URL (?popup=1 or ?test_ad=1)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isTestMode = urlParams.get('popup') === '1' || urlParams.get('test_ad') === '1';
+
+    // 45-second cooldown after user dismisses, so re-tests or new page views work cleanly
+    if (!isTestMode) {
+      try {
+        const closedAt = sessionStorage.getItem('careerdiary_scroll_popup_closed');
+        if (closedAt) {
+          const timeSince = Date.now() - parseInt(closedAt, 10);
+          if (timeSince < 45000) {
+            return;
+          }
+        }
+      } catch (_) {}
+    }
+
+    hasTriggeredRef.current = false;
+    let scrollTriggerTimer: NodeJS.Timeout | null = null;
+    let fallbackTimer: NodeJS.Timeout | null = null;
 
     const triggerPopup = () => {
       if (hasTriggeredRef.current) return;
       hasTriggeredRef.current = true;
       setIsOpen(true);
       window.removeEventListener('scroll', handleScroll);
+      if (scrollTriggerTimer) clearTimeout(scrollTriggerTimer);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
+
+    if (isTestMode) {
+      triggerPopup();
+      return;
+    }
 
     const handleScroll = () => {
       const scrolled = window.scrollY || document.documentElement.scrollTop || 0;
-      if (scrolled >= 250) {
-        triggerPopup();
+
+      // When user scrolls down >= 100px, show promptly (within 400ms)
+      if (scrolled >= 100) {
+        if (!scrollTriggerTimer) {
+          scrollTriggerTimer = setTimeout(() => {
+            triggerPopup();
+          }, 400);
+        }
+      } else if (scrolled >= 20) {
+        // As soon as user starts scrolling (>20px), guarantee popup appears in 1.2s (well under 5s)
+        if (!scrollTriggerTimer) {
+          scrollTriggerTimer = setTimeout(() => {
+            triggerPopup();
+          }, 1200);
+        }
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Fallback timer: also show after 6 seconds of engagement if user has not scrolled yet
-    const fallbackTimer = setTimeout(() => {
+    // Fallback timer: guarantee popup shows within 5 seconds even if user scrolls very lightly
+    fallbackTimer = setTimeout(() => {
       triggerPopup();
-    }, 6000);
+    }, 5000);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(fallbackTimer);
+      if (scrollTriggerTimer) clearTimeout(scrollTriggerTimer);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
   }, [pathname]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   // Push AdSense ad unit as soon as popup is mounted and visible
   useEffect(() => {
@@ -63,32 +110,20 @@ export default function ScrollPopupAd() {
       try {
         el.dataset.adPushDone = 'true';
         (window.adsbygoogle = window.adsbygoogle || []).push({});
-      } catch (_) {}
-    }, 200);
-
-    // If AdSense explicitly reports unfilled after auction, auto-close smoothly
-    const observer = new MutationObserver(() => {
-      if (el.getAttribute('data-ad-status') === 'unfilled') {
-        setTimeout(() => {
-          if (el.getAttribute('data-ad-status') === 'unfilled') {
-            setIsOpen(false);
-          }
-        }, 3000);
+      } catch (err) {
+        console.warn('AdSense scroll popup push notice:', err);
       }
-    });
-
-    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
+    }, 250);
 
     return () => {
       clearTimeout(pushTimer);
-      observer.disconnect();
     };
   }, [isOpen]);
 
   const handleClose = () => {
     setIsOpen(false);
     try {
-      sessionStorage.setItem('careerdiary_scroll_popup_closed', 'true');
+      sessionStorage.setItem('careerdiary_scroll_popup_closed', Date.now().toString());
     } catch (_) {}
   };
 
@@ -109,10 +144,13 @@ export default function ScrollPopupAd() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
       }}
       onClick={handleClose}
+      aria-modal="true"
+      role="dialog"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -122,7 +160,7 @@ export default function ScrollPopupAd() {
           maxWidth: '340px',
           backgroundColor: '#ffffff',
           borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
           border: '1px solid #e2e8f0',
           overflow: 'hidden',
           animation: 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
@@ -156,7 +194,7 @@ export default function ScrollPopupAd() {
               background: '#f1f5f9',
               border: 'none',
               cursor: 'pointer',
-              padding: '4px 10px',
+              padding: '5px 12px',
               borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
@@ -164,8 +202,9 @@ export default function ScrollPopupAd() {
               color: '#334155',
               fontWeight: 700,
               fontSize: '12px',
+              transition: 'background 0.2s',
             }}
-            aria-label="Close"
+            aria-label="Close advertisement"
           >
             <X size={15} /> Close
           </button>

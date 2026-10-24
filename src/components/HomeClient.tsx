@@ -10,7 +10,7 @@ import Footer from './Footer';
 import PostJobModal from './PostJobModal';
 import AgeCalcModal from './AgeCalcModal';
 import AdminLoginModal from './AdminLoginModal';
-import { DisplayAd } from './AdSenseBanner';
+import { DisplayAd, InFeedAd, MultiplexMt5566 } from './AdSenseBanner';
 import { mergeAndSortJobs } from '../utils/jobsService';
 import { getInitialJobs } from '../data/initialJobs';
 import { subscribeToFirestoreJobs, subscribeToBreakingNews, cleanJobId } from '../firebase';
@@ -394,9 +394,19 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
           }}
         />
 
+        {/* AdSense In-Feed Ad Unit (Slot 2542955740) */}
+        <div className="container" style={{ margin: '16px auto' }}>
+          <InFeedAd label="SPONSORED UPDATES" />
+        </div>
+
         {/* AdSense Block Ad #2: Display Ad at bottom of content */}
         <div className="container" style={{ margin: '20px auto' }}>
           <DisplayAd label="ADVERTISEMENT" />
+        </div>
+
+        {/* AdSense Multiplex Grid (Slot 5566657954 - Mt) */}
+        <div className="container" style={{ margin: '24px auto' }}>
+          <MultiplexMt5566 label="TRENDING EXAMS &amp; NOTIFICATIONS" />
         </div>
       </main>
 

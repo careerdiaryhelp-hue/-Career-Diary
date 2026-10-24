@@ -131,26 +131,41 @@ export default function AdSenseBanner({
 }
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
+// 1. Display Ad (Slot 1202522135) - Restrict to graphical banners & rectangles (prevents search intent chips)
 export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202522135" format="auto" responsive="true" {...props} />;
+  return <AdSenseBanner slot="1202522135" format="rectangle, horizontal" responsive="true" {...props} />;
 }
 
+export function DisplayBannerAd(props) {
+  return <AdSenseBanner slot="1202522135" format="horizontal" responsive="true" {...props} />;
+}
+
+// 2. In feed Ad (Slot 2542955740)
 export function InFeedAd(props) {
   return <AdSenseBanner slot="2542955740" format="auto" responsive="true" {...props} />;
 }
 
-// Google Multiplex Ad Unit (Slot 1963114002 - Autorelaxed Grid)
-export function MultiplexAd1963(props) {
+// 3. Ut Multiplex Ad (Slot 1963114002 - Autorelaxed Grid)
+export function MultiplexUt1963(props) {
   return <AdSenseBanner slot="1963114002" format="autorelaxed" {...props} />;
 }
 
-// Google Multiplex Ad Unit (Slot 3880243672 - Autorelaxed Grid)
-export function MultiplexAd(props) {
+// 4. Mt Multiplex Ad (Slot 5566657954 - Autorelaxed Grid)
+export function MultiplexMt5566(props) {
+  return <AdSenseBanner slot="5566657954" format="autorelaxed" {...props} />;
+}
+
+// 5. Multiplexad (Slot 3880243672 - Autorelaxed Grid)
+export function MultiplexAd3880(props) {
   return <AdSenseBanner slot="3880243672" format="autorelaxed" {...props} />;
 }
 
-// Google In-Article Ad Unit 1 (Slot 2022998762)
-export function InArticleAd2022(props) {
+export function MultiplexAd(props) {
+  return <MultiplexAd3880 {...props} />;
+}
+
+// 6. Po In-Article Native Ad (Slot 2022998762)
+export function InArticlePo2022(props) {
   return (
     <AdSenseBanner
       slot="2022998762"
@@ -163,8 +178,8 @@ export function InArticleAd2022(props) {
   );
 }
 
-// Google In-Article Ad Unit 2 (Slot 1100799336)
-export function InArticleAd1100(props) {
+// 7. Hg In-Article Native Ad (Slot 1100799336)
+export function InArticleHg1100(props) {
   return (
     <AdSenseBanner
       slot="1100799336"
@@ -177,12 +192,39 @@ export function InArticleAd1100(props) {
   );
 }
 
+// 8. InPost In-Article Native Ad (Slot 7544533819)
+export function InPostAd7544(props) {
+  return (
+    <AdSenseBanner
+      slot="7544533819"
+      layout="in-article"
+      format="fluid"
+      responsive="false"
+      style={{ textAlign: 'center' }}
+      {...props}
+    />
+  );
+}
+
+// Aliases for backward compatibility
 export function InPostAd(props) {
-  return <InArticleAd2022 {...props} />;
+  return <InPostAd7544 {...props} />;
 }
 
 export function InArticleAd(props) {
-  return <InArticleAd1100 {...props} />;
+  return <InArticleHg1100 {...props} />;
+}
+
+export function InArticleAd1100(props) {
+  return <InArticleHg1100 {...props} />;
+}
+
+export function MultiplexAd1963(props) {
+  return <MultiplexUt1963 {...props} />;
+}
+
+export function InArticleAd2022(props) {
+  return <InArticlePo2022 {...props} />;
 }
 
 

@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { InPostAd, InArticleAd1100, MultiplexAd } from './AdSenseBanner';
+import { InPostAd, InArticleAd1100, MultiplexAd, MultiplexMt5566 } from './AdSenseBanner';
 import AutoFAQSection from './AutoFAQSection';
 
 // Clean, high quality SVG brand icons for exact visual match
