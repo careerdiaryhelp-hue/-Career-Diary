@@ -1,8 +1,16 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Briefcase, IdCard, CheckSquare, Key, FileText, GraduationCap, BookOpen } from 'lucide-react';
 
 export default function Navbar({ currentCategory, setCurrentCategory, onNavigate }: any = {}) {
+  const [pathname, setPathname] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPathname(window.location.pathname);
+    }
+  }, []);
+
   const navItems = [
     { cat: 'all', path: '/', label: 'Home', icon: Home },
     { cat: 'LATEST JOB', path: '/latest-jobs', label: 'Latest Jobs', icon: Briefcase },
@@ -11,18 +19,28 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
     { cat: 'ANSWER KEY', path: '/answer-key', label: 'Answer Key', icon: Key },
     { cat: 'SYLLABUS', path: '/syllabus', label: 'Syllabus', icon: FileText },
     { cat: 'ADMISSION', path: '/admission', label: 'Admission', icon: GraduationCap },
-    { cat: 'STUDY_QUIZ', path: '/study-quiz', label: 'Study & Quiz', icon: BookOpen },
+    { cat: 'STUDY_QUIZ', path: '/study-quiz', label: 'Study & Quiz', icon: BookOpen, badge: 'NEW' },
   ];
 
+  const isItemActive = (item: typeof navItems[0]) => {
+    if (currentCategory) {
+      return currentCategory === item.cat;
+    }
+    if (item.path === '/') {
+      return pathname === '/' || pathname === '';
+    }
+    return pathname.startsWith(item.path);
+  };
+
   return (
-    <nav className="nav-bar">
-      <div className="container nav-container">
+    <nav className="nav-bar" aria-label="Main Navigation">
+      <div className="nav-container">
         <ul className="nav-links">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentCategory === item.cat;
+            const active = isItemActive(item);
             return (
-              <li key={item.cat} className={isActive ? 'active' : ''}>
+              <li key={item.cat} className={active ? 'active' : ''}>
                 <a
                   href={item.path}
                   onClick={(e) => {
@@ -32,11 +50,15 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
                         onNavigate(item.path);
                       } else if (setCurrentCategory) {
                         setCurrentCategory(item.cat);
+                      } else {
+                        window.location.href = item.path;
                       }
                     }
                   }}
                 >
-                  <Icon size={16} className="nav-icon" /> {item.label}
+                  <Icon size={15} className="nav-icon" />
+                  <span>{item.label}</span>
+                  {item.badge && <span className="nav-item-badge">{item.badge}</span>}
                 </a>
               </li>
             );

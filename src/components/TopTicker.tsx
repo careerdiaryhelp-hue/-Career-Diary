@@ -86,7 +86,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
     <div className="header-tickers-wrapper">
       {/* 1. Last Date Reminder */}
       <div className="last-date-bar">
-        Last Date Reminder:- <a
+        Last Date Reminder: <a
           href="/last-date-jobs"
           onClick={(e) => {
             if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
