@@ -253,6 +253,7 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
         {currentCategory === 'all' && !searchQuery && (
           <div className="container" style={{ marginTop: '16px', marginBottom: '8px' }}>
             <div
+              className="home-quiz-banner"
               style={{
                 background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #0f766e 100%)',
                 borderRadius: '12px',
@@ -265,9 +266,11 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
                 gap: '14px',
                 boxShadow: '0 6px 20px rgba(30, 27, 75, 0.2)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxSizing: 'border-box',
+                maxWidth: '100%',
               }}
             >
-              <div style={{ flex: '1 1 320px' }}>
+              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
                 <div
                   style={{
                     display: 'inline-flex',

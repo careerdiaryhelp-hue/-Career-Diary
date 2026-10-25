@@ -90,7 +90,7 @@ export default function JobColumnsGrid({
               {displayedJobs.map((job, idx) => (
                 <React.Fragment key={job.id || idx}>
                   {renderJobItem(job, isSingle)}
-                  {(isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : idx === 4) && (
+                  {((isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : (!isMobile && idx === 4))) && (
                     <li className="in-column-ad-item" style={{ listStyle: 'none', margin: '8px 0', padding: 0 }}>
                       <RectangleAd label="" style={{ margin: '4px 0' }} />
                     </li>
