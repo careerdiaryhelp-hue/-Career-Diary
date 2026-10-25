@@ -2728,8 +2728,8 @@ ins.adsbygoogle[data-ad-status="unfilled"],
   pointer-events: none !important;
 }
 
-/* Ensure in-column ads inside narrow grid boxes get proper min-width */
+/* Ensure in-column ads inside narrow grid boxes get proper min-width & 250px height for 300x250 display rectangle */
 .in-column-ad-item .adsense-banner-wrapper {
-  min-width: 250px;
-  min-height: 100px;
+  min-width: 280px;
+  min-height: 250px;
 }

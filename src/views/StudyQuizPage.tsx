@@ -637,17 +637,17 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                 const isBookmarked = bookmarkedQuestions.includes(q.id);
 
                 return (
-                  <div
-                    key={q.id}
-                    id={q.id}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                      padding: '20px',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
-                    }}
-                  >
+                  <React.Fragment key={q.id}>
+                    <div
+                      id={q.id}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                        padding: '20px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+                      }}
+                    >
                     {/* Question Header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -828,6 +828,23 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       </div>
                     )}
                   </div>
+
+                    {/* Ad after every 5 questions in Study Mode */}
+                    {(idx + 1) % 5 === 0 && (
+                      <div
+                        style={{
+                          backgroundColor: '#ffffff',
+                          borderRadius: '12px',
+                          border: '1px dashed #cbd5e1',
+                          padding: '16px',
+                          textAlign: 'center',
+                          margin: '4px 0'
+                        }}
+                      >
+                        <DisplayAd label="SPONSORED UPDATE" />
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -970,8 +987,19 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     </div>
                   )}
 
+                  {/* 1. Ad directly under Question Text & Image (Before Options) */}
+                  <div
+                    key={`cbt-question-ad-${currentTestQuestion.id}`}
+                    style={{
+                      margin: '14px 0 22px 0',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
+                  </div>
+
                   {/* Options */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
                     {Object.entries(currentTestQuestion.options).map(([optKey, optText]) => {
                       const isSelected = testAnswers[currentTestQuestion.id] === optKey;
                       return (
@@ -1013,6 +1041,17 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* 2. Ad directly under Options (Before Navigation Toolbar) */}
+                  <div
+                    key={`cbt-options-ad-${currentTestQuestion.id}`}
+                    style={{
+                      margin: '18px 0 24px 0',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
                   </div>
 
                   {/* Bottom Navigation Toolbar */}
@@ -1198,6 +1237,11 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Question Palette Sticky Ad */}
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                  <DisplayAd label="SPONSORED" style={{ minHeight: '120px' }} />
                 </div>
               </div>
             </div>

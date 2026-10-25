@@ -5,7 +5,7 @@ import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import JobColumnsGrid from './JobColumnsGrid';
-import { DisplayAd, InFeedAd, MultiplexAd3880 } from './AdSenseBanner';
+import { DisplayAd, InFeedAd, MultiplexAd3880, SidebarAd } from './AdSenseBanner';
 import { getJobUrl, getJobsForCategory } from '../data/categoryHelpers';
 import { subscribeToFirestoreJobs } from '../firebase';
 import { mergeAndSortJobs } from '../utils/jobsService';
@@ -102,10 +102,10 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
     <div className="app-root">
       {/* Sidebar Ads for Desktop */}
       <div className="side-ad-container side-ad-left">
-        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
       </div>
       <div className="side-ad-container side-ad-right">
-        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
       </div>
 
       <Header

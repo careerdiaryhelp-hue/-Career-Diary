@@ -10,19 +10,30 @@ export default function AdSenseBanner({
   layoutKey = null,
   responsive = 'true',
   style = {},
+  insStyle = {},
   minHeight = '90px',
   label = 'ADVERTISEMENT'
+}: {
+  slot?: string;
+  format?: string;
+  layout?: string | null;
+  layoutKey?: string | null;
+  responsive?: string;
+  style?: React.CSSProperties;
+  insStyle?: React.CSSProperties;
+  minHeight?: string;
+  label?: string | null;
 }) {
   const pathname = usePathname();
   const isAdmin = pathname ? pathname.startsWith('/admin') : false;
-  const adRef = useRef(null);
+  const adRef = useRef<HTMLModElement | null>(null);
   const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
 
   useEffect(() => {
     if (isAdmin || !canServeAds()) return;
 
     let isMounted = true;
-    let timer = null;
+    let timer: NodeJS.Timeout | null = null;
     const el = adRef.current;
     if (!el) return;
 
@@ -55,7 +66,7 @@ export default function AdSenseBanner({
 
       try {
         el.dataset.adPushDone = 'true';
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       } catch (err) {
         // Safe catch
       }
@@ -109,34 +120,94 @@ export default function AdSenseBanner({
           {label}
         </div>
       )}
-      <ins
-        ref={adRef}
-        className="adsbygoogle"
-        style={{
-          display: 'block',
-          width: '100%',
-          minHeight: effectiveMinHeight,
-          ...(layout ? { textAlign: 'center' } : {})
-        }}
-        data-ad-client="ca-pub-2108299943580613"
-        data-ad-slot={slot}
-        data-ad-format={format}
-        {...(layout ? { 'data-ad-layout': layout } : {})}
-        {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
-        {...(responsive !== 'false' && !layout ? { 'data-full-width-responsive': responsive } : {})}
-        suppressHydrationWarning
-      />
+      {isLocalDev() ? (
+        <div
+          style={{
+            minHeight: effectiveMinHeight,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f8fafc',
+            border: '1.5px dashed #93c5fd',
+            borderRadius: '8px',
+            padding: '12px',
+            color: '#1e3a8a',
+            fontSize: '0.8rem',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            ...insStyle
+          }}
+        >
+          <div style={{ fontWeight: 700, color: '#2563eb', marginBottom: '2px' }}>
+            📢 Google AdSense Ad ({format || 'auto'})
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+            Slot: {slot} • Live ad serves on careerdiary.in
+          </div>
+        </div>
+      ) : (
+        <ins
+          ref={adRef}
+          className="adsbygoogle"
+          style={{
+            display: format === 'vertical' ? 'inline-block' : 'block',
+            width: '100%',
+            minHeight: effectiveMinHeight,
+            ...(layout ? { textAlign: 'center' } : {}),
+            ...insStyle
+          }}
+          data-ad-client="ca-pub-2108299943580613"
+          data-ad-slot={slot}
+          data-ad-format={format}
+          {...(layout ? { 'data-ad-layout': layout } : {})}
+          {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
+          {...(responsive !== 'false' && !layout ? { 'data-full-width-responsive': responsive } : {})}
+          suppressHydrationWarning
+        />
+      )}
     </div>
   );
 }
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
-// 1. Display Ad (Slot 1202522135) - Restrict to graphical banners & rectangles (prevents search intent chips)
-export function DisplayAd(props) {
-  return <AdSenseBanner slot="1202522135" format="rectangle, horizontal" responsive="true" {...props} />;
+// 1. Display Ad (Slot 1202522135) - Full Responsive Display Ads
+export function DisplayAd(props: any) {
+  return <AdSenseBanner slot="1202522135" format="auto" responsive="true" {...props} />;
 }
 
-export function DisplayBannerAd(props) {
+// 2. Sidebar Ad (Slot 1202522135) - Fixed 160x600 Vertical Skyscraper (Prevents Discover More Chips in narrow sidebar)
+export function SidebarAd(props: any) {
+  return (
+    <AdSenseBanner
+      slot="1202522135"
+      format="vertical"
+      responsive="false"
+      minHeight="600px"
+      label="ADVERTISEMENT"
+      style={{ width: '160px', height: '600px', margin: '0 auto', ...(props.style || {}) }}
+      insStyle={{ width: '160px', height: '600px', display: 'inline-block', ...(props.insStyle || {}) }}
+      {...props}
+    />
+  );
+}
+
+// 3. Rectangle Ad (Slot 1202522135) - Standard 300x250 Medium Rectangle (Forces Display Banner inside Cards & Columns)
+export function RectangleAd(props: any) {
+  return (
+    <AdSenseBanner
+      slot="1202522135"
+      format="rectangle"
+      responsive="true"
+      minHeight="250px"
+      label=""
+      insStyle={{ minHeight: '250px', ...(props.insStyle || {}) }}
+      {...props}
+    />
+  );
+}
+
+export function DisplayBannerAd(props: any) {
   return <AdSenseBanner slot="1202522135" format="horizontal" responsive="true" {...props} />;
 }
 

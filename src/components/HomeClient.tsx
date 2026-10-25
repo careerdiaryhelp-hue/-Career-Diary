@@ -10,7 +10,7 @@ import Footer from './Footer';
 import PostJobModal from './PostJobModal';
 import AgeCalcModal from './AgeCalcModal';
 import AdminLoginModal from './AdminLoginModal';
-import { DisplayAd, InFeedAd, MultiplexMt5566 } from './AdSenseBanner';
+import { DisplayAd, InFeedAd, MultiplexMt5566, SidebarAd } from './AdSenseBanner';
 import { mergeAndSortJobs } from '../utils/jobsService';
 import { getInitialJobs } from '../data/initialJobs';
 import { subscribeToFirestoreJobs, subscribeToBreakingNews, cleanJobId } from '../firebase';
@@ -202,10 +202,10 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
     <div className="app-root">
       {/* Sidebar Ads for Desktop */}
       <div className="side-ad-container side-ad-left">
-        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
       </div>
       <div className="side-ad-container side-ad-right">
-        <DisplayAd style={{ height: '600px', width: '160px', position: 'sticky', top: '150px' }} />
+        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
       </div>
 
       {/* 1. Main Header with Logo, Search & Language */}
