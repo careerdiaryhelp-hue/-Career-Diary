@@ -5,7 +5,7 @@ import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import JobColumnsGrid from './JobColumnsGrid';
-import { DisplayAd, InFeedAd, MultiplexAd3880, SidebarAd } from './AdSenseBanner';
+import { DisplayAd, SidebarAd } from './AdSenseBanner';
 import { getJobUrl, getJobsForCategory } from '../data/categoryHelpers';
 import { subscribeToFirestoreJobs } from '../firebase';
 import { mergeAndSortJobs } from '../utils/jobsService';
@@ -146,19 +146,9 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
           }}
         />
 
-        {/* AdSense In-Feed Ad Unit (Slot 2542955740) */}
-        <div style={{ margin: '16px 0' }}>
-          <InFeedAd label="SPONSORED NOTIFICATIONS" />
-        </div>
-
-        {/* AdSense Block Ad #2: Bottom Display Ad */}
-        <div style={{ margin: '20px 0' }}>
-          <DisplayAd label="ADVERTISEMENT" />
-        </div>
-
-        {/* AdSense Multiplex Unit (Slot 3880243672) */}
+        {/* Single Clean AdSense Bottom Display Ad */}
         <div style={{ margin: '24px 0' }}>
-          <MultiplexAd3880 label="RECOMMENDED ALERTS &amp; EXAMS" />
+          <DisplayAd label="ADVERTISEMENT" />
         </div>
       </main>
       <Footer />

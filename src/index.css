@@ -644,18 +644,18 @@ body {
 }
 .nav-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0 8px;
+  padding: 0 6px;
   box-sizing: border-box;
 }
 .nav-links {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   list-style: none;
   overflow-x: auto;
   scrollbar-width: none;
@@ -675,14 +675,14 @@ body {
 .nav-links a {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 11px 12px;
-  font-size: 0.88rem;
+  gap: 5px;
+  padding: 11px 9px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #cbd5e1;
   border-bottom: 3px solid transparent;
   transition: all 0.18s ease;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
   border-radius: 4px 4px 0 0;
 }
 .nav-icon {
@@ -722,33 +722,63 @@ body {
   box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
 }
 
-/* Wide Desktop Screens (1150px+) */
-@media (min-width: 1150px) {
-  .nav-links a {
-    padding: 12px 14px;
-    font-size: 0.90rem;
-    gap: 7px;
+.nav-more-toggle-btn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.nav-more-toggle-btn:hover .nav-icon {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+@keyframes navDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Medium screens & Laptops (961px - 1149px) - Fits all 8 items cleanly without overflow */
-@media (min-width: 961px) and (max-width: 1149px) {
+/* Extra Wide Desktop Screens (1280px+) */
+@media (min-width: 1280px) {
+  .nav-container {
+    justify-content: center;
+  }
+  .nav-links {
+    justify-content: center;
+  }
+  .nav-links a {
+    padding: 12px 11px;
+    font-size: 0.88rem;
+    gap: 6px;
+  }
+}
+
+/* Desktop & Laptop (961px - 1279px) - Fits all 9 items cleanly with Home always visible */
+@media (min-width: 961px) and (max-width: 1279px) {
   .nav-container {
     max-width: 100%;
     padding: 0 4px;
+    justify-content: flex-start;
+  }
+  .nav-links {
+    justify-content: flex-start;
   }
   .nav-links a {
-    padding: 11px 8px;
-    font-size: 0.84rem;
+    padding: 11px 7px;
+    font-size: 0.82rem;
     gap: 4px;
   }
   .nav-links a svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
   }
 }
 
-/* Tablet & Mobile (<= 960px) - Smooth horizontal touch scroll with zero clipping */
+/* Tablet & Mobile (<= 960px) - Smooth horizontal touch scroll with zero clipping, Home always first */
 @media (max-width: 960px) {
   .nav-container {
     padding: 0;
@@ -759,12 +789,12 @@ body {
     justify-content: flex-start;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 8px;
+    padding: 0 6px;
     gap: 2px;
     width: 100%;
   }
   .nav-links a {
-    padding: 10px 11px;
+    padding: 10px 10px;
     font-size: 0.82rem;
     gap: 5px;
   }

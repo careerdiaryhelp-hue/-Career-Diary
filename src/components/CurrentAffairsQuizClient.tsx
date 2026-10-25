@@ -311,8 +311,15 @@ export default function CurrentAffairsQuizClient({
                   {currentQ?.question}
                 </div>
 
-                {/* 4 Clickable Options */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* 4 Clickable Options (2x2 square-like grid) */}
+                <div
+                  className="ca-options-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '14px'
+                  }}
+                >
                   {Object.entries(currentQ?.options || {}).map(([key, optText]) => {
                     const isSelected = selectedAnswers[currentQ.id] === key;
                     return (
@@ -322,29 +329,31 @@ export default function CurrentAffairsQuizClient({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '14px',
-                          padding: '14px 18px',
-                          borderRadius: '10px',
+                          gap: '12px',
+                          padding: '16px 18px',
+                          minHeight: '70px',
+                          borderRadius: '12px',
                           border: isSelected ? '2px solid #2563eb' : '1.5px solid #cbd5e1',
                           background: isSelected ? '#eff6ff' : '#ffffff',
+                          boxShadow: isSelected ? '0 4px 12px rgba(37, 99, 235, 0.12)' : '0 1px 3px rgba(0,0,0,0.04)',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease'
                         }}
                       >
                         <div
                           style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 800,
-                            fontSize: '0.95rem',
+                            fontSize: '0.98rem',
                             flexShrink: 0,
                             background: isSelected ? '#2563eb' : '#f1f5f9',
                             color: isSelected ? '#ffffff' : '#334155',
-                            border: isSelected ? 'none' : '1px solid #cbd5e1'
+                            border: isSelected ? 'none' : '1.5px solid #cbd5e1'
                           }}
                         >
                           {key}
@@ -620,106 +629,153 @@ export default function CurrentAffairsQuizClient({
               const isRevealed = Boolean(studyRevealed[q.id] || userOpt);
 
               return (
-                <div
-                  key={q.id}
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '14px',
-                    padding: '22px 24px',
-                    border: '1.5px solid #cbd5e1',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ background: '#2563eb', color: '#ffffff', fontWeight: 800, fontSize: '0.85rem', padding: '3px 10px', borderRadius: '4px' }}>
-                      Q{idx + 1} of {totalQuestions}
-                    </span>
-                    <button
-                      onClick={() => setStudyRevealed(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
+                <React.Fragment key={q.id}>
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      borderRadius: '14px',
+                      padding: '22px 24px',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ background: '#2563eb', color: '#ffffff', fontWeight: 800, fontSize: '0.85rem', padding: '3px 10px', borderRadius: '4px' }}>
+                        Q{idx + 1} of {totalQuestions}
+                      </span>
+                      <button
+                        onClick={() => setStudyRevealed(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {isRevealed ? <EyeOff size={14} /> : <Eye size={14} />}
+                        <span>{isRevealed ? 'Hide Answer' : 'Show Answer'}</span>
+                      </button>
+                    </div>
+
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.5, marginBottom: '18px' }}>
+                      {q.question}
+                    </div>
+
+                    {/* Options (2x2 square-like grid) */}
+                    <div
+                      className="ca-options-grid"
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#2563eb',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: '12px',
+                        marginBottom: '16px'
                       }}
                     >
-                      {isRevealed ? <EyeOff size={14} /> : <Eye size={14} />}
-                      <span>{isRevealed ? 'Hide Answer' : 'Show Answer'}</span>
-                    </button>
-                  </div>
+                      {Object.entries(q.options).map(([key, optText]) => {
+                        const isUserChoice = userOpt === key;
+                        const isRightAns = q.correct_answer === key;
 
-                  <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.5, marginBottom: '18px' }}>
-                    {q.question}
-                  </div>
+                        let bg = '#ffffff';
+                        let border = '1.5px solid #cbd5e1';
+                        let col = '#1e293b';
 
-                  {/* Options */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    {Object.entries(q.options).map(([key, optText]) => {
-                      const isUserChoice = userOpt === key;
-                      const isRightAns = q.correct_answer === key;
-
-                      let bg = '#ffffff';
-                      let border = '1.5px solid #cbd5e1';
-                      let col = '#1e293b';
-
-                      if (isRevealed) {
-                        if (isRightAns) {
-                          bg = '#dcfce7';
-                          border = '2px solid #16a34a';
-                          col = '#14532d';
-                        } else if (isUserChoice) {
-                          bg = '#fee2e2';
-                          border = '2px solid #dc2626';
-                          col = '#7f1d1d';
+                        if (isRevealed) {
+                          if (isRightAns) {
+                            bg = '#dcfce7';
+                            border = '2px solid #16a34a';
+                            col = '#14532d';
+                          } else if (isUserChoice) {
+                            bg = '#fee2e2';
+                            border = '2px solid #dc2626';
+                            col = '#7f1d1d';
+                          }
                         }
-                      }
 
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => {
-                            setStudyAnswers(prev => ({ ...prev, [q.id]: key }));
-                            setStudyRevealed(prev => ({ ...prev, [q.id]: true }));
-                          }}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            border,
-                            background: bg,
-                            color: col,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            fontSize: '0.98rem'
-                          }}
-                        >
-                          <span style={{ fontWeight: 800, width: '24px' }}>({key})</span>
-                          <span>{optText}</span>
-                          {isRevealed && isRightAns && <CheckCircle2 size={16} color="#16a34a" style={{ marginLeft: 'auto' }} />}
-                          {isRevealed && isUserChoice && !isRightAns && <XCircle size={16} color="#dc2626" style={{ marginLeft: 'auto' }} />}
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => {
+                              setStudyAnswers(prev => ({ ...prev, [q.id]: key }));
+                              setStudyRevealed(prev => ({ ...prev, [q.id]: true }));
+                            }}
+                            style={{
+                              padding: '14px 16px',
+                              minHeight: '62px',
+                              borderRadius: '10px',
+                              border,
+                              background: bg,
+                              color: col,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              fontSize: '0.98rem',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 800,
+                                fontSize: '0.92rem',
+                                flexShrink: 0,
+                                background: isRevealed && isRightAns ? '#16a34a' : isRevealed && isUserChoice ? '#dc2626' : '#f1f5f9',
+                                color: isRevealed && (isRightAns || isUserChoice) ? '#ffffff' : '#334155',
+                                border: isRevealed && (isRightAns || isUserChoice) ? 'none' : '1px solid #cbd5e1'
+                              }}
+                            >
+                              {key}
+                            </div>
+                            <span style={{ fontWeight: isUserChoice || (isRevealed && isRightAns) ? 600 : 500 }}>{optText}</span>
+                            {isRevealed && isRightAns && <CheckCircle2 size={18} color="#16a34a" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                            {isRevealed && isUserChoice && !isRightAns && <XCircle size={18} color="#dc2626" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Explanation Box */}
+                    {isRevealed && (
+                      <div style={{ background: '#f0fdf4', borderLeft: '4px solid #16a34a', padding: '14px 18px', borderRadius: '6px' }}>
+                        <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem', marginBottom: '4px' }}>
+                          ✅ सही उत्तर: Option ({q.correct_answer}) - {q.options[q.correct_answer]}
                         </div>
-                      );
-                    })}
+                        <div style={{ fontSize: '0.92rem', color: '#1e293b', lineHeight: 1.6 }}>
+                          <strong>विस्तृत व्याख्या:</strong> {q.solution}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Explanation Box */}
-                  {isRevealed && (
-                    <div style={{ background: '#f0fdf4', borderLeft: '4px solid #16a34a', padding: '14px 18px', borderRadius: '6px' }}>
-                      <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem', marginBottom: '4px' }}>
-                        ✅ सही उत्तर: Option ({q.correct_answer}) - {q.options[q.correct_answer]}
+                  {/* Google AdSense Ad after every 5 questions */}
+                  {(idx + 1) % 5 === 0 && (
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1.5px dashed #cbd5e1',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        margin: '6px 0',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                        ADVERTISEMENT
                       </div>
-                      <div style={{ fontSize: '0.92rem', color: '#1e293b', lineHeight: 1.6 }}>
-                        <strong>विस्तृत व्याख्या:</strong> {q.solution}
-                      </div>
+                      <DisplayAd label={null} />
                     </div>
                   )}
-                </div>
+                </React.Fragment>
               );
             })}
           </div>
@@ -845,7 +901,15 @@ export default function CurrentAffairsQuizClient({
                       </div>
 
                       {/* Options Review */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+                      <div
+                        className="ca-options-grid"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, 1fr)',
+                          gap: '10px',
+                          marginBottom: '14px'
+                        }}
+                      >
                         {Object.entries(q.options).map(([k, text]) => {
                           const isRight = k === q.correct_answer;
                           const isUserPicked = userAns === k;
@@ -1006,6 +1070,11 @@ export default function CurrentAffairsQuizClient({
       <style jsx global>{`
         @media (max-width: 880px) {
           .ca-quiz-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .ca-options-grid {
             grid-template-columns: 1fr !important;
           }
         }

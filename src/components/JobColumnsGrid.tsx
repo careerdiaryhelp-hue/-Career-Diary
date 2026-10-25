@@ -226,8 +226,6 @@ export default function JobColumnsGrid({
             renderColumnCard(col, getJobsForCategory(jobs, col.key))
           )}
         </div>
-        {/* AdSense Display Banner Ad Unit (Slot 1202522135) */}
-        <DisplayAd label="ADVERTISEMENT" style={{ marginTop: '24px' }} />
       </div>
     </main>
   );
