@@ -1018,26 +1018,28 @@ body.dark-mode .job-item-link:hover {
 /* Status Badges inside Job Items */
 .badge-tag {
   display: inline-block;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 1.5px 5.5px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
   margin-left: 5px;
-  vertical-align: baseline;
+  vertical-align: middle;
   text-transform: uppercase;
   color: #ffffff !important;
   line-height: 1.2;
   white-space: nowrap;
   letter-spacing: 0.2px;
+  position: relative;
+  top: -1px;
 }
 sup {
-  vertical-align: super;
-  font-size: 85%;
-  line-height: 0;
+  vertical-align: baseline;
+  font-size: 100%;
+  line-height: inherit;
 }
 sup .badge-tag {
-  vertical-align: baseline;
-  padding: 1.5px 5px;
+  vertical-align: middle;
+  padding: 1px 5px;
 }
 .tag-new,
 .tag-red {
@@ -2086,7 +2088,7 @@ sup .badge-tag {
   background: #ffffff !important;
   border: none !important;
   border-radius: 0 !important;
-  padding: 12px 14px 10px 22px;
+  padding: 10px 10px 8px 14px;
   min-height: 380px;
 }
 
@@ -2095,12 +2097,12 @@ sup .badge-tag {
   list-style-type: disc !important;
   color: #0c1cae; /* bullet is blue like Sarkari Result */
   margin: 0;
-  padding: 0 0 0 14px;
+  padding: 0 0 0 10px;
 }
 
 .col-darkred .column-body li {
-  margin-bottom: 12px;
-  line-height: 1.42;
+  margin-bottom: 9px;
+  line-height: 1.45;
   padding-left: 2px;
   position: static;
 }
@@ -2113,13 +2115,15 @@ sup .badge-tag {
   font-family: Arial, Helvetica, sans-serif;
   color: #0c1cae !important; /* Exact blue */
   font-weight: 700;
-  font-size: 0.94rem;
-  line-height: 1.42;
+  font-size: 0.92rem;
+  line-height: 1.45;
   text-decoration: none;
   border-bottom: none;
   padding: 0;
   display: inline;
   border-radius: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .col-darkred .job-item-link:hover {
   color: #ab183d !important;
@@ -2157,12 +2161,15 @@ sup .badge-tag {
 }
 
 .badge-tag {
-  font-size: 0.68rem;
-  margin-left: 4px;
+  font-size: 0.65rem;
+  margin-left: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
 }
 sup .badge-tag {
-  vertical-align: baseline;
-  padding: 1.5px 5px;
+  vertical-align: middle;
+  padding: 1px 5px;
 }
 
 /* Dedicated Single Category Page Layout */
@@ -2325,10 +2332,9 @@ sup .badge-tag {
   /* Job item links: wrap properly, no overflow/cutting */
   .col-darkred .job-item-link {
     font-size: 0.72rem !important;
-    line-height: 1.28 !important;
-    word-break: break-word !important;
+    line-height: 1.35 !important;
     overflow-wrap: break-word !important;
-    hyphens: auto;
+    word-break: normal !important;
     display: inline !important;
   }
 
@@ -2336,9 +2342,12 @@ sup .badge-tag {
   .col-darkred .badge-tag,
   .badge-tag {
     font-size: 0.52rem !important;
-    padding: 0 2px !important;
-    margin-left: 2px !important;
+    padding: 0 3px !important;
+    margin-left: 3px !important;
     line-height: 1.1 !important;
+    vertical-align: middle !important;
+    position: relative !important;
+    top: -1px !important;
   }
 
   /* Compact View More button */

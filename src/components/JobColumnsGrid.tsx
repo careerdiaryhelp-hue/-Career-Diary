@@ -42,9 +42,7 @@ export default function JobColumnsGrid({
         >
           {job.title}
           {badgeText && (
-            <sup>
-              <span className={`badge-tag ${badgeClass}`}>{badgeText}</span>
-            </sup>
+            <span className={`badge-tag ${badgeClass}`}>{badgeText}</span>
           )}
           {isSingle && lastDate && (
             <span style={{ fontSize: '0.85rem', color: '#b30000', fontWeight: '600', marginLeft: '8px' }}>
