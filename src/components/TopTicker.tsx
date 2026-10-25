@@ -142,9 +142,7 @@ export default function TopTicker({ jobs = [], breakingNews = [], onSelectJob })
       <div style={{ margin: '14px 0 6px 0', padding: '0 12px' }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
           <a
-            href="https://sarkariguidejob.com/current-affairs/"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/current-affairs"
             style={{
               display: 'flex',
               alignItems: 'center',

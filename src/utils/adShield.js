@@ -1,4 +1,5 @@
 export function isLocalDev() {
+  if (process.env.NODE_ENV === 'development') return true;
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname || '';
   return (

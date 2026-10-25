@@ -12,8 +12,14 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns, Zap
+  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns, Zap, Newspaper, BookOpen
 } from 'lucide-react';
+import {
+  publishCurrentAffairsToFirestore,
+  deleteCurrentAffairsFromFirestore,
+  subscribeToCurrentAffairs,
+  fetchCurrentAffairsOnce
+} from '../firebase';
 
 const cleanSlug = (str) => {
   if (!str) return '';
@@ -170,6 +176,45 @@ export default function AdminDashboardPage({
     priority: 0,
     active: true
   });
+
+  // ── Current Affairs Management State ──
+  const [currentAffairsList, setCurrentAffairsList] = useState([]);
+  const [caLoading, setCaLoading] = useState(false);
+  const [caSaving, setCaSaving] = useState(false);
+  const [showCaForm, setShowCaForm] = useState(false);
+  const [editingCaId, setEditingCaId] = useState(null);
+  const [caSearch, setCaSearch] = useState('');
+  const [caAlert, setCaAlert] = useState(null);
+  const [caForm, setCaForm] = useState({
+    title: '',
+    postDate: '',
+    category: 'Daily Current Affairs',
+    slug: '',
+    description: '',
+    content: '',
+    status: 'Published'
+  });
+
+  useEffect(() => {
+    let unsubscribe = null;
+    fetchCurrentAffairsOnce().then(initial => {
+      if (Array.isArray(initial) && initial.length > 0) {
+        setCurrentAffairsList(initial);
+      }
+    }).catch(() => {});
+
+    try {
+      unsubscribe = subscribeToCurrentAffairs((posts) => {
+        if (Array.isArray(posts) && posts.length > 0) {
+          setCurrentAffairsList(posts);
+        }
+      });
+    } catch (_) {}
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   // Search state for Latest Updates and Featured Posts manager sections
   const [latestSearchQuery, setLatestSearchQuery] = useState('');
@@ -4554,12 +4599,721 @@ export default function AdminDashboardPage({
     </div>
   );
 
+  // ── Current Affairs Management Handlers & Section ────────
+  const handleStartNewCa = () => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString('en-US', { month: 'long' });
+    const year = today.getFullYear();
+    const dateStr = `${day} ${month} ${year}`;
+
+    setEditingCaId(null);
+    setCaForm({
+      title: `Daily Current Affairs ${dateStr} – 50 MCQs Mock Test (30 Minutes)`,
+      postDate: `${dateStr} | 08:00 AM`,
+      category: 'Daily Current Affairs',
+      slug: `daily-current-affairs-${cleanSlug(dateStr)}`,
+      description: `Attempt 50 MCQs Daily Current Affairs Mock Test with 30-minute timer for SSC CGL, BSSC, Railways RRB, Banking, and State PSC exams.`,
+      durationMinutes: 30,
+      totalQuestions: 50,
+      content: '',
+      status: 'Published'
+    });
+    setShowCaForm(true);
+    setCaAlert(null);
+  };
+
+  const handleEditCa = (item) => {
+    setEditingCaId(item.id || item.slug);
+    setCaForm({
+      title: item.title || '',
+      postDate: item.postDate || item.date || '',
+      category: item.category || 'Daily Current Affairs',
+      slug: item.slug || cleanSlug(item.title) || item.id,
+      description: item.description || '',
+      durationMinutes: item.durationMinutes || 30,
+      totalQuestions: item.totalQuestions || 50,
+      content: item.content || '',
+      status: item.status || 'Published'
+    });
+    setShowCaForm(true);
+    setCaAlert(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteCa = async (item) => {
+    const id = item.id || item.slug;
+    if (!window.confirm(`Are you sure you want to delete "${item.title}"? This cannot be undone.`)) return;
+    try {
+      setCaLoading(true);
+      await deleteCurrentAffairsFromFirestore(id);
+      setCurrentAffairsList(prev => prev.filter(p => (p.id || p.slug) !== id));
+      setCaAlert({ type: 'success', message: 'Current Affairs post deleted successfully from Firestore.' });
+    } catch (err) {
+      setCaAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+    } finally {
+      setCaLoading(false);
+    }
+  };
+
+  const handlePublishCa = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!caForm.title.trim()) {
+      alert('Please enter a Title for the Current Affairs post.');
+      return;
+    }
+
+    const safeSlug = cleanSlug(caForm.slug || caForm.title);
+    const postData = {
+      ...caForm,
+      id: safeSlug,
+      slug: safeSlug,
+      title: caForm.title.trim(),
+      date: caForm.postDate ? caForm.postDate.split('|')[0].trim() : '',
+      durationMinutes: Number(caForm.durationMinutes) || 30,
+      totalQuestions: Number(caForm.totalQuestions) || 50,
+      updatedAt: new Date().toISOString(),
+      views: 100,
+      tags: ['Current Affairs 2026', '50 MCQs', '30 Min Test', 'Daily GK', 'SSC', 'Railways', 'BSSC']
+    };
+
+    try {
+      setCaSaving(true);
+      const res = await publishCurrentAffairsToFirestore(postData);
+      if (res && res.success) {
+        setCurrentAffairsList(prev => {
+          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          return [postData, ...filtered];
+        });
+        setCaAlert({
+          type: 'success',
+          message: 'Current Affairs post has been published LIVE on the website!',
+          link: `/current-affairs/${safeSlug}`
+        });
+        setShowCaForm(false);
+      } else {
+        throw (res && res.error) || new Error('Publishing failed');
+      }
+    } catch (err) {
+      setCaAlert({
+        type: 'error',
+        message: 'Error saving Current Affairs: ' + (err.message || String(err))
+      });
+    } finally {
+      setCaSaving(false);
+    }
+  };
+
+  const renderCurrentAffairs = () => {
+    const filteredCa = currentAffairsList.filter(item => {
+      if (!caSearch.trim()) return true;
+      const s = caSearch.toLowerCase();
+      return (
+        (item.title && item.title.toLowerCase().includes(s)) ||
+        (item.date && item.date.toLowerCase().includes(s)) ||
+        (item.category && item.category.toLowerCase().includes(s))
+      );
+    });
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Section Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Newspaper size={28} style={{ color: '#2563eb' }} />
+              <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Current Affairs & GK Management
+              </h1>
+            </div>
+            <p style={{ margin: '6px 0 0', fontSize: '0.92rem', color: '#64748b' }}>
+              Paste raw HTML questions/MCQs to publish daily Current Affairs sets live on the website
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a
+              href="/current-affairs"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: '8px',
+                padding: '9px 16px',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                textDecoration: 'none'
+              }}
+            >
+              <ExternalLink size={15} />
+              <span>View Website Page</span>
+            </a>
+
+            <button
+              onClick={() => {
+                if (showCaForm) {
+                  setShowCaForm(false);
+                } else {
+                  handleStartNewCa();
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: showCaForm ? '#64748b' : '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+              }}
+            >
+              {showCaForm ? <X size={16} /> : <Plus size={16} />}
+              <span>{showCaForm ? 'Close Form' : '+ New Current Affairs'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Success or Error Alert Banner */}
+        {caAlert && (
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              background: caAlert.type === 'success' ? '#f0fdf4' : '#fef2f2',
+              border: caAlert.type === 'success' ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
+              color: caAlert.type === 'success' ? '#166534' : '#991b1b'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {caAlert.type === 'success' ? <CheckCircle2 size={20} color="#16a34a" /> : <AlertCircle size={20} color="#dc2626" />}
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{caAlert.message}</span>
+            </div>
+
+            {caAlert.link && (
+              <a
+                href={caAlert.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#16a34a',
+                  color: '#ffffff',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  textDecoration: 'none'
+                }}
+              >
+                <span>View Live on Website</span>
+                <ExternalLink size={14} />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Create / Edit Form Card */}
+        {showCaForm && (
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+              border: '1.5px solid #e2e8f0',
+              padding: isMobile ? '20px' : '28px',
+              marginBottom: '32px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit3 size={20} color="#2563eb" />
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                  {editingCaId ? 'Edit Current Affairs Post' : 'Create & Publish New Current Affairs Set'}
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowCaForm(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePublishCa} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Title */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  POST TITLE <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Daily Current Affairs 25 October 2026 – Top 20 MCQs with Explanation"
+                  value={caForm.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setCaForm(prev => ({
+                      ...prev,
+                      title,
+                      slug: prev.slug === cleanSlug(prev.title) || !prev.slug ? cleanSlug(title) : prev.slug
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* 3 Fields Row: Date, Category, Slug */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    POST DATE
+                  </label>
+                  <input
+                    type="text"
+                    value={caForm.postDate}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, postDate: e.target.value }))}
+                    placeholder="e.g. 25 October 2026 | 08:00 AM"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    CATEGORY
+                  </label>
+                  <select
+                    value={caForm.category}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, category: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="Daily Current Affairs">Daily Current Affairs</option>
+                    <option value="Monthly Current Affairs">Monthly Current Affairs</option>
+                    <option value="GK Questions">GK Questions</option>
+                    <option value="Exam Special">Exam Special</option>
+                    <option value="State Special">State Special</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    URL SLUG
+                  </label>
+                  <input
+                    type="text"
+                    value={caForm.slug}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, slug: cleanSlug(e.target.value) }))}
+                    placeholder="e.g. daily-current-affairs-25-october-2026"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                    Live URL: careerdiary.in/current-affairs/{cleanSlug(caForm.slug || caForm.title)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  SHORT SUMMARY / DESCRIPTION
+                </label>
+                <textarea
+                  rows={2}
+                  value={caForm.description}
+                  onChange={(e) => setCaForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Brief 1-2 line summary about this Current Affairs set..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    lineHeight: 1.5,
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Test Settings: 50 Questions, 30 Min Timer */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ⏱️ TEST TIME DURATION (MINUTES)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={caForm.durationMinutes || 30}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 30 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    Countdown timer for student test (Default: 30 Minutes)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    📝 TOTAL MCQ QUESTIONS
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="200"
+                    value={caForm.totalQuestions || 50}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 50 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    Total interactive questions in test (Default: 50 Questions)
+                  </div>
+                </div>
+              </div>
+
+              {/* HTML SOURCE CODE Textarea (Styled exactly as requested by user) */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                    HTML SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    💡 Paste question tables, MCQs, or notes HTML here
+                  </span>
+                </div>
+                <textarea
+                  rows={14}
+                  placeholder="Paste HTML here..."
+                  value={caForm.content}
+                  onChange={(e) => setCaForm(prev => ({ ...prev, content: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    background: '#0d1117',
+                    color: '#38bdf8',
+                    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                    fontSize: '0.86rem',
+                    lineHeight: '1.55',
+                    borderRadius: '8px',
+                    border: '1px solid #1e293b',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Live HTML Preview Box */}
+              {caForm.content && (
+                <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ background: '#f1f5f9', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                    <Eye size={16} color="#2563eb" />
+                    <span>Live HTML Preview (How it appears on website)</span>
+                  </div>
+                  <div
+                    className="sr-rich-html-content"
+                    dangerouslySetInnerHTML={{ __html: caForm.content }}
+                    style={{
+                      padding: '20px',
+                      background: '#ffffff',
+                      maxHeight: '400px',
+                      overflowY: 'auto'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="submit"
+                  disabled={caSaving}
+                  style={{
+                    background: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 28px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    cursor: caSaving ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  <Save size={18} />
+                  <span>{caSaving ? 'Publishing Live...' : (editingCaId ? 'Update & Save Changes' : '🚀 Publish Live to Website')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCaForm(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '12px 22px',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Current Affairs Posts Table & List */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            padding: isMobile ? '16px' : '24px'
+          }}
+        >
+          {/* Top Row: Search and Count */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                Published Current Affairs Sets
+              </span>
+              <span style={{ background: '#eff6ff', color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', padding: '3px 10px', borderRadius: '14px' }}>
+                {filteredCa.length} Sets
+              </span>
+            </div>
+
+            <div style={{ position: 'relative', minWidth: '260px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                value={caSearch}
+                onChange={(e) => setCaSearch(e.target.value)}
+                placeholder="Search current affairs sets..."
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 36px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          {filteredCa.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+              <Newspaper size={36} style={{ color: '#cbd5e1', margin: '0 auto 10px' }} />
+              <p style={{ margin: 0, fontWeight: 600 }}>No Current Affairs posts found.</p>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>Click "+ New Current Affairs" above to paste HTML questions and publish live!</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '12px 16px' }}>Title & Slug</th>
+                    <th style={{ padding: '12px 16px', width: '160px' }}>Date</th>
+                    <th style={{ padding: '12px 16px', width: '170px' }}>Category</th>
+                    <th style={{ padding: '12px 16px', width: '110px' }}>Status</th>
+                    <th style={{ padding: '12px 16px', width: '220px', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCa.map((item) => {
+                    const slug = item.slug || item.id;
+                    const liveUrl = `/current-affairs/${slug}`;
+
+                    return (
+                      <tr
+                        key={item.id || slug}
+                        style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                      >
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+                            {item.title}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: '#64748b', fontFamily: 'monospace' }}>
+                            /current-affairs/{slug}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 16px', color: '#334155', fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Calendar size={13} color="#64748b" />
+                            <span>{item.date || item.postDate || 'Live'}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: '0.76rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                            {item.category || 'Daily Current Affairs'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ background: '#f0fdf4', color: '#16a34a', fontSize: '0.76rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
+                            Live
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                            <a
+                              href={liveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="View live post on website"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#eff6ff',
+                                color: '#2563eb',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                                border: '1px solid #bfdbfe'
+                              }}
+                            >
+                              <ExternalLink size={13} /> View
+                            </a>
+
+                            <button
+                              onClick={() => handleEditCa(item)}
+                              title="Edit Current Affairs content"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#f1f5f9',
+                                color: '#0f172a',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #cbd5e1',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Edit3 size={13} /> Edit
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteCa(item)}
+                              disabled={caLoading}
+                              title="Delete from Firestore"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#fee2e2',
+                                color: '#dc2626',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #fca5a5',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ── Sidebar Nav Items ────────────────────────────────────
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'categories', label: 'Categories', icon: Layers },
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
+    { id: 'current-affairs', label: 'Current Affairs', icon: Newspaper },
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
     { id: 'top-online-forms', label: 'Top Online Forms', icon: FileText },
@@ -8776,12 +9530,30 @@ export default function AdminDashboardPage({
 
         {/* Bottom Buttons */}
         <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <button onClick={() => { onBack(); if (isMobile) setSidebarOpen(false); }}
+          <button onClick={() => {
+            if (typeof onBack === 'function') {
+              onBack();
+            } else {
+              window.location.href = '/';
+            }
+            if (isMobile) setSidebarOpen(false);
+          }}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px', fontSize: '0.88rem' }}>
             <Eye size={18} style={{ flexShrink: 0 }} />
             {(sidebarOpen || isMobile) && <span style={{ whiteSpace: 'nowrap' }}>View Website</span>}
           </button>
-          <button onClick={() => { onLogout(); if (isMobile) setSidebarOpen(false); }}
+          <button onClick={() => {
+            if (typeof onLogout === 'function') {
+              onLogout();
+            } else {
+              try {
+                localStorage.removeItem('career_diary_admin');
+                sessionStorage.removeItem('career_diary_admin');
+              } catch (_) {}
+              window.location.href = '/';
+            }
+            if (isMobile) setSidebarOpen(false);
+          }}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', background: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#f87171', fontSize: '0.88rem' }}>
             <LogOut size={18} style={{ flexShrink: 0 }} />
             {(sidebarOpen || isMobile) && <span style={{ whiteSpace: 'nowrap' }}>Logout</span>}
@@ -8858,6 +9630,7 @@ export default function AdminDashboardPage({
           {activeSection === 'dashboard' && renderDashboard()}
           {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
           {activeSection === 'new-post' && renderNewPost()}
+          {activeSection === 'current-affairs' && renderCurrentAffairs()}
           {activeSection === 'breaking-news' && renderBreakingNews()}
           {activeSection === 'latest-updates' && renderLatestUpdates()}
           {activeSection === 'featured-posts' && renderFeaturedPosts()}

@@ -222,6 +222,9 @@ export default function AdminPage() {
       jobs={jobs}
       onAddJob={handleAddJob}
       onDeleteJob={handleDeleteJob}
+      onBack={() => {
+        window.location.href = '/';
+      }}
       onLogout={handleLogout}
       categories={categories}
       onSaveCategories={handleSaveCategories}

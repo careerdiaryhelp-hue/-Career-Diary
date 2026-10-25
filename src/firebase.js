@@ -348,7 +348,7 @@ export async function fetchFirestoreJobsOnce() {
       const parsed = data
         .filter(item => item && item.document)
         .map(item => parseFirestoreDoc(item.document))
-        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && doc.title && doc.status !== 'Draft' && doc.status !== 'draft');
+        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && !doc.id.startsWith('ca_') && !doc.isCurrentAffairs && doc.title && doc.status !== 'Draft' && doc.status !== 'draft');
         
       memoryCache = {
         data: parsed,
@@ -375,40 +375,41 @@ const DOC_MEM_CACHE = new Map();
 
 // Fetch a single document by ID from Firestore (includes full HTML content, ~30KB)
 // Caches both hits and misses (negative caching) to eliminate repetitive 404 queries
-export async function fetchFirestoreJobById(docId) {
+export async function fetchFirestoreJobById(docId, collection = 'jobs') {
   if (!docId) return null;
   const clean = cleanJobId(docId);
+  const cacheKey = `${collection}/${clean}`;
   const now = Date.now();
   if (now < memoryCache.quotaExceededUntil) {
     return null;
   }
-  const cached = DOC_MEM_CACHE.get(clean);
+  const cached = DOC_MEM_CACHE.get(cacheKey);
   if (cached && (now - cached.time < 600000)) {
     return cached.data;
   }
   try {
     const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/${clean}?key=${firebaseConfig.apiKey}`,
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/${collection}/${clean}?key=${firebaseConfig.apiKey}`,
       { 
         cf: { cacheTtl: 600, cacheEverything: true }
       }
     );
     if (res.status === 429 || res.status === 403) {
       memoryCache.quotaExceededUntil = Date.now() + (60 * 60 * 1000);
-      DOC_MEM_CACHE.set(clean, { time: now, data: null });
+      DOC_MEM_CACHE.set(cacheKey, { time: now, data: null });
       return null;
     }
     if (!res.ok) {
       // Cache negative lookup for 10 minutes so non-existent URLs don't burn Firestore quota
-      DOC_MEM_CACHE.set(clean, { time: now, data: null });
+      DOC_MEM_CACHE.set(cacheKey, { time: now, data: null });
       return null;
     }
     const data = await res.json();
     const parsed = parseFirestoreDoc(data);
-    DOC_MEM_CACHE.set(clean, { time: now, data: parsed });
+    DOC_MEM_CACHE.set(cacheKey, { time: now, data: parsed });
     return parsed;
   } catch (e) {
-    DOC_MEM_CACHE.set(clean, { time: now, data: null });
+    DOC_MEM_CACHE.set(cacheKey, { time: now, data: null });
     return null;
   }
 }
@@ -531,6 +532,199 @@ export function subscribeToTopForms(onUpdate) {
     if (typeof unsubscribe === 'function') unsubscribe();
   };
 }
+
+// ─── Current Affairs Service ─────────────────────────────────
+let caCache = { data: null, timestamp: 0 };
+
+export async function publishCurrentAffairsToFirestore(caPost) {
+  const rawId = caPost.id || caPost.slug || caPost.title || '';
+  const safeId = cleanJobId(rawId);
+  if (!safeId) {
+    return { success: false, error: new Error('Post title or slug must contain valid text.') };
+  }
+
+  const nowIso = new Date().toISOString();
+  const safeDoc = {
+    ...caPost,
+    id: safeId,
+    slug: safeId,
+    isCurrentAffairs: true,
+    updatedAt: nowIso,
+    status: caPost.status || 'Published'
+  };
+
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // 1. Save individual full post in permitted 'jobs' collection as ca_${safeId}
+    const caRef = doc(db, 'jobs', `ca_${safeId}`);
+    await setDoc(caRef, safeDoc, { merge: true });
+
+    // 2. Also update master settings_currentAffairs array doc in 'jobs' collection
+    const listRef = doc(db, 'jobs', 'settings_currentAffairs');
+    let existingItems = [];
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) existingItems = d.items;
+      }
+    } catch (_) {}
+
+    const updatedItems = [
+      safeDoc,
+      ...existingItems.filter(p => (p.id || p.slug) !== safeId)
+    ];
+
+    await setDoc(listRef, {
+      id: 'settings_currentAffairs',
+      items: updatedItems,
+      updatedAt: nowIso,
+      isSystemDoc: true
+    }, { merge: true });
+
+    caCache.data = null;
+    caCache.timestamp = 0;
+    return { success: true, cleanId: safeId };
+  } catch (error) {
+    console.error('Error publishing Current Affairs:', error);
+    return { success: false, error };
+  }
+}
+
+export async function deleteCurrentAffairsFromFirestore(id) {
+  const safeId = cleanJobId(id);
+  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
+
+    // 1. Delete individual ca_${safeId} doc
+    try {
+      await deleteDoc(doc(db, 'jobs', `ca_${safeId}`));
+    } catch (_) {}
+
+    // 2. Update settings_currentAffairs list
+    const listRef = doc(db, 'jobs', 'settings_currentAffairs');
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) {
+          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
+          await setDoc(listRef, {
+            id: 'settings_currentAffairs',
+            items: filtered,
+            updatedAt: new Date().toISOString(),
+            isSystemDoc: true
+          }, { merge: true });
+        }
+      }
+    } catch (_) {}
+
+    caCache.data = null;
+    caCache.timestamp = 0;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting Current Affairs:', error);
+    return { success: false, error };
+  }
+}
+
+export function subscribeToCurrentAffairs(onUpdate, onError) {
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  let active = true;
+
+  getClientDb().then(async (db) => {
+    if (!db || !active) return;
+    try {
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const listRef = doc(db, 'jobs', 'settings_currentAffairs');
+      unsubscribe = onSnapshot(listRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.items)) {
+            onUpdate(data.items);
+          }
+        }
+      }, (err) => {
+        console.warn('Current Affairs subscription error (fallback to local):', err);
+        if (onError) onError(err);
+      });
+    } catch (e) {
+      console.warn('Could not subscribe to Current Affairs:', e);
+      if (onError) onError(e);
+    }
+  });
+
+  return () => {
+    active = false;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
+export async function fetchCurrentAffairsOnce() {
+  const now = Date.now();
+  if (caCache.data && now - caCache.timestamp < 60000) {
+    return caCache.data;
+  }
+
+  const { initialCurrentAffairs } = await import('./data/initialCurrentAffairs.js');
+
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_currentAffairs`,
+      {
+        cf: { cacheTtl: 120, cacheEverything: true }
+      }
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = parseFirestoreDoc(data);
+      if (Array.isArray(parsed?.items) && parsed.items.length > 0) {
+        const merged = [...parsed.items];
+        const seen = new Set(parsed.items.map(p => p.id || p.slug));
+        (initialCurrentAffairs || []).forEach(p => {
+          const key = p.id || p.slug;
+          if (!seen.has(key)) merged.push(p);
+        });
+        caCache = { data: merged, timestamp: now };
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch settings_currentAffairs REST:', e);
+  }
+
+  return initialCurrentAffairs || [];
+}
+
+export async function fetchCurrentAffairsBySlug(slug) {
+  if (!slug) return null;
+  const safeId = cleanJobId(slug);
+
+  // 1. Try single document fetch ca_${safeId} from permitted jobs collection
+  try {
+    const doc = await fetchFirestoreJobById(`ca_${safeId}`, 'jobs');
+    if (doc && (doc.title || doc.content)) return doc;
+  } catch (_) {}
+
+  // 2. Direct lookup from settings_currentAffairs / initial
+  try {
+    const all = await fetchCurrentAffairsOnce();
+    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
+    if (found) return found;
+  } catch (_) {}
+
+  return null;
+}
+
+
 
 
 
