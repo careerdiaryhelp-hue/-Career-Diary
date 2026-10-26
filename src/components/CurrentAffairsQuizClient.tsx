@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { DisplayAd, SidebarAd } from './AdSenseBanner';
+import { DisplayAd, SidebarAd, SquareAd } from './AdSenseBanner';
 import { CAQuestion, default50CurrentAffairsQuestions } from '../data/currentAffairs50Questions';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
@@ -459,6 +459,24 @@ export default function CurrentAffairsQuizClient({
                   </div>
                 </div>
               </div>
+
+              {/* Under-Question Ad (Fills the blank space directly below the active question) */}
+              <div
+                style={{
+                  marginTop: '18px',
+                  background: '#ffffff',
+                  borderRadius: '14px',
+                  border: '1.5px solid #cbd5e1',
+                  padding: '16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  ADVERTISEMENT
+                </div>
+                <DisplayAd label={null} />
+              </div>
             </div>
 
             {/* Right: Timer & 50-Question Palette */}
@@ -604,8 +622,22 @@ export default function CurrentAffairsQuizClient({
                 </button>
               </div>
 
-              {/* Sidebar Ad */}
-              <SidebarAd label="ADVERTISEMENT" />
+              {/* Sidebar Square Ad (Replaces tall vertical ad with clean 300x250 square ad) */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '14px',
+                  border: '1.5px solid #cbd5e1',
+                  padding: '16px 12px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  ADVERTISEMENT
+                </div>
+                <SquareAd label={null} />
+              </div>
             </aside>
           </div>
         )}

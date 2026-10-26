@@ -207,6 +207,22 @@ export function RectangleAd(props: any) {
   );
 }
 
+// 4. Square Ad (Slot 1202522135) - 300x250 Square Ad for Sidebar & Cards
+export function SquareAd(props: any) {
+  return (
+    <AdSenseBanner
+      slot="1202522135"
+      format="rectangle"
+      responsive="true"
+      minHeight="250px"
+      label="ADVERTISEMENT"
+      style={{ width: '100%', maxWidth: '300px', minHeight: '250px', margin: '0 auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', maxWidth: '300px', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
+      {...props}
+    />
+  );
+}
+
 export function DisplayBannerAd(props: any) {
   return <AdSenseBanner slot="1202522135" format="horizontal" responsive="true" {...props} />;
 }
