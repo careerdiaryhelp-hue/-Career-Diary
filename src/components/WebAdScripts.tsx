@@ -4,13 +4,16 @@ import { useEffect } from 'react';
 import { attachAdClickTracker } from '../utils/adShield';
 
 /**
- * Checks if a given DOM element is a "Discover More" / related-search chip
- * injected by Google AdSense auto-ads. Returns true if it should be killed.
+ * Checks if a given DOM element is a "Discover More" / related-search chip / recommended ad
+ * injected by Google AdSense auto-ads or responsive format fallbacks.
+ * Returns true if it should be killed.
  */
 function isDiscoverMoreChip(el: Element): boolean {
+  if (!el) return false;
+
   // Check data-ad-format
   const format = el.getAttribute('data-ad-format');
-  if (format === 'related_search' || format === 'relatedsearch') return true;
+  if (format === 'related_search' || format === 'relatedsearch' || format === 'autorelaxed') return true;
 
   // Check aria-label
   const label = (el.getAttribute('aria-label') || '').toLowerCase();
@@ -18,24 +21,34 @@ function isDiscoverMoreChip(el: Element): boolean {
     label.includes('discover more') ||
     label.includes('related search') ||
     label.includes('searches related') ||
+    label.includes('recommended') ||
+    label.includes('recommendation') ||
     label.includes('aur padhe') ||
-    label.includes('aur jaanein')
+    label.includes('aur jaanein') ||
+    label.includes('suggested')
   ) return true;
 
   // Check data attributes
-  if (el.hasAttribute('data-ad-intent') || el.hasAttribute('data-text-ad')) return true;
+  if (
+    el.hasAttribute('data-ad-intent') ||
+    el.hasAttribute('data-text-ad') ||
+    el.hasAttribute('data-matched-content-ui-type')
+  ) return true;
 
   // Check class names
-  const cls = el.className || '';
-  if (typeof cls === 'string' && (
+  const cls = (typeof el.className === 'string' ? el.className : '').toLowerCase();
+  if (
     cls.includes('related_search') ||
     cls.includes('relatedsearch') ||
-    cls.includes('rscontainer')
-  )) return true;
+    cls.includes('rscontainer') ||
+    cls.includes('related-search') ||
+    cls.includes('google-anno-sc') ||
+    cls.includes('ad-intent')
+  ) return true;
 
   // Check inner content for related search containers
   const inner = el.querySelector?.(
-    '.rscontainer, .related-search-container, [data-ad-format="related_search"], [data-matched-content-ui-type], [role="listbox"]'
+    '.rscontainer, .related-search-container, [data-ad-format="related_search"], [data-ad-format="autorelaxed"], [data-matched-content-ui-type], [role="listbox"], [data-ad-intent], [aria-label*="Discover more" i], [aria-label*="Related search" i]'
   );
   if (inner) return true;
 
@@ -46,26 +59,48 @@ function isDiscoverMoreChip(el: Element): boolean {
  * Immediately hides and collapses a "Discover More" chip element.
  */
 function killChip(el: HTMLElement) {
-  el.style.setProperty('display', 'none', 'important');
-  el.style.setProperty('height', '0', 'important');
-  el.style.setProperty('max-height', '0', 'important');
-  el.style.setProperty('min-height', '0', 'important');
-  el.style.setProperty('margin', '0', 'important');
-  el.style.setProperty('padding', '0', 'important');
-  el.style.setProperty('opacity', '0', 'important');
-  el.style.setProperty('overflow', 'hidden', 'important');
-  el.style.setProperty('visibility', 'hidden', 'important');
-  el.style.setProperty('pointer-events', 'none', 'important');
+  try {
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('height', '0', 'important');
+    el.style.setProperty('max-height', '0', 'important');
+    el.style.setProperty('min-height', '0', 'important');
+    el.style.setProperty('margin', '0', 'important');
+    el.style.setProperty('padding', '0', 'important');
+    el.style.setProperty('opacity', '0', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
+    el.style.setProperty('visibility', 'hidden', 'important');
+    el.style.setProperty('pointer-events', 'none', 'important');
+  } catch (_) {}
 }
 
 /**
- * Scans the DOM for existing "Discover More" chips and kills them.
+ * Scans the DOM universally for any "Discover More" / recommended chips and kills them.
  */
 function sweepExistingChips() {
-  document.querySelectorAll('.google-auto-placed').forEach((el) => {
-    if (isDiscoverMoreChip(el)) {
-      killChip(el as HTMLElement);
-    }
+  const candidateSelectors = [
+    '.google-auto-placed',
+    '.adsense-banner-wrapper',
+    '[data-ad-format="related_search"]',
+    '[data-ad-format="relatedsearch"]',
+    '[data-ad-format="autorelaxed"]',
+    '[data-ad-intent]',
+    '[data-text-ad]',
+    '.rscontainer',
+    '.related-search-container',
+    '[aria-label*="discover more" i]',
+    '[aria-label*="related search" i]',
+    '[aria-label*="searches related" i]',
+    '[aria-label*="recommended" i]'
+  ];
+
+  candidateSelectors.forEach((sel) => {
+    try {
+      document.querySelectorAll(sel).forEach((el) => {
+        if (isDiscoverMoreChip(el)) {
+          killChip(el as HTMLElement);
+        }
+      });
+    } catch (_) {}
   });
 }
 
@@ -77,7 +112,7 @@ export default function WebAdScripts() {
     // Initial sweep for any chips already in the DOM
     sweepExistingChips();
 
-    // MutationObserver: watch for newly injected "Discover More" chips
+    // MutationObserver: watch for newly injected "Discover More" / recommended chips
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         // Check added nodes
@@ -86,13 +121,15 @@ export default function WebAdScripts() {
           const el = node as HTMLElement;
 
           // Direct match
-          if (el.classList?.contains('google-auto-placed') && isDiscoverMoreChip(el)) {
+          if (isDiscoverMoreChip(el)) {
             killChip(el);
             continue;
           }
 
-          // Children match (Google sometimes wraps in extra divs)
-          el.querySelectorAll?.('.google-auto-placed').forEach((child) => {
+          // Descendant match
+          el.querySelectorAll?.(
+            '.google-auto-placed, .adsense-banner-wrapper, [data-ad-format], [aria-label], [data-ad-intent], .rscontainer, .related-search-container, [data-matched-content-ui-type]'
+          ).forEach((child) => {
             if (isDiscoverMoreChip(child)) {
               killChip(child as HTMLElement);
             }
@@ -102,7 +139,7 @@ export default function WebAdScripts() {
         // Check attribute changes on existing elements
         if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
           const target = mutation.target;
-          if (target.classList?.contains('google-auto-placed') && isDiscoverMoreChip(target)) {
+          if (isDiscoverMoreChip(target)) {
             killChip(target);
           }
         }
@@ -113,7 +150,7 @@ export default function WebAdScripts() {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['data-ad-format', 'aria-label', 'data-ad-intent', 'class'],
+      attributeFilter: ['data-ad-format', 'aria-label', 'data-ad-intent', 'class', 'data-matched-content-ui-type'],
     });
 
     // Periodic safety sweep every 3 seconds for first 30 seconds

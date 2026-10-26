@@ -475,7 +475,7 @@ export default function CurrentAffairsQuizClient({
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
                   ADVERTISEMENT
                 </div>
-                <DisplayAd label={null} />
+                <SquareAd label={null} />
               </div>
             </div>
 
