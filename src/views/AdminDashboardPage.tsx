@@ -20,6 +20,7 @@ import {
   subscribeToCurrentAffairs,
   fetchCurrentAffairsOnce
 } from '../firebase';
+import { extractQuestionsFromContent } from '../data/questionExtractor';
 
 const cleanSlug = (str) => {
   if (!str) return '';
@@ -4664,6 +4665,7 @@ export default function AdminDashboardPage({
     }
 
     const safeSlug = cleanSlug(caForm.slug || caForm.title);
+    const parsedQuestions = extractQuestionsFromContent(caForm.content);
     const postData = {
       ...caForm,
       id: safeSlug,
@@ -4671,7 +4673,8 @@ export default function AdminDashboardPage({
       title: caForm.title.trim(),
       date: caForm.postDate ? caForm.postDate.split('|')[0].trim() : '',
       durationMinutes: Number(caForm.durationMinutes) || 30,
-      totalQuestions: Number(caForm.totalQuestions) || 50,
+      totalQuestions: parsedQuestions.length > 0 ? parsedQuestions.length : (Number(caForm.totalQuestions) || 50),
+      questions: parsedQuestions.length > 0 ? parsedQuestions : (caForm.questions || []),
       updatedAt: new Date().toISOString(),
       views: 100,
       tags: ['Current Affairs 2026', '50 MCQs', '30 Min Test', 'Daily GK', 'SSC', 'Railways', 'BSSC']
@@ -5067,6 +5070,30 @@ export default function AdminDashboardPage({
                     boxSizing: 'border-box'
                   }}
                 />
+                {(() => {
+                  const detected = extractQuestionsFromContent(caForm.content);
+                  if (detected.length > 0) {
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#f0fdf4',
+                        border: '1.5px solid #86efac',
+                        borderRadius: '8px',
+                        color: '#15803d',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#16a34a" />
+                        <span>✅ {detected.length} Questions Detected! The 30-Minute Live Mock Test will use these questions with +1.00 / -0.25 scoring.</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Live HTML Preview Box (Sandboxed Iframe prevents external CSS/body styles from leaking into Admin Dashboard) */}

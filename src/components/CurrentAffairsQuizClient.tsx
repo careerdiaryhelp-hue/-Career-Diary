@@ -6,6 +6,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { DisplayAd, SidebarAd } from './AdSenseBanner';
 import { CAQuestion, default50CurrentAffairsQuestions } from '../data/currentAffairs50Questions';
+import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
   Clock, CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, ArrowLeft,
   Bookmark, Flag, HelpCircle, Check, Eye, EyeOff, Trophy, AlertTriangle,
@@ -33,10 +34,19 @@ export default function CurrentAffairsQuizClient({
   post: CurrentAffairsPost;
   relatedPosts?: any[];
 }) {
-  // Use post questions if provided, otherwise default to full 50 questions set
-  const questions: CAQuestion[] = (post.questions && post.questions.length > 0)
-    ? post.questions
-    : default50CurrentAffairsQuestions;
+  // Use post questions if provided, otherwise extract from post.content (quizData, HTML cards), or fallback to default 50
+  const questions: CAQuestion[] = React.useMemo(() => {
+    if (Array.isArray(post.questions) && post.questions.length > 0) {
+      return post.questions;
+    }
+    if (post.content) {
+      const extracted = extractQuestionsFromContent(post.content);
+      if (extracted && extracted.length > 0) {
+        return extracted;
+      }
+    }
+    return default50CurrentAffairsQuestions;
+  }, [post.questions, post.content]);
 
   const totalQuestions = questions.length;
   const durationSeconds = (post.durationMinutes || 30) * 60; // 30 mins = 1800s
