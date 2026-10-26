@@ -724,6 +724,197 @@ export async function fetchCurrentAffairsBySlug(slug) {
   return null;
 }
 
+// ─── PYQ (Previous Year Questions) Service ───────────────────
+let pyqCache = { data: null, timestamp: 0 };
+
+export async function publishPyqToFirestore(pyqPost) {
+  const rawId = pyqPost.id || pyqPost.slug || pyqPost.title || '';
+  const safeId = cleanJobId(rawId);
+  if (!safeId) {
+    return { success: false, error: new Error('Post title or slug must contain valid text.') };
+  }
+
+  const nowIso = new Date().toISOString();
+  const safeDoc = {
+    ...pyqPost,
+    id: safeId,
+    slug: safeId,
+    isPyq: true,
+    updatedAt: nowIso,
+    status: pyqPost.status || 'Published'
+  };
+
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // 1. Save individual full post in permitted 'jobs' collection as pyq_${safeId}
+    const pyqRef = doc(db, 'jobs', `pyq_${safeId}`);
+    await setDoc(pyqRef, safeDoc, { merge: true });
+
+    // 2. Also update master settings_pyq array doc in 'jobs' collection
+    const listRef = doc(db, 'jobs', 'settings_pyq');
+    let existingItems = [];
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) existingItems = d.items;
+      }
+    } catch (_) {}
+
+    const updatedItems = [
+      safeDoc,
+      ...existingItems.filter(p => (p.id || p.slug) !== safeId)
+    ];
+
+    await setDoc(listRef, {
+      id: 'settings_pyq',
+      items: updatedItems,
+      updatedAt: nowIso,
+      isSystemDoc: true
+    }, { merge: true });
+
+    pyqCache.data = null;
+    pyqCache.timestamp = 0;
+    return { success: true, cleanId: safeId };
+  } catch (error) {
+    console.error('Error publishing PYQ post:', error);
+    return { success: false, error };
+  }
+}
+
+export async function deletePyqFromFirestore(id) {
+  const safeId = cleanJobId(id);
+  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
+
+    // 1. Delete individual pyq_${safeId} doc
+    try {
+      await deleteDoc(doc(db, 'jobs', `pyq_${safeId}`));
+    } catch (_) {}
+
+    // 2. Update settings_pyq list
+    const listRef = doc(db, 'jobs', 'settings_pyq');
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) {
+          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
+          await setDoc(listRef, {
+            id: 'settings_pyq',
+            items: filtered,
+            updatedAt: new Date().toISOString(),
+            isSystemDoc: true
+          }, { merge: true });
+        }
+      }
+    } catch (_) {}
+
+    pyqCache.data = null;
+    pyqCache.timestamp = 0;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting PYQ:', error);
+    return { success: false, error };
+  }
+}
+
+export function subscribeToPyq(onUpdate, onError) {
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  let active = true;
+
+  getClientDb().then(async (db) => {
+    if (!db || !active) return;
+    try {
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const listRef = doc(db, 'jobs', 'settings_pyq');
+      unsubscribe = onSnapshot(listRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.items)) {
+            onUpdate(data.items);
+          }
+        }
+      }, (err) => {
+        console.warn('PYQ subscription error (fallback to local):', err);
+        if (onError) onError(err);
+      });
+    } catch (e) {
+      console.warn('Could not subscribe to PYQ:', e);
+      if (onError) onError(e);
+    }
+  });
+
+  return () => {
+    active = false;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
+export async function fetchPyqOnce() {
+  const now = Date.now();
+  if (pyqCache.data && now - pyqCache.timestamp < 60000) {
+    return pyqCache.data;
+  }
+
+  const { initialPyq } = await import('./data/initialPyq.js');
+
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_pyq`,
+      {
+        cf: { cacheTtl: 120, cacheEverything: true }
+      }
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = parseFirestoreDoc(data);
+      if (Array.isArray(parsed?.items) && parsed.items.length > 0) {
+        const merged = [...parsed.items];
+        const seen = new Set(parsed.items.map(p => p.id || p.slug));
+        (initialPyq || []).forEach(p => {
+          const key = p.id || p.slug;
+          if (!seen.has(key)) merged.push(p);
+        });
+        pyqCache = { data: merged, timestamp: now };
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch settings_pyq REST:', e);
+  }
+
+  return initialPyq || [];
+}
+
+export async function fetchPyqBySlug(slug) {
+  if (!slug) return null;
+  const safeId = cleanJobId(slug);
+
+  // 1. Try single document fetch pyq_${safeId} from permitted jobs collection
+  try {
+    const doc = await fetchFirestoreJobById(`pyq_${safeId}`, 'jobs');
+    if (doc && (doc.title || doc.content || doc.questions)) return doc;
+  } catch (_) {}
+
+  // 2. Direct lookup from settings_pyq / initial
+  try {
+    const all = await fetchPyqOnce();
+    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
+    if (found) return found;
+  } catch (_) {}
+
+  return null;
+}
+
 
 
 

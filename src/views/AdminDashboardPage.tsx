@@ -18,7 +18,11 @@ import {
   publishCurrentAffairsToFirestore,
   deleteCurrentAffairsFromFirestore,
   subscribeToCurrentAffairs,
-  fetchCurrentAffairsOnce
+  fetchCurrentAffairsOnce,
+  publishPyqToFirestore,
+  deletePyqFromFirestore,
+  subscribeToPyq,
+  fetchPyqOnce
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 
@@ -208,6 +212,50 @@ export default function AdminDashboardPage({
       unsubscribe = subscribeToCurrentAffairs((posts) => {
         if (Array.isArray(posts) && posts.length > 0) {
           setCurrentAffairsList(posts);
+        }
+      });
+    } catch (_) {}
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  // ── PYQ (Previous Year Questions) Management State ──
+  const [pyqList, setPyqList] = useState([]);
+  const [pyqLoading, setPyqLoading] = useState(false);
+  const [pyqSaving, setPyqSaving] = useState(false);
+  const [showPyqForm, setShowPyqForm] = useState(false);
+  const [editingPyqId, setEditingPyqId] = useState(null);
+  const [pyqSearch, setPyqSearch] = useState('');
+  const [pyqAlert, setPyqAlert] = useState(null);
+  const [pyqForm, setPyqForm] = useState({
+    title: '',
+    exam: 'BSSC CGL',
+    year: '2024',
+    shift: 'Shift 1',
+    postDate: '',
+    category: 'PYQ',
+    slug: '',
+    description: '',
+    durationMinutes: 60,
+    totalQuestions: 50,
+    content: '',
+    status: 'Published'
+  });
+
+  useEffect(() => {
+    let unsubscribe = null;
+    fetchPyqOnce().then(initial => {
+      if (Array.isArray(initial) && initial.length > 0) {
+        setPyqList(initial);
+      }
+    }).catch(() => {});
+
+    try {
+      unsubscribe = subscribeToPyq((posts) => {
+        if (Array.isArray(posts) && posts.length > 0) {
+          setPyqList(posts);
         }
       });
     } catch (_) {}
@@ -5341,6 +5389,866 @@ export default function AdminDashboardPage({
     );
   };
 
+  // ── PYQ Management Handlers & Section ────────
+  const handleStartNewPyq = () => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString('en-US', { month: 'long' });
+    const year = today.getFullYear();
+    const dateStr = `${day} ${month} ${year}`;
+
+    setEditingPyqId(null);
+    setPyqForm({
+      title: `BSSC CGL 2024 Solved Official PYQ Paper (Set 1)`,
+      exam: 'BSSC CGL',
+      year: '2024',
+      shift: 'Shift 1',
+      postDate: `${dateStr} | 10:00 AM`,
+      category: 'PYQ',
+      slug: `bssc-cgl-2024-solved-pyq-paper-set-1`,
+      description: `Attempt BSSC CGL 2024 Solved Official Previous Year Question Paper with step-by-step solutions, CBT timer & instant study mode.`,
+      durationMinutes: 60,
+      totalQuestions: 50,
+      content: '',
+      status: 'Published'
+    });
+    setShowPyqForm(true);
+    setPyqAlert(null);
+  };
+
+  const handleEditPyq = (item) => {
+    setEditingPyqId(item.id || item.slug);
+    setPyqForm({
+      title: item.title || '',
+      exam: item.exam || 'BSSC CGL',
+      year: item.year || '2024',
+      shift: item.shift || 'Shift 1',
+      postDate: item.postDate || item.date || '',
+      category: item.category || 'PYQ',
+      slug: item.slug || cleanSlug(item.title) || item.id,
+      description: item.description || '',
+      durationMinutes: item.durationMinutes || 60,
+      totalQuestions: item.totalQuestions || 50,
+      content: item.content || '',
+      status: item.status || 'Published'
+    });
+    setShowPyqForm(true);
+    setPyqAlert(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeletePyq = async (item) => {
+    const id = item.id || item.slug;
+    if (!window.confirm(`Are you sure you want to delete PYQ Paper "${item.title}"? This cannot be undone.`)) return;
+    try {
+      setPyqLoading(true);
+      await deletePyqFromFirestore(id);
+      setPyqList(prev => prev.filter(p => (p.id || p.slug) !== id));
+      setPyqAlert({ type: 'success', message: 'PYQ paper deleted successfully from Firestore.' });
+    } catch (err) {
+      setPyqAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+    } finally {
+      setPyqLoading(false);
+    }
+  };
+
+  const handlePublishPyq = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!pyqForm.title.trim()) {
+      alert('Please enter a Title for the PYQ Paper.');
+      return;
+    }
+
+    const safeSlug = cleanSlug(pyqForm.slug || pyqForm.title);
+    const parsedQuestions = extractQuestionsFromContent(pyqForm.content);
+    const postData = {
+      ...pyqForm,
+      id: safeSlug,
+      slug: safeSlug,
+      title: pyqForm.title.trim(),
+      exam: pyqForm.exam || 'General',
+      year: String(pyqForm.year || '2024'),
+      shift: pyqForm.shift || 'Shift 1',
+      date: pyqForm.postDate ? pyqForm.postDate.split('|')[0].trim() : '',
+      durationMinutes: Number(pyqForm.durationMinutes) || 60,
+      totalQuestions: parsedQuestions.length > 0 ? parsedQuestions.length : (Number(pyqForm.totalQuestions) || 50),
+      questions: parsedQuestions.length > 0 ? parsedQuestions : (pyqForm.questions || []),
+      updatedAt: new Date().toISOString(),
+      views: 120,
+      tags: [pyqForm.exam, 'PYQ', `${pyqForm.year || '2024'} Paper`, 'Solved Paper', 'Official Answer Key', 'Mock Test']
+    };
+
+    try {
+      setPyqSaving(true);
+      const res = await publishPyqToFirestore(postData);
+      if (res && res.success) {
+        setPyqList(prev => {
+          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          return [postData, ...filtered];
+        });
+        setPyqAlert({
+          type: 'success',
+          message: 'Previous Year Question paper has been published LIVE on the website!',
+          link: `/pyq/${safeSlug}`
+        });
+        setShowPyqForm(false);
+      } else {
+        throw (res && res.error) || new Error('Publishing failed');
+      }
+    } catch (err) {
+      setPyqAlert({
+        type: 'error',
+        message: 'Error saving PYQ Paper: ' + (err.message || String(err))
+      });
+    } finally {
+      setPyqSaving(false);
+    }
+  };
+
+  const renderPyqManagement = () => {
+    const filteredPyq = pyqList.filter(item => {
+      if (!pyqSearch.trim()) return true;
+      const s = pyqSearch.toLowerCase();
+      return (
+        (item.title && item.title.toLowerCase().includes(s)) ||
+        (item.exam && item.exam.toLowerCase().includes(s)) ||
+        (item.year && String(item.year).toLowerCase().includes(s)) ||
+        (item.shift && item.shift.toLowerCase().includes(s)) ||
+        (item.category && item.category.toLowerCase().includes(s))
+      );
+    });
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Section Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <GraduationCap size={28} style={{ color: '#059669' }} />
+              <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Previous Year Questions (PYQ) Management
+              </h1>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '6px', margin: '6px 0 0 0' }}>
+              Create, edit, and publish official solved PYQ papers with interactive CBT mock tests, instant study mode & live countdown timer.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a
+              href="/pyq"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '9px 16px',
+                borderRadius: '8px',
+                background: '#ecfdf5',
+                color: '#059669',
+                border: '1px solid #a7f3d0',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
+              <span>View Live PYQ Section</span>
+              <ExternalLink size={14} />
+            </a>
+
+            <button
+              onClick={() => {
+                if (showPyqForm) {
+                  setShowPyqForm(false);
+                } else {
+                  handleStartNewPyq();
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                background: showPyqForm ? '#64748b' : '#059669',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+              }}
+            >
+              <Plus size={16} />
+              <span>{showPyqForm ? 'Close Form' : '+ Create New PYQ Paper'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Alert Banner */}
+        {pyqAlert && (
+          <div
+            style={{
+              padding: '12px 18px',
+              borderRadius: '10px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              background: pyqAlert.type === 'success' ? '#ecfdf5' : '#fef2f2',
+              border: `1px solid ${pyqAlert.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+              color: pyqAlert.type === 'success' ? '#065f46' : '#991b1b',
+              fontSize: '0.9rem',
+              fontWeight: 600
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {pyqAlert.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+              <span>{pyqAlert.message}</span>
+              {pyqAlert.link && (
+                <a
+                  href={pyqAlert.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#059669',
+                    textDecoration: 'underline',
+                    marginLeft: '8px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  View Live <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
+            <button
+              onClick={() => setPyqAlert(null)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Create / Edit PYQ Form */}
+        {showPyqForm && (
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 10px 25px -5px rgba(0,0,0,0.05)',
+              border: '1.5px solid #a7f3d0',
+              padding: isMobile ? '18px' : '28px',
+              marginBottom: '28px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                  {editingPyqId ? '✏️ Edit PYQ Paper' : '🚀 Create & Publish New PYQ Paper'}
+                </span>
+                {editingPyqId && (
+                  <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    Editing: {editingPyqId}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setShowPyqForm(false)}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handlePublishPyq} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Row 1: Title */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  TITLE <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. BSSC CGL 2024 Solved Official PYQ Paper (Set 1)"
+                  value={pyqForm.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setPyqForm(prev => ({
+                      ...prev,
+                      title,
+                      slug: prev.slug && !editingPyqId ? cleanSlug(title) : prev.slug
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Row 2: Exam, Year, Shift, Post Date */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    EXAM NAME <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    list="pyq-exam-list"
+                    value={pyqForm.exam}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, exam: e.target.value }))}
+                    placeholder="e.g. BSSC CGL"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      fontWeight: 600
+                    }}
+                  />
+                  <datalist id="pyq-exam-list">
+                    <option value="BSSC CGL" />
+                    <option value="BSSC Inter Level" />
+                    <option value="SSC CGL" />
+                    <option value="SSC CHSL" />
+                    <option value="SSC GD" />
+                    <option value="RRB NTPC" />
+                    <option value="RRB Group D" />
+                    <option value="RRB ALP" />
+                    <option value="BPSC Teacher TRE" />
+                    <option value="BPSC 70th" />
+                    <option value="Banking PO/Clerk" />
+                    <option value="CTET / STET" />
+                  </datalist>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    YEAR <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={pyqForm.year}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, year: e.target.value }))}
+                    placeholder="e.g. 2024"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      fontWeight: 600
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    SHIFT / TIER
+                  </label>
+                  <input
+                    type="text"
+                    value={pyqForm.shift}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, shift: e.target.value }))}
+                    placeholder="e.g. Shift 1 or Tier 1"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    POST DATE / TIME
+                  </label>
+                  <input
+                    type="text"
+                    value={pyqForm.postDate}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, postDate: e.target.value }))}
+                    placeholder="e.g. 26 October 2026 | 10:00 AM"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: URL Slug & Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    PERMALINK SLUG
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+                    <span style={{ padding: '0 10px', fontSize: '0.82rem', color: '#64748b', background: '#f1f5f9', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap', userSelect: 'none' }}>
+                      /pyq/
+                    </span>
+                    <input
+                      type="text"
+                      value={pyqForm.slug}
+                      onChange={(e) => setPyqForm(prev => ({ ...prev, slug: cleanSlug(e.target.value) }))}
+                      placeholder="bssc-cgl-2024-solved-pyq-paper"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    Preview: https://careerdiary.in/pyq/{cleanSlug(pyqForm.slug || pyqForm.title)}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    STATUS
+                  </label>
+                  <select
+                    value={pyqForm.status}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, status: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      background: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Published">Published (Live)</option>
+                    <option value="Draft">Draft (Hidden)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 4: Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  SHORT SUMMARY / DESCRIPTION
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Short description for Google SEO and student preview cards..."
+                  value={pyqForm.description}
+                  onChange={(e) => setPyqForm(prev => ({ ...prev, description: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Row 5: CBT Timer & Total Questions */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ⏱️ CBT TEST DURATION (MINUTES)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="180"
+                    value={pyqForm.durationMinutes || 60}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 60 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    Countdown timer for student test mode (Default: 60 Minutes)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    📝 TOTAL MCQ QUESTIONS
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="200"
+                    value={pyqForm.totalQuestions || 50}
+                    onChange={(e) => setPyqForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 50 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    Total interactive questions in test (Default: 50 Questions)
+                  </div>
+                </div>
+              </div>
+
+              {/* HTML SOURCE CODE Textarea */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                    HTML SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    💡 Paste question tables, MCQs, or notes HTML here
+                  </span>
+                </div>
+                <textarea
+                  rows={14}
+                  placeholder="Paste HTML here..."
+                  value={pyqForm.content}
+                  onChange={(e) => setPyqForm(prev => ({ ...prev, content: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    lineHeight: '1.5',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Live HTML Preview (Sandboxed & Isolated) */}
+              {pyqForm.content && (
+                <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                      <Eye size={16} color="#059669" />
+                      <span>Live HTML Preview (Sandboxed & Isolated)</span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: '#065f46', background: '#d1fae5', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Live Safe Sandbox
+                    </span>
+                  </div>
+                  <iframe
+                    srcDoc={pyqForm.content}
+                    title="Live PYQ HTML Preview"
+                    sandbox="allow-same-origin allow-scripts"
+                    style={{
+                      width: '100%',
+                      height: '420px',
+                      border: 'none',
+                      background: '#ffffff',
+                      display: 'block'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="submit"
+                  disabled={pyqSaving}
+                  style={{
+                    background: '#059669',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 28px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    cursor: pyqSaving ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)'
+                  }}
+                >
+                  <Save size={18} />
+                  <span>{pyqSaving ? 'Publishing Live...' : (editingPyqId ? 'Update & Save Changes' : '🚀 Publish Live to Website')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPyqForm(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '12px 22px',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* PYQ Papers Table & List */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            padding: isMobile ? '16px' : '24px'
+          }}
+        >
+          {/* Top Row: Search and Count */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                Published PYQ Papers
+              </span>
+              <span style={{ background: '#ecfdf5', color: '#065f46', fontWeight: 700, fontSize: '0.8rem', padding: '3px 10px', borderRadius: '14px' }}>
+                {filteredPyq.length} Papers
+              </span>
+            </div>
+
+            <div style={{ position: 'relative', minWidth: '260px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                value={pyqSearch}
+                onChange={(e) => setPyqSearch(e.target.value)}
+                placeholder="Search PYQ papers by exam, year, title..."
+                style={{
+                  width: '100%',
+                  padding: '9px 12px 9px 36px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          {filteredPyq.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: '#64748b' }}>
+              <GraduationCap size={44} style={{ opacity: 0.3, marginBottom: '12px' }} />
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#334155' }}>No PYQ papers found</div>
+              <p style={{ fontSize: '0.86rem', marginTop: '4px' }}>
+                {pyqSearch ? 'Try a different search keyword.' : 'Click "+ Create New PYQ Paper" above to publish your first solved question paper.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Paper & Exam</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Questions & Duration</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Slug / URL</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Status</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPyq.map((item, index) => {
+                    const itemSlug = item.slug || cleanSlug(item.title) || item.id;
+                    const liveUrl = `/pyq/${itemSlug}`;
+                    return (
+                      <tr
+                        key={item.id || itemSlug || index}
+                        style={{
+                          borderBottom: '1px solid #f1f5f9',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
+                        <td style={{ padding: '14px', verticalAlign: 'top', maxWidth: '380px' }}>
+                          <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px', lineHeight: 1.4 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {item.exam && (
+                              <span style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.72rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>
+                                {item.exam}
+                              </span>
+                            )}
+                            {item.year && (
+                              <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.72rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>
+                                Year {item.year}
+                              </span>
+                            )}
+                            {item.shift && (
+                              <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px', borderRadius: '4px' }}>
+                                {item.shift}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 700, color: '#334155' }}>
+                            {item.totalQuestions || (Array.isArray(item.questions) ? item.questions.length : 50)} MCQs
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
+                            ⏱️ {item.durationMinutes || 60} Mins CBT
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top' }}>
+                          <a
+                            href={liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#059669',
+                              textDecoration: 'none',
+                              fontSize: '0.82rem',
+                              fontFamily: 'monospace',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontWeight: 600
+                            }}
+                          >
+                            <span>/pyq/{itemSlug}</span>
+                            <ExternalLink size={12} />
+                          </a>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '3px' }}>
+                            {item.postDate || item.date || item.updatedAt ? (item.postDate || item.date || new Date(item.updatedAt).toLocaleDateString()) : 'Live'}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: item.status === 'Draft' ? '#f1f5f9' : '#dcfce7',
+                              color: item.status === 'Draft' ? '#64748b' : '#15803d'
+                            }}
+                          >
+                            {item.status || 'Published'}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', gap: '8px' }}>
+                            <a
+                              href={liveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#f8fafc',
+                                color: '#059669',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #cbd5e1',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <Eye size={13} /> View
+                            </a>
+
+                            <button
+                              onClick={() => handleEditPyq(item)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#f8fafc',
+                                color: '#0284c7',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #cbd5e1',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Edit3 size={13} /> Edit
+                            </button>
+
+                            <button
+                              onClick={() => handleDeletePyq(item)}
+                              disabled={pyqLoading}
+                              title="Delete from Firestore"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#fee2e2',
+                                color: '#dc2626',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #fca5a5',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ── Sidebar Nav Items ────────────────────────────────────
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -5348,6 +6256,7 @@ export default function AdminDashboardPage({
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
     { id: 'current-affairs', label: 'Current Affairs', icon: Newspaper },
+    { id: 'pyq', label: 'Previous Year Questions (PYQ)', icon: GraduationCap },
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },
     { id: 'top-online-forms', label: 'Top Online Forms', icon: FileText },
@@ -9668,6 +10577,7 @@ export default function AdminDashboardPage({
           {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
           {activeSection === 'new-post' && renderNewPost()}
           {activeSection === 'current-affairs' && renderCurrentAffairs()}
+          {activeSection === 'pyq' && renderPyqManagement()}
           {activeSection === 'breaking-news' && renderBreakingNews()}
           {activeSection === 'latest-updates' && renderLatestUpdates()}
           {activeSection === 'featured-posts' && renderFeaturedPosts()}

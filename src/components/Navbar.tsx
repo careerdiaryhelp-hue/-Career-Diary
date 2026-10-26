@@ -87,12 +87,19 @@ export default function Navbar({ currentCategory, setCurrentCategory, onNavigate
 
   const moreItems = [
     { cat: 'TEST_SERIES', path: '/test-series', label: 'Test Series', icon: BookOpen, badge: 'NEW' },
-    { cat: 'CURRENT_AFFAIRS', path: '/current-affairs', label: 'Current Affairs', icon: Newspaper, badge: 'HOT' },
+    { cat: 'CURRENT_AFFAIRS', path: '/current-affairs', label: 'Quiz', icon: Newspaper, badge: 'HOT' },
+    { cat: 'PYQ', path: '/pyq', label: 'PYQ', icon: GraduationCap, badge: 'NEW' },
   ];
 
   const isItemActive = (item: { cat: string; path: string }) => {
     if (currentCategory) {
       if (item.cat === 'TEST_SERIES' && (currentCategory === 'TEST_SERIES' || currentCategory === 'STUDY_QUIZ')) {
+        return true;
+      }
+      if (item.cat === 'CURRENT_AFFAIRS' && (currentCategory === 'CURRENT_AFFAIRS' || currentCategory === 'QUIZ')) {
+        return true;
+      }
+      if (item.cat === 'PYQ' && currentCategory === 'PYQ') {
         return true;
       }
       return currentCategory === item.cat;
