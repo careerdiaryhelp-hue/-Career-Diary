@@ -2917,26 +2917,18 @@ body:has(.admin-login-wrapper) {
 .adsense-banner-wrapper:has([data-ad-intent]),
 .adsense-banner-wrapper:has([data-text-ad]),
 
-/* --- Pattern 4: Class-name based (Google rotates these) --- */
-.rscontainer,
-.related-search-container,
-.google-auto-placed:has(.rscontainer),
-.google-auto-placed:has(.related-search-container),
+/* --- Pattern 4: Target entire auto-placed related search containers (NOT inner children) --- */
+.google-auto-placed[data-ad-format="related_search"],
+.google-auto-placed:has([data-ad-format="related_search"]),
 .google-auto-placed:has(.gsc-resultsbox-visible),
-.adsense-banner-wrapper:has(.rscontainer),
-.adsense-banner-wrapper:has(.related-search-container),
-div[class*="related_search"],
-div[class*="relatedsearch"],
-div[class*="rscontainer"],
 
 /* --- Pattern 5: Matched content / link units that look like chips --- */
 .google-auto-placed:has([data-matched-content-ui-type]),
 .google-auto-placed:has(a[data-ad-url]),
 .google-auto-placed:has([data-noaft]),
-.adsense-banner-wrapper:has([data-matched-content-ui-type]),
 
 /* --- Pattern 6: Wildcard role on Google auto-placed chip containers --- */
-.google-auto-placed:has([role="listbox"]),
+.google-auto-placed:has([role="listbox"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])),
 .google-auto-placed:has([role="list"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
   display: none !important;
   visibility: hidden !important;

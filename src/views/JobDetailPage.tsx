@@ -298,17 +298,17 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // 1. Google Display Ad Unit (Graphical Banners & Image Ads - Slot 1202522135)
+    // 1. Google Display Banner Ad 1 (Slot 1202522135)
     const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
-    // 2. Google In-Article Native Ad Unit 1 (Po - Slot 2022998762)
-    const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    // 2. Google Display Banner Ad 2 (InPost - Slot 7544533819)
+    const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
-    // 3. Google In-Article Native Ad Unit 2 (Hg - Slot 1100799336)
-    const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    // 3. Google Display Banner Ad 3 (Po - Slot 2022998762)
+    const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
-    // 4. Google In-Article Native Ad Unit 3 (InPost - Slot 7544533819)
-    const inArticleSnippet3 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
+    // 4. Google Display Banner Ad 4 (Hg - Slot 1100799336)
+    const inArticleSnippet3 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;

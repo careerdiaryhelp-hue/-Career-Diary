@@ -263,43 +263,49 @@ export function MultiplexAd(props: any) {
   return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
-// 6. Po In-Article Native Ad (Slot 2022998762)
-export function InArticlePo2022(props) {
+// 6. Po Display Banner Ad (Slot 2022998762)
+export function InArticlePo2022(props: any) {
   return (
     <AdSenseBanner
       slot="2022998762"
-      layout="in-article"
-      format="fluid"
-      responsive="false"
-      style={{ textAlign: 'center' }}
+      format="auto"
+      responsive="true"
+      minHeight="250px"
+      label="ADVERTISEMENT"
+      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
 }
 
-// 7. Hg In-Article Native Ad (Slot 1100799336)
-export function InArticleHg1100(props) {
+// 7. Hg Display Banner Ad (Slot 1100799336)
+export function InArticleHg1100(props: any) {
   return (
     <AdSenseBanner
       slot="1100799336"
-      layout="in-article"
-      format="fluid"
-      responsive="false"
-      style={{ textAlign: 'center' }}
+      format="auto"
+      responsive="true"
+      minHeight="250px"
+      label="ADVERTISEMENT"
+      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
 }
 
-// 8. InPost In-Article Native Ad (Slot 7544533819)
-export function InPostAd7544(props) {
+// 8. InPost Display Banner Ad (Slot 7544533819)
+export function InPostAd7544(props: any) {
   return (
     <AdSenseBanner
       slot="7544533819"
-      layout="in-article"
-      format="fluid"
-      responsive="false"
-      style={{ textAlign: 'center' }}
+      format="auto"
+      responsive="true"
+      minHeight="250px"
+      label="ADVERTISEMENT"
+      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
