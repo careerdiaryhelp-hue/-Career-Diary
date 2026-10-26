@@ -4,8 +4,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { DisplayAd, MultiplexUt1963 } from '../components/AdSenseBanner';
+import { DisplayAd, SquareAd } from '../components/AdSenseBanner';
 import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug } from '../data/quizRegistry';
+import { subscribeToTestSeries, fetchTestSeriesOnce } from '../firebase';
+import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
   BookOpen,
   HelpCircle,
@@ -37,10 +39,75 @@ interface StudyQuizPageProps {
   initialMode?: 'hub' | 'study' | 'test';
 }
 
+function normalizeToQuizSet(item: any): QuizSet {
+  const cleanId = item.id || item.slug;
+  const examSlug = item.examSlug || String(item.exam || 'bssc-cgl').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const setSlug = item.setSlug || String(item.set || item.slug || 'set1').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const urlPath = item.urlPath || `/test-series/${examSlug}/${setSlug}`;
+
+  let parsedQuestions: Question[] = [];
+  if (Array.isArray(item.questions) && item.questions.length > 0) {
+    parsedQuestions = item.questions.map((q: any, idx: number) => ({
+      id: String(q.id || idx + 1),
+      topic: q.topic || 'General Studies',
+      subtopic: q.subtopic || '',
+      difficulty: q.difficulty || 'Medium',
+      question: q.question || '',
+      options: {
+        A: q.options?.A || '',
+        B: q.options?.B || '',
+        C: q.options?.C || '',
+        D: q.options?.D || ''
+      },
+      correct_answer: String(q.correct_answer || 'A').toUpperCase(),
+      solution: q.solution || ''
+    }));
+  } else if (item.content) {
+    const raw = extractQuestionsFromContent(item.content);
+    parsedQuestions = raw.map((q, idx) => ({
+      id: String(q.id || idx + 1),
+      topic: 'General Studies',
+      subtopic: '',
+      difficulty: 'Medium',
+      question: q.question,
+      options: q.options,
+      correct_answer: q.correct_answer,
+      solution: q.solution
+    }));
+  }
+
+  const marks = Number(item.marksPerQuestion) || 4;
+  const neg = Number(item.negativeMarks) || 1;
+  const qCount = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(item.totalQuestions) || 150);
+
+  return {
+    id: cleanId,
+    slug: item.slug || cleanId,
+    exam: item.exam || 'BSSC CGL',
+    examSlug,
+    setSlug,
+    urlPath,
+    subject: item.subject || `${item.exam || 'Exam'} ${item.set || 'Set'}`,
+    title: item.title,
+    subtitle: item.description || item.subtitle || `${qCount} Questions • Full Syllabus Mock Test`,
+    description: item.description || item.subtitle || '',
+    total_questions: qCount,
+    durationMinutes: Number(item.durationMinutes) || 135,
+    marksPerQuestion: marks,
+    negativeMarks: neg,
+    totalMarks: qCount * marks,
+    category: item.category || 'BIHAR GOVT EXAMS',
+    badge: item.badge || 'Live CBT Mock',
+    topicsSummary: item.topicsSummary || { 'General Studies': qCount },
+    questions: parsedQuestions
+  };
+}
+
 export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialMode = 'hub' }: StudyQuizPageProps) {
-  const allSets = useMemo(() => getAllQuizSets(), []);
+  const initialBaseSets = useMemo(() => getAllQuizSets(), []);
+  const [allSets, setAllSets] = useState<QuizSet[]>(initialBaseSets);
   const [selectedSet, setSelectedSet] = useState<QuizSet>(() => {
-    return getQuizSetBySlug(initialSlug) || allSets[0];
+    return getQuizSetBySlug(initialSlug) || initialBaseSets[0];
   });
 
   const [mode, setMode] = useState<'hub' | 'study' | 'test' | 'result'>(initialMode);
@@ -65,6 +132,44 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
   const [showPaletteMobile, setShowPaletteMobile] = useState<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const mergeDynamicSets = (firestoreItems: any[]) => {
+    const dynamicConverted = (firestoreItems || []).map(normalizeToQuizSet);
+    const dynamicIds = new Set(dynamicConverted.map(s => s.id));
+    const merged = [
+      ...dynamicConverted,
+      ...initialBaseSets.filter(b => !dynamicIds.has(b.id) && !dynamicIds.has(b.slug))
+    ];
+    setAllSets(merged);
+
+    const match = merged.find(s => s.slug === initialSlug || s.id === initialSlug || s.setSlug === initialSlug);
+    if (match) {
+      setSelectedSet(match);
+      setTestTimeRemaining(match.durationMinutes * 60);
+    }
+  };
+
+  // Subscribe to real-time Test Series updates from Firestore
+  useEffect(() => {
+    let unsubscribe: any = null;
+    fetchTestSeriesOnce().then((items: any[]) => {
+      if (Array.isArray(items) && items.length > 0) {
+        mergeDynamicSets(items);
+      }
+    }).catch(() => {});
+
+    try {
+      unsubscribe = subscribeToTestSeries((items: any[]) => {
+        if (Array.isArray(items) && items.length > 0) {
+          mergeDynamicSets(items);
+        }
+      });
+    } catch (_) {}
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [initialSlug]);
 
   // Load bookmarks and URL query params
   useEffect(() => {

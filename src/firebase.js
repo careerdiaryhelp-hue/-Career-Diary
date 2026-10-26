@@ -915,6 +915,198 @@ export async function fetchPyqBySlug(slug) {
   return null;
 }
 
+// ─── Test Series & Mock Tests Service ────────────────────────
+let testSeriesCache = { data: null, timestamp: 0 };
+
+export async function publishTestSeriesToFirestore(testSeriesPost) {
+  const rawId = testSeriesPost.id || testSeriesPost.slug || testSeriesPost.title || '';
+  const safeId = cleanJobId(rawId);
+  if (!safeId) {
+    return { success: false, error: new Error('Test series title or slug must contain valid text.') };
+  }
+
+  const nowIso = new Date().toISOString();
+  const safeDoc = {
+    ...testSeriesPost,
+    id: safeId,
+    slug: safeId,
+    isTestSeries: true,
+    updatedAt: nowIso,
+    status: testSeriesPost.status || 'Published'
+  };
+
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // 1. Save individual full test series doc in permitted 'jobs' collection as ts_${safeId}
+    const tsRef = doc(db, 'jobs', `ts_${safeId}`);
+    await setDoc(tsRef, safeDoc, { merge: true });
+
+    // 2. Also update master settings_testSeries array doc in 'jobs' collection
+    const listRef = doc(db, 'jobs', 'settings_testSeries');
+    let existingItems = [];
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) existingItems = d.items;
+      }
+    } catch (_) {}
+
+    const updatedItems = [
+      safeDoc,
+      ...existingItems.filter(p => (p.id || p.slug) !== safeId)
+    ];
+
+    await setDoc(listRef, {
+      id: 'settings_testSeries',
+      items: updatedItems,
+      updatedAt: nowIso,
+      isSystemDoc: true
+    }, { merge: true });
+
+    testSeriesCache.data = null;
+    testSeriesCache.timestamp = 0;
+    return { success: true, cleanId: safeId };
+  } catch (error) {
+    console.error('Error publishing Test Series:', error);
+    return { success: false, error };
+  }
+}
+
+export async function deleteTestSeriesFromFirestore(id) {
+  const safeId = cleanJobId(id);
+  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+  try {
+    const db = await getClientDb();
+    if (!db) throw new Error('Firestore is only available in browser');
+    const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
+
+    // 1. Delete individual ts_${safeId} doc
+    try {
+      await deleteDoc(doc(db, 'jobs', `ts_${safeId}`));
+    } catch (_) {}
+
+    // 2. Update settings_testSeries list
+    const listRef = doc(db, 'jobs', 'settings_testSeries');
+    try {
+      const snap = await getDoc(listRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (Array.isArray(d.items)) {
+          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
+          await setDoc(listRef, {
+            id: 'settings_testSeries',
+            items: filtered,
+            updatedAt: new Date().toISOString(),
+            isSystemDoc: true
+          }, { merge: true });
+        }
+      }
+    } catch (_) {}
+
+    testSeriesCache.data = null;
+    testSeriesCache.timestamp = 0;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting Test Series:', error);
+    return { success: false, error };
+  }
+}
+
+export function subscribeToTestSeries(onUpdate, onError) {
+  if (typeof window === 'undefined') return () => {};
+  let unsubscribe = null;
+  let active = true;
+
+  getClientDb().then(async (db) => {
+    if (!db || !active) return;
+    try {
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const listRef = doc(db, 'jobs', 'settings_testSeries');
+      unsubscribe = onSnapshot(listRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.items)) {
+            onUpdate(data.items);
+          }
+        }
+      }, (err) => {
+        console.warn('Test Series subscription error (fallback to local):', err);
+        if (onError) onError(err);
+      });
+    } catch (e) {
+      console.warn('Could not subscribe to Test Series:', e);
+      if (onError) onError(e);
+    }
+  });
+
+  return () => {
+    active = false;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
+export async function fetchTestSeriesOnce() {
+  const now = Date.now();
+  if (testSeriesCache.data && now - testSeriesCache.timestamp < 60000) {
+    return testSeriesCache.data;
+  }
+
+  const { initialTestSeries } = await import('./data/initialTestSeries.js');
+
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_testSeries`,
+      {
+        cf: { cacheTtl: 120, cacheEverything: true }
+      }
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = parseFirestoreDoc(data);
+      if (Array.isArray(parsed?.items) && parsed.items.length > 0) {
+        const merged = [...parsed.items];
+        const seen = new Set(parsed.items.map(p => p.id || p.slug));
+        (initialTestSeries || []).forEach(p => {
+          const key = p.id || p.slug;
+          if (!seen.has(key)) merged.push(p);
+        });
+        testSeriesCache = { data: merged, timestamp: now };
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch settings_testSeries REST:', e);
+  }
+
+  return initialTestSeries || [];
+}
+
+export async function fetchTestSeriesBySlug(slug) {
+  if (!slug) return null;
+  const safeId = cleanJobId(slug);
+
+  // 1. Try single document fetch ts_${safeId} from permitted jobs collection
+  try {
+    const doc = await fetchFirestoreJobById(`ts_${safeId}`, 'jobs');
+    if (doc && (doc.title || doc.content || doc.questions)) return doc;
+  } catch (_) {}
+
+  // 2. Direct lookup from settings_testSeries / initial
+  try {
+    const all = await fetchTestSeriesOnce();
+    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
+    if (found) return found;
+  } catch (_) {}
+
+  return null;
+}
+
+
 
 
 

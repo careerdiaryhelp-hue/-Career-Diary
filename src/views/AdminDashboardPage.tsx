@@ -22,7 +22,11 @@ import {
   publishPyqToFirestore,
   deletePyqFromFirestore,
   subscribeToPyq,
-  fetchPyqOnce
+  fetchPyqOnce,
+  publishTestSeriesToFirestore,
+  deleteTestSeriesFromFirestore,
+  subscribeToTestSeries,
+  fetchTestSeriesOnce
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 
@@ -256,6 +260,51 @@ export default function AdminDashboardPage({
       unsubscribe = subscribeToPyq((posts) => {
         if (Array.isArray(posts) && posts.length > 0) {
           setPyqList(posts);
+        }
+      });
+    } catch (_) {}
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  // ── Test Series & Mock Tests Management State ──
+  const [testSeriesList, setTestSeriesList] = useState([]);
+  const [tsLoading, setTsLoading] = useState(false);
+  const [tsSaving, setTsSaving] = useState(false);
+  const [showTsForm, setShowTsForm] = useState(false);
+  const [editingTsId, setEditingTsId] = useState(null);
+  const [tsSearch, setTsSearch] = useState('');
+  const [tsAlert, setTsAlert] = useState(null);
+  const [tsForm, setTsForm] = useState({
+    title: '',
+    exam: 'BSSC CGL',
+    set: 'Set 1',
+    category: 'BIHAR GOVT EXAMS',
+    postDate: '',
+    slug: '',
+    description: '',
+    durationMinutes: 135,
+    marksPerQuestion: 4,
+    negativeMarks: 1,
+    totalQuestions: 150,
+    content: '',
+    status: 'Published'
+  });
+
+  useEffect(() => {
+    let unsubscribe = null;
+    fetchTestSeriesOnce().then(initial => {
+      if (Array.isArray(initial) && initial.length > 0) {
+        setTestSeriesList(initial);
+      }
+    }).catch(() => {});
+
+    try {
+      unsubscribe = subscribeToTestSeries((posts) => {
+        if (Array.isArray(posts) && posts.length > 0) {
+          setTestSeriesList(posts);
         }
       });
     } catch (_) {}
@@ -6249,12 +6298,959 @@ export default function AdminDashboardPage({
     );
   };
 
+  // ── Test Series Management Handlers & Section ────────
+  const handleStartNewTs = () => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString('en-US', { month: 'long' });
+    const year = today.getFullYear();
+    const dateStr = `${day} ${month} ${year}`;
+
+    setEditingTsId(null);
+    setTsForm({
+      title: `BSSC CGL 2026 Full Length Mock Test (Set 3)`,
+      exam: 'BSSC CGL',
+      set: 'Set 3',
+      category: 'BIHAR GOVT EXAMS',
+      postDate: `${dateStr} | 10:00 AM`,
+      slug: `bssc-cgl-set-3`,
+      description: `Practice 150 questions full-length CBT mock test for BSSC CGL 2026 with real-time countdown timer, negative marking (+4 / -1), and bilingual step-by-step solutions.`,
+      durationMinutes: 135,
+      marksPerQuestion: 4,
+      negativeMarks: 1,
+      totalQuestions: 150,
+      content: '',
+      status: 'Published'
+    });
+    setShowTsForm(true);
+    setTsAlert(null);
+  };
+
+  const handleEditTs = (item) => {
+    setEditingTsId(item.id || item.slug);
+    setTsForm({
+      title: item.title || '',
+      exam: item.exam || 'BSSC CGL',
+      set: item.set || item.setSlug || 'Set 1',
+      category: item.category || 'BIHAR GOVT EXAMS',
+      postDate: item.postDate || item.date || '',
+      slug: item.slug || cleanSlug(item.title) || item.id,
+      description: item.description || item.subtitle || '',
+      durationMinutes: item.durationMinutes || 135,
+      marksPerQuestion: item.marksPerQuestion || 4,
+      negativeMarks: item.negativeMarks || 1,
+      totalQuestions: item.totalQuestions || item.total_questions || 150,
+      content: item.content || '',
+      status: item.status || 'Published'
+    });
+    setShowTsForm(true);
+    setTsAlert(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteTs = async (item) => {
+    const id = item.id || item.slug;
+    if (!window.confirm(`Are you sure you want to delete Test Series "${item.title}"? This cannot be undone.`)) return;
+    try {
+      setTsLoading(true);
+      await deleteTestSeriesFromFirestore(id);
+      setTestSeriesList(prev => prev.filter(p => (p.id || p.slug) !== id));
+      setTsAlert({ type: 'success', message: 'Test Series deleted successfully from Firestore.' });
+    } catch (err) {
+      setTsAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+    } finally {
+      setTsLoading(false);
+    }
+  };
+
+  const handlePublishTs = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!tsForm.title.trim()) {
+      alert('Please enter a Title for the Test Series / Mock Test.');
+      return;
+    }
+
+    const safeSlug = cleanSlug(tsForm.slug || tsForm.title);
+    const parsedQuestions = extractQuestionsFromContent(tsForm.content);
+    const cleanExamSlug = cleanSlug(tsForm.exam || 'bssc-cgl');
+    const cleanSetSlug = cleanSlug(tsForm.set || 'set-1').replace(/[^a-z0-9]/g, '') || 'set1';
+    const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(tsForm.totalQuestions) || 150);
+    const marks = Number(tsForm.marksPerQuestion) || 4;
+
+    const postData = {
+      ...tsForm,
+      id: safeSlug,
+      slug: safeSlug,
+      title: tsForm.title.trim(),
+      exam: tsForm.exam || 'BSSC CGL',
+      examSlug: cleanExamSlug,
+      set: tsForm.set || 'Set 1',
+      setSlug: cleanSetSlug,
+      urlPath: `/test-series/${cleanExamSlug}/${cleanSetSlug}`,
+      subject: `${tsForm.exam || 'Exam'} ${tsForm.set || 'Set'}`,
+      category: tsForm.category || 'BIHAR GOVT EXAMS',
+      date: tsForm.postDate ? tsForm.postDate.split('|')[0].trim() : '',
+      durationMinutes: Number(tsForm.durationMinutes) || 135,
+      marksPerQuestion: marks,
+      negativeMarks: Number(tsForm.negativeMarks) || 1,
+      totalQuestions: totalQ,
+      totalMarks: totalQ * marks,
+      questions: parsedQuestions.length > 0 ? parsedQuestions : (tsForm.questions || []),
+      updatedAt: new Date().toISOString(),
+      views: 180,
+      badge: 'Live CBT Mock',
+      tags: [tsForm.exam, 'Test Series', 'Mock Test', 'CBT Test', 'Full Length Practice', `${totalQ} Questions`]
+    };
+
+    try {
+      setTsSaving(true);
+      const res = await publishTestSeriesToFirestore(postData);
+      if (res && res.success) {
+        setTestSeriesList(prev => {
+          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          return [postData, ...filtered];
+        });
+        setTsAlert({
+          type: 'success',
+          message: 'Test Series / Mock Test has been published LIVE on the website!',
+          link: `/test-series/${cleanExamSlug}/${cleanSetSlug}`
+        });
+        setShowTsForm(false);
+      } else {
+        throw (res && res.error) || new Error('Publishing failed');
+      }
+    } catch (err) {
+      setTsAlert({
+        type: 'error',
+        message: 'Error saving Test Series: ' + (err.message || String(err))
+      });
+    } finally {
+      setTsSaving(false);
+    }
+  };
+
+  const renderTestSeriesManagement = () => {
+    const filteredTs = testSeriesList.filter(item => {
+      if (!tsSearch.trim()) return true;
+      const s = tsSearch.toLowerCase();
+      return (
+        (item.title && item.title.toLowerCase().includes(s)) ||
+        (item.exam && item.exam.toLowerCase().includes(s)) ||
+        (item.set && item.set.toLowerCase().includes(s)) ||
+        (item.category && item.category.toLowerCase().includes(s))
+      );
+    });
+
+    return (
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Section Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <BookOpen size={28} style={{ color: '#c2185b' }} />
+              <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Test Series & Mock Tests Management
+              </h1>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '6px', margin: '6px 0 0 0' }}>
+              Create, edit, and publish full-length CBT mock tests with negative marking, timers, scorecard analysis & step-by-step solutions.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a
+              href="/test-series"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '9px 16px',
+                borderRadius: '8px',
+                background: '#fdf2f8',
+                color: '#c2185b',
+                border: '1px solid #fbcfe8',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
+              <span>View Live Test Series Hub</span>
+              <ExternalLink size={14} />
+            </a>
+
+            <button
+              onClick={() => {
+                if (showTsForm) {
+                  setShowTsForm(false);
+                } else {
+                  handleStartNewTs();
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                background: showTsForm ? '#64748b' : '#c2185b',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(194, 24, 91, 0.25)'
+              }}
+            >
+              <Plus size={16} />
+              <span>{showTsForm ? 'Close Form' : '+ Create New Mock Test'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Alert Banner */}
+        {tsAlert && (
+          <div
+            style={{
+              padding: '12px 18px',
+              borderRadius: '10px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              background: tsAlert.type === 'success' ? '#ecfdf5' : '#fef2f2',
+              border: `1px solid ${tsAlert.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+              color: tsAlert.type === 'success' ? '#065f46' : '#991b1b',
+              fontSize: '0.9rem',
+              fontWeight: 600
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {tsAlert.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+              <span>{tsAlert.message}</span>
+              {tsAlert.link && (
+                <a
+                  href={tsAlert.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#c2185b',
+                    textDecoration: 'underline',
+                    marginLeft: '8px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  View Live <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
+            <button
+              onClick={() => setTsAlert(null)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Create / Edit Test Series Form */}
+        {showTsForm && (
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 10px 25px -5px rgba(0,0,0,0.05)',
+              border: '1.5px solid #fbcfe8',
+              padding: isMobile ? '18px' : '28px',
+              marginBottom: '28px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                  {editingTsId ? '✏️ Edit Test Series / Mock Test' : '🚀 Create & Publish New Mock Test'}
+                </span>
+                {editingTsId && (
+                  <span style={{ fontSize: '0.75rem', background: '#fce7f3', color: '#be185d', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    Editing: {editingTsId}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setShowTsForm(false)}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handlePublishTs} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Row 1: Title */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  TEST TITLE <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. BSSC CGL 2026 Full Length Mock Test (Set 3)"
+                  value={tsForm.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setTsForm(prev => ({
+                      ...prev,
+                      title,
+                      slug: prev.slug && !editingTsId ? cleanSlug(title) : prev.slug
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Row 2: Exam Name, Set Number, Category, Post Date */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    EXAM NAME <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    list="ts-exam-list"
+                    value={tsForm.exam}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, exam: e.target.value }))}
+                    placeholder="e.g. BSSC CGL"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      fontWeight: 600
+                    }}
+                  />
+                  <datalist id="ts-exam-list">
+                    <option value="BSSC CGL" />
+                    <option value="BSSC Inter Level" />
+                    <option value="SSC CGL" />
+                    <option value="SSC CHSL" />
+                    <option value="SSC GD" />
+                    <option value="RRB NTPC" />
+                    <option value="RRB Group D" />
+                    <option value="RRB ALP" />
+                    <option value="BPSC Teacher TRE" />
+                    <option value="Bihar Police SI" />
+                    <option value="CTET / STET" />
+                  </datalist>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    SET NUMBER / LABEL <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tsForm.set}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, set: e.target.value }))}
+                    placeholder="e.g. Set 1, Set 2, Full Mock 3"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      fontWeight: 600
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    EXAM CATEGORY
+                  </label>
+                  <select
+                    value={tsForm.category}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, category: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  >
+                    <option value="BIHAR GOVT EXAMS">Bihar Govt Exams</option>
+                    <option value="SSC EXAMS">SSC Exams</option>
+                    <option value="RAILWAY EXAMS">Railway Exams</option>
+                    <option value="TEACHING EXAMS">Teaching Exams</option>
+                    <option value="DEFENCE EXAMS">Defence Exams</option>
+                    <option value="BANKING EXAMS">Banking Exams</option>
+                    <option value="ALL INDIA EXAMS">All India Exams</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    POST DATE / TIME
+                  </label>
+                  <input
+                    type="text"
+                    value={tsForm.postDate}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, postDate: e.target.value }))}
+                    placeholder="e.g. 26 October 2026 | 10:00 AM"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: URL Slug & Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    PERMALINK SLUG
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+                    <span style={{ padding: '0 10px', fontSize: '0.82rem', color: '#64748b', background: '#f1f5f9', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap', userSelect: 'none' }}>
+                      /test-series/{cleanSlug(tsForm.exam || 'bssc-cgl')}/
+                    </span>
+                    <input
+                      type="text"
+                      value={tsForm.slug}
+                      onChange={(e) => setTsForm(prev => ({ ...prev, slug: cleanSlug(e.target.value) }))}
+                      placeholder="set1 or bssc-cgl-set-1"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                    URL: https://careerdiary.in/test-series/{cleanSlug(tsForm.exam || 'bssc-cgl')}/{cleanSlug(tsForm.set || tsForm.slug || 'set1').replace(/[^a-z0-9]/g, '')}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    STATUS
+                  </label>
+                  <select
+                    value={tsForm.status}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, status: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      background: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Published">Published (Live)</option>
+                    <option value="Draft">Draft (Hidden)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 4: Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  DESCRIPTION / SUBTITLE
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. 150 Questions • Full Syllabus • Negative Marking • Official CBT Pattern"
+                  value={tsForm.description}
+                  onChange={(e) => setTsForm(prev => ({ ...prev, description: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Row 5: CBT Duration, Total Questions, Marks Per Q, Negative Marks */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px', background: '#fdf2f8', padding: '14px', borderRadius: '10px', border: '1px solid #fbcfe8' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#831843', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ⏱️ TIMER (MINUTES)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="240"
+                    value={tsForm.durationMinutes || 135}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 135 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
+                    Exam time (Default: 135 Mins)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#831843', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    📝 TOTAL QUESTIONS
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={tsForm.totalQuestions || 150}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 150 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
+                    Question count (Default: 150)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#831843', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➕ MARKS PER QUESTION
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={tsForm.marksPerQuestion || 4}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, marksPerQuestion: Number(e.target.value) || 4 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
+                    Positive (+4 marks)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#831843', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➖ NEGATIVE MARKS
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.25"
+                    value={tsForm.negativeMarks || 1}
+                    onChange={(e) => setTsForm(prev => ({ ...prev, negativeMarks: Number(e.target.value) || 1 }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
+                    Penalty (-1 mark per wrong)
+                  </div>
+                </div>
+              </div>
+
+              {/* HTML SOURCE CODE Textarea */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                    QUESTIONS HTML / JSON SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    💡 Paste question cards, MCQs, or quizData script here
+                  </span>
+                </div>
+                <textarea
+                  rows={14}
+                  placeholder="Paste question cards HTML or quizData array here..."
+                  value={tsForm.content}
+                  onChange={(e) => setTsForm(prev => ({ ...prev, content: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    lineHeight: '1.5',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Live HTML Preview (Sandboxed & Isolated) */}
+              {tsForm.content && (
+                <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                      <Eye size={16} color="#c2185b" />
+                      <span>Live HTML Preview (Sandboxed & Isolated)</span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: '#9d174d', background: '#fce7f3', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Live Safe Sandbox
+                    </span>
+                  </div>
+                  <iframe
+                    srcDoc={tsForm.content}
+                    title="Live Test Series HTML Preview"
+                    sandbox="allow-same-origin allow-scripts"
+                    style={{
+                      width: '100%',
+                      height: '420px',
+                      border: 'none',
+                      background: '#ffffff',
+                      display: 'block'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="submit"
+                  disabled={tsSaving}
+                  style={{
+                    background: '#c2185b',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 28px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    cursor: tsSaving ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 2px 8px rgba(194, 24, 91, 0.3)'
+                  }}
+                >
+                  <Save size={18} />
+                  <span>{tsSaving ? 'Publishing Live...' : (editingTsId ? 'Update & Save Changes' : '🚀 Publish Live to Website')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTsForm(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '12px 22px',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Test Series Table & List */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            padding: isMobile ? '16px' : '24px'
+          }}
+        >
+          {/* Top Row: Search and Count */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                Published Mock Test Sets
+              </span>
+              <span style={{ background: '#fdf2f8', color: '#be185d', fontWeight: 700, fontSize: '0.8rem', padding: '3px 10px', borderRadius: '14px' }}>
+                {filteredTs.length} Sets
+              </span>
+            </div>
+
+            <div style={{ position: 'relative', minWidth: '260px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                value={tsSearch}
+                onChange={(e) => setTsSearch(e.target.value)}
+                placeholder="Search mock tests by exam, set, title..."
+                style={{
+                  width: '100%',
+                  padding: '9px 12px 9px 36px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          {filteredTs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: '#64748b' }}>
+              <BookOpen size={44} style={{ opacity: 0.3, marginBottom: '12px' }} />
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#334155' }}>No mock test sets found</div>
+              <p style={{ fontSize: '0.86rem', marginTop: '4px' }}>
+                {tsSearch ? 'Try a different search keyword.' : 'Click "+ Create New Mock Test" above to publish your first full-length test series.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Test Name & Exam</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Questions & Duration</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Marking Pattern</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>URL / Route</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Status</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTs.map((item, index) => {
+                    const examSlug = cleanSlug(item.examSlug || item.exam || 'bssc-cgl');
+                    const setSlug = cleanSlug(item.setSlug || item.set || item.slug || 'set1').replace(/[^a-z0-9]/g, '');
+                    const liveUrl = item.urlPath || `/test-series/${examSlug}/${setSlug}`;
+                    return (
+                      <tr
+                        key={item.id || item.slug || index}
+                        style={{
+                          borderBottom: '1px solid #f1f5f9',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
+                        <td style={{ padding: '14px', verticalAlign: 'top', maxWidth: '380px' }}>
+                          <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px', lineHeight: 1.4 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {item.exam && (
+                              <span style={{ background: '#fce7f3', color: '#be185d', fontSize: '0.72rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>
+                                {item.exam}
+                              </span>
+                            )}
+                            {item.set && (
+                              <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.72rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>
+                                {item.set}
+                              </span>
+                            )}
+                            {item.category && (
+                              <span style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.7rem', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                {item.category}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 700, color: '#334155' }}>
+                            {item.totalQuestions || item.total_questions || (Array.isArray(item.questions) ? item.questions.length : 150)} MCQs
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
+                            ⏱️ {item.durationMinutes || 135} Mins CBT
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#059669' }}>
+                            +{item.marksPerQuestion || 4} Right
+                          </div>
+                          <div style={{ fontSize: '0.76rem', fontWeight: 600, color: '#dc2626', marginTop: '2px' }}>
+                            -{item.negativeMarks || 1} Negative
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top' }}>
+                          <a
+                            href={liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#c2185b',
+                              textDecoration: 'none',
+                              fontSize: '0.82rem',
+                              fontFamily: 'monospace',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontWeight: 600
+                            }}
+                          >
+                            <span>{liveUrl}</span>
+                            <ExternalLink size={12} />
+                          </a>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '3px' }}>
+                            {item.postDate || item.date || item.updatedAt ? (item.postDate || item.date || new Date(item.updatedAt).toLocaleDateString()) : 'Live'}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: item.status === 'Draft' ? '#f1f5f9' : '#fce7f3',
+                              color: item.status === 'Draft' ? '#64748b' : '#be185d'
+                            }}
+                          >
+                            {item.status || 'Published'}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '14px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', gap: '8px' }}>
+                            <a
+                              href={liveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#f8fafc',
+                                color: '#c2185b',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #cbd5e1',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <Eye size={13} /> View
+                            </a>
+
+                            <button
+                              onClick={() => handleEditTs(item)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#f8fafc',
+                                color: '#0284c7',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #cbd5e1',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Edit3 size={13} /> Edit
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteTs(item)}
+                              disabled={tsLoading}
+                              title="Delete from Firestore"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#fee2e2',
+                                color: '#dc2626',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                border: '1px solid #fca5a5',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ── Sidebar Nav Items ────────────────────────────────────
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'categories', label: 'Categories', icon: Layers },
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
+    { id: 'test-series', label: 'Test Series & Mock Tests', icon: BookOpen },
     { id: 'current-affairs', label: 'Current Affairs', icon: Newspaper },
     { id: 'pyq', label: 'Previous Year Questions (PYQ)', icon: GraduationCap },
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
@@ -10576,6 +11572,7 @@ export default function AdminDashboardPage({
           {activeSection === 'dashboard' && renderDashboard()}
           {(activeSection === 'categories' || activeSection === 'all-posts') && renderCategories()}
           {activeSection === 'new-post' && renderNewPost()}
+          {activeSection === 'test-series' && renderTestSeriesManagement()}
           {activeSection === 'current-affairs' && renderCurrentAffairs()}
           {activeSection === 'pyq' && renderPyqManagement()}
           {activeSection === 'breaking-news' && renderBreakingNews()}
