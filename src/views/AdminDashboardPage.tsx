@@ -4890,7 +4890,7 @@ export default function AdminDashboardPage({
               </div>
 
               {/* 3 Fields Row: Date, Category, Slug */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
                     POST DATE
@@ -4985,7 +4985,7 @@ export default function AdminDashboardPage({
               </div>
 
               {/* Test Settings: 50 Questions, 30 Min Timer */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
                     ⏱️ TEST TIME DURATION (MINUTES)
@@ -5069,21 +5069,28 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* Live HTML Preview Box */}
+              {/* Live HTML Preview Box (Sandboxed Iframe prevents external CSS/body styles from leaking into Admin Dashboard) */}
               {caForm.content && (
-                <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ background: '#f1f5f9', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
-                    <Eye size={16} color="#2563eb" />
-                    <span>Live HTML Preview (How it appears on website)</span>
+                <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                      <Eye size={16} color="#2563eb" />
+                      <span>Live HTML Preview (Sandboxed & Isolated)</span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Live Safe Sandbox
+                    </span>
                   </div>
-                  <div
-                    className="sr-rich-html-content"
-                    dangerouslySetInnerHTML={{ __html: caForm.content }}
+                  <iframe
+                    srcDoc={caForm.content}
+                    title="Live HTML Preview"
+                    sandbox="allow-same-origin allow-scripts"
                     style={{
-                      padding: '20px',
+                      width: '100%',
+                      height: '420px',
+                      border: 'none',
                       background: '#ffffff',
-                      maxHeight: '400px',
-                      overflowY: 'auto'
+                      display: 'block'
                     }}
                   />
                 </div>
@@ -9376,6 +9383,8 @@ export default function AdminDashboardPage({
   // ── Layout ────────────────────────────────────────────────
   return (
     <div className="admin-dashboard-root" style={{
+      position: 'fixed',
+      inset: 0,
       display: 'flex',
       height: '100vh',
       minHeight: '100vh',
@@ -9383,7 +9392,8 @@ export default function AdminDashboardPage({
       maxWidth: '100vw',
       background: '#f8fafc',
       fontFamily: 'Plus Jakarta Sans, sans-serif',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      zIndex: 1
     }}>
       <style>{`
         .google-auto-placed, 

@@ -223,15 +223,49 @@ export default function CurrentAffairsDetailClient({
 
             {/* Render Raw HTML Questions / MCQs Content */}
             {post.content ? (
-              <div
-                className="sr-rich-html-content"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-                style={{
-                  fontSize: '1rem',
-                  lineHeight: 1.7,
-                  color: '#1e293b'
-                }}
-              />
+              (() => {
+                const lower = post.content.toLowerCase();
+                const isFullDoc = lower.includes('<!doctype') || lower.includes('<html') || lower.includes('<script');
+
+                if (isFullDoc) {
+                  return (
+                    <div style={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#ffffff' }}>
+                      <iframe
+                        srcDoc={post.content}
+                        title={post.title}
+                        sandbox="allow-same-origin allow-scripts"
+                        style={{
+                          width: '100%',
+                          minHeight: '750px',
+                          border: 'none',
+                          display: 'block',
+                          background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
+                // Scope any embedded style tags so body/html selectors don't leak globally
+                const scopedHtml = post.content.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (_, css) => {
+                  const scopedCss = css
+                    .replace(/\b(html|body)\b/gi, '.sr-rich-html-content')
+                    .replace(/:root/gi, '.sr-rich-html-content');
+                  return `<style>${scopedCss}</style>`;
+                });
+
+                return (
+                  <div
+                    className="sr-rich-html-content"
+                    dangerouslySetInnerHTML={{ __html: scopedHtml }}
+                    style={{
+                      fontSize: '1rem',
+                      lineHeight: 1.7,
+                      color: '#1e293b'
+                    }}
+                  />
+                );
+              })()
             ) : (
               <div style={{ padding: '30px', textAlign: 'center', background: '#f8fafc', borderRadius: '10px' }}>
                 <p style={{ color: '#64748b', margin: 0 }}>Content is being prepared. Check back shortly!</p>

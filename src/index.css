@@ -2861,6 +2861,11 @@ body:has(.admin-dashboard-root),
 body:has(.admin-login-wrapper) {
   overflow: auto !important;
   position: static !important;
+  max-width: 100vw !important;
+  width: 100vw !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
 @keyframes slideUpFadeIn {
