@@ -8,8 +8,19 @@ import { canServeAds, isLocalDev } from '../utils/adShield';
 export default function ScrollPopupAd() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [adKey, setAdKey] = useState(0);
   const insRef = useRef<HTMLModElement | null>(null);
   const hasTriggeredRef = useRef(false);
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 5;
+
+  // Cleanup pending retry timers on unmount or route change
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, [pathname]);
 
   // Trigger popup within 5 seconds when user scrolls (or 5s fallback on page read)
   useEffect(() => {
@@ -104,12 +115,29 @@ export default function ScrollPopupAd() {
 
     const el = insRef.current;
 
-    // Auto-close modal immediately if Google reports ad is unfilled (prevents blank white box)
+    // Handler when ad is unfilled: auto-close immediately, then try again 3 seconds later
+    const handleUnfilledRetry = () => {
+      setIsOpen(false);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      if (retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current += 1;
+        retryTimerRef.current = setTimeout(() => {
+          setAdKey((prev) => prev + 1);
+          setIsOpen(true);
+        }, 3000); // Re-open after 3 seconds
+      }
+    };
+
+    // Auto-close modal and schedule 3s retry if Google reports ad is unfilled (prevents blank white box)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
-          if (el.getAttribute('data-ad-status') === 'unfilled') {
-            setIsOpen(false);
+          const status = el.getAttribute('data-ad-status');
+          if (status === 'unfilled') {
+            handleUnfilledRetry();
+          } else if (status === 'filled') {
+            // Success! Reset retry count
+            retryCountRef.current = 0;
           }
         }
       });
@@ -130,10 +158,10 @@ export default function ScrollPopupAd() {
       }
     }, 250);
 
-    // Safety fallback: if Google fails to fill the ad within 4.5 seconds, auto-close modal so user never sees a blank box
+    // Safety fallback: if Google fails to fill the ad within 4.5 seconds, auto-close and retry after 3s
     const safetyTimer = setTimeout(() => {
       if (el && el.getAttribute('data-ad-status') !== 'filled' && !el.querySelector('iframe')) {
-        setIsOpen(false);
+        handleUnfilledRetry();
       }
     }, 4500);
 
@@ -142,9 +170,12 @@ export default function ScrollPopupAd() {
       clearTimeout(safetyTimer);
       observer.disconnect();
     };
-  }, [isOpen]);
+  }, [isOpen, adKey]);
 
   const handleClose = () => {
+    // If user explicitly dismisses popup, cancel any retry
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    retryCountRef.current = MAX_RETRIES;
     setIsOpen(false);
     try {
       sessionStorage.setItem('careerdiary_scroll_popup_closed', Date.now().toString());
@@ -275,6 +306,7 @@ export default function ScrollPopupAd() {
             </div>
           ) : (
             <ins
+              key={adKey}
               ref={insRef}
               className="adsbygoogle"
               style={{
