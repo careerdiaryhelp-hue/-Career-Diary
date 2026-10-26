@@ -236,31 +236,31 @@ export function SquareAd(props: any) {
 }
 
 export function DisplayBannerAd(props: any) {
-  return <AdSenseBanner slot="1202522135" format="horizontal" responsive="true" {...props} />;
+  return <DisplayAd {...props} />;
 }
 
-// 2. In feed Ad (Slot 2542955740)
-export function InFeedAd(props) {
-  return <AdSenseBanner slot="2542955740" format="auto" responsive="true" {...props} />;
+// 2. In feed Ad (Slot 2542955740) - Standard Display Banner
+export function InFeedAd(props: any) {
+  return <DisplayAd slot="2542955740" {...props} />;
 }
 
-// 3. Ut Multiplex Ad (Slot 1963114002 - Autorelaxed Grid)
-export function MultiplexUt1963(props) {
-  return <AdSenseBanner slot="1963114002" format="autorelaxed" {...props} />;
+// 3. Ut Multiplex (Formerly Slot 1963114002 - Converted to Clean Display Banner)
+export function MultiplexUt1963(props: any) {
+  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
-// 4. Mt Multiplex Ad (Slot 5566657954 - Autorelaxed Grid)
-export function MultiplexMt5566(props) {
-  return <AdSenseBanner slot="5566657954" format="autorelaxed" {...props} />;
+// 4. Mt Multiplex (Formerly Slot 5566657954 - Converted to Clean Display Banner)
+export function MultiplexMt5566(props: any) {
+  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
-// 5. Multiplexad (Slot 3880243672 - Autorelaxed Grid)
-export function MultiplexAd3880(props) {
-  return <AdSenseBanner slot="3880243672" format="autorelaxed" {...props} />;
+// 5. Multiplexad (Slot 3880243672 - Converted to Clean Display Banner)
+export function MultiplexAd3880(props: any) {
+  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
-export function MultiplexAd(props) {
-  return <MultiplexAd3880 {...props} />;
+export function MultiplexAd(props: any) {
+  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
 // 6. Po In-Article Native Ad (Slot 2022998762)

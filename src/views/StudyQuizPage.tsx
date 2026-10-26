@@ -1482,12 +1482,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               </button>
             </div>
 
-            {/* Display Ad & Multiplex Grid in Result View */}
+            {/* Clean Display Ad in Result View */}
             <div style={{ marginTop: '20px' }}>
               <DisplayAd label="ADVERTISEMENT" />
-            </div>
-            <div style={{ marginTop: '24px' }}>
-              <MultiplexUt1963 label="RECOMMENDED STUDY MATERIALS" />
             </div>
           </div>
         )}

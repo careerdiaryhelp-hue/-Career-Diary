@@ -260,7 +260,6 @@ export default function ScrollPopupAd() {
               }}
               data-ad-client="ca-pub-2108299943580613"
               data-ad-slot="1202522135"
-              data-ad-format="rectangle"
               data-full-width-responsive="false"
             />
           )}

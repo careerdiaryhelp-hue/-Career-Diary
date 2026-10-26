@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { DisplayAd, SidebarAd, InFeedAd } from './AdSenseBanner';
+import { DisplayAd, SidebarAd, SquareAd, InFeedAd } from './AdSenseBanner';
 import {
   Calendar, User, Eye, Share2, Copy, Check, MessageCircle, Send,
   ArrowLeft, ArrowRight, Tag, BookOpen, Flame, Newspaper
@@ -431,8 +431,8 @@ export default function CurrentAffairsDetailClient({
               </a>
             </div>
 
-            {/* Sidebar AdSense Ad */}
-            <SidebarAd label="ADVERTISEMENT" />
+            {/* Sidebar AdSense Square Display Ad */}
+            <SquareAd label="ADVERTISEMENT" />
 
             {/* Navigation back to all current affairs */}
             <div
