@@ -151,8 +151,8 @@ export default function AdSenseBanner({
           ref={adRef}
           className="adsbygoogle"
           style={{
-            display: (format === 'vertical' || responsive === 'false') ? 'inline-block' : 'block',
-            width: responsive === 'false' ? (insStyle.width || '300px') : '100%',
+            display: layout ? 'block' : ((format === 'vertical' || (responsive === 'false' && !layout)) ? 'inline-block' : 'block'),
+            width: (!layout && responsive === 'false') ? (insStyle.width || '300px') : '100%',
             minHeight: effectiveMinHeight,
             ...(layout ? { textAlign: 'center' } : {}),
             ...insStyle
@@ -162,7 +162,7 @@ export default function AdSenseBanner({
           {...(format ? { 'data-ad-format': format } : {})}
           {...(layout ? { 'data-ad-layout': layout } : {})}
           {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
-          {...(responsive !== 'false' && !layout ? { 'data-full-width-responsive': responsive } : { 'data-full-width-responsive': 'false' })}
+          {...(!layout && responsive !== 'false' ? { 'data-full-width-responsive': responsive } : {})}
           suppressHydrationWarning
         />
       )}
@@ -263,49 +263,40 @@ export function MultiplexAd(props: any) {
   return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
 }
 
-// 6. Po Display Banner Ad (Slot 2022998762)
+// 6. Po In-Article Native Ad (Slot 2022998762)
 export function InArticlePo2022(props: any) {
   return (
     <AdSenseBanner
       slot="2022998762"
-      format="auto"
-      responsive="true"
-      minHeight="250px"
-      label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
+      layout="in-article"
+      format="fluid"
+      style={{ textAlign: 'center' }}
       {...props}
     />
   );
 }
 
-// 7. Hg Display Banner Ad (Slot 1100799336)
+// 7. Hg In-Article Native Ad (Slot 1100799336)
 export function InArticleHg1100(props: any) {
   return (
     <AdSenseBanner
       slot="1100799336"
-      format="auto"
-      responsive="true"
-      minHeight="250px"
-      label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
+      layout="in-article"
+      format="fluid"
+      style={{ textAlign: 'center' }}
       {...props}
     />
   );
 }
 
-// 8. InPost Display Banner Ad (Slot 7544533819)
+// 8. InPost In-Article Native Ad (Slot 7544533819)
 export function InPostAd7544(props: any) {
   return (
     <AdSenseBanner
       slot="7544533819"
-      format="auto"
-      responsive="true"
-      minHeight="250px"
-      label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
+      layout="in-article"
+      format="fluid"
+      style={{ textAlign: 'center' }}
       {...props}
     />
   );

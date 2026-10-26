@@ -70,21 +70,27 @@ function isDiscoverMoreChip(el: Element): boolean {
 }
 
 /**
- * Immediately hides and collapses a "Discover More" chip element and its ad wrapper.
+ * Immediately hides and collapses stray auto-placed chips outside user content.
+ * NEVER hides user's own .adsense-banner-wrapper units!
  */
 function killChip(el: HTMLElement) {
   try {
-    // If inside an .adsense-banner-wrapper, collapse the entire wrapper so empty ADVERTISEMENT label is not visible
-    const wrapper = el.closest ? (el.closest('.adsense-banner-wrapper, .google-auto-placed') as HTMLElement | null) : null;
-    if (wrapper) {
-      wrapper.style.setProperty('display', 'none', 'important');
-      wrapper.style.setProperty('height', '0', 'important');
-      wrapper.style.setProperty('max-height', '0', 'important');
-      wrapper.style.setProperty('min-height', '0', 'important');
-      wrapper.style.setProperty('margin', '0', 'important');
-      wrapper.style.setProperty('padding', '0', 'important');
-      wrapper.style.setProperty('overflow', 'hidden', 'important');
-      wrapper.style.setProperty('visibility', 'hidden', 'important');
+    // PROTECT user's intended in-page ads: NEVER kill .adsense-banner-wrapper!
+    if (el.closest && el.closest('.adsense-banner-wrapper')) {
+      return;
+    }
+
+    // Only collapse stray google-auto-placed floating search intent chips
+    const autoPlaced = el.closest ? (el.closest('.google-auto-placed') as HTMLElement | null) : null;
+    if (autoPlaced) {
+      autoPlaced.style.setProperty('display', 'none', 'important');
+      autoPlaced.style.setProperty('height', '0', 'important');
+      autoPlaced.style.setProperty('max-height', '0', 'important');
+      autoPlaced.style.setProperty('min-height', '0', 'important');
+      autoPlaced.style.setProperty('margin', '0', 'important');
+      autoPlaced.style.setProperty('padding', '0', 'important');
+      autoPlaced.style.setProperty('overflow', 'hidden', 'important');
+      autoPlaced.style.setProperty('visibility', 'hidden', 'important');
     }
 
     el.style.setProperty('display', 'none', 'important');
@@ -101,45 +107,26 @@ function killChip(el: HTMLElement) {
 }
 
 /**
- * Scans the DOM universally for any "Discover More" / recommended chips and kills them.
+ * Scans the DOM for stray Google Auto-Ads search intent chips (never touches user's in-page ads).
  */
 function sweepExistingChips() {
   const candidateSelectors = [
-    '.google-auto-placed',
-    '.adsense-banner-wrapper',
-    '[data-ad-format="related_search"]',
-    '[data-ad-format="relatedsearch"]',
-    '[data-ad-format="autorelaxed"]',
-    '[data-ad-intent]',
-    '[data-text-ad]',
-    '.rscontainer',
-    '.related-search-container',
-    '[aria-label*="discover more" i]',
-    '[aria-label*="related search" i]',
-    '[aria-label*="searches related" i]',
-    '[aria-label*="recommended" i]'
+    '.google-auto-placed[data-ad-format="related_search"]',
+    '.google-auto-placed[data-ad-format="relatedsearch"]',
+    '.google-auto-placed[data-ad-intent]',
+    '.google-auto-placed .rscontainer',
+    '.google-auto-placed .related-search-container'
   ];
 
   candidateSelectors.forEach((sel) => {
     try {
       document.querySelectorAll(sel).forEach((el) => {
-        if (isDiscoverMoreChip(el)) {
+        if (!el.closest('.adsense-banner-wrapper') && isDiscoverMoreChip(el)) {
           killChip(el as HTMLElement);
         }
       });
     } catch (_) {}
   });
-
-  // Universal text content sweep for rogue "Discover more" headings/elements
-  try {
-    const allWrappers = document.querySelectorAll('.adsense-banner-wrapper, .google-auto-placed');
-    allWrappers.forEach((wrapper) => {
-      const text = (wrapper.textContent || '').trim().toLowerCase().replace(/advertisement/gi, '').trim();
-      if (text === 'discover more' || text.startsWith('discover more') || text.startsWith('searches related')) {
-        killChip(wrapper as HTMLElement);
-      }
-    });
-  } catch (_) {}
 }
 
 export default function WebAdScripts() {
@@ -158,17 +145,20 @@ export default function WebAdScripts() {
           if (node.nodeType !== Node.ELEMENT_NODE) continue;
           const el = node as HTMLElement;
 
-          // Direct match
+          // Ignore any nodes inside user in-page ad banners
+          if (el.closest && el.closest('.adsense-banner-wrapper')) continue;
+
+          // Direct match on stray auto-placed chips
           if (isDiscoverMoreChip(el)) {
             killChip(el);
             continue;
           }
 
-          // Descendant match
+          // Descendant match on stray auto-placed chips
           el.querySelectorAll?.(
-            '.google-auto-placed, .adsense-banner-wrapper, [data-ad-format], [aria-label], [data-ad-intent], .rscontainer, .related-search-container, [data-matched-content-ui-type]'
+            '.google-auto-placed[data-ad-format="related_search"], .google-auto-placed[data-ad-intent], .google-auto-placed .rscontainer'
           ).forEach((child) => {
-            if (isDiscoverMoreChip(child)) {
+            if (!child.closest('.adsense-banner-wrapper') && isDiscoverMoreChip(child)) {
               killChip(child as HTMLElement);
             }
           });
@@ -177,7 +167,7 @@ export default function WebAdScripts() {
         // Check attribute changes on existing elements
         if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
           const target = mutation.target;
-          if (isDiscoverMoreChip(target)) {
+          if (!target.closest('.adsense-banner-wrapper') && isDiscoverMoreChip(target)) {
             killChip(target);
           }
         }

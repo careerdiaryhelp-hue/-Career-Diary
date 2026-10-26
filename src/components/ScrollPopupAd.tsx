@@ -103,7 +103,22 @@ export default function ScrollPopupAd() {
     if (typeof window === 'undefined' || !canServeAds()) return;
 
     const el = insRef.current;
-    if (el.dataset.adPushDone) return;
+
+    // Auto-close modal immediately if Google reports ad is unfilled (prevents blank white box)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
+          if (el.getAttribute('data-ad-status') === 'unfilled') {
+            setIsOpen(false);
+          }
+        }
+      });
+    });
+    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
+
+    if (el.dataset.adPushDone) {
+      return () => observer.disconnect();
+    }
 
     // Push after modal animation renders so offset dimensions are confirmed
     const pushTimer = setTimeout(() => {
@@ -115,8 +130,17 @@ export default function ScrollPopupAd() {
       }
     }, 250);
 
+    // Safety fallback: if Google fails to fill the ad within 4.5 seconds, auto-close modal so user never sees a blank box
+    const safetyTimer = setTimeout(() => {
+      if (el && el.getAttribute('data-ad-status') !== 'filled' && !el.querySelector('iframe')) {
+        setIsOpen(false);
+      }
+    }, 4500);
+
     return () => {
       clearTimeout(pushTimer);
+      clearTimeout(safetyTimer);
+      observer.disconnect();
     };
   }, [isOpen]);
 
@@ -260,7 +284,6 @@ export default function ScrollPopupAd() {
               }}
               data-ad-client="ca-pub-2108299943580613"
               data-ad-slot="1202522135"
-              data-full-width-responsive="false"
             />
           )}
         </div>

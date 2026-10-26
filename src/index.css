@@ -2880,54 +2880,13 @@ body:has(.admin-login-wrapper) {
 }
 
 /* =========================================
-   SUPPRESS LOW-PAYING SEARCH INTENT CHIPS ("Discover more")
-   Aggressive multi-pattern suppression to cover
-   all known Google AdSense DOM injection variants.
+   SUPPRESS ROGUE GOOGLE AUTO-ADS FLOATING CHIPS
+   Never targets user in-page .adsense-banner-wrapper units!
    ========================================= */
-
-/* --- Pattern 1: Standard data-ad-format selectors --- */
-.google-auto-placed[data-ad-format="related_search"],
-.google-auto-placed:has([data-ad-format="related_search"]),
-.adsense-banner-wrapper:has([data-ad-format="related_search"]),
-.adsense-banner-wrapper[data-ad-format="related_search"],
-[data-ad-format="related_search"],
-[data-ad-format="relatedsearch"],
-[data-ad-slot="related_search"],
-
-/* --- Pattern 2: aria-label matching (case-insensitive) --- */
-[aria-label*="Discover more" i],
-[aria-label*="Related search" i],
-[aria-label*="Searches related" i],
-[aria-label*="aur padhe" i],
-[aria-label*="aur jaanein" i],
-.google-auto-placed:has([aria-label*="Discover more" i]),
-.google-auto-placed:has([aria-label*="Related search" i]),
-.google-auto-placed:has([aria-label*="Searches related" i]),
-.adsense-banner-wrapper:has([aria-label*="Discover more" i]),
-.adsense-banner-wrapper:has([aria-label*="Related search" i]),
-.adsense-banner-wrapper:has([aria-label*="Searches related" i]),
-.adsense-banner-wrapper:has([aria-label*="aur padhe" i]),
-.adsense-banner-wrapper:has([aria-label*="aur jaanein" i]),
-
-/* --- Pattern 3: intent / text-ad attributes --- */
-[data-ad-intent],
-[data-text-ad],
-.google-auto-placed:has([data-ad-intent]),
-.google-auto-placed:has([data-text-ad]),
-.adsense-banner-wrapper:has([data-ad-intent]),
-.adsense-banner-wrapper:has([data-text-ad]),
-
-/* --- Pattern 4: Target entire auto-placed related search containers (NOT inner children) --- */
 .google-auto-placed[data-ad-format="related_search"],
 .google-auto-placed:has([data-ad-format="related_search"]),
 .google-auto-placed:has(.gsc-resultsbox-visible),
-
-/* --- Pattern 5: Matched content / link units that look like chips --- */
 .google-auto-placed:has([data-matched-content-ui-type]),
-.google-auto-placed:has(a[data-ad-url]),
-.google-auto-placed:has([data-noaft]),
-
-/* --- Pattern 6: Wildcard role on Google auto-placed chip containers --- */
 .google-auto-placed:has([role="listbox"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])),
 .google-auto-placed:has([role="list"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
   display: none !important;
