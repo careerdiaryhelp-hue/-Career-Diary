@@ -2881,21 +2881,56 @@ body:has(.admin-login-wrapper) {
 
 /* =========================================
    SUPPRESS LOW-PAYING SEARCH INTENT CHIPS ("Discover more")
+   Aggressive multi-pattern suppression to cover
+   all known Google AdSense DOM injection variants.
    ========================================= */
+
+/* --- Pattern 1: Standard data-ad-format selectors --- */
 .google-auto-placed[data-ad-format="related_search"],
 .google-auto-placed:has([data-ad-format="related_search"]),
+[data-ad-slot="related_search"],
+
+/* --- Pattern 2: aria-label matching (case-insensitive) --- */
 .google-auto-placed:has([aria-label*="Discover more" i]),
 .google-auto-placed:has([aria-label*="Related search" i]),
+.google-auto-placed:has([aria-label*="Searches related" i]),
+.google-auto-placed:has([aria-label*="aur padhe" i]),
+.google-auto-placed:has([aria-label*="aur jaanein" i]),
+
+/* --- Pattern 3: intent / text-ad attributes --- */
 [data-ad-intent],
-[data-ad-slot="related_search"] {
+[data-text-ad],
+[data-ad-format="relatedsearch"],
+
+/* --- Pattern 4: Class-name based (Google rotates these) --- */
+.google-auto-placed:has(.rscontainer),
+.google-auto-placed:has(.related-search-container),
+.google-auto-placed:has(.gsc-resultsbox-visible),
+div[class*="related_search"],
+div[class*="relatedsearch"],
+div[class*="rscontainer"],
+
+/* --- Pattern 5: Matched content / link units that look like chips --- */
+.google-auto-placed:has([data-matched-content-ui-type]),
+.google-auto-placed:has(a[data-ad-url]),
+.google-auto-placed:has([data-noaft]),
+
+/* --- Pattern 6: Wildcard role on Google auto-placed chip containers --- */
+.google-auto-placed:has([role="listbox"]),
+.google-auto-placed:has([role="list"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
+  max-height: 0 !important;
   min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  overflow: hidden !important;
+  border: none !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
 }
 
 /* =========================================

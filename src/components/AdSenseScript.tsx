@@ -36,23 +36,26 @@ export default function AdSenseScript() {
     }
   }, [isAdmin]);
 
-  // Next.js App Router: re-scan and push unrendered ad units on route transitions
+  // Next.js App Router: individual ad components (AdSenseBanner, DirectAdSense)
+  // handle their own push. No global re-scan needed here — global re-push was
+  // causing double-push which triggered extra "Discover More" / related-search
+  // chip injections from AdSense auto-ads.
+  // Keeping this hook only as a cleanup guard for stale ad units on SPA navigation.
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined') return;
 
-    const timer = setTimeout(() => {
+    // Cleanup stale ad units from previous routes that were not unmounted
+    return () => {
       try {
-        const unpushed = document.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])');
-        unpushed.forEach((ins: any) => {
-          if (!ins.dataset.adPushDone) {
-            ins.dataset.adPushDone = 'true';
-            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        document.querySelectorAll('ins.adsbygoogle[data-ad-status="unfilled"]').forEach((el: any) => {
+          if (el.closest && el.closest('.adsense-banner-wrapper')) {
+            const wrapper = el.closest('.adsense-banner-wrapper');
+            wrapper.style.display = 'none';
+            wrapper.style.height = '0';
           }
         });
       } catch (_) {}
-    }, 250);
-
-    return () => clearTimeout(timer);
+    };
   }, [pathname, isAdmin]);
 
   return null;
