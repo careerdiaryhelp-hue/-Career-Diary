@@ -11,6 +11,20 @@ import { attachAdClickTracker } from '../utils/adShield';
 function isDiscoverMoreChip(el: Element): boolean {
   if (!el) return false;
 
+  // Check text content: if the element text is literally "Discover more" or starts with "Discover more"
+  const rawText = (el.textContent || '').trim().toLowerCase();
+  const strippedText = rawText.replace(/advertisement/gi, '').trim();
+  if (
+    strippedText === 'discover more' ||
+    strippedText.startsWith('discover more') ||
+    strippedText.startsWith('searches related') ||
+    strippedText.startsWith('related search') ||
+    strippedText.startsWith('aur padhe') ||
+    strippedText.startsWith('aur jaanein')
+  ) {
+    return true;
+  }
+
   // Check data-ad-format
   const format = el.getAttribute('data-ad-format');
   if (format === 'related_search' || format === 'relatedsearch' || format === 'autorelaxed') return true;
@@ -56,10 +70,23 @@ function isDiscoverMoreChip(el: Element): boolean {
 }
 
 /**
- * Immediately hides and collapses a "Discover More" chip element.
+ * Immediately hides and collapses a "Discover More" chip element and its ad wrapper.
  */
 function killChip(el: HTMLElement) {
   try {
+    // If inside an .adsense-banner-wrapper, collapse the entire wrapper so empty ADVERTISEMENT label is not visible
+    const wrapper = el.closest ? (el.closest('.adsense-banner-wrapper, .google-auto-placed') as HTMLElement | null) : null;
+    if (wrapper) {
+      wrapper.style.setProperty('display', 'none', 'important');
+      wrapper.style.setProperty('height', '0', 'important');
+      wrapper.style.setProperty('max-height', '0', 'important');
+      wrapper.style.setProperty('min-height', '0', 'important');
+      wrapper.style.setProperty('margin', '0', 'important');
+      wrapper.style.setProperty('padding', '0', 'important');
+      wrapper.style.setProperty('overflow', 'hidden', 'important');
+      wrapper.style.setProperty('visibility', 'hidden', 'important');
+    }
+
     el.style.setProperty('display', 'none', 'important');
     el.style.setProperty('height', '0', 'important');
     el.style.setProperty('max-height', '0', 'important');
@@ -102,6 +129,17 @@ function sweepExistingChips() {
       });
     } catch (_) {}
   });
+
+  // Universal text content sweep for rogue "Discover more" headings/elements
+  try {
+    const allWrappers = document.querySelectorAll('.adsense-banner-wrapper, .google-auto-placed');
+    allWrappers.forEach((wrapper) => {
+      const text = (wrapper.textContent || '').trim().toLowerCase().replace(/advertisement/gi, '').trim();
+      if (text === 'discover more' || text.startsWith('discover more') || text.startsWith('searches related')) {
+        killChip(wrapper as HTMLElement);
+      }
+    });
+  } catch (_) {}
 }
 
 export default function WebAdScripts() {

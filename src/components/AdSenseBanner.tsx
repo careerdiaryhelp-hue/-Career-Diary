@@ -11,7 +11,7 @@ export default function AdSenseBanner({
   responsive = 'true',
   style = {},
   insStyle = {},
-  minHeight = '90px',
+  minHeight = '250px',
   label = 'ADVERTISEMENT'
 }: {
   slot?: string;
@@ -171,65 +171,65 @@ export default function AdSenseBanner({
 }
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
-// 1. Display Ad (Slot 1202522135) - Pure Display Horizontal Banner (Blocks Search Intent chips)
+// 1. Display Ad (Slot 1202522135) - Responsive Graphic & Image Banner Ad Unit (300x250, 336x280, 728x90, Rich Media)
 export function DisplayAd(props: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
-      format="horizontal"
-      responsive="false"
-      minHeight="90px"
+      format="auto"
+      responsive="true"
+      minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '728px', margin: '0 auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', maxWidth: '728px', minHeight: '90px', display: 'block', ...(props.insStyle || {}) }}
+      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
 }
 
-// 2. Sidebar Ad (Slot 1202522135) - Fixed 160x600 Vertical Skyscraper (Prevents Discover More Chips in narrow sidebar)
+// 2. Sidebar Ad (Slot 1202522135) - Fixed 160x600 Vertical Skyscraper or Responsive Tower Banner
 export function SidebarAd(props: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
-      format="vertical"
-      responsive="false"
+      format="auto"
+      responsive="true"
       minHeight="600px"
       label="ADVERTISEMENT"
-      style={{ width: '160px', height: '600px', margin: '0 auto', ...(props.style || {}) }}
-      insStyle={{ width: '160px', height: '600px', display: 'inline-block', ...(props.insStyle || {}) }}
+      style={{ width: '100%', maxWidth: '300px', margin: '0 auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '600px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
 }
 
-// 3. Rectangle Ad (Slot 1202522135) - Standard 300x250 Medium Rectangle (Strict Display Banner, Prevents Search Chips)
+// 3. Rectangle Ad (Slot 1202522135) - Standard 300x250 Medium Rectangle Display Banner
 export function RectangleAd(props: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
-      format={null}
-      responsive="false"
+      format="auto"
+      responsive="true"
       minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '300px', height: '250px', maxWidth: '100%', margin: '0 auto', ...(props.style || {}) }}
-      insStyle={{ width: '300px', height: '250px', display: 'inline-block', ...(props.insStyle || {}) }}
+      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
 }
 
-// 4. Square Ad (Slot 1202522135) - 300x250 Fixed Square Display Banner (Blocks Recommended / Search Intent chips)
+// 4. Square Ad (Slot 1202522135) - 300x250 Fixed Square Display Banner
 export function SquareAd(props: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
-      format={null}
-      responsive="false"
+      format="auto"
+      responsive="true"
       minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '300px', height: '250px', maxWidth: '100%', margin: '0 auto', ...(props.style || {}) }}
-      insStyle={{ width: '300px', height: '250px', display: 'inline-block', ...(props.insStyle || {}) }}
+      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(props.style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
       {...props}
     />
   );
