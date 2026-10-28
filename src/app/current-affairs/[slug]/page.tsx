@@ -15,8 +15,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
-  const title = `${post.title} (50 MCQs • 30 Min Live Test) | Career Diary`;
-  const description = post.description || `${post.title} - Attempt 50 MCQs Current Affairs practice mock test with 30-minute timer on Career Diary.`;
+  const totalQ = Array.isArray(post.questions) && post.questions.length > 0 ? post.questions.length : (post.totalQuestions || 10);
+  const durationM = post.durationMinutes || 30;
+  const title = `${post.title} (${totalQ} MCQs • ${durationM} Min Live Test) | Career Diary`;
+  const description = post.description || `${post.title} - Attempt ${totalQ} MCQs Current Affairs practice mock test with ${durationM}-minute timer on Career Diary.`;
   const url = `https://careerdiary.in/current-affairs/${slug}`;
 
   return {

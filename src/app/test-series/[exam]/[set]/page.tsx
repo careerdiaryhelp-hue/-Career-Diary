@@ -28,23 +28,19 @@ export async function generateMetadata({
   params: Promise<{ exam: string; set: string }>;
 }): Promise<Metadata> {
   const { exam, set: setParam } = await params;
-  let set: any = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+  const cleanExam = String(exam || '').toLowerCase().trim().replace(/_/g, '-');
+  const cleanSet = String(setParam || '').toLowerCase().trim().replace(/[-_]/g, '');
+
+  const allDynamic = await fetchTestSeriesOnce();
+  let set: any = (allDynamic || []).find((s: any) => {
+    const sExam = String(s.examSlug || s.exam || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const sSet = String(s.setSlug || s.set || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const sSlug = String(s.slug || s.id || '').toLowerCase().trim();
+    return (sExam === cleanExam && sSet === cleanSet) || sSlug === cleanSet || sSlug === String(setParam || '').toLowerCase().trim();
+  }) || (await fetchTestSeriesBySlug(setParam));
 
   if (!set) {
-    const allDynamic = await fetchTestSeriesOnce();
-    const dynamic = (allDynamic || []).find(
-      (s: any) => (s.slug === setParam || s.setSlug === setParam || s.id === setParam)
-    ) || (await fetchTestSeriesBySlug(setParam));
-    if (dynamic) {
-      set = {
-        ...dynamic,
-        title: dynamic.title,
-        subtitle: dynamic.description || dynamic.subtitle || `${dynamic.totalQuestions || 150} Questions CBT Mock Test`,
-        total_questions: dynamic.totalQuestions || dynamic.total_questions || 150,
-        exam: dynamic.exam || 'Govt Exam',
-        urlPath: dynamic.urlPath || `/test-series/${exam}/${setParam}`
-      };
-    }
+    set = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
   }
 
   if (!set) {
@@ -53,9 +49,13 @@ export async function generateMetadata({
     };
   }
 
+  const qCount = Array.isArray(set.questions) && set.questions.length > 0
+    ? set.questions.length
+    : (set.totalQuestions || set.total_questions || 150);
+
   const title = `${set.title} 2026 – Free Online Test Series & Practice Set | Career Diary`;
-  const description = `${set.subtitle}. Practice ${set.total_questions} questions for ${set.exam} with real-time CBT timer, negative marking (+4 / -1), and bilingual step-by-step solutions on Career Diary.`;
-  const url = `https://careerdiary.in${set.urlPath}`;
+  const description = `${set.subtitle || set.description || `${qCount} Questions CBT Mock Test`}. Practice ${qCount} questions for ${set.exam || 'Govt Exam'} with real-time CBT timer, negative marking (+4 / -1), and bilingual step-by-step solutions on Career Diary.`;
+  const url = `https://careerdiary.in${set.urlPath || `/test-series/${exam}/${setParam}`}`;
 
   return {
     title,
@@ -79,21 +79,26 @@ export default async function TestSeriesSetRoute({
   params: Promise<{ exam: string; set: string }>;
 }) {
   const { exam, set: setParam } = await params;
-  let set: any = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+  const cleanExam = String(exam || '').toLowerCase().trim().replace(/_/g, '-');
+  const cleanSet = String(setParam || '').toLowerCase().trim().replace(/[-_]/g, '');
 
+  // 1. Check dynamic test series from Firestore first so admin updates take effect immediately
+  const allDynamic = await fetchTestSeriesOnce();
+  let set: any = (allDynamic || []).find((s: any) => {
+    const sExam = String(s.examSlug || s.exam || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const sSet = String(s.setSlug || s.set || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const sSlug = String(s.slug || s.id || '').toLowerCase().trim();
+    return (sExam === cleanExam && sSet === cleanSet) || sSlug === cleanSet || sSlug === String(setParam || '').toLowerCase().trim();
+  }) || (await fetchTestSeriesBySlug(setParam));
+
+  // 2. Fallback to hardcoded sets if not found in Firestore
   if (!set) {
-    const allDynamic = await fetchTestSeriesOnce();
-    const dynamic = (allDynamic || []).find(
-      (s: any) => (s.slug === setParam || s.setSlug === setParam || s.id === setParam)
-    ) || (await fetchTestSeriesBySlug(setParam));
-    if (dynamic) {
-      set = dynamic;
-    }
+    set = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
   }
 
   if (!set) {
     notFound();
   }
 
-  return <StudyQuizPage initialSlug={set.slug || set.id} initialMode="hub" />;
+  return <StudyQuizPage initialSlug={set.slug || set.id} initialSet={set} initialMode="study" />;
 }

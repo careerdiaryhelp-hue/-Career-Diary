@@ -10,7 +10,7 @@ import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
   Clock, CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, ArrowLeft,
   Bookmark, Flag, HelpCircle, Check, Eye, EyeOff, Trophy, AlertTriangle,
-  Flame, BookOpen, Share2, MessageCircle, Send, Copy, Calendar, Tag, User
+  Flame, BookOpen, Share2, MessageCircle, Send, Copy, Calendar, Tag, User, Newspaper
 } from 'lucide-react';
 
 interface CurrentAffairsPost {
@@ -34,8 +34,8 @@ export default function CurrentAffairsQuizClient({
   post: CurrentAffairsPost;
   relatedPosts?: any[];
 }) {
-  // Use post questions if provided, otherwise extract from post.content (quizData, HTML cards), or fallback to default 50
-  const questions: CAQuestion[] = React.useMemo(() => {
+  // Extract questions from post.questions or post.content
+  const extractedQuestions = React.useMemo(() => {
     if (Array.isArray(post.questions) && post.questions.length > 0) {
       return post.questions;
     }
@@ -45,13 +45,35 @@ export default function CurrentAffairsQuizClient({
         return extracted;
       }
     }
-    return default50CurrentAffairsQuestions;
+    return [];
   }, [post.questions, post.content]);
 
-  const totalQuestions = questions.length;
-  const durationSeconds = (post.durationMinutes || 30) * 60; // 30 mins = 1800s
+  // Use extracted questions if available; otherwise fallback only if no custom content was provided
+  const questions: CAQuestion[] = React.useMemo(() => {
+    if (extractedQuestions.length > 0) {
+      return extractedQuestions;
+    }
+    if (!post.content) {
+      return default50CurrentAffairsQuestions;
+    }
+    return [];
+  }, [extractedQuestions, post.content]);
 
-  const [mode, setMode] = useState<'test' | 'study' | 'result'>('test');
+  const totalQuestions = questions.length;
+  const durationMinutes = post.durationMinutes || (totalQuestions <= 15 ? 10 : (totalQuestions <= 30 ? 20 : 30));
+  const durationSeconds = durationMinutes * 60;
+
+  const [mode, setMode] = useState<'test' | 'study' | 'article' | 'result'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const urlMode = p.get('mode') as any;
+      if (urlMode === 'study' || urlMode === 'test' || urlMode === 'article') {
+        return urlMode;
+      }
+    }
+    if (totalQuestions === 0 && post.content) return 'article';
+    return 'test';
+  });
   const [currentIdx, setCurrentIdx] = useState(0);
 
   // Test mode states
@@ -225,7 +247,7 @@ export default function CurrentAffairsQuizClient({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', padding: '3px 12px', borderRadius: '14px', fontSize: '0.78rem', fontWeight: 700, color: '#fef08a', marginBottom: '8px', textTransform: 'uppercase' }}>
-                <Flame size={14} color="#f59e0b" /> 50 Questions • 30 Minutes Live MCQ Mock Test
+                <Flame size={14} color="#f59e0b" /> {totalQuestions > 0 ? `${totalQuestions} Questions • ${durationMinutes} Minutes Live MCQ Mock Test` : 'Daily Current Affairs & GK Notes'}
               </div>
               <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(1.3rem, 3.2vw, 1.9rem)', fontWeight: 800, margin: '0 0 6px 0', lineHeight: 1.3 }}>
                 {post.title}
@@ -235,57 +257,87 @@ export default function CurrentAffairsQuizClient({
                   <Calendar size={14} />
                   <span>{post.date || post.postDate || 'Live Today'}</span>
                 </div>
-                <span>•</span>
-                <span>Exam Pattern: +1.00 Mark, -0.25 Negative</span>
+                {totalQuestions > 0 && (
+                  <>
+                    <span>•</span>
+                    <span>Exam Pattern: +1.00 Mark, -0.25 Negative</span>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Mode Switcher Buttons */}
-            <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '5px', borderRadius: '10px' }}>
-              <button
-                onClick={() => setMode('test')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: mode === 'test' ? '#2563eb' : 'transparent',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Clock size={15} /> 30-Min Test
-              </button>
-              <button
-                onClick={() => setMode('study')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: mode === 'study' ? '#2563eb' : 'transparent',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <BookOpen size={15} /> Practice Mode
-              </button>
+            <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '5px', borderRadius: '10px', flexWrap: 'wrap' }}>
+              {totalQuestions > 0 && (
+                <>
+                  <button
+                    onClick={() => setMode('test')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '7px',
+                      border: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: mode === 'test' ? '#2563eb' : 'transparent',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Clock size={15} /> {durationMinutes}-Min Test
+                  </button>
+                  <button
+                    onClick={() => setMode('study')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '7px',
+                      border: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: mode === 'study' ? '#2563eb' : 'transparent',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <BookOpen size={15} /> Practice Mode
+                  </button>
+                </>
+              )}
+
+              {post.content && (
+                <button
+                  onClick={() => setMode('article')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: mode === 'article' ? '#2563eb' : 'transparent',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Newspaper size={15} /> Article / HTML
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ───────── 1. TEST MODE (30 Min Countdown + 50 MCQs) ───────── */}
-        {mode === 'test' && (
+        {/* ───────── 1. TEST MODE ───────── */}
+        {mode === 'test' && totalQuestions > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(0, 340px)', gap: '20px' }} className="ca-quiz-grid">
             {/* Left: Active Question Box */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -842,14 +894,14 @@ export default function CurrentAffairsQuizClient({
                 Test Completed Successfully!
               </h2>
               <p style={{ margin: '0 0 20px 0', fontSize: '1rem', color: '#e0f2fe' }}>
-                You have submitted the 50 MCQs Current Affairs Test. Here is your detailed performance report:
+                You have submitted the {totalQuestions} MCQs Current Affairs Test. Here is your detailed performance report:
               </p>
 
               {/* Stats Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px', maxWidth: '800px', margin: '0 auto' }}>
                 <div style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', borderRadius: '12px', padding: '16px 12px' }}>
                   <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 700 }}>TOTAL SCORE</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fef08a', marginTop: '4px' }}>{score} / 50</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fef08a', marginTop: '4px' }}>{score} / {totalQuestions}</div>
                 </div>
                 <div style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', borderRadius: '12px', padding: '16px 12px' }}>
                   <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 700 }}>ACCURACY</div>
@@ -1008,6 +1060,134 @@ export default function CurrentAffairsQuizClient({
           </div>
         )}
 
+        {/* ───────── 4. FULL ARTICLE / NOTES VIEW ───────── */}
+        {mode === 'article' && post.content && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(0, 320px)', gap: '24px' }} className="ca-detail-grid">
+            <article
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '24px 28px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              }}
+            >
+              {totalQuestions > 0 && (
+                <div style={{
+                  background: '#eff6ff',
+                  border: '1.5px solid #bfdbfe',
+                  borderRadius: '12px',
+                  padding: '14px 18px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}>
+                  <div style={{ fontSize: '0.92rem', color: '#1e40af', fontWeight: 600 }}>
+                    💡 <strong>Live Test Available:</strong> You can attempt these {totalQuestions} questions with real-time timer and instant scorecard!
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => setMode('test')}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.84rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Start Live Test ({durationMinutes}m)
+                    </button>
+                    <button
+                      onClick={() => setMode('study')}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#ffffff',
+                        color: '#2563eb',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '6px',
+                        fontSize: '0.84rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Study Mode
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(() => {
+                const lower = post.content.toLowerCase();
+                const isFullDoc = lower.includes('<!doctype') || lower.includes('<html') || lower.includes('<script');
+
+                if (isFullDoc) {
+                  return (
+                    <div style={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#ffffff' }}>
+                      <iframe
+                        srcDoc={post.content}
+                        title={post.title}
+                        sandbox="allow-same-origin allow-scripts"
+                        style={{
+                          width: '100%',
+                          minHeight: '850px',
+                          border: 'none',
+                          display: 'block',
+                          background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
+                const scopedHtml = post.content.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (_, css) => {
+                  const scopedCss = css
+                    .replace(/\b(html|body)\b/gi, '.sr-rich-html-content')
+                    .replace(/:root/gi, '.sr-rich-html-content');
+                  return `<style>${scopedCss}</style>`;
+                });
+
+                return (
+                  <div
+                    className="sr-rich-html-content"
+                    dangerouslySetInnerHTML={{ __html: scopedHtml }}
+                  />
+                );
+              })()}
+            </article>
+
+            {/* Sidebar */}
+            <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <SquareAd label="SPONSORED" />
+              {relatedPosts.length > 0 && (
+                <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', padding: '18px 20px' }}>
+                  <h3 style={{ margin: '0 0 14px 0', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                    Recent Current Affairs
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {relatedPosts.map((rp) => (
+                      <a
+                        key={rp.id || rp.slug}
+                        href={`/current-affairs/${rp.slug || rp.id}`}
+                        style={{ textDecoration: 'none', color: '#1e293b', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        <ArrowRight size={13} color="#2563eb" />
+                        <span style={{ lineHeight: 1.4 }}>{rp.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+
         {/* ───────── SUBMIT CONFIRMATION MODAL ───────── */}
         {showSubmitModal && (
           <div
@@ -1039,7 +1219,7 @@ export default function CurrentAffairsQuizClient({
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <AlertTriangle size={48} color="#f59e0b" style={{ margin: '0 auto 10px' }} />
                 <h3 style={{ margin: '0 0 6px', fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
-                  Submit 50 MCQs Test?
+                  Submit {totalQuestions} MCQs Test?
                 </h3>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                   Please review your attempt summary before final submission.

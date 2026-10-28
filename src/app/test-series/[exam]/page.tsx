@@ -18,17 +18,20 @@ export async function generateMetadata({
   params: Promise<{ exam: string }>;
 }): Promise<Metadata> {
   const { exam } = await params;
-  let sets: any[] = getQuizSetsByExam(exam);
+  const clean = String(exam || '').toLowerCase().replace(/_/g, '-');
 
-  if (sets.length === 0) {
-    const all = await fetchTestSeriesOnce();
-    const clean = String(exam || '').toLowerCase().replace(/_/g, '-');
-    sets = (all || []).filter(
-      (s: any) =>
-        (s.examSlug && s.examSlug.toLowerCase().replace(/_/g, '-') === clean) ||
-        (s.exam && s.exam.toLowerCase().replace(/[^a-z0-9]+/g, '-') === clean)
-    );
-  }
+  const allDynamic = await fetchTestSeriesOnce();
+  const dynamicForExam = (allDynamic || []).filter(
+    (s: any) =>
+      (s.examSlug && s.examSlug.toLowerCase().replace(/_/g, '-') === clean) ||
+      (s.exam && s.exam.toLowerCase().replace(/[^a-z0-9]+/g, '-') === clean)
+  );
+  const staticSets = getQuizSetsByExam(exam);
+  const dynamicIds = new Set(dynamicForExam.map((s: any) => s.slug || s.id));
+  const sets = [
+    ...dynamicForExam,
+    ...staticSets.filter((s: any) => !dynamicIds.has(s.slug) && !dynamicIds.has(s.id))
+  ];
 
   if (sets.length === 0) {
     return {
@@ -63,21 +66,24 @@ export default async function TestSeriesExamRoute({
   params: Promise<{ exam: string }>;
 }) {
   const { exam } = await params;
-  let sets: any[] = getQuizSetsByExam(exam);
+  const clean = String(exam || '').toLowerCase().replace(/_/g, '-');
 
-  if (sets.length === 0) {
-    const all = await fetchTestSeriesOnce();
-    const clean = String(exam || '').toLowerCase().replace(/_/g, '-');
-    sets = (all || []).filter(
-      (s: any) =>
-        (s.examSlug && s.examSlug.toLowerCase().replace(/_/g, '-') === clean) ||
-        (s.exam && s.exam.toLowerCase().replace(/[^a-z0-9]+/g, '-') === clean)
-    );
-  }
+  const allDynamic = await fetchTestSeriesOnce();
+  const dynamicForExam = (allDynamic || []).filter(
+    (s: any) =>
+      (s.examSlug && s.examSlug.toLowerCase().replace(/_/g, '-') === clean) ||
+      (s.exam && s.exam.toLowerCase().replace(/[^a-z0-9]+/g, '-') === clean)
+  );
+  const staticSets = getQuizSetsByExam(exam);
+  const dynamicIds = new Set(dynamicForExam.map((s: any) => s.slug || s.id));
+  const sets = [
+    ...dynamicForExam,
+    ...staticSets.filter((s: any) => !dynamicIds.has(s.slug) && !dynamicIds.has(s.id))
+  ];
 
   if (sets.length === 0) {
     notFound();
   }
 
-  return <StudyQuizPage initialSlug={sets[0].slug || sets[0].id} initialMode="hub" />;
+  return <StudyQuizPage initialSlug={sets[0].slug || sets[0].id} initialSet={sets[0]} initialMode="hub" />;
 }

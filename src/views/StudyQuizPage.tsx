@@ -37,6 +37,7 @@ import {
 interface StudyQuizPageProps {
   initialSlug?: string;
   initialMode?: 'hub' | 'study' | 'test';
+  initialSet?: any;
 }
 
 function normalizeToQuizSet(item: any): QuizSet {
@@ -91,6 +92,7 @@ function normalizeToQuizSet(item: any): QuizSet {
     title: item.title,
     subtitle: item.description || item.subtitle || `${qCount} Questions • Full Syllabus Mock Test`,
     description: item.description || item.subtitle || '',
+    content: item.content || '',
     total_questions: qCount,
     durationMinutes: Number(item.durationMinutes) || 135,
     marksPerQuestion: marks,
@@ -103,10 +105,19 @@ function normalizeToQuizSet(item: any): QuizSet {
   };
 }
 
-export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialMode = 'hub' }: StudyQuizPageProps) {
-  const initialBaseSets = useMemo(() => getAllQuizSets(), []);
+export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialMode = 'hub', initialSet }: StudyQuizPageProps) {
+  const initialBaseSets = useMemo(() => {
+    const staticSets = getAllQuizSets();
+    if (initialSet) {
+      const converted = normalizeToQuizSet(initialSet);
+      return [converted, ...staticSets.filter(s => s.id !== converted.id && s.slug !== converted.slug)];
+    }
+    return staticSets;
+  }, [initialSet]);
+
   const [allSets, setAllSets] = useState<QuizSet[]>(initialBaseSets);
   const [selectedSet, setSelectedSet] = useState<QuizSet>(() => {
+    if (initialSet) return normalizeToQuizSet(initialSet);
     return getQuizSetBySlug(initialSlug) || initialBaseSets[0];
   });
 
@@ -953,6 +964,36 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                 );
               })}
             </div>
+
+            {filteredStudyQuestions.length === 0 && (
+              selectedSet.content ? (
+                <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', overflow: 'hidden' }}>
+                  {(() => {
+                    const lower = selectedSet.content.toLowerCase();
+                    const isFullDoc = lower.includes('<!doctype') || lower.includes('<html') || lower.includes('<script');
+                    if (isFullDoc) {
+                      return (
+                        <iframe
+                          srcDoc={selectedSet.content}
+                          title={selectedSet.title}
+                          sandbox="allow-same-origin allow-scripts"
+                          style={{ width: '100%', minHeight: '850px', border: 'none', background: '#ffffff' }}
+                        />
+                      );
+                    }
+                    return (
+                      <div className="sr-rich-html-content" dangerouslySetInnerHTML={{ __html: selectedSet.content }} />
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                  <HelpCircle size={40} style={{ margin: '0 auto 12px', color: '#94a3b8' }} />
+                  <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>No questions available</h3>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>No questions match your filter criteria.</p>
+                </div>
+              )
+            )}
 
             {/* Ad Banner after questions list */}
             <div style={{ marginTop: '36px' }}>

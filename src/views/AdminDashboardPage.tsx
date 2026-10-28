@@ -6003,6 +6003,30 @@ export default function AdminDashboardPage({
                     boxSizing: 'border-box'
                   }}
                 />
+                {(() => {
+                  const detected = extractQuestionsFromContent(pyqForm.content);
+                  if (detected.length > 0) {
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#ecfdf5',
+                        border: '1.5px solid #a7f3d0',
+                        borderRadius: '8px',
+                        color: '#065f46',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#059669" />
+                        <span>✅ {detected.length} Questions Detected! The PYQ Quiz Test will use these questions with +1.00 / -0.25 scoring.</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Live HTML Preview (Sandboxed & Isolated) */}
@@ -6938,6 +6962,30 @@ export default function AdminDashboardPage({
                     boxSizing: 'border-box'
                   }}
                 />
+                {(() => {
+                  const detected = extractQuestionsFromContent(tsForm.content);
+                  if (detected.length > 0) {
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#fdf2f8',
+                        border: '1.5px solid #fbcfe8',
+                        borderRadius: '8px',
+                        color: '#9d174d',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#be185d" />
+                        <span>✅ {detected.length} Questions Detected! The Full Length CBT Mock Test will use these questions with +{tsForm.marksPerQuestion || 4} / -{tsForm.negativeMarks || 1} scoring.</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Live HTML Preview (Sandboxed & Isolated) */}

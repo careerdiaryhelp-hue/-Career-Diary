@@ -37,6 +37,7 @@ export interface QuizSet {
   totalMarks: number;
   category: string;
   badge?: string;
+  content?: string;
   topicsSummary: { [topic: string]: number };
   questions: Question[];
 }
