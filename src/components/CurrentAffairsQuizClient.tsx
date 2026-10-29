@@ -27,6 +27,24 @@ interface CurrentAffairsPost {
   totalQuestions?: number;
 }
 
+function renderOptionContent(text: string) {
+  if (!text) return '';
+  const imgTagMatch = text.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (imgTagMatch) {
+    const remainingText = text.replace(/<img[^>]*>/gi, '').trim();
+    return (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
+        <img src={imgTagMatch[1]} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+        {remainingText && <span>{remainingText}</span>}
+      </span>
+    );
+  }
+  if (/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(text.trim())) {
+    return <img src={text.trim()} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />;
+  }
+  return text;
+}
+
 export default function CurrentAffairsQuizClient({
   post,
   relatedPosts = []
@@ -369,9 +387,16 @@ export default function CurrentAffairsQuizClient({
                 </div>
 
                 {/* Question Text */}
-                <div style={{ fontSize: '1.18rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.55, marginBottom: '22px' }}>
+                <div style={{ fontSize: '1.18rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.55, marginBottom: '22px', whiteSpace: 'pre-line' }}>
                   {currentQ?.question}
                 </div>
+
+                {/* Optional Question Image */}
+                {currentQ?.image && (
+                  <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                    <img src={currentQ.image} alt={`Question ${currentQ.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                  </div>
+                )}
 
                 {/* 4 Clickable Options (2x2 square-like grid) */}
                 <div
@@ -420,8 +445,8 @@ export default function CurrentAffairsQuizClient({
                         >
                           {key}
                         </div>
-                        <div style={{ fontSize: '1.02rem', color: isSelected ? '#1e3a8a' : '#1e293b', fontWeight: isSelected ? 600 : 500, lineHeight: 1.45 }}>
-                          {optText}
+                        <div style={{ fontSize: '1.02rem', color: isSelected ? '#1e3a8a' : '#1e293b', fontWeight: isSelected ? 600 : 500, lineHeight: 1.45, whiteSpace: 'pre-line' }}>
+                          {renderOptionContent(optText)}
                         </div>
                       </div>
                     );
@@ -756,9 +781,16 @@ export default function CurrentAffairsQuizClient({
                       </button>
                     </div>
 
-                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.5, marginBottom: '18px' }}>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.5, marginBottom: '18px', whiteSpace: 'pre-line' }}>
                       {q.question}
                     </div>
+
+                    {/* Optional Question Image */}
+                    {q.image && (
+                      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                        <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                      </div>
+                    )}
 
                     {/* Options (2x2 square-like grid) */}
                     <div
@@ -830,7 +862,7 @@ export default function CurrentAffairsQuizClient({
                             >
                               {key}
                             </div>
-                            <span style={{ fontWeight: isUserChoice || (isRevealed && isRightAns) ? 600 : 500 }}>{optText}</span>
+                            <span style={{ fontWeight: isUserChoice || (isRevealed && isRightAns) ? 600 : 500, whiteSpace: 'pre-line' }}>{renderOptionContent(optText)}</span>
                             {isRevealed && isRightAns && <CheckCircle2 size={18} color="#16a34a" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
                             {isRevealed && isUserChoice && !isRightAns && <XCircle size={18} color="#dc2626" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
                           </div>
@@ -844,7 +876,7 @@ export default function CurrentAffairsQuizClient({
                         <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem', marginBottom: '4px' }}>
                           ✅ सही उत्तर: Option ({q.correct_answer}) - {q.options[q.correct_answer]}
                         </div>
-                        <div style={{ fontSize: '0.92rem', color: '#1e293b', lineHeight: 1.6 }}>
+                        <div style={{ fontSize: '0.92rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                           <strong>विस्तृत व्याख्या:</strong> {q.solution}
                         </div>
                       </div>
@@ -990,9 +1022,16 @@ export default function CurrentAffairsQuizClient({
                         )}
                       </div>
 
-                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px', whiteSpace: 'pre-line' }}>
                         {q.question}
                       </div>
+
+                      {/* Optional Question Image */}
+                      {q.image && (
+                        <div style={{ marginBottom: '14px', textAlign: 'center' }}>
+                          <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                        </div>
+                      )}
 
                       {/* Options Review */}
                       <div
@@ -1038,7 +1077,7 @@ export default function CurrentAffairsQuizClient({
                               }}
                             >
                               <span style={{ fontWeight: 800 }}>({k})</span>
-                              <span>{text}</span>
+                              <span style={{ whiteSpace: 'pre-line' }}>{renderOptionContent(text)}</span>
                               {isRight && <Check size={14} color="#16a34a" style={{ marginLeft: 'auto' }} />}
                               {isUserPicked && !isRight && <XCircle size={14} color="#dc2626" style={{ marginLeft: 'auto' }} />}
                             </div>
@@ -1048,7 +1087,7 @@ export default function CurrentAffairsQuizClient({
 
                       {/* Solution */}
                       <div style={{ background: '#f8fafc', borderLeft: '4px solid #2563eb', padding: '12px 16px', borderRadius: '6px' }}>
-                        <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6 }}>
+                        <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                           <strong>विस्तृत उत्तर:</strong> {q.solution}
                         </div>
                       </div>

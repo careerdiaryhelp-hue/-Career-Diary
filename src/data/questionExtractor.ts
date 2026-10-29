@@ -6,23 +6,83 @@ export interface CAQuestion {
     B: string;
     C: string;
     D: string;
+    [key: string]: string;
   };
-  correct_answer: 'A' | 'B' | 'C' | 'D';
+  correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   solution: string;
+  image?: string;
+}
+
+/**
+ * Cleans HTML markup while preserving structure:
+ * - Converts tables to text with dividers
+ * - Converts <br>, <p>, <div>, <li>, <tr> to line breaks (\n)
+ * - Decodes common HTML entities
+ * - Removes remaining tags
+ */
+export function cleanHtmlText(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  return html
+    .replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (_all, tbl) => {
+      return (
+        '\n' +
+        tbl
+          .replace(/<\/tr>/gi, '\n')
+          .replace(/<\/t[dh]>/gi, '  |  ')
+          .replace(/<[^>]*>/g, '') +
+        '\n'
+      );
+    })
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|li|h[1-6]|tr)>/gi, '\n')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&mdash;|&ndash;/g, '—')
+    .replace(/<[^>]*>/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Extracts the first image URL from an HTML snippet or tag
+ */
+export function extractImageFromHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  const m = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  return m ? m[1].trim() : '';
+}
+
+/**
+ * Determines whether a line of text represents an MCQ option
+ * (e.g. "(A) Option text" or "A. Option text")
+ * while rejecting matching list lines like "A. गंधक — 1. मुंगेर"
+ */
+function isOptionLine(line: string): boolean {
+  if (!line) return false;
+  // If line contains a matching delimiter (e.g. "A. item — 1. target" or "A. item : target"), it's a matching list item
+  if (/^[A-D]\.?[ \t]+[^\n—–\-:]+[—–\-:][ \t]*/i.test(line)) return false;
+  return /^\(?([A-D])\)[\.\:\-\s]+/i.test(line) || /^[A-D][\.\:\)][ \t]+/i.test(line);
 }
 
 /**
  * Robust parser that extracts MCQs / questions from:
- * 1. JavaScript arrays (e.g. const quizData = [ { q: "...", options: [...], ans: 1, expl: "..." }, ... ])
- * 2. HTML cards (e.g. class="question-card", "q-card", "quiz-card", "mcq-card")
- *    Supports radio buttons with value="A", checkAnswer('q1', 'B'), explanation-box, etc.
+ * 1. JavaScript arrays (e.g. const quizData = [ { q: "...", image: "...", options: [...], ans: 1, expl: "..." }, ... ])
+ * 2. HTML cards & boxes (e.g. class="question-box", "question-card", "q-card", "quiz-card", "mcq-card")
+ *    Supports question images (<img>), matching lists (<br>, <table>), <ul class="options">, explanation boxes, etc.
  * 3. HTML tables / numbered question blocks (e.g. Q1. or प्र. 1) with (A), (B), (C), (D) options)
  */
 export function extractQuestionsFromContent(content: string): CAQuestion[] {
   if (!content || typeof content !== 'string') return [];
 
-  // Strategy 1: Bracket-matching search for JavaScript array in content
+  // ─────────────────────────────────────────────────────────────
+  // Strategy 1: Bracket-matching search for JavaScript array
   // Handles: const quizData = [ ... ]; var questions = [ ... ]; let mcqs = [ ... ];
+  // ─────────────────────────────────────────────────────────────
   const arrayStartMatch = content.match(/(?:quizData|questions|mcqs|testData|quizItems)\s*=\s*\[/i);
   let bracketStart = -1;
   if (arrayStartMatch && arrayStartMatch.index !== undefined) {
@@ -71,23 +131,35 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
             const rawQ = String(item.q || item.question || item.title || '').trim();
             if (!rawQ) return;
 
-            // Remove leading question numbers e.g. "1. ", "Q1. ", "प्र. 1) ", etc.
-            const cleanQ = rawQ.replace(/^(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)[\.\:\)\-\s]+/i, '').trim();
+            let img = String(item.image || item.img || item.imageUrl || item.pic || '').trim();
+            if (!img) img = extractImageFromHtml(rawQ);
+
+            // Clean question text and remove leading question numbers
+            const cleanQ = cleanHtmlText(rawQ.replace(/<img[^>]*>/gi, ''))
+              .replace(/^(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)[\.\:\)\-\s]+/i, '')
+              .trim();
+
+            const cleanOpt = (val: any) => {
+              const s = String(val ?? '').trim();
+              const optImg = extractImageFromHtml(s);
+              if (optImg && !s.replace(/<img[^>]*>/gi, '').trim()) return optImg;
+              return cleanHtmlText(s).replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim();
+            };
 
             let opts = { A: '', B: '', C: '', D: '' };
             if (Array.isArray(item.options)) {
               opts = {
-                A: String(item.options[0] ?? '').replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim(),
-                B: String(item.options[1] ?? '').replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim(),
-                C: String(item.options[2] ?? '').replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim(),
-                D: String(item.options[3] ?? '').replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim(),
+                A: cleanOpt(item.options[0]),
+                B: cleanOpt(item.options[1]),
+                C: cleanOpt(item.options[2]),
+                D: cleanOpt(item.options[3]),
               };
             } else if (item.options && typeof item.options === 'object') {
               opts = {
-                A: String(item.options.A || item.options.a || item.options['1'] || '').trim(),
-                B: String(item.options.B || item.options.b || item.options['2'] || '').trim(),
-                C: String(item.options.C || item.options.c || item.options['3'] || '').trim(),
-                D: String(item.options.D || item.options.d || item.options['4'] || '').trim(),
+                A: cleanOpt(item.options.A || item.options.a || item.options['1']),
+                B: cleanOpt(item.options.B || item.options.b || item.options['2']),
+                C: cleanOpt(item.options.C || item.options.c || item.options['3']),
+                D: cleanOpt(item.options.D || item.options.d || item.options['4']),
               };
             }
 
@@ -109,14 +181,15 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
               }
             }
 
-            const expl = String(item.expl || item.explanation || item.solution || item.desc || '').trim();
+            const expl = cleanHtmlText(String(item.expl || item.explanation || item.solution || item.desc || '').trim());
 
             questions.push({
               id: idx + 1,
               question: cleanQ || rawQ,
               options: opts,
               correct_answer: correct,
-              solution: expl
+              solution: expl,
+              image: img || undefined
             });
           });
 
@@ -128,9 +201,12 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
     }
   }
 
-  // Strategy 2: HTML Cards (supports class="question-card", "q-card", "quiz-card", "mcq-card")
+  // ─────────────────────────────────────────────────────────────
+  // Strategy 2: HTML Cards & Boxes
+  // Supports: question-box, question-card, q-card, quiz-card, mcq-card, test-card, cbt-card
+  // ─────────────────────────────────────────────────────────────
   try {
-    const cardSplitRegex = /<div[^>]*class=["'][^"']*(?:question-card|q-card|quiz-card|mcq-card)[^"']*["'][^>]*>/i;
+    const cardSplitRegex = /<div[^>]*class=["'][^"']*(?:question-box|question-card|q-card|quiz-card|mcq-card|test-card|cbt-card)[^"']*["'][^>]*>/i;
     if (cardSplitRegex.test(content)) {
       const cardParts = content.split(cardSplitRegex);
       const questions: CAQuestion[] = [];
@@ -139,34 +215,82 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         const rawCard = cardParts[i];
         const cardContent = rawCard.split(/<\/body>|<script\b/i)[0];
 
-        // 1. Question Title
-        let questionText = '';
-        const titleMatch = cardContent.match(/<div[^>]*class=["'][^"']*(?:question-title|q-text|quiz-title)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)
-          || cardContent.match(/<(?:h[2-6]|p|strong|b)[^>]*>([\s\S]*?)<\/(?:h[2-6]|p|strong|b)>/i);
+        // 1. Question Title & Image
+        const beforeOptions =
+          cardContent.split(
+            /<ul[^>]*class=["'][^"']*options|<label|<div[^>]*class=["'][^"']*(?:options|option-item|opt-btn)/i
+          )[0] || cardContent;
+
+        let qImage = extractImageFromHtml(beforeOptions);
+        if (!qImage) qImage = extractImageFromHtml(cardContent);
+
+        let questionRaw = '';
+        const titleMatch =
+          cardContent.match(
+            /<div[^>]*class=["'][^"']*(?:question-title|question-box|question|q-text|quiz-title)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+          ) || cardContent.match(/<(?:h[2-6]|p|strong|b)[^>]*>([\s\S]*?)<\/(?:h[2-6]|p|strong|b)>/i);
 
         if (titleMatch) {
-          questionText = titleMatch[1].replace(/<[^>]*>/g, '').trim();
+          questionRaw = titleMatch[1];
+        } else {
+          questionRaw = beforeOptions;
         }
 
-        const cleanQuestion = questionText.replace(/^(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)[\.\:\)\-\s]+/i, '').trim();
+        // Clean HTML, preserve newlines for matching lists (A. ... \n B. ...), remove <img> tags
+        const cleanQuestion = cleanHtmlText(questionRaw.replace(/<img[^>]*>/gi, ''))
+          .replace(/^(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)[\.\:\)\-\s]+/i, '')
+          .trim();
 
         // 2. Options A, B, C, D
         const options = { A: '', B: '', C: '', D: '' };
 
-        // Radio label format: <label class="option-label"><input ... value="A"> (A) Text</label>
-        const radioMatches = [...cardContent.matchAll(/<label[^>]*class=["'][^"']*option-label[^"']*["'][^>]*>[\s\S]*?<input[^>]*value=["']([A-D])["'][^>]*>([\s\S]*?)<\/label>/gi)];
-        if (radioMatches.length >= 2) {
-          radioMatches.forEach(m => {
-            const key = m[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
-            const text = m[2].replace(/<[^>]*>/g, '').replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
-            options[key] = text;
-          });
-        } else {
-          // List / button / div option format: <li class="option-item">, <button class="opt-btn">
-          const liMatches = [...cardContent.matchAll(/<(?:li|button|div)[^>]*class=["'][^"']*(?:option-item|opt-btn|option)[^"']*["'][^>]*>([\s\S]*?)<\/(?:li|button|div)>/gi)];
+        // 2a. Options inside <ul class="options"><li>...</li></ul>
+        const ulOptionsMatch = cardContent.match(/<ul[^>]*class=["'][^"']*options[^"']*["'][^>]*>([\s\S]*?)<\/ul>/i);
+        if (ulOptionsMatch) {
+          const liMatches = [...ulOptionsMatch[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
           const letters = ['A', 'B', 'C', 'D'] as const;
           liMatches.slice(0, 4).forEach((lm, idx) => {
-            const text = lm[1].replace(/<[^>]*>/g, '').replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
+            const rawLi = lm[1];
+            const optImg = extractImageFromHtml(rawLi);
+            let text = cleanHtmlText(rawLi.replace(/<img[^>]*>/gi, '')).replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
+            if (optImg && !text) text = optImg;
+            const key = letters[idx];
+            if (key) options[key] = text;
+          });
+        }
+
+        // 2b. Radio label format
+        if (!options.A && !options.B) {
+          const radioMatches = [
+            ...cardContent.matchAll(
+              /<label[^>]*class=["'][^"']*option-label[^"']*["'][^>]*>[\s\S]*?<input[^>]*value=["']([A-D])["'][^>]*>([\s\S]*?)<\/label>/gi
+            ),
+          ];
+          if (radioMatches.length >= 2) {
+            radioMatches.forEach(m => {
+              const key = m[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
+              const rawLab = m[2];
+              const optImg = extractImageFromHtml(rawLab);
+              let text = cleanHtmlText(rawLab.replace(/<img[^>]*>/gi, '')).replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
+              if (optImg && !text) text = optImg;
+              options[key] = text;
+            });
+          }
+        }
+
+        // 2c. Elements with option-item / opt-btn
+        if (!options.A && !options.B) {
+          const liMatches = [
+            ...cardContent.matchAll(
+              /<(?:li|button|div)[^>]*class=["'][^"']*(?:option-item|opt-btn|option)[^"']*["'][^>]*>([\s\S]*?)<\/(?:li|button|div)>/gi
+            ),
+          ];
+          const letters = ['A', 'B', 'C', 'D'] as const;
+          liMatches.slice(0, 4).forEach((lm, idx) => {
+            const rawLi = lm[1];
+            const optImg = extractImageFromHtml(rawLi);
+            let text = cleanHtmlText(rawLi.replace(/<img[^>]*>/gi, '')).replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
+            if (optImg && !text) text = optImg;
             const key = letters[idx];
             if (key) options[key] = text;
           });
@@ -178,7 +302,7 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         if (checkAnsMatch) {
           correct = checkAnsMatch[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
         } else {
-          const ansMatch = cardContent.match(/(?:सही उत्तर|Correct Answer|Ans|Answer)[\s\:\-]+(?:\()?([A-D])(?:\))?/i);
+          const ansMatch = cardContent.match(/(?:उत्तर|सही उत्तर|Correct Answer|Ans|Answer)[\s\:\-]+(?:\()?([A-D])(?:\))?/i);
           if (ansMatch) {
             correct = ansMatch[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
           }
@@ -186,19 +310,25 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
 
         // 4. Explanation
         let explanation = '';
-        const expMatch = cardContent.match(/<p[^>]*class=["'][^"']*exp-text[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)
-          || cardContent.match(/<div[^>]*class=["'][^"']*(?:explanation-box|expl-box|explanation)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+        const expMatch =
+          cardContent.match(/<p[^>]*class=["'][^"']*exp-text[^"']*["'][^>]*>([\s\S]*?)<\/p>/i) ||
+          cardContent.match(
+            /<div[^>]*class=["'][^"']*(?:explanation-box|expl-box|explanation|solution)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+          );
         if (expMatch) {
-          explanation = expMatch[1].replace(/<[^>]*>/g, '').replace(/^(?:व्याख्या|Explanation)[\s\:\(\)]*/i, '').trim();
+          explanation = cleanHtmlText(expMatch[1])
+            .replace(/^(?:व्याख्या|स्पष्टीकरण|Explanation|Solution)[\s\:\(\)\-]*/i, '')
+            .trim();
         }
 
-        if (cleanQuestion || questionText) {
+        if (cleanQuestion) {
           questions.push({
             id: i,
-            question: cleanQuestion || questionText,
+            question: cleanQuestion,
             options,
             correct_answer: correct,
-            solution: explanation
+            solution: explanation,
+            image: qImage || undefined
           });
         }
       }
@@ -209,32 +339,47 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
     console.warn('Error in HTML cards parser:', e);
   }
 
-  // Strategy 3: Generic numbered question regex (e.g., Q1. or प्र. 1) with (A), (B), (C), (D) options)
+  // ─────────────────────────────────────────────────────────────
+  // Strategy 3: Generic numbered question regex (e.g. Q1. or प्र. 1)
+  // ─────────────────────────────────────────────────────────────
   try {
     const qBlocks = content.split(/(?:<p>|<div[^>]*>|\n)\s*(?:<b>|<strong>)?\s*(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)\s*[\.\:\)]/i);
     if (qBlocks.length > 1) {
       const questions: CAQuestion[] = [];
       for (let i = 1; i < qBlocks.length; i++) {
         const block = qBlocks[i];
-        const lines = block.replace(/<[^>]*>/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+        const qImage = extractImageFromHtml(block);
+        const lines = cleanHtmlText(block.replace(/<img[^>]*>/gi, '')).split('\n').map(l => l.trim()).filter(Boolean);
         if (lines.length < 3) continue;
 
-        const qText = lines[0];
+        // Find index where the first option begins
+        let firstOptIdx = -1;
+        for (let j = 0; j < lines.length; j++) {
+          if (isOptionLine(lines[j])) {
+            firstOptIdx = j;
+            break;
+          }
+        }
+
+        // Everything before first option is the question statement (including matching pairs)
+        const qText = firstOptIdx > 0 ? lines.slice(0, firstOptIdx).join('\n') : lines[0];
+        const searchLines = firstOptIdx >= 0 ? lines.slice(firstOptIdx) : lines.slice(1);
+
         const options = { A: '', B: '', C: '', D: '' };
         let correct: 'A' | 'B' | 'C' | 'D' = 'A';
         let explanation = '';
 
-        lines.forEach(line => {
-          const optMatch = line.match(/^\(?([A-D])\)[\.\:\-\s]+(.+)/i);
+        searchLines.forEach(line => {
+          const optMatch = line.match(/^\(?([A-D])\)[\.\:\-\s]+(.+)/i) || line.match(/^([A-D])[\.\:\-\s]+(.+)/i);
           if (optMatch) {
             const key = optMatch[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
             options[key] = optMatch[2].trim();
           }
-          const ansMatch = line.match(/(?:Ans|Answer|सही उत्तर)[\s\:\-]+([A-D])/i);
+          const ansMatch = line.match(/(?:उत्तर|सही उत्तर|Ans|Answer|Correct Answer)[\s\:\-]+(?:\()?([A-D])(?:\))?/i);
           if (ansMatch) {
             correct = ansMatch[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
           }
-          const expMatch = line.match(/(?:Exp|Explanation|व्याख्या)[\s\:\-]+(.+)/i);
+          const expMatch = line.match(/(?:व्याख्या|स्पष्टीकरण|Exp|Explanation|Solution)[\s\:\-]+(.+)/i);
           if (expMatch) {
             explanation = expMatch[1].trim();
           }
@@ -246,7 +391,8 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
             question: qText,
             options,
             correct_answer: correct,
-            solution: explanation
+            solution: explanation,
+            image: qImage || undefined
           });
         }
       }

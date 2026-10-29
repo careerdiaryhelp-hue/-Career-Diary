@@ -30,6 +30,24 @@ interface PyqPost {
   totalQuestions?: number;
 }
 
+function renderOptionContent(text: string) {
+  if (!text) return '';
+  const imgTagMatch = text.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (imgTagMatch) {
+    const remainingText = text.replace(/<img[^>]*>/gi, '').trim();
+    return (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
+        <img src={imgTagMatch[1]} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+        {remainingText && <span>{remainingText}</span>}
+      </span>
+    );
+  }
+  if (/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(text.trim())) {
+    return <img src={text.trim()} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />;
+  }
+  return text;
+}
+
 export default function PyqQuizClient({
   post,
   relatedPosts = []
@@ -38,14 +56,14 @@ export default function PyqQuizClient({
   relatedPosts?: any[];
 }) {
   const questions: CAQuestion[] = React.useMemo(() => {
-    if (Array.isArray(post.questions) && post.questions.length > 0) {
-      return post.questions;
-    }
     if (post.content) {
       const extracted = extractQuestionsFromContent(post.content);
       if (extracted && extracted.length > 0) {
         return extracted;
       }
+    }
+    if (Array.isArray(post.questions) && post.questions.length > 0) {
+      return post.questions;
     }
     return [];
   }, [post.questions, post.content]);
@@ -349,9 +367,16 @@ export default function PyqQuizClient({
                 </div>
 
                 {/* Question Statement */}
-                <div style={{ fontSize: '1.12rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.6, marginBottom: '22px' }}>
+                <div style={{ fontSize: '1.12rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.6, marginBottom: '22px', whiteSpace: 'pre-line' }}>
                   {currentQ.question}
                 </div>
+
+                {/* Optional Question Image */}
+                {currentQ.image && (
+                  <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                    <img src={currentQ.image} alt={`Question ${currentQ.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                  </div>
+                )}
 
                 {/* Options List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -398,10 +423,11 @@ export default function PyqQuizClient({
                             fontSize: '1rem',
                             color: isSelected ? '#064e3b' : '#1e293b',
                             fontWeight: isSelected ? 700 : 500,
-                            lineHeight: 1.5
+                            lineHeight: 1.5,
+                            whiteSpace: 'pre-line'
                           }}
                         >
-                          {optVal}
+                          {renderOptionContent(optVal)}
                         </div>
                       </div>
                     );
@@ -720,9 +746,16 @@ export default function PyqQuizClient({
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.6, marginBottom: '18px' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.6, marginBottom: '18px', whiteSpace: 'pre-line' }}>
                       {q.question}
                     </div>
+
+                    {/* Optional Question Image */}
+                    {q.image && (
+                      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                        <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                      </div>
+                    )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                       {Object.entries(q.options).map(([optKey, optVal]) => {
@@ -767,7 +800,7 @@ export default function PyqQuizClient({
                             <span style={{ width: '26px', height: '26px', borderRadius: '6px', background: isRevealed && isCorrect ? '#16a34a' : '#f1f5f9', color: isRevealed && isCorrect ? '#ffffff' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 800 }}>
                               {optKey}
                             </span>
-                            <span>{optVal}</span>
+                            <span style={{ whiteSpace: 'pre-line' }}>{renderOptionContent(optVal)}</span>
                           </div>
                         );
                       })}
@@ -787,7 +820,7 @@ export default function PyqQuizClient({
                         <div style={{ fontWeight: 800, color: '#064e3b', marginBottom: '6px', fontSize: '0.92rem' }}>
                           ✅ Correct Answer: Option ({q.correct_answer})
                         </div>
-                        <div style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.6 }}>
+                        <div style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                           {q.solution}
                         </div>
                       </div>
@@ -932,9 +965,16 @@ export default function PyqQuizClient({
                         )}
                       </div>
 
-                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                         {q.question}
                       </div>
+
+                      {/* Optional Question Image */}
+                      {q.image && (
+                        <div style={{ marginBottom: '14px', textAlign: 'center' }}>
+                          <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                        </div>
+                      )}
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', marginBottom: '14px' }}>
                         {Object.entries(q.options).map(([optKey, optVal]) => {
@@ -973,13 +1013,13 @@ export default function PyqQuizClient({
                               }}
                             >
                               <span style={{ fontWeight: 800 }}>({optKey})</span>
-                              <span>{optVal}</span>
+                              <span style={{ whiteSpace: 'pre-line' }}>{renderOptionContent(optVal)}</span>
                             </div>
                           );
                         })}
                       </div>
 
-                      <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '6px', borderLeft: '4px solid #047857', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6 }}>
+                      <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '6px', borderLeft: '4px solid #047857', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                         <strong style={{ color: '#064e3b' }}>Detailed Solution:</strong> {q.solution}
                       </div>
                     </div>

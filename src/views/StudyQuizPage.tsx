@@ -40,6 +40,24 @@ interface StudyQuizPageProps {
   initialSet?: any;
 }
 
+function renderOptionContent(text: string) {
+  if (!text) return '';
+  const imgTagMatch = text.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (imgTagMatch) {
+    const remainingText = text.replace(/<img[^>]*>/gi, '').trim();
+    return (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
+        <img src={imgTagMatch[1]} alt="Option" style={{ maxHeight: '120px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+        {remainingText && <span>{remainingText}</span>}
+      </span>
+    );
+  }
+  if (/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(text.trim())) {
+    return <img src={text.trim()} alt="Option" style={{ maxHeight: '120px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />;
+  }
+  return text;
+}
+
 function normalizeToQuizSet(item: any): QuizSet {
   const cleanId = item.id || item.slug;
   const examSlug = item.examSlug || String(item.exam || 'bssc-cgl').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -47,7 +65,24 @@ function normalizeToQuizSet(item: any): QuizSet {
   const urlPath = item.urlPath || `/test-series/${examSlug}/${setSlug}`;
 
   let parsedQuestions: Question[] = [];
-  if (Array.isArray(item.questions) && item.questions.length > 0) {
+  if (item.content) {
+    const raw = extractQuestionsFromContent(item.content);
+    if (raw && raw.length > 0) {
+      parsedQuestions = raw.map((q, idx) => ({
+        id: String(q.id || idx + 1),
+        topic: 'General Studies',
+        subtopic: '',
+        difficulty: 'Medium',
+        question: q.question,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        solution: q.solution,
+        image: q.image || ''
+      }));
+    }
+  }
+
+  if (parsedQuestions.length === 0 && Array.isArray(item.questions) && item.questions.length > 0) {
     parsedQuestions = item.questions.map((q: any, idx: number) => ({
       id: String(q.id || idx + 1),
       topic: q.topic || 'General Studies',
@@ -61,19 +96,8 @@ function normalizeToQuizSet(item: any): QuizSet {
         D: q.options?.D || ''
       },
       correct_answer: String(q.correct_answer || 'A').toUpperCase(),
-      solution: q.solution || ''
-    }));
-  } else if (item.content) {
-    const raw = extractQuestionsFromContent(item.content);
-    parsedQuestions = raw.map((q, idx) => ({
-      id: String(q.id || idx + 1),
-      topic: 'General Studies',
-      subtopic: '',
-      difficulty: 'Medium',
-      question: q.question,
-      options: q.options,
-      correct_answer: q.correct_answer,
-      solution: q.solution
+      solution: q.solution || '',
+      image: q.image || ''
     }));
   }
 
@@ -882,7 +906,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                             >
                               {optKey}
                             </span>
-                            <span style={{ flex: 1, whiteSpace: 'pre-line' }}>{optText}</span>
+                            <span style={{ flex: 1, whiteSpace: 'pre-line' }}>{renderOptionContent(optText)}</span>
                           </div>
                         );
                       })}
@@ -1182,7 +1206,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                             {optKey}
                           </span>
                           <span style={{ fontSize: '0.95rem', color: isSelected ? '#1d4ed8' : '#334155', fontWeight: isSelected ? 600 : 500, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                            {optText}
+                            {renderOptionContent(optText)}
                           </span>
                         </div>
                       );

@@ -6,9 +6,11 @@ export interface CAQuestion {
     B: string;
     C: string;
     D: string;
+    [key: string]: string;
   };
-  correct_answer: 'A' | 'B' | 'C' | 'D';
+  correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   solution: string;
+  image?: string;
 }
 
 export const default50CurrentAffairsQuestions: CAQuestion[] = [
