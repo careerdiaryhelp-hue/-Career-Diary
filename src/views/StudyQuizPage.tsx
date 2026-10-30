@@ -82,16 +82,22 @@ function normalizeToQuizSet(item: any): QuizSet {
         subtopic: '',
         difficulty: q.difficulty || getDefaultDifficulty(idx),
         question: q.question,
-        options: q.options,
+        options: {
+          A: q.options?.A || '',
+          B: q.options?.B || '',
+          C: q.options?.C || '',
+          D: q.options?.D || ''
+        },
         correct_answer: q.correct_answer,
-        solution: q.solution,
+        solution: q.solution || '',
         image: q.image || ''
       }));
     }
   }
 
-  if (parsedQuestions.length === 0 && Array.isArray(item.questions) && item.questions.length > 0) {
-    parsedQuestions = item.questions.map((q: any, idx: number) => ({
+  const hasOptions = parsedQuestions.length > 0 && parsedQuestions.some(q => Boolean(q.options?.A || q.options?.B));
+  if (!hasOptions && Array.isArray(item.questions) && item.questions.length > 0) {
+    const fromQuestions = item.questions.map((q: any, idx: number) => ({
       id: String(q.id || idx + 1),
       topic: q.topic || 'General Studies',
       subtopic: q.subtopic || '',
@@ -107,7 +113,21 @@ function normalizeToQuizSet(item: any): QuizSet {
       solution: q.solution || '',
       image: q.image || ''
     }));
+    const questionsHasValidOptions = fromQuestions.some((q: any) => Boolean(q.options?.A || q.options?.B));
+    if (questionsHasValidOptions || parsedQuestions.length === 0) {
+      parsedQuestions = fromQuestions;
+    }
   }
+
+  // Ensure solution is never empty for any question
+  parsedQuestions.forEach(q => {
+    if (!q.solution || !q.solution.trim()) {
+      const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
+      q.solution = optText
+        ? `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}): "${optText}" है।`
+        : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
+    }
+  });
 
   const marks = Number(item.marksPerQuestion) || 4;
   const neg = Number(item.negativeMarks) || 1;
@@ -914,7 +934,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                             >
                               {optKey}
                             </span>
-                            <span style={{ flex: 1, whiteSpace: 'pre-line' }}>{renderOptionContent(optText)}</span>
+                            <span style={{ flex: 1, whiteSpace: 'pre-line' }}>{renderOptionContent(optText) || `विकल्प (${optKey})`}</span>
                           </div>
                         );
                       })}
@@ -971,7 +991,14 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                           💡 विस्तृत व्याख्या एवं समाधान (Detailed Solution):
                         </div>
                         <div style={{ whiteSpace: 'pre-line' }}>
-                          {q.solution}
+                          {q.solution && q.solution.trim() ? (
+                            q.solution
+                          ) : (
+                            <span>
+                              सही उत्तर विकल्प <strong>({q.correct_answer})</strong>
+                              {q.options && q.options[q.correct_answer] ? ` : ${q.options[q.correct_answer]}` : ''} है।
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1216,7 +1243,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                             {optKey}
                           </span>
                           <span style={{ fontSize: '0.95rem', color: isSelected ? '#1d4ed8' : '#334155', fontWeight: isSelected ? 600 : 500, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                            {renderOptionContent(optText)}
+                            {renderOptionContent(optText) || `विकल्प (${optKey})`}
                           </span>
                         </div>
                       );

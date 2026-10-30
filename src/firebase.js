@@ -33,23 +33,28 @@ export function cleanJobId(id) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Recursively strips undefined values so Firestore setDoc / updateDoc never throws:
+// Recursively strips undefined values and non-serializable fields so Firestore setDoc / updateDoc never throws:
 // "Function setDoc() called with invalid data. Unsupported field value: undefined"
 export function sanitizeFirestoreData(obj) {
   if (obj === undefined) return null;
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return obj;
+  if (obj === null) return null;
+  if (typeof obj === 'function' || typeof obj === 'symbol') return null;
+  if (typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj.toISOString();
 
   if (Array.isArray(obj)) {
     return obj
-      .filter(item => item !== undefined)
+      .filter(item => item !== undefined && typeof item !== 'function' && typeof item !== 'symbol')
       .map(item => sanitizeFirestoreData(item));
   }
 
   const cleaned = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
-      cleaned[key] = sanitizeFirestoreData(value);
+    if (value !== undefined && typeof value !== 'function' && typeof value !== 'symbol') {
+      const sanitized = sanitizeFirestoreData(value);
+      if (sanitized !== undefined) {
+        cleaned[key] = sanitized;
+      }
     }
   }
   return cleaned;

@@ -72,6 +72,19 @@ function isOptionLine(line: string): boolean {
 }
 
 /**
+ * Cleans option text by stripping option labels like (A), B., C), (क), etc.
+ */
+export function cleanOptionText(val: any): string {
+  const s = String(val ?? '').trim();
+  const optImg = extractImageFromHtml(s);
+  if (optImg && !s.replace(/<img[^>]*>/gi, '').trim()) return optImg;
+  return cleanHtmlText(s)
+    .replace(/^\([A-Da-dक-घ]\)[\.\:\-]?\s*/, '')
+    .replace(/^[A-Da-dक-घ][\)\.\:\-]+\s*/, '')
+    .trim();
+}
+
+/**
  * Robust parser that extracts MCQs / questions from:
  * 1. JavaScript arrays (e.g. const quizData = [ { q: "...", image: "...", options: [...], ans: 1, expl: "..." }, ... ])
  * 2. HTML cards & boxes (e.g. class="question-box", "question-card", "q-card", "quiz-card", "mcq-card")
@@ -141,12 +154,7 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
               .replace(/^(?:प्र\.?\s*\d+|प्रश्न\s*\d+|Q\s*\d+|\d+)[\.\:\)\-\s]+/i, '')
               .trim();
 
-            const cleanOpt = (val: any) => {
-              const s = String(val ?? '').trim();
-              const optImg = extractImageFromHtml(s);
-              if (optImg && !s.replace(/<img[^>]*>/gi, '').trim()) return optImg;
-              return cleanHtmlText(s).replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim();
-            };
+            const cleanOpt = cleanOptionText;
 
             const rawOpts = item.options || item.opts || item.choices || item.answers;
             let opts = { A: '', B: '', C: '', D: '' };
@@ -184,7 +192,11 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
               }
             }
 
-            const expl = cleanHtmlText(String(item.expl || item.exp || item.explanation || item.solution || item.desc || '').trim());
+            let expl = cleanHtmlText(String(item.expl || item.exp || item.explanation || item.solution || item.desc || '').trim());
+            if (!expl) {
+              const optText = opts[correct] || '';
+              expl = optText ? `सही उत्तर विकल्प (${correct}): ${optText} है।` : `सही उत्तर विकल्प (${correct}) है।`;
+            }
 
             // Assign balanced difficulty if not explicitly set
             const mod = idx % 10;
@@ -282,16 +294,14 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         if (!options.A && !options.B) {
           const radioMatches = [
             ...cardContent.matchAll(
-              /<label[^>]*class=["'][^"']*option-label[^"']*["'][^>]*>[\s\S]*?<input[^>]*value=["']([A-D])["'][^>]*>([\s\S]*?)<\/label>/gi
+              /<label[^>]*>[\s\S]*?<input[^>]*value=["']([A-D])["'][^>]*>([\s\S]*?)<\/label>/gi
             ),
           ];
           if (radioMatches.length >= 2) {
             radioMatches.forEach(m => {
               const key = m[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
               const rawLab = m[2];
-              const optImg = extractImageFromHtml(rawLab);
-              let text = cleanHtmlText(rawLab.replace(/<img[^>]*>/gi, '')).replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
-              if (optImg && !text) text = optImg;
+              const text = cleanOptionText(rawLab);
               options[key] = text;
             });
           }
@@ -307,11 +317,23 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
           const letters = ['A', 'B', 'C', 'D'] as const;
           liMatches.slice(0, 4).forEach((lm, idx) => {
             const rawLi = lm[1];
-            const optImg = extractImageFromHtml(rawLi);
-            let text = cleanHtmlText(rawLi.replace(/<img[^>]*>/gi, '')).replace(/^\s*[\(\[]?[A-D][\)\]\.\:\-]\s*/i, '').trim();
-            if (optImg && !text) text = optImg;
+            const text = cleanOptionText(rawLi);
             const key = letters[idx];
             if (key) options[key] = text;
+          });
+        }
+
+        // 2d. Fallback: Parse plain option lines inside card content
+        if (!options.A && !options.B) {
+          const lines = cleanHtmlText(cardContent).split('\n').map(l => l.trim()).filter(Boolean);
+          lines.forEach(l => {
+            const m = l.match(/^\(?\s*([A-D])\s*[\)\.\:\-]\s*(.+)/i);
+            if (m && !l.includes('सही उत्तर') && !l.includes('Correct Answer') && !l.includes('उत्तर:')) {
+              const k = m[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
+              if (['A', 'B', 'C', 'D'].includes(k) && !options[k]) {
+                options[k] = cleanOptionText(m[2]);
+              }
+            }
           });
         }
 
@@ -332,12 +354,21 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         const expMatch =
           cardContent.match(/<p[^>]*class=["'][^"']*exp-text[^"']*["'][^>]*>([\s\S]*?)<\/p>/i) ||
           cardContent.match(
-            /<div[^>]*class=["'][^"']*(?:explanation-box|expl-box|explanation|solution)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+            /<div[^>]*class=["'][^"']*(?:explanation-box|expl-box|explanation|solution|answer-box|ans-box)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
           );
         if (expMatch) {
           explanation = cleanHtmlText(expMatch[1])
             .replace(/^(?:व्याख्या|स्पष्टीकरण|Explanation|Solution)[\s\:\(\)\-]*/i, '')
             .trim();
+        } else {
+          const inlineExpMatch = cardContent.match(/(?:व्याख्या|स्पष्टीकरण|Explanation|Solution)[\s\:\-]+([\s\S]*?)(?:<\/(?:div|p)>|<hr|$)/i);
+          if (inlineExpMatch) {
+            explanation = cleanHtmlText(inlineExpMatch[1]).trim();
+          }
+        }
+        if (!explanation) {
+          const optText = options[correct] || '';
+          explanation = optText ? `सही उत्तर विकल्प (${correct}): ${optText} है।` : `सही उत्तर विकल्प (${correct}) है।`;
         }
 
         const mod = (i - 1) % 10;

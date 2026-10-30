@@ -4764,6 +4764,14 @@ export default function AdminDashboardPage({
 
     const safeSlug = cleanSlug(caForm.slug || caForm.title);
     const parsedQuestions = extractQuestionsFromContent(caForm.content);
+    parsedQuestions.forEach(q => {
+      if (!q.solution || !q.solution.trim()) {
+        const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
+        q.solution = optText
+          ? `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}): "${optText}" है।`
+          : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
+      }
+    });
     const postData = {
       ...caForm,
       id: safeSlug,
@@ -5513,13 +5521,23 @@ export default function AdminDashboardPage({
 
     const safeSlug = cleanSlug(pyqForm.slug || pyqForm.title);
     const parsedQuestions = extractQuestionsFromContent(pyqForm.content);
+    parsedQuestions.forEach(q => {
+      if (!q.solution || !q.solution.trim()) {
+        const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
+        q.solution = optText
+          ? `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}): "${optText}" है।`
+          : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
+      }
+    });
+    const safeExam = pyqForm.exam || 'General';
+    const safeYear = String(pyqForm.year || '2024');
     const postData = {
       ...pyqForm,
       id: safeSlug,
       slug: safeSlug,
-      title: pyqForm.title.trim(),
-      exam: pyqForm.exam || 'General',
-      year: String(pyqForm.year || '2024'),
+      title: (pyqForm.title || '').trim(),
+      exam: safeExam,
+      year: safeYear,
       shift: pyqForm.shift || 'Shift 1',
       date: pyqForm.postDate ? pyqForm.postDate.split('|')[0].trim() : '',
       durationMinutes: Number(pyqForm.durationMinutes) || 60,
@@ -5527,7 +5545,7 @@ export default function AdminDashboardPage({
       questions: parsedQuestions.length > 0 ? parsedQuestions : (pyqForm.questions || []),
       updatedAt: new Date().toISOString(),
       views: 120,
-      tags: [pyqForm.exam, 'PYQ', `${pyqForm.year || '2024'} Paper`, 'Solved Paper', 'Official Answer Key', 'Mock Test']
+      tags: [safeExam, 'PYQ', `${safeYear} Paper`, 'Solved Paper', 'Official Answer Key', 'Mock Test'].filter(Boolean)
     };
 
     const cleanPostData = sanitizeFirestoreData(postData);
@@ -6401,6 +6419,14 @@ export default function AdminDashboardPage({
 
     const safeSlug = cleanSlug(tsForm.slug || tsForm.title);
     const parsedQuestions = extractQuestionsFromContent(tsForm.content);
+    parsedQuestions.forEach(q => {
+      if (!q.solution || !q.solution.trim()) {
+        const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
+        q.solution = optText
+          ? `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}): "${optText}" है।`
+          : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
+      }
+    });
     const cleanExamSlug = cleanSlug(tsForm.exam || 'bssc-cgl');
     const cleanSetSlug = cleanSlug(tsForm.set || 'set-1').replace(/[^a-z0-9]/g, '') || 'set1';
     const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(tsForm.totalQuestions) || 150);

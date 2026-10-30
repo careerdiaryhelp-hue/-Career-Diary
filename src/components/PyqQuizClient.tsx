@@ -821,7 +821,14 @@ export default function PyqQuizClient({
                           ✅ Correct Answer: Option ({q.correct_answer})
                         </div>
                         <div style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                          {q.solution}
+                          {q.solution && q.solution.trim() ? (
+                            q.solution
+                          ) : (
+                            <span>
+                              सही उत्तर विकल्प <strong>({q.correct_answer})</strong>
+                              {q.options && q.options[q.correct_answer] ? ` : ${q.options[q.correct_answer]}` : ''} है।
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1020,7 +1027,8 @@ export default function PyqQuizClient({
                       </div>
 
                       <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '6px', borderLeft: '4px solid #047857', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                        <strong style={{ color: '#064e3b' }}>Detailed Solution:</strong> {q.solution}
+                        <strong style={{ color: '#064e3b' }}>Detailed Solution:</strong>{' '}
+                        {q.solution && q.solution.trim() ? q.solution : `सही उत्तर विकल्प (${q.correct_answer}) ${q.options?.[q.correct_answer] ? ': ' + q.options[q.correct_answer] : ''} है।`}
                       </div>
                     </div>
                   );

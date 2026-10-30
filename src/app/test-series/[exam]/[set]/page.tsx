@@ -1,6 +1,7 @@
 import StudyQuizPage from '../../../../views/StudyQuizPage';
 import { getQuizSetByExamAndSet, getAllQuizSets, getQuizSetBySlug } from '../../../../data/quizRegistry';
 import { fetchTestSeriesBySlug, fetchTestSeriesOnce } from '../../../../firebase';
+import { extractQuestionsFromContent } from '../../../../data/questionExtractor';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
@@ -98,6 +99,20 @@ export default async function TestSeriesSetRoute({
 
   if (!set) {
     notFound();
+  }
+
+  // Pre-extract questions on the server if Firestore questions had empty options/solution
+  if (set && set.content) {
+    const questionsHaveNoOptions = !set.questions || set.questions.length === 0 || !set.questions[0]?.options?.A;
+    if (questionsHaveNoOptions) {
+      const extracted = extractQuestionsFromContent(set.content);
+      if (extracted && extracted.length > 0) {
+        set = {
+          ...set,
+          questions: extracted
+        };
+      }
+    }
   }
 
   return <StudyQuizPage initialSlug={set.slug || set.id} initialSet={set} initialMode="study" />;
