@@ -2,14 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { X, Send, MessageCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function ScrollPopupAd() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
-  const [adUnfilled, setAdUnfilled] = useState(false);
   const insRef = useRef<HTMLModElement | null>(null);
   const hasTriggeredRef = useRef(false);
   const isLocal = isLocalDev();
@@ -125,15 +124,15 @@ export default function ScrollPopupAd() {
       return false;
     };
 
-    // MutationObserver to watch Google AdSense filling or unfilled status
+    // MutationObserver to watch Google AdSense filling
     const observer = new MutationObserver(() => {
       if (isDisposed) return;
       const status = el.getAttribute('data-ad-status');
       if (status === 'filled' || checkFilled()) {
         setAdLoaded(true);
-        setAdUnfilled(false);
       } else if (status === 'unfilled') {
-        setAdUnfilled(true);
+        // If Google explicitly marks unfilled, safely close after waiting
+        setIsOpen(false);
       }
     });
 
@@ -144,7 +143,7 @@ export default function ScrollPopupAd() {
       subtree: true,
     });
 
-    // Push ad to AdSense
+    // Push ad request to Google AdSense
     const pushTimer = setTimeout(() => {
       if (isDisposed) return;
       try {
@@ -155,9 +154,9 @@ export default function ScrollPopupAd() {
       } catch (err) {
         console.warn('AdSense scroll popup push notice:', err);
       }
-    }, 150);
+    }, 100);
 
-    // Polling verification
+    // Continuous polling verification for rapid fill detection
     const pollInterval = setInterval(() => {
       if (isDisposed) {
         clearInterval(pollInterval);
@@ -165,27 +164,26 @@ export default function ScrollPopupAd() {
       }
       if (checkFilled()) {
         setAdLoaded(true);
-        setAdUnfilled(false);
         clearInterval(pollInterval);
       } else if (el.getAttribute('data-ad-status') === 'unfilled') {
-        setAdUnfilled(true);
+        setIsOpen(false);
         clearInterval(pollInterval);
       }
-    }, 250);
+    }, 200);
 
-    // If Google has no fill within 3.5s, switch cleanly to community banner (never blank)
-    const fallbackTimeout = setTimeout(() => {
+    // Generous 12s safety timeout: only if Google completely fails to bid or fill, close modal
+    const safetyTimeout = setTimeout(() => {
       if (isDisposed) return;
       clearInterval(pollInterval);
       if (!checkFilled()) {
-        setAdUnfilled(true);
+        setIsOpen(false);
       }
-    }, 3500);
+    }, 12000);
 
     return () => {
       isDisposed = true;
       clearTimeout(pushTimer);
-      clearTimeout(fallbackTimeout);
+      clearTimeout(safetyTimeout);
       clearInterval(pollInterval);
       observer.disconnect();
     };
@@ -256,7 +254,7 @@ export default function ScrollPopupAd() {
               color: '#64748b',
             }}
           >
-            {adUnfilled ? 'Special Update' : 'Advertisement'}
+            Advertisement
           </span>
           <button
             onClick={handleClose}
@@ -321,106 +319,24 @@ export default function ScrollPopupAd() {
                 Live AdSense ad serves on careerdiary.in
               </div>
             </div>
-          ) : adUnfilled ? (
-            /* 2. Unfilled Fallback: Career Diary Official Updates Banner (Never a blank box!) */
+          ) : (
+            /* 2. Live Google AdSense Display */
             <div
               style={{
+                position: 'relative',
                 width: '300px',
                 height: '250px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%)',
-                borderRadius: '12px',
-                padding: '18px 16px',
-                boxSizing: 'border-box',
-                color: '#ffffff',
-                textAlign: 'center',
-                boxShadow: 'inset 0 1px 3px rgba(255, 255, 255, 0.2)',
               }}
             >
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  color: '#93c5fd',
-                  marginBottom: '8px',
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                📢 Official Channel
-              </div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '6px' }}>
-                सरकारी नौकरी &amp; रिजल्ट अपडेट
-              </div>
-              <p style={{ fontSize: '0.76rem', opacity: 0.9, lineHeight: 1.4, margin: '0 0 14px 0' }}>
-                लेटेस्ट जॉब्स, एडमिट कार्ड और आंसर-की की सबसे तेज़ जानकारी सीधे अपने फोन पर पाएँ।
-              </p>
-              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                <a
-                  href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '9px 10px',
-                    backgroundColor: '#22c55e',
-                    color: '#ffffff',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px',
-                    boxShadow: '0 2px 4px rgba(34, 197, 94, 0.3)',
-                  }}
-                >
-                  <MessageCircle size={15} /> WhatsApp
-                </a>
-                <a
-                  href="https://t.me/careerdiary"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '9px 10px',
-                    backgroundColor: '#0284c7',
-                    color: '#ffffff',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px',
-                    boxShadow: '0 2px 4px rgba(2, 132, 199, 0.3)',
-                  }}
-                >
-                  <Send size={15} /> Telegram
-                </a>
-              </div>
-            </div>
-          ) : (
-            /* 3. Live Google AdSense Display */
-            <>
-              {/* Loading Placeholder until ad paints */}
+              {/* Clean Loading Placeholder with spinner while AdSense renders */}
               {!adLoaded && (
                 <div
                   style={{
                     position: 'absolute',
-                    width: '300px',
-                    height: '250px',
+                    inset: 0,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -448,6 +364,7 @@ export default function ScrollPopupAd() {
                 </div>
               )}
 
+              {/* Permanent AdSense Element (Never unmounted so AdSense can fill) */}
               <ins
                 ref={insRef}
                 className="adsbygoogle"
@@ -460,8 +377,10 @@ export default function ScrollPopupAd() {
                 }}
                 data-ad-client="ca-pub-2108299943580613"
                 data-ad-slot="1202522135"
+                data-ad-format="auto"
+                data-full-width-responsive="true"
               />
-            </>
+            </div>
           )}
         </div>
       </div>
