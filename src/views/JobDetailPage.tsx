@@ -1227,9 +1227,6 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           )}
         </div>
 
-        {/* AdSense Display Banner Unit */}
-        <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
-
         {/* Master Post Footer Section (Disclaimer, 6-Grid Social Media Box, Guidelines, Follow Now Table, Ads & Auto FAQ) */}
         <PostFooterSection job={job} category={faqCategory} />
 

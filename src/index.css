@@ -2926,7 +2926,8 @@ body:has(.admin-login-wrapper) {
 
 /* Force collapse unfilled ad units completely to 0px */
 ins.adsbygoogle[data-ad-status="unfilled"],
-.adsense-banner-wrapper:has(ins[data-ad-status="unfilled"]) {
+.adsense-banner-wrapper:has(ins[data-ad-status="unfilled"]),
+.adsense-banner-wrapper[data-ad-status="unfilled"] {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;

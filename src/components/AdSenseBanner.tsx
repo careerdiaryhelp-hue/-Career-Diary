@@ -27,34 +27,65 @@ export default function AdSenseBanner({
   const pathname = usePathname();
   const isAdmin = pathname ? pathname.startsWith('/admin') : false;
   const adRef = useRef<HTMLModElement | null>(null);
-  const [adStatus, setAdStatus] = useState('loading'); // 'loading', 'filled', 'unfilled'
+  const [adStatus, setAdStatus] = useState<'loading' | 'filled' | 'unfilled'>('loading');
 
   useEffect(() => {
     if (isAdmin || !canServeAds()) return;
 
     let isMounted = true;
     let timer: NodeJS.Timeout | null = null;
+    let safetyTimer: NodeJS.Timeout | null = null;
+    let pollInterval: NodeJS.Timeout | null = null;
     const el = adRef.current;
     if (!el) return;
 
-    // MutationObserver to detect AdSense status changes (filled vs unfilled)
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
-          const status = el.getAttribute('data-ad-status');
-          if (isMounted) {
-            setAdStatus(status || 'filled');
-          }
-        }
-      });
+    const checkStatus = () => {
+      if (!isMounted || !el) return;
+      const status = el.getAttribute('data-ad-status');
+      const googleStatus = el.getAttribute('data-adsbygoogle-status');
+      const hasIframe = Boolean(el.querySelector('iframe'));
+
+      if (status === 'filled' || hasIframe) {
+        setAdStatus('filled');
+      } else if (status === 'unfilled' || (googleStatus === 'done' && !hasIframe)) {
+        setAdStatus('unfilled');
+      }
+    };
+
+    // MutationObserver to watch Google AdSense iframe injection or unfilled status
+    const observer = new MutationObserver(() => {
+      checkStatus();
     });
 
-    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
+    observer.observe(el, {
+      attributes: true,
+      attributeFilter: ['data-ad-status', 'data-adsbygoogle-status'],
+      childList: true,
+      subtree: true,
+    });
+
+    // Check status periodically for fast response
+    pollInterval = setInterval(() => {
+      checkStatus();
+    }, 300);
+
+    // If Google has not filled within 3.5s, auto-collapse completely so no empty white space remains
+    safetyTimer = setTimeout(() => {
+      if (!isMounted || !el) return;
+      const hasIframe = Boolean(el.querySelector('iframe'));
+      const status = el.getAttribute('data-ad-status');
+      if (!hasIframe && status !== 'filled') {
+        setAdStatus('unfilled');
+      }
+    }, 3500);
 
     let retryCount = 0;
     const tryPush = () => {
       if (!isMounted || !adRef.current) return;
-      if (el.getAttribute('data-adsbygoogle-status')) return;
+      if (el.getAttribute('data-adsbygoogle-status')) {
+        checkStatus();
+        return;
+      }
       if (el.dataset.adPushDone) return;
 
       const currentWidth = el.offsetWidth || (el.parentElement && el.parentElement.offsetWidth) || 0;
@@ -72,18 +103,24 @@ export default function AdSenseBanner({
       }
     };
 
-    // Push ad request smoothly once component mounts and DOM calculates width
-    timer = setTimeout(tryPush, 100);
+    // Push ad request smoothly once component mounts
+    timer = setTimeout(tryPush, 80);
 
     return () => {
       isMounted = false;
       if (timer) clearTimeout(timer);
+      if (safetyTimer) clearTimeout(safetyTimer);
+      if (pollInterval) clearInterval(pollInterval);
       observer.disconnect();
     };
   }, [slot, layout, layoutKey, isAdmin, pathname]);
 
-  // Hide wrapper completely on admin routes
+  // Hide wrapper completely on admin routes or if unfilled
   if (pathname && pathname.startsWith('/admin')) {
+    return null;
+  }
+
+  if (adStatus === 'unfilled') {
     return null;
   }
 
@@ -91,8 +128,8 @@ export default function AdSenseBanner({
 
   return (
     <div
-      key={pathname ? `${pathname}-${slot}` : slot}
       className="adsense-banner-wrapper"
+      data-ad-status={adStatus}
       suppressHydrationWarning
       style={{
         margin: '16px auto',
@@ -100,12 +137,13 @@ export default function AdSenseBanner({
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
-        display: adStatus === 'unfilled' ? 'none' : 'block',
-        minHeight: adStatus === 'unfilled' ? 0 : effectiveMinHeight,
+        display: 'block',
+        minHeight: adStatus === 'filled' ? effectiveMinHeight : 'auto',
         ...style
       }}
     >
-      {label && adStatus !== 'unfilled' && (
+      {/* Label only appears when ad is confirmed filled, never over empty space */}
+      {label && adStatus === 'filled' && (
         <div
           className="ad-label"
           style={{
@@ -153,7 +191,7 @@ export default function AdSenseBanner({
           style={{
             display: layout ? 'block' : ((format === 'vertical' || (responsive === 'false' && !layout)) ? 'inline-block' : 'block'),
             width: (!layout && responsive === 'false') ? (insStyle.width || '300px') : '100%',
-            minHeight: effectiveMinHeight,
+            minHeight: adStatus === 'filled' ? effectiveMinHeight : 'auto',
             ...(layout ? { textAlign: 'center' } : {}),
             ...insStyle
           }}
