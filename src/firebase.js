@@ -33,6 +33,28 @@ export function cleanJobId(id) {
     .replace(/^-+|-+$/g, '');
 }
 
+// Recursively strips undefined values so Firestore setDoc / updateDoc never throws:
+// "Function setDoc() called with invalid data. Unsupported field value: undefined"
+export function sanitizeFirestoreData(obj) {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj;
+
+  if (Array.isArray(obj)) {
+    return obj
+      .filter(item => item !== undefined)
+      .map(item => sanitizeFirestoreData(item));
+  }
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = sanitizeFirestoreData(value);
+    }
+  }
+  return cleaned;
+}
+
 // ─── localStorage pending queue for failed Firestore saves ───
 const PENDING_SAVES_KEY = 'career_diary_pending_firestore_saves';
 
@@ -96,7 +118,8 @@ export async function publishJobToFirestore(job, skipQueue = false) {
       if (!db) throw new Error('Firestore is only available in browser');
       const { doc, setDoc } = await import('firebase/firestore');
       const jobRef = doc(db, 'jobs', safeId);
-      await setDoc(jobRef, safeJob, { merge: true });
+      const sanitizedJob = sanitizeFirestoreData(safeJob);
+      await setDoc(jobRef, sanitizedJob, { merge: true });
       // Invalidate memory cache so next fetch immediately returns fresh data
       memoryCache.data = null;
       memoryCache.timestamp = 0;
@@ -560,7 +583,8 @@ export async function publishCurrentAffairsToFirestore(caPost) {
 
     // 1. Save individual full post in permitted 'jobs' collection as ca_${safeId}
     const caRef = doc(db, 'jobs', `ca_${safeId}`);
-    await setDoc(caRef, safeDoc, { merge: true });
+    const sanitizedDoc = sanitizeFirestoreData(safeDoc);
+    await setDoc(caRef, sanitizedDoc, { merge: true });
 
     // 2. Also update master settings_currentAffairs array doc in 'jobs' collection
     const listRef = doc(db, 'jobs', 'settings_currentAffairs');
@@ -574,16 +598,16 @@ export async function publishCurrentAffairsToFirestore(caPost) {
     } catch (_) {}
 
     const updatedItems = [
-      safeDoc,
+      sanitizedDoc,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
-    await setDoc(listRef, {
+    await setDoc(listRef, sanitizeFirestoreData({
       id: 'settings_currentAffairs',
       items: updatedItems,
       updatedAt: nowIso,
       isSystemDoc: true
-    }, { merge: true });
+    }), { merge: true });
 
     caCache.data = null;
     caCache.timestamp = 0;
@@ -751,7 +775,8 @@ export async function publishPyqToFirestore(pyqPost) {
 
     // 1. Save individual full post in permitted 'jobs' collection as pyq_${safeId}
     const pyqRef = doc(db, 'jobs', `pyq_${safeId}`);
-    await setDoc(pyqRef, safeDoc, { merge: true });
+    const sanitizedDoc = sanitizeFirestoreData(safeDoc);
+    await setDoc(pyqRef, sanitizedDoc, { merge: true });
 
     // 2. Also update master settings_pyq array doc in 'jobs' collection
     const listRef = doc(db, 'jobs', 'settings_pyq');
@@ -765,16 +790,16 @@ export async function publishPyqToFirestore(pyqPost) {
     } catch (_) {}
 
     const updatedItems = [
-      safeDoc,
+      sanitizedDoc,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
-    await setDoc(listRef, {
+    await setDoc(listRef, sanitizeFirestoreData({
       id: 'settings_pyq',
       items: updatedItems,
       updatedAt: nowIso,
       isSystemDoc: true
-    }, { merge: true });
+    }), { merge: true });
 
     pyqCache.data = null;
     pyqCache.timestamp = 0;
@@ -942,7 +967,8 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
 
     // 1. Save individual full test series doc in permitted 'jobs' collection as ts_${safeId}
     const tsRef = doc(db, 'jobs', `ts_${safeId}`);
-    await setDoc(tsRef, safeDoc, { merge: true });
+    const sanitizedDoc = sanitizeFirestoreData(safeDoc);
+    await setDoc(tsRef, sanitizedDoc, { merge: true });
 
     // 2. Also update master settings_testSeries array doc in 'jobs' collection
     const listRef = doc(db, 'jobs', 'settings_testSeries');
@@ -956,16 +982,16 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
     } catch (_) {}
 
     const updatedItems = [
-      safeDoc,
+      sanitizedDoc,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
-    await setDoc(listRef, {
+    await setDoc(listRef, sanitizeFirestoreData({
       id: 'settings_testSeries',
       items: updatedItems,
       updatedAt: nowIso,
       isSystemDoc: true
-    }, { merge: true });
+    }), { merge: true });
 
     testSeriesCache.data = null;
     testSeriesCache.timestamp = 0;

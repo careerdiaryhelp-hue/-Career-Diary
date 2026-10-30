@@ -183,14 +183,15 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
 
             const expl = cleanHtmlText(String(item.expl || item.explanation || item.solution || item.desc || '').trim());
 
-            questions.push({
+            const qObj: CAQuestion = {
               id: idx + 1,
               question: cleanQ || rawQ,
               options: opts,
               correct_answer: correct,
-              solution: expl,
-              image: img || undefined
-            });
+              solution: expl
+            };
+            if (img) qObj.image = img;
+            questions.push(qObj);
           });
 
           if (questions.length > 0) return questions;
@@ -322,14 +323,15 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         }
 
         if (cleanQuestion) {
-          questions.push({
+          const qObj: CAQuestion = {
             id: i,
             question: cleanQuestion,
             options,
             correct_answer: correct,
-            solution: explanation,
-            image: qImage || undefined
-          });
+            solution: explanation
+          };
+          if (qImage) qObj.image = qImage;
+          questions.push(qObj);
         }
       }
 
@@ -386,14 +388,15 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         });
 
         if (options.A && options.B) {
-          questions.push({
+          const qObj: CAQuestion = {
             id: i,
             question: qText,
             options,
             correct_answer: correct,
-            solution: explanation,
-            image: qImage || undefined
-          });
+            solution: explanation
+          };
+          if (qImage) qObj.image = qImage;
+          questions.push(qObj);
         }
       }
       if (questions.length > 0) return questions;

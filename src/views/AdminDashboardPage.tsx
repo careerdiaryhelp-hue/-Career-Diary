@@ -26,7 +26,8 @@ import {
   publishTestSeriesToFirestore,
   deleteTestSeriesFromFirestore,
   subscribeToTestSeries,
-  fetchTestSeriesOnce
+  fetchTestSeriesOnce,
+  sanitizeFirestoreData
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 
@@ -4777,13 +4778,15 @@ export default function AdminDashboardPage({
       tags: ['Current Affairs 2026', '50 MCQs', '30 Min Test', 'Daily GK', 'SSC', 'Railways', 'BSSC']
     };
 
+    const cleanPostData = sanitizeFirestoreData(postData);
+
     try {
       setCaSaving(true);
-      const res = await publishCurrentAffairsToFirestore(postData);
+      const res = await publishCurrentAffairsToFirestore(cleanPostData);
       if (res && res.success) {
         setCurrentAffairsList(prev => {
           const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
-          return [postData, ...filtered];
+          return [cleanPostData, ...filtered];
         });
         setCaAlert({
           type: 'success',
@@ -5527,13 +5530,15 @@ export default function AdminDashboardPage({
       tags: [pyqForm.exam, 'PYQ', `${pyqForm.year || '2024'} Paper`, 'Solved Paper', 'Official Answer Key', 'Mock Test']
     };
 
+    const cleanPostData = sanitizeFirestoreData(postData);
+
     try {
       setPyqSaving(true);
-      const res = await publishPyqToFirestore(postData);
+      const res = await publishPyqToFirestore(cleanPostData);
       if (res && res.success) {
         setPyqList(prev => {
           const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
-          return [postData, ...filtered];
+          return [cleanPostData, ...filtered];
         });
         setPyqAlert({
           type: 'success',
@@ -6426,13 +6431,15 @@ export default function AdminDashboardPage({
       tags: [tsForm.exam, 'Test Series', 'Mock Test', 'CBT Test', 'Full Length Practice', `${totalQ} Questions`]
     };
 
+    const cleanPostData = sanitizeFirestoreData(postData);
+
     try {
       setTsSaving(true);
-      const res = await publishTestSeriesToFirestore(postData);
+      const res = await publishTestSeriesToFirestore(cleanPostData);
       if (res && res.success) {
         setTestSeriesList(prev => {
           const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
-          return [postData, ...filtered];
+          return [cleanPostData, ...filtered];
         });
         setTsAlert({
           type: 'success',
