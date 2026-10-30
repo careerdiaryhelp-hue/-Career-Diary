@@ -2,44 +2,34 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
+import { X, Send, MessageCircle } from 'lucide-react';
 import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function ScrollPopupAd() {
   const pathname = usePathname();
-  const [isTriggered, setIsTriggered] = useState(false);
-  const [isAdLoaded, setIsAdLoaded] = useState(false);
-  const [adKey, setAdKey] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [adLoaded, setAdLoaded] = useState(false);
+  const [adUnfilled, setAdUnfilled] = useState(false);
   const insRef = useRef<HTMLModElement | null>(null);
   const hasTriggeredRef = useRef(false);
-  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const retryCountRef = useRef(0);
-  const MAX_RETRIES = 3;
   const isLocal = isLocalDev();
 
-  // Cleanup pending retry timers on unmount or route change
-  useEffect(() => {
-    return () => {
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    };
-  }, [pathname]);
-
-  // Trigger popup loading when user scrolls (or 5s fallback on page read)
+  // Trigger popup when user scrolls (or 4.5s fallback)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (pathname && pathname.startsWith('/admin')) return;
 
-    // Check if test parameter is present in URL (?popup=1 or ?test_ad=1)
+    // Check test parameters (?popup=1 or ?test_ad=1)
     const urlParams = new URLSearchParams(window.location.search);
     const isTestMode = urlParams.get('popup') === '1' || urlParams.get('test_ad') === '1';
 
-    // 45-second cooldown after user dismisses, so re-tests or new page views work cleanly
+    // Cooldown only if explicitly dismissed by user
     if (!isTestMode) {
       try {
         const closedAt = sessionStorage.getItem('careerdiary_scroll_popup_closed');
         if (closedAt) {
           const timeSince = Date.now() - parseInt(closedAt, 10);
-          if (timeSince < 45000) {
+          if (timeSince < 30000) {
             return;
           }
         }
@@ -47,16 +37,15 @@ export default function ScrollPopupAd() {
     }
 
     hasTriggeredRef.current = false;
-    let scrollTriggerTimer: NodeJS.Timeout | null = null;
+    let scrollTimer: NodeJS.Timeout | null = null;
     let fallbackTimer: NodeJS.Timeout | null = null;
 
     const triggerPopup = () => {
       if (hasTriggeredRef.current) return;
       hasTriggeredRef.current = true;
-      setIsTriggered(true);
-      setIsAdLoaded(false);
+      setIsOpen(true);
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTriggerTimer) clearTimeout(scrollTriggerTimer);
+      if (scrollTimer) clearTimeout(scrollTimer);
       if (fallbackTimer) clearTimeout(fallbackTimer);
     };
 
@@ -68,40 +57,38 @@ export default function ScrollPopupAd() {
     const handleScroll = () => {
       const scrolled = window.scrollY || document.documentElement.scrollTop || 0;
 
-      // When user scrolls down >= 100px, start loading promptly (within 400ms)
-      if (scrolled >= 100) {
-        if (!scrollTriggerTimer) {
-          scrollTriggerTimer = setTimeout(() => {
-            triggerPopup();
-          }, 400);
-        }
+      // User scrolled down >= 80px, open promptly
+      if (scrolled >= 80) {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          triggerPopup();
+        }, 300);
       } else if (scrolled >= 20) {
-        // As soon as user starts scrolling (>20px), start loading in 1.2s
-        if (!scrollTriggerTimer) {
-          scrollTriggerTimer = setTimeout(() => {
+        if (!scrollTimer) {
+          scrollTimer = setTimeout(() => {
             triggerPopup();
-          }, 1200);
+          }, 1000);
         }
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Fallback timer: start loading within 5s even if user scrolls very lightly
+    // Fallback timer: ensure it opens within 4.5s
     fallbackTimer = setTimeout(() => {
       triggerPopup();
-    }, 5000);
+    }, 4500);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTriggerTimer) clearTimeout(scrollTriggerTimer);
+      if (scrollTimer) clearTimeout(scrollTimer);
       if (fallbackTimer) clearTimeout(fallbackTimer);
     };
   }, [pathname]);
 
-  // Handle ESC key to close modal when it is visible
+  // Handle ESC key to close
   useEffect(() => {
-    if (!isAdLoaded) return;
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleClose();
@@ -109,20 +96,15 @@ export default function ScrollPopupAd() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAdLoaded]);
+  }, [isOpen]);
 
-  // Ad loading and verification:
-  // The popup modal stays 100% invisible (opacity: 0, pointer-events: none)
-  // until the ad is confirmed filled with an actual creative/iframe!
+  // Handle AdSense ad loading & status detection
   useEffect(() => {
-    if (!isTriggered) return;
+    if (!isOpen) return;
 
     if (isLocal) {
-      // In local dev, display preview after short delay
-      const t = setTimeout(() => {
-        setIsAdLoaded(true);
-      }, 200);
-      return () => clearTimeout(t);
+      setAdLoaded(true);
+      return;
     }
 
     if (typeof window === 'undefined' || !canServeAds()) return;
@@ -143,69 +125,26 @@ export default function ScrollPopupAd() {
       return false;
     };
 
-    const handleUnfilledRetry = () => {
-      if (isDisposed) return;
-      setIsAdLoaded(false);
-      // Popup remains completely invisible to user (no empty white box shown)
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-      if (retryCountRef.current < MAX_RETRIES) {
-        retryCountRef.current += 1;
-        retryTimerRef.current = setTimeout(() => {
-          if (!isDisposed) {
-            setAdKey((prev) => prev + 1);
-          }
-        }, 3000); // Retry loading in background
-      } else {
-        // Max retries reached, silently unmount without ever showing empty box
-        setIsTriggered(false);
-      }
-    };
-
-    let safetyTimer: NodeJS.Timeout | null = null;
-
-    // Observe data-ad-status and child iframe injection
+    // MutationObserver to watch Google AdSense filling or unfilled status
     const observer = new MutationObserver(() => {
       if (isDisposed) return;
       const status = el.getAttribute('data-ad-status');
-      if (status === 'filled') {
-        setIsAdLoaded(true);
-        retryCountRef.current = 0;
-        if (safetyTimer) clearTimeout(safetyTimer);
+      if (status === 'filled' || checkFilled()) {
+        setAdLoaded(true);
+        setAdUnfilled(false);
       } else if (status === 'unfilled') {
-        handleUnfilledRetry();
-      } else if (checkFilled()) {
-        setIsAdLoaded(true);
-        retryCountRef.current = 0;
-        if (safetyTimer) clearTimeout(safetyTimer);
+        setAdUnfilled(true);
       }
     });
 
     observer.observe(el, {
       attributes: true,
-      attributeFilter: ['data-ad-status'],
+      attributeFilter: ['data-ad-status', 'data-adsbygoogle-status'],
       childList: true,
       subtree: true,
     });
 
-    // Also poll every 250ms for up to 5s in case mutation is not caught
-    const pollTimer = setInterval(() => {
-      if (isDisposed) {
-        clearInterval(pollTimer);
-        return;
-      }
-      const status = el.getAttribute('data-ad-status');
-      if (status === 'filled' || checkFilled()) {
-        setIsAdLoaded(true);
-        retryCountRef.current = 0;
-        clearInterval(pollTimer);
-        if (safetyTimer) clearTimeout(safetyTimer);
-      } else if (status === 'unfilled') {
-        clearInterval(pollTimer);
-        handleUnfilledRetry();
-      }
-    }, 250);
-
-    // Push to AdSense queue
+    // Push ad to AdSense
     const pushTimer = setTimeout(() => {
       if (isDisposed) return;
       try {
@@ -216,38 +155,51 @@ export default function ScrollPopupAd() {
       } catch (err) {
         console.warn('AdSense scroll popup push notice:', err);
       }
-    }, 100);
+    }, 150);
 
-    // Safety fallback: if Google fails to respond within 5s, quietly cancel (never show blank box)
-    safetyTimer = setTimeout(() => {
-      if (isDisposed) return;
-      clearInterval(pollTimer);
-      if (!checkFilled()) {
-        handleUnfilledRetry();
+    // Polling verification
+    const pollInterval = setInterval(() => {
+      if (isDisposed) {
+        clearInterval(pollInterval);
+        return;
       }
-    }, 5000);
+      if (checkFilled()) {
+        setAdLoaded(true);
+        setAdUnfilled(false);
+        clearInterval(pollInterval);
+      } else if (el.getAttribute('data-ad-status') === 'unfilled') {
+        setAdUnfilled(true);
+        clearInterval(pollInterval);
+      }
+    }, 250);
+
+    // If Google has no fill within 3.5s, switch cleanly to community banner (never blank)
+    const fallbackTimeout = setTimeout(() => {
+      if (isDisposed) return;
+      clearInterval(pollInterval);
+      if (!checkFilled()) {
+        setAdUnfilled(true);
+      }
+    }, 3500);
 
     return () => {
       isDisposed = true;
       clearTimeout(pushTimer);
-      if (safetyTimer) clearTimeout(safetyTimer);
-      clearInterval(pollTimer);
+      clearTimeout(fallbackTimeout);
+      clearInterval(pollInterval);
       observer.disconnect();
     };
-  }, [isTriggered, adKey, isLocal]);
+  }, [isOpen, isLocal]);
 
   const handleClose = () => {
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    retryCountRef.current = MAX_RETRIES;
-    setIsAdLoaded(false);
-    setIsTriggered(false);
+    setIsOpen(false);
     try {
       sessionStorage.setItem('careerdiary_scroll_popup_closed', Date.now().toString());
     } catch (_) {}
   };
 
-  // Disabled on admin pages or if trigger not active
-  if (!isTriggered || (pathname && pathname.startsWith('/admin'))) {
+  // Disabled on admin pages or if not opened
+  if (!isOpen || (pathname && pathname.startsWith('/admin'))) {
     return null;
   }
 
@@ -256,20 +208,18 @@ export default function ScrollPopupAd() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: isAdLoaded ? 999999 : -1,
+        zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        backgroundColor: isAdLoaded ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
-        backdropFilter: isAdLoaded ? 'blur(3px)' : 'none',
-        WebkitBackdropFilter: isAdLoaded ? 'blur(3px)' : 'none',
-        opacity: isAdLoaded ? 1 : 0,
-        pointerEvents: isAdLoaded ? 'auto' : 'none',
-        transition: 'opacity 0.25s ease, background-color 0.25s ease',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        animation: 'fadeIn 0.25s ease-out forwards',
       }}
       onClick={handleClose}
-      aria-modal={isAdLoaded ? 'true' : 'false'}
+      aria-modal="true"
       role="dialog"
     >
       <div
@@ -280,10 +230,10 @@ export default function ScrollPopupAd() {
           maxWidth: '340px',
           backgroundColor: '#ffffff',
           borderRadius: '16px',
-          boxShadow: isAdLoaded ? '0 25px 50px -12px rgba(0, 0, 0, 0.45)' : 'none',
-          border: isAdLoaded ? '1px solid #e2e8f0' : 'none',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          border: '1px solid #e2e8f0',
           overflow: 'hidden',
-          animation: isAdLoaded ? 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+          animation: 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         }}
       >
         {/* Header Bar */}
@@ -306,7 +256,7 @@ export default function ScrollPopupAd() {
               color: '#64748b',
             }}
           >
-            Advertisement
+            {adUnfilled ? 'Special Update' : 'Advertisement'}
           </span>
           <button
             onClick={handleClose}
@@ -324,13 +274,13 @@ export default function ScrollPopupAd() {
               fontSize: '12px',
               transition: 'background 0.2s',
             }}
-            aria-label="Close advertisement"
+            aria-label="Close"
           >
             <X size={15} /> Close
           </button>
         </div>
 
-        {/* Ad Unit Container */}
+        {/* Content Area */}
         <div
           style={{
             padding: '12px',
@@ -340,8 +290,10 @@ export default function ScrollPopupAd() {
             justifyContent: 'center',
             minHeight: '260px',
             backgroundColor: '#ffffff',
+            position: 'relative',
           }}
         >
+          {/* 1. Local Dev Preview */}
           {isLocal ? (
             <div
               style={{
@@ -369,19 +321,147 @@ export default function ScrollPopupAd() {
                 Live AdSense ad serves on careerdiary.in
               </div>
             </div>
-          ) : (
-            <ins
-              key={adKey}
-              ref={insRef}
-              className="adsbygoogle"
+          ) : adUnfilled ? (
+            /* 2. Unfilled Fallback: Career Diary Official Updates Banner (Never a blank box!) */
+            <div
               style={{
-                display: 'inline-block',
                 width: '300px',
                 height: '250px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%)',
+                borderRadius: '12px',
+                padding: '18px 16px',
+                boxSizing: 'border-box',
+                color: '#ffffff',
+                textAlign: 'center',
+                boxShadow: 'inset 0 1px 3px rgba(255, 255, 255, 0.2)',
               }}
-              data-ad-client="ca-pub-2108299943580613"
-              data-ad-slot="1202522135"
-            />
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: '#93c5fd',
+                  marginBottom: '8px',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                📢 Official Channel
+              </div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '6px' }}>
+                सरकारी नौकरी &amp; रिजल्ट अपडेट
+              </div>
+              <p style={{ fontSize: '0.76rem', opacity: 0.9, lineHeight: 1.4, margin: '0 0 14px 0' }}>
+                लेटेस्ट जॉब्स, एडमिट कार्ड और आंसर-की की सबसे तेज़ जानकारी सीधे अपने फोन पर पाएँ।
+              </p>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <a
+                  href="https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1,
+                    padding: '9px 10px',
+                    backgroundColor: '#22c55e',
+                    color: '#ffffff',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    boxShadow: '0 2px 4px rgba(34, 197, 94, 0.3)',
+                  }}
+                >
+                  <MessageCircle size={15} /> WhatsApp
+                </a>
+                <a
+                  href="https://t.me/careerdiary"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1,
+                    padding: '9px 10px',
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    boxShadow: '0 2px 4px rgba(2, 132, 199, 0.3)',
+                  }}
+                >
+                  <Send size={15} /> Telegram
+                </a>
+              </div>
+            </div>
+          ) : (
+            /* 3. Live Google AdSense Display */
+            <>
+              {/* Loading Placeholder until ad paints */}
+              {!adLoaded && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: '300px',
+                    height: '250px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px dashed #cbd5e1',
+                    zIndex: 1,
+                    gap: '10px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      border: '3px solid #e2e8f0',
+                      borderTopColor: '#2563eb',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                    Loading advertisement...
+                  </span>
+                </div>
+              )}
+
+              <ins
+                ref={insRef}
+                className="adsbygoogle"
+                style={{
+                  display: 'inline-block',
+                  width: '300px',
+                  height: '250px',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+                data-ad-client="ca-pub-2108299943580613"
+                data-ad-slot="1202522135"
+              />
+            </>
           )}
         </div>
       </div>
