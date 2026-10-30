@@ -7,13 +7,15 @@ import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function ScrollPopupAd() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isTriggered, setIsTriggered] = useState(false);
+  const [isAdLoaded, setIsAdLoaded] = useState(false);
   const [adKey, setAdKey] = useState(0);
   const insRef = useRef<HTMLModElement | null>(null);
   const hasTriggeredRef = useRef(false);
   const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
-  const MAX_RETRIES = 5;
+  const MAX_RETRIES = 3;
+  const isLocal = isLocalDev();
 
   // Cleanup pending retry timers on unmount or route change
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function ScrollPopupAd() {
     };
   }, [pathname]);
 
-  // Trigger popup within 5 seconds when user scrolls (or 5s fallback on page read)
+  // Trigger popup loading when user scrolls (or 5s fallback on page read)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (pathname && pathname.startsWith('/admin')) return;
@@ -51,7 +53,8 @@ export default function ScrollPopupAd() {
     const triggerPopup = () => {
       if (hasTriggeredRef.current) return;
       hasTriggeredRef.current = true;
-      setIsOpen(true);
+      setIsTriggered(true);
+      setIsAdLoaded(false);
       window.removeEventListener('scroll', handleScroll);
       if (scrollTriggerTimer) clearTimeout(scrollTriggerTimer);
       if (fallbackTimer) clearTimeout(fallbackTimer);
@@ -65,7 +68,7 @@ export default function ScrollPopupAd() {
     const handleScroll = () => {
       const scrolled = window.scrollY || document.documentElement.scrollTop || 0;
 
-      // When user scrolls down >= 100px, show promptly (within 400ms)
+      // When user scrolls down >= 100px, start loading promptly (within 400ms)
       if (scrolled >= 100) {
         if (!scrollTriggerTimer) {
           scrollTriggerTimer = setTimeout(() => {
@@ -73,7 +76,7 @@ export default function ScrollPopupAd() {
           }, 400);
         }
       } else if (scrolled >= 20) {
-        // As soon as user starts scrolling (>20px), guarantee popup appears in 1.2s (well under 5s)
+        // As soon as user starts scrolling (>20px), start loading in 1.2s
         if (!scrollTriggerTimer) {
           scrollTriggerTimer = setTimeout(() => {
             triggerPopup();
@@ -84,7 +87,7 @@ export default function ScrollPopupAd() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Fallback timer: guarantee popup shows within 5 seconds even if user scrolls very lightly
+    // Fallback timer: start loading within 5s even if user scrolls very lightly
     fallbackTimer = setTimeout(() => {
       triggerPopup();
     }, 5000);
@@ -96,9 +99,9 @@ export default function ScrollPopupAd() {
     };
   }, [pathname]);
 
-  // Handle ESC key to close modal
+  // Handle ESC key to close modal when it is visible
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isAdLoaded) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleClose();
@@ -106,105 +109,167 @@ export default function ScrollPopupAd() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isAdLoaded]);
 
-  // Push AdSense ad unit as soon as popup is mounted and visible
+  // Ad loading and verification:
+  // The popup modal stays 100% invisible (opacity: 0, pointer-events: none)
+  // until the ad is confirmed filled with an actual creative/iframe!
   useEffect(() => {
-    if (!isOpen || !insRef.current) return;
+    if (!isTriggered) return;
+
+    if (isLocal) {
+      // In local dev, display preview after short delay
+      const t = setTimeout(() => {
+        setIsAdLoaded(true);
+      }, 200);
+      return () => clearTimeout(t);
+    }
+
     if (typeof window === 'undefined' || !canServeAds()) return;
 
     const el = insRef.current;
+    if (!el) return;
 
-    // Handler when ad is unfilled: auto-close immediately, then try again 3 seconds later
+    let isDisposed = false;
+
+    const checkFilled = () => {
+      if (!el) return false;
+      const status = el.getAttribute('data-ad-status');
+      if (status === 'filled') return true;
+      const iframe = el.querySelector('iframe');
+      if (iframe && status !== 'unfilled') {
+        return true;
+      }
+      return false;
+    };
+
     const handleUnfilledRetry = () => {
-      setIsOpen(false);
+      if (isDisposed) return;
+      setIsAdLoaded(false);
+      // Popup remains completely invisible to user (no empty white box shown)
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current += 1;
         retryTimerRef.current = setTimeout(() => {
-          setAdKey((prev) => prev + 1);
-          setIsOpen(true);
-        }, 3000); // Re-open after 3 seconds
+          if (!isDisposed) {
+            setAdKey((prev) => prev + 1);
+          }
+        }, 3000); // Retry loading in background
+      } else {
+        // Max retries reached, silently unmount without ever showing empty box
+        setIsTriggered(false);
       }
     };
 
-    // Auto-close modal and schedule 3s retry if Google reports ad is unfilled (prevents blank white box)
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
-          const status = el.getAttribute('data-ad-status');
-          if (status === 'unfilled') {
-            handleUnfilledRetry();
-          } else if (status === 'filled') {
-            // Success! Reset retry count
-            retryCountRef.current = 0;
-          }
-        }
-      });
+    let safetyTimer: NodeJS.Timeout | null = null;
+
+    // Observe data-ad-status and child iframe injection
+    const observer = new MutationObserver(() => {
+      if (isDisposed) return;
+      const status = el.getAttribute('data-ad-status');
+      if (status === 'filled') {
+        setIsAdLoaded(true);
+        retryCountRef.current = 0;
+        if (safetyTimer) clearTimeout(safetyTimer);
+      } else if (status === 'unfilled') {
+        handleUnfilledRetry();
+      } else if (checkFilled()) {
+        setIsAdLoaded(true);
+        retryCountRef.current = 0;
+        if (safetyTimer) clearTimeout(safetyTimer);
+      }
     });
-    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
 
-    if (el.dataset.adPushDone) {
-      return () => observer.disconnect();
-    }
+    observer.observe(el, {
+      attributes: true,
+      attributeFilter: ['data-ad-status'],
+      childList: true,
+      subtree: true,
+    });
 
-    // Push after modal animation renders so offset dimensions are confirmed
-    const pushTimer = setTimeout(() => {
-      try {
-        el.dataset.adPushDone = 'true';
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      } catch (err) {
-        console.warn('AdSense scroll popup push notice:', err);
+    // Also poll every 250ms for up to 5s in case mutation is not caught
+    const pollTimer = setInterval(() => {
+      if (isDisposed) {
+        clearInterval(pollTimer);
+        return;
+      }
+      const status = el.getAttribute('data-ad-status');
+      if (status === 'filled' || checkFilled()) {
+        setIsAdLoaded(true);
+        retryCountRef.current = 0;
+        clearInterval(pollTimer);
+        if (safetyTimer) clearTimeout(safetyTimer);
+      } else if (status === 'unfilled') {
+        clearInterval(pollTimer);
+        handleUnfilledRetry();
       }
     }, 250);
 
-    // Safety fallback: if Google fails to fill the ad within 4.5 seconds, auto-close and retry after 3s
-    const safetyTimer = setTimeout(() => {
-      if (el && el.getAttribute('data-ad-status') !== 'filled' && !el.querySelector('iframe')) {
+    // Push to AdSense queue
+    const pushTimer = setTimeout(() => {
+      if (isDisposed) return;
+      try {
+        if (!el.dataset.adPushDone) {
+          el.dataset.adPushDone = 'true';
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
+      } catch (err) {
+        console.warn('AdSense scroll popup push notice:', err);
+      }
+    }, 100);
+
+    // Safety fallback: if Google fails to respond within 5s, quietly cancel (never show blank box)
+    safetyTimer = setTimeout(() => {
+      if (isDisposed) return;
+      clearInterval(pollTimer);
+      if (!checkFilled()) {
         handleUnfilledRetry();
       }
-    }, 4500);
+    }, 5000);
 
     return () => {
+      isDisposed = true;
       clearTimeout(pushTimer);
-      clearTimeout(safetyTimer);
+      if (safetyTimer) clearTimeout(safetyTimer);
+      clearInterval(pollTimer);
       observer.disconnect();
     };
-  }, [isOpen, adKey]);
+  }, [isTriggered, adKey, isLocal]);
 
   const handleClose = () => {
-    // If user explicitly dismisses popup, cancel any retry
     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     retryCountRef.current = MAX_RETRIES;
-    setIsOpen(false);
+    setIsAdLoaded(false);
+    setIsTriggered(false);
     try {
       sessionStorage.setItem('careerdiary_scroll_popup_closed', Date.now().toString());
     } catch (_) {}
   };
 
-  // Disabled on admin pages or if not opened
-  if (!isOpen || (pathname && pathname.startsWith('/admin'))) {
+  // Disabled on admin pages or if trigger not active
+  if (!isTriggered || (pathname && pathname.startsWith('/admin'))) {
     return null;
   }
-
-  const isLocal = isLocalDev();
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 999999,
+        zIndex: isAdLoaded ? 999999 : -1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(3px)',
-        WebkitBackdropFilter: 'blur(3px)',
+        backgroundColor: isAdLoaded ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
+        backdropFilter: isAdLoaded ? 'blur(3px)' : 'none',
+        WebkitBackdropFilter: isAdLoaded ? 'blur(3px)' : 'none',
+        opacity: isAdLoaded ? 1 : 0,
+        pointerEvents: isAdLoaded ? 'auto' : 'none',
+        transition: 'opacity 0.25s ease, background-color 0.25s ease',
       }}
       onClick={handleClose}
-      aria-modal="true"
+      aria-modal={isAdLoaded ? 'true' : 'false'}
       role="dialog"
     >
       <div
@@ -215,10 +280,10 @@ export default function ScrollPopupAd() {
           maxWidth: '340px',
           backgroundColor: '#ffffff',
           borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
-          border: '1px solid #e2e8f0',
+          boxShadow: isAdLoaded ? '0 25px 50px -12px rgba(0, 0, 0, 0.45)' : 'none',
+          border: isAdLoaded ? '1px solid #e2e8f0' : 'none',
           overflow: 'hidden',
-          animation: 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          animation: isAdLoaded ? 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
         }}
       >
         {/* Header Bar */}
