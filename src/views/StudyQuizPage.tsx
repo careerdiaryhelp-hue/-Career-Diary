@@ -31,7 +31,8 @@ import {
   AlertCircle,
   Sparkles,
   BarChart3,
-  Layers
+  Layers,
+  X
 } from 'lucide-react';
 
 interface StudyQuizPageProps {
@@ -58,6 +59,13 @@ function renderOptionContent(text: string) {
   return text;
 }
 
+function getDefaultDifficulty(idx: number): 'Easy' | 'Medium' | 'Hard' {
+  const mod = idx % 10;
+  if (mod === 4 || mod === 9) return 'Hard';
+  if (mod % 2 === 0) return 'Easy';
+  return 'Medium';
+}
+
 function normalizeToQuizSet(item: any): QuizSet {
   const cleanId = item.id || item.slug;
   const examSlug = item.examSlug || String(item.exam || 'bssc-cgl').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -70,9 +78,9 @@ function normalizeToQuizSet(item: any): QuizSet {
     if (raw && raw.length > 0) {
       parsedQuestions = raw.map((q, idx) => ({
         id: String(q.id || idx + 1),
-        topic: 'General Studies',
+        topic: q.topic || 'General Studies',
         subtopic: '',
-        difficulty: 'Medium',
+        difficulty: q.difficulty || getDefaultDifficulty(idx),
         question: q.question,
         options: q.options,
         correct_answer: q.correct_answer,
@@ -87,7 +95,7 @@ function normalizeToQuizSet(item: any): QuizSet {
       id: String(q.id || idx + 1),
       topic: q.topic || 'General Studies',
       subtopic: q.subtopic || '',
-      difficulty: q.difficulty || 'Medium',
+      difficulty: q.difficulty || getDefaultDifficulty(idx),
       question: q.question || '',
       options: {
         A: q.options?.A || '',
@@ -990,7 +998,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
             </div>
 
             {filteredStudyQuestions.length === 0 && (
-              selectedSet.content ? (
+              selectedSet.questions.length === 0 && selectedSet.content ? (
                 <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', overflow: 'hidden' }}>
                   {(() => {
                     const lower = selectedSet.content.toLowerCase();
@@ -1013,8 +1021,10 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               ) : (
                 <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
                   <HelpCircle size={40} style={{ margin: '0 auto 12px', color: '#94a3b8' }} />
-                  <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>No questions available</h3>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>No questions match your filter criteria.</p>
+                  <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>कोई प्रश्न नहीं मिला (No questions found)</h3>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>
+                    चयनित फ़िल्टर के अनुसार कोई प्रश्न उपलब्ध नहीं है। कृपया दूसरा फ़िल्टर चुनें या &quot;All&quot; पर क्लिक करें।
+                  </p>
                 </div>
               )
             )}
@@ -1409,12 +1419,201 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                   })}
                 </div>
 
+                {/* Submit Button Under the Question Numbers Grid */}
+                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1.5px solid #e2e8f0' }}>
+                  <button
+                    onClick={() => setIsSubmitModalOpen(true)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: '#16a34a',
+                      color: '#ffffff',
+                      fontSize: '0.96rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.35)',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                  >
+                    <CheckCircle2 size={18} />
+                    <span>Submit Test (टेस्ट सबमिट करें)</span>
+                  </button>
+                </div>
+
                 {/* Question Palette Sticky Ad */}
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
                   <DisplayAd label="SPONSORED" style={{ minHeight: '120px' }} />
                 </div>
               </div>
             </div>
+
+            {/* Mobile Question Palette Drawer */}
+            {showPaletteMobile && (
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9998,
+                  backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                  backdropFilter: 'blur(3px)',
+                  display: 'flex',
+                  justifyContent: 'flex-end'
+                }}
+                onClick={() => setShowPaletteMobile(false)}
+              >
+                <div
+                  style={{
+                    width: '320px',
+                    maxWidth: '85vw',
+                    height: '100%',
+                    backgroundColor: '#ffffff',
+                    padding: '20px',
+                    boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflowY: 'auto'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                      Question Palette ({selectedSet.total_questions})
+                    </h4>
+                    <button
+                      onClick={() => setShowPaletteMobile(false)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#64748b' }}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  {/* Palette Summary Legend */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.72rem', marginBottom: '12px', background: '#f8fafc', padding: '8px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                      Answered: {Object.keys(testAnswers).length}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                      Unanswered: {Object.keys(visitedQuestions).length - Object.keys(testAnswers).length}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7' }} />
+                      Review: {Object.values(markedForReview).filter(Boolean).length}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
+                      Not Visited: {selectedSet.total_questions - Object.keys(visitedQuestions).length}
+                    </div>
+                  </div>
+
+                  {/* Section filter */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <select
+                      value={testSectionFilter}
+                      onChange={(e) => setTestSectionFilter(e.target.value)}
+                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.8rem', fontWeight: 600 }}
+                    >
+                      <option value="All">All Sections ({selectedSet.total_questions})</option>
+                      {uniqueTopics.filter(t => t !== 'All').map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Question Numbers Grid */}
+                  <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', paddingRight: '2px', marginBottom: '16px' }}>
+                    {selectedSet.questions.map((q, i) => {
+                      if (testSectionFilter !== 'All' && q.topic !== testSectionFilter) return null;
+                      const isCurrent = i === currentQuestionIndex;
+                      const isAnswered = !!testAnswers[q.id];
+                      const isMarked = !!markedForReview[q.id];
+                      const isVisited = !!visitedQuestions[q.id];
+
+                      let bg = '#f1f5f9';
+                      let textCol = '#475569';
+                      let border = '1px solid #e2e8f0';
+
+                      if (isAnswered) {
+                        bg = '#22c55e';
+                        textCol = '#ffffff';
+                        border = 'none';
+                      } else if (isMarked) {
+                        bg = '#a855f7';
+                        textCol = '#ffffff';
+                        border = 'none';
+                      } else if (isVisited) {
+                        bg = '#ef4444';
+                        textCol = '#ffffff';
+                        border = 'none';
+                      }
+
+                      if (isCurrent) {
+                        border = '2.5px solid #1e3a8a';
+                      }
+
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => {
+                            setCurrentQuestionIndex(i);
+                            setShowPaletteMobile(false);
+                          }}
+                          style={{
+                            height: '34px',
+                            borderRadius: '6px',
+                            border,
+                            backgroundColor: bg,
+                            color: textCol,
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {i + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Submit Button Under Numbers Grid (Mobile) */}
+                  <button
+                    onClick={() => {
+                      setShowPaletteMobile(false);
+                      setIsSubmitModalOpen(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: '#16a34a',
+                      color: '#ffffff',
+                      fontSize: '0.96rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.35)'
+                    }}
+                  >
+                    <CheckCircle2 size={18} />
+                    <span>Submit Test (टेस्ट सबमिट करें)</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Submit Confirmation Modal */}
             {isSubmitModalOpen && (

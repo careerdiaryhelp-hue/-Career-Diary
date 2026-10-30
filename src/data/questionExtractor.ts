@@ -11,6 +11,8 @@ export interface CAQuestion {
   correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   solution: string;
   image?: string;
+  difficulty?: 'Easy' | 'Medium' | 'Hard' | string;
+  topic?: string;
 }
 
 /**
@@ -146,20 +148,21 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
               return cleanHtmlText(s).replace(/^[A-Da-d][\.\:\)\-\s]+/, '').trim();
             };
 
+            const rawOpts = item.options || item.opts || item.choices || item.answers;
             let opts = { A: '', B: '', C: '', D: '' };
-            if (Array.isArray(item.options)) {
+            if (Array.isArray(rawOpts)) {
               opts = {
-                A: cleanOpt(item.options[0]),
-                B: cleanOpt(item.options[1]),
-                C: cleanOpt(item.options[2]),
-                D: cleanOpt(item.options[3]),
+                A: cleanOpt(rawOpts[0]),
+                B: cleanOpt(rawOpts[1]),
+                C: cleanOpt(rawOpts[2]),
+                D: cleanOpt(rawOpts[3]),
               };
-            } else if (item.options && typeof item.options === 'object') {
+            } else if (rawOpts && typeof rawOpts === 'object') {
               opts = {
-                A: cleanOpt(item.options.A || item.options.a || item.options['1']),
-                B: cleanOpt(item.options.B || item.options.b || item.options['2']),
-                C: cleanOpt(item.options.C || item.options.c || item.options['3']),
-                D: cleanOpt(item.options.D || item.options.d || item.options['4']),
+                A: cleanOpt(rawOpts.A || rawOpts.a || rawOpts['1']),
+                B: cleanOpt(rawOpts.B || rawOpts.b || rawOpts['2']),
+                C: cleanOpt(rawOpts.C || rawOpts.c || rawOpts['3']),
+                D: cleanOpt(rawOpts.D || rawOpts.d || rawOpts['4']),
               };
             }
 
@@ -181,14 +184,29 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
               }
             }
 
-            const expl = cleanHtmlText(String(item.expl || item.explanation || item.solution || item.desc || '').trim());
+            const expl = cleanHtmlText(String(item.expl || item.exp || item.explanation || item.solution || item.desc || '').trim());
+
+            // Assign balanced difficulty if not explicitly set
+            const mod = idx % 10;
+            const autoDiff = (mod === 4 || mod === 9) ? 'Hard' : (mod % 2 === 0 ? 'Easy' : 'Medium');
+            let diff = item.difficulty || item.diff || item.level;
+            if (diff) {
+              const dLower = String(diff).toLowerCase();
+              if (dLower.includes('easy') || dLower.includes('सरल')) diff = 'Easy';
+              else if (dLower.includes('hard') || dLower.includes('कठिन')) diff = 'Hard';
+              else diff = 'Medium';
+            } else {
+              diff = autoDiff;
+            }
 
             const qObj: CAQuestion = {
               id: idx + 1,
               question: cleanQ || rawQ,
               options: opts,
               correct_answer: correct,
-              solution: expl
+              solution: expl,
+              difficulty: diff,
+              topic: item.topic || item.subject || 'General Studies'
             };
             if (img) qObj.image = img;
             questions.push(qObj);
@@ -322,13 +340,26 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
             .trim();
         }
 
+        const mod = (i - 1) % 10;
+        const autoDiff = (mod === 4 || mod === 9) ? 'Hard' : (mod % 2 === 0 ? 'Easy' : 'Medium');
+        let cardDiff = '';
+        const diffMatch = cardContent.match(/(?:difficulty|कठिनाई|level)[\s\:\-]+([A-Za-z]+)/i);
+        if (diffMatch) {
+          const dLower = diffMatch[1].toLowerCase();
+          if (dLower.includes('easy')) cardDiff = 'Easy';
+          else if (dLower.includes('hard')) cardDiff = 'Hard';
+          else cardDiff = 'Medium';
+        }
+
         if (cleanQuestion) {
           const qObj: CAQuestion = {
             id: i,
             question: cleanQuestion,
             options,
             correct_answer: correct,
-            solution: explanation
+            solution: explanation,
+            difficulty: cardDiff || autoDiff,
+            topic: 'General Studies'
           };
           if (qImage) qObj.image = qImage;
           questions.push(qObj);
@@ -388,12 +419,16 @@ export function extractQuestionsFromContent(content: string): CAQuestion[] {
         });
 
         if (options.A && options.B) {
+          const mod = (i - 1) % 10;
+          const autoDiff = (mod === 4 || mod === 9) ? 'Hard' : (mod % 2 === 0 ? 'Easy' : 'Medium');
           const qObj: CAQuestion = {
             id: i,
             question: qText,
             options,
             correct_answer: correct,
-            solution: explanation
+            solution: explanation,
+            difficulty: autoDiff,
+            topic: 'General Studies'
           };
           if (qImage) qObj.image = qImage;
           questions.push(qObj);
