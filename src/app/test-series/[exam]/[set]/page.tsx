@@ -92,6 +92,14 @@ export default async function TestSeriesSetRoute({
     return (sExam === cleanExam && sSet === cleanSet) || sSlug === cleanSet || sSlug === String(setParam || '').toLowerCase().trim();
   }) || (await fetchTestSeriesBySlug(setParam));
 
+  // If set came from summary list or is chunked, load full document with all questions
+  if (set && (!set.questions || set.questions.length <= 3 || set.isChunked)) {
+    const fullSet = await fetchTestSeriesBySlug(set.slug || set.id || setParam);
+    if (fullSet && Array.isArray(fullSet.questions) && fullSet.questions.length > 0) {
+      set = { ...set, ...fullSet };
+    }
+  }
+
   // 2. Fallback to hardcoded sets if not found in Firestore
   if (!set) {
     set = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);

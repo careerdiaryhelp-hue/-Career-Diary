@@ -956,6 +956,8 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
   }
 
   const nowIso = new Date().toISOString();
+  const rawQuestions = Array.isArray(testSeriesPost.questions) ? testSeriesPost.questions : [];
+
   const safeDoc = {
     ...testSeriesPost,
     id: safeId,
@@ -965,17 +967,73 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
     status: testSeriesPost.status || 'Published'
   };
 
+  // 1. Never store massive stringified JSON in 'content' to avoid Firestore property size limits
+  if (rawQuestions.length > 0) {
+    safeDoc.content = '';
+  } else if (typeof safeDoc.content === 'string' && safeDoc.content.length > 400000) {
+    safeDoc.content = safeDoc.content.slice(0, 400000);
+  }
+
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
-    const { doc, setDoc, getDoc } = await import('firebase/firestore');
+    const { doc, setDoc, getDoc, deleteDoc } = await import('firebase/firestore');
 
-    // 1. Save individual full test series doc in permitted 'jobs' collection as ts_${safeId}
+    // 2. Determine chunking for questions to guarantee each Firestore doc stays well below 1 MiB limit
+    const questionsJson = JSON.stringify(rawQuestions);
+    const needsChunking = questionsJson.length > 400000;
+
+    let chunkCount = 1;
+    if (needsChunking) {
+      const chunks = [];
+      let cur = [];
+      let curBytes = 0;
+      const MAX_CHUNK_BYTES = 300000; // 300 KB safe ceiling per document
+
+      for (const q of rawQuestions) {
+        const qBytes = JSON.stringify(q).length;
+        if (cur.length > 0 && curBytes + qBytes > MAX_CHUNK_BYTES) {
+          chunks.push(cur);
+          cur = [q];
+          curBytes = qBytes;
+        } else {
+          cur.push(q);
+          curBytes += qBytes;
+        }
+      }
+      if (cur.length > 0) chunks.push(cur);
+
+      chunkCount = chunks.length;
+      safeDoc.isChunked = true;
+      safeDoc.chunkCount = chunkCount;
+      // Main doc stores preview only so main doc is lightweight (< 50KB)
+      safeDoc.questions = rawQuestions.slice(0, 3);
+
+      // Save each chunk document in permitted 'jobs' collection
+      for (let i = 0; i < chunkCount; i++) {
+        const chunkRef = doc(db, 'jobs', `ts_${safeId}_c${i}`);
+        await setDoc(chunkRef, sanitizeFirestoreData({
+          id: `ts_${safeId}_c${i}`,
+          parentId: safeId,
+          chunkIndex: i,
+          questions: chunks[i],
+          isChunk: true,
+          updatedAt: nowIso
+        }), { merge: true });
+      }
+    } else {
+      safeDoc.isChunked = false;
+      safeDoc.chunkCount = 1;
+      safeDoc.questions = rawQuestions;
+    }
+
+    // 3. Save main test series doc in permitted 'jobs' collection as ts_${safeId}
     const tsRef = doc(db, 'jobs', `ts_${safeId}`);
     const sanitizedDoc = sanitizeFirestoreData(safeDoc);
     await setDoc(tsRef, sanitizedDoc, { merge: true });
 
-    // 2. Also update master settings_testSeries array doc in 'jobs' collection
+    // 4. Update master settings_testSeries array doc in 'jobs' collection
+    // IMPORTANT: Strip heavy questions & content from master settings doc to prevent 1MB limit
     const listRef = doc(db, 'jobs', 'settings_testSeries');
     let existingItems = [];
     try {
@@ -986,8 +1044,12 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
       }
     } catch (_) {}
 
+    const summaryItem = { ...sanitizedDoc };
+    delete summaryItem.content;
+    delete summaryItem.questions; // Keep master list light
+
     const updatedItems = [
-      sanitizedDoc,
+      summaryItem,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
@@ -1015,10 +1077,16 @@ export async function deleteTestSeriesFromFirestore(id) {
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
 
-    // 1. Delete individual ts_${safeId} doc
+    // 1. Delete individual ts_${safeId} doc & potential chunks
     try {
       await deleteDoc(doc(db, 'jobs', `ts_${safeId}`));
     } catch (_) {}
+
+    for (let i = 0; i < 30; i++) {
+      try {
+        await deleteDoc(doc(db, 'jobs', `ts_${safeId}_c${i}`));
+      } catch (_) {}
+    }
 
     // 2. Update settings_testSeries list
     const listRef = doc(db, 'jobs', 'settings_testSeries');
@@ -1121,17 +1189,61 @@ export async function fetchTestSeriesBySlug(slug) {
   if (!slug) return null;
   const safeId = cleanJobId(slug);
 
+  // Helper to reassemble chunks if doc was split
+  const reassembleChunksIfNeeded = async (targetDoc) => {
+    if (!targetDoc) return targetDoc;
+    if (targetDoc.isChunked && targetDoc.chunkCount > 1) {
+      const parentSafeId = cleanJobId(targetDoc.id || targetDoc.slug);
+      const chunkPromises = [];
+      for (let i = 0; i < targetDoc.chunkCount; i++) {
+        chunkPromises.push(fetchFirestoreJobById(`ts_${parentSafeId}_c${i}`, 'jobs'));
+      }
+      try {
+        const chunkResults = await Promise.all(chunkPromises);
+        let assembled = [];
+        chunkResults.forEach(c => {
+          if (c && Array.isArray(c.questions)) {
+            assembled = assembled.concat(c.questions);
+          }
+        });
+        if (assembled.length > 0) {
+          targetDoc.questions = assembled;
+        }
+      } catch (err) {
+        console.warn('Error fetching test series chunks:', err);
+      }
+    }
+    return targetDoc;
+  };
+
   // 1. Try single document fetch ts_${safeId} from permitted jobs collection
   try {
-    const doc = await fetchFirestoreJobById(`ts_${safeId}`, 'jobs');
-    if (doc && (doc.title || doc.content || doc.questions)) return doc;
+    let doc = await fetchFirestoreJobById(`ts_${safeId}`, 'jobs');
+    if (doc) {
+      doc = await reassembleChunksIfNeeded(doc);
+      if (doc.title || doc.content || (doc.questions && doc.questions.length > 0)) {
+        return doc;
+      }
+    }
   } catch (_) {}
 
   // 2. Direct lookup from settings_testSeries / initial
   try {
     const all = await fetchTestSeriesOnce();
     const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
-    if (found) return found;
+    if (found) {
+      // If found in summary list but questions are empty or chunked, fetch full ts_${safeId}
+      if (!found.questions || found.questions.length <= 3 || found.isChunked) {
+        try {
+          let fullDoc = await fetchFirestoreJobById(`ts_${cleanJobId(found.id || found.slug)}`, 'jobs');
+          if (fullDoc) {
+            fullDoc = await reassembleChunksIfNeeded(fullDoc);
+            return { ...found, ...fullDoc };
+          }
+        } catch (_) {}
+      }
+      return found;
+    }
   } catch (_) {}
 
   return null;
