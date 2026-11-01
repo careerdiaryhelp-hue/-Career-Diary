@@ -910,7 +910,14 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     {/* Optional Question Image */}
                     {q.image && (
                       <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                        <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                        <img
+                          src={q.image}
+                          alt={`Question ${q.id}`}
+                          style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                        />
                       </div>
                     )}
 
@@ -1055,6 +1062,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                               src={q.explanation_image}
                               alt={`Solution diagram for question ${q.id}`}
                               style={{ maxWidth: '100%', maxHeight: '350px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
                             />
                           </div>
                         )}
@@ -1239,7 +1249,14 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                   {/* Optional Question Image */}
                   {currentTestQuestion.image && (
                     <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                      <img src={currentTestQuestion.image} alt="Question" style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px' }} />
+                      <img
+                        src={currentTestQuestion.image}
+                        alt="Question"
+                        style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px' }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                        }}
+                      />
                     </div>
                   )}
 

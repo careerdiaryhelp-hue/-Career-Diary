@@ -33,7 +33,7 @@ import {
   cleanJobId
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
-import { parseQuizJson, optimizeQuizQuestionsImages } from '../utils/quizParser';
+import { parseQuizJson, parseQuizZip, attachImagesToQuestions, optimizeQuizQuestionsImages } from '../utils/quizParser';
 
 const cleanSlug = (str) => {
   if (!str) return '';
@@ -285,6 +285,7 @@ export default function AdminDashboardPage({
   const [tsJsonFileStats, setTsJsonFileStats] = useState(null);
   const [showTsJsonPreviewModal, setShowTsJsonPreviewModal] = useState(false);
   const tsFileInputRef = useRef(null);
+  const tsImagesInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
     title: '',
     exam: 'BSSC CGL',
@@ -6491,65 +6492,124 @@ export default function AdminDashboardPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleTsJsonFileUpload = (e) => {
+  const handleTsJsonFileUpload = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const content = event.target.result;
-        const parsed = parseQuizJson(content, file.name);
+    const isZip = file.name.toLowerCase().endsWith('.zip');
 
-        setTsJsonFileStats({
-          fileName: file.name,
-          fileSize: (file.size / 1024).toFixed(1) + ' KB',
-          totalQuestions: parsed.totalQuestions,
-          questionsWithImage: parsed.questionsWithImage,
-          solutionsWithImage: parsed.solutionsWithImage,
-          topicsSummary: parsed.topicsSummary,
-          previewQuestions: parsed.questions.slice(0, 5),
-          optimizing: parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0
+    try {
+      showToast(isZip ? `📦 Unpacking ZIP & diagrams from "${file.name}"...` : `Reading "${file.name}"...`, 'info');
+
+      let parsed;
+      if (isZip) {
+        parsed = await parseQuizZip(file, (step) => {
+          console.log(`[ZIP Loader] ${step}`);
         });
-
-        // CRITICAL FIX: NEVER set content to JSON.stringify(parsed.questions) which causes Firestore 1MB property limit error!
-        setTsForm(prev => ({
-          ...prev,
-          title: parsed.title,
-          exam: parsed.exam,
-          set: parsed.set,
-          category: parsed.category,
-          slug: parsed.slug,
-          description: parsed.description,
-          durationMinutes: parsed.durationMinutes,
-          marksPerQuestion: parsed.marksPerQuestion,
-          negativeMarks: parsed.negativeMarks,
-          totalQuestions: parsed.totalQuestions,
-          questions: parsed.questions,
-          topicsSummary: parsed.topicsSummary,
-          content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${parsed.questionsWithImage} question diagrams and ${parsed.solutionsWithImage} solution diagrams.\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
-        }));
-
-        showToast(`✅ ${parsed.totalQuestions} questions successfully imported from "${file.name}"!`, 'success');
+      } else {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsText(file);
+        });
+        parsed = parseQuizJson(text, file.name);
 
         // Automatically optimize high-res embedded diagrams in background to prevent Firestore bloat and speed up CBT
         if (parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0) {
           try {
-            const optimized = await optimizeQuizQuestionsImages(parsed.questions);
-            setTsForm(prev => ({ ...prev, questions: optimized }));
-            setTsJsonFileStats(prev => prev ? { ...prev, optimizing: false } : null);
+            parsed.questions = await optimizeQuizQuestionsImages(parsed.questions);
           } catch (optErr) {
             console.warn('Image optimization skipped:', optErr);
-            setTsJsonFileStats(prev => prev ? { ...prev, optimizing: false } : null);
           }
         }
-      } catch (err) {
-        console.error('Error parsing quiz JSON:', err);
-        alert('Error parsing JSON file: ' + (err.message || String(err)));
       }
-    };
-    reader.readAsText(file);
-    if (e.target) e.target.value = '';
+
+      setTsJsonFileStats({
+        fileName: file.name,
+        fileSize: (file.size / 1024).toFixed(1) + ' KB',
+        totalQuestions: parsed.totalQuestions,
+        questionsWithImage: parsed.questionsWithImage,
+        solutionsWithImage: parsed.solutionsWithImage,
+        topicsSummary: parsed.topicsSummary,
+        previewQuestions: parsed.questions.slice(0, 5),
+        isZip: isZip
+      });
+
+      // CRITICAL FIX: NEVER set content to JSON.stringify(parsed.questions) which causes Firestore 1MB property limit error!
+      setTsForm(prev => ({
+        ...prev,
+        title: parsed.title,
+        exam: parsed.exam,
+        set: parsed.set,
+        category: parsed.category,
+        slug: parsed.slug,
+        description: parsed.description,
+        durationMinutes: parsed.durationMinutes,
+        marksPerQuestion: parsed.marksPerQuestion,
+        negativeMarks: parsed.negativeMarks,
+        totalQuestions: parsed.totalQuestions,
+        questions: parsed.questions,
+        topicsSummary: parsed.topicsSummary,
+        content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${parsed.questionsWithImage} question diagrams and ${parsed.solutionsWithImage} solution diagrams.\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
+      }));
+
+      showToast(`✅ ${parsed.totalQuestions} प्रश्न व ${parsed.questionsWithImage + parsed.solutionsWithImage} चित्र सफलतापूर्वक लोड हो गए!`, 'success');
+    } catch (err) {
+      console.error('Error loading quiz file:', err);
+      alert('Error loading file: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleTsImagesAttach = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!tsForm.questions || tsForm.questions.length === 0) {
+      alert('कृपया पहले JSON फ़ाइल लोड करें, उसके बाद इमेज जोड़ें।');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    try {
+      showToast(`📷 Diagrams sync kiye ja rahe hain...`, 'info');
+      const isSingleZip = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip');
+      const { updatedQuestions, matchedQuestionImgs, matchedSolutionImgs } = await attachImagesToQuestions(
+        tsForm.questions,
+        isSingleZip ? files[0] : files
+      );
+
+      setTsForm(prev => ({
+        ...prev,
+        questions: updatedQuestions
+      }));
+
+      const totalQImgs = updatedQuestions.filter(q => !!q.image).length;
+      const totalSImgs = updatedQuestions.filter(q => !!q.explanation_image).length;
+
+      setTsJsonFileStats(prev => prev ? {
+        ...prev,
+        questionsWithImage: totalQImgs,
+        solutionsWithImage: totalSImgs,
+        previewQuestions: updatedQuestions.slice(0, 5)
+      } : {
+        fileName: 'Quiz Package',
+        fileSize: `${tsForm.questions.length} Questions`,
+        totalQuestions: tsForm.questions.length,
+        questionsWithImage: totalQImgs,
+        solutionsWithImage: totalSImgs,
+        topicsSummary: tsForm.topicsSummary || {},
+        previewQuestions: updatedQuestions.slice(0, 5)
+      });
+
+      showToast(`✅ ${matchedQuestionImgs} प्रश्न आरेख और ${matchedSolutionImgs} व्याख्या चित्र सफलतापूर्वक जुड़ गए!`, 'success');
+    } catch (err) {
+      console.error('Error attaching images:', err);
+      alert('Error attaching images: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleDeleteTs = (item) => {
@@ -6866,12 +6926,22 @@ export default function AdminDashboardPage({
                   position: 'relative'
                 }}
               >
-                {/* Hidden File Input */}
+                {/* Hidden File Input for ZIP or JSON */}
                 <input
                   type="file"
                   ref={tsFileInputRef}
-                  accept=".json,application/json"
+                  accept=".zip,.json,application/zip,application/json,application/x-zip-compressed,multipart/x-zip"
                   onChange={handleTsJsonFileUpload}
+                  style={{ display: 'none' }}
+                />
+
+                {/* Hidden File Input for attaching Diagrams (ZIP or Image files) */}
+                <input
+                  type="file"
+                  ref={tsImagesInputRef}
+                  accept=".zip,image/*"
+                  multiple
+                  onChange={handleTsImagesAttach}
                   style={{ display: 'none' }}
                 />
 
@@ -6885,42 +6955,71 @@ export default function AdminDashboardPage({
                       justifyContent: 'center',
                       cursor: 'pointer',
                       gap: '8px',
-                      padding: '10px 0'
+                      padding: '12px 0'
                     }}
                   >
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
-                      <UploadCloud size={26} />
+                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                      <UploadCloud size={28} />
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e3a8a' }}>
-                      📂 Upload Test Series JSON File (ऑटोमैटिक 150 प्रश्न, इमेजेस व व्याख्या लोड करें)
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a' }}>
+                      📦 Upload Test Series Package (ZIP या JSON फ़ाइल)
                     </div>
-                    <div style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '580px', textAlign: 'center', lineHeight: 1.45 }}>
-                      BSSC CGL, EduTeria (जैसे <code style={{ color: '#2563eb', fontWeight: 700 }}>bssc_cgl4_set1_quiz_with_embedded_images.json</code>) या कोई भी क्विज़ JSON चुनें — प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Question Images) और विस्तृत व्याख्या (Solutions) स्वतः तैयार हो जाएँगे।
+                    <div style={{ fontSize: '0.84rem', color: '#64748b', maxWidth: '620px', textAlign: 'center', lineHeight: 1.5 }}>
+                      <strong>ZIP पैकेज</strong> (जिसमें JSON और <code style={{ color: '#0284c7', background: '#f0f9ff', padding: '1px 5px', borderRadius: '4px' }}>images/</code> फ़ोल्डर दोनों हों) या अकेला <strong>JSON</strong> चुनें — सभी प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Question Images) और विस्तृत व्याख्या (Solutions) स्वतः तैयार हो जाएँगे।
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        tsFileInputRef.current && tsFileInputRef.current.click();
-                      }}
-                      style={{
-                        marginTop: '6px',
-                        background: '#2563eb',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '9px 18px',
-                        fontSize: '0.88rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
-                      }}
-                    >
-                      <FileText size={16} /> Select JSON File (JSON फ़ाइल चुनें)
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (tsFileInputRef.current) {
+                            tsFileInputRef.current.accept = '.zip,application/zip,application/x-zip-compressed';
+                            tsFileInputRef.current.click();
+                          }
+                        }}
+                        style={{
+                          background: '#2563eb',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '9px 18px',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
+                        }}
+                      >
+                        📦 Upload ZIP Package (.zip) (JSON + Images एक साथ)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (tsFileInputRef.current) {
+                            tsFileInputRef.current.accept = '.json,application/json';
+                            tsFileInputRef.current.click();
+                          }
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          color: '#1e293b',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '8px',
+                          padding: '9px 16px',
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <FileText size={16} /> Upload JSON Only (.json)
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -6934,18 +7033,38 @@ export default function AdminDashboardPage({
                             ✅ {tsJsonFileStats.fileName} ({tsJsonFileStats.fileSize})
                           </div>
                           <div style={{ fontSize: '0.78rem', color: '#475569' }}>
-                            JSON फ़ाइल से सभी {tsJsonFileStats.totalQuestions} प्रश्न, विकल्प, इमेज व व्याख्या सफलतापूर्वक लोड हो गए हैं!
+                            {tsJsonFileStats.isZip ? '📦 ZIP पैकेज से' : 'फ़ाइल से'} सभी {tsJsonFileStats.totalQuestions} प्रश्न, विकल्प, {tsJsonFileStats.questionsWithImage} प्रश्न आरेख व {tsJsonFileStats.solutionsWithImage} व्याख्या चित्र लोड हो गए हैं!
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => tsImagesInputRef.current && tsImagesInputRef.current.click()}
+                          title="Attach diagrams ZIP or images folder"
+                          style={{
+                            background: '#f0fdf4',
+                            border: '1px solid #86efac',
+                            color: '#166534',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                        >
+                          📷 Attach Images (.zip/files)
+                        </button>
                         <button
                           type="button"
                           onClick={() => setShowTsJsonPreviewModal(!showTsJsonPreviewModal)}
                           style={{
                             background: '#ffffff',
-                            border: '1px solid #86efac',
-                            color: '#15803d',
+                            border: '1px solid #cbd5e1',
+                            color: '#334155',
                             borderRadius: '6px',
                             padding: '6px 14px',
                             fontSize: '0.82rem',
@@ -6960,7 +7079,12 @@ export default function AdminDashboardPage({
                         </button>
                         <button
                           type="button"
-                          onClick={() => tsFileInputRef.current && tsFileInputRef.current.click()}
+                          onClick={() => {
+                            if (tsFileInputRef.current) {
+                              tsFileInputRef.current.accept = '.zip,.json,application/zip,application/json,application/x-zip-compressed';
+                              tsFileInputRef.current.click();
+                            }
+                          }}
                           style={{
                             background: '#ffffff',
                             border: '1px solid #cbd5e1',
@@ -6972,7 +7096,7 @@ export default function AdminDashboardPage({
                             cursor: 'pointer'
                           }}
                         >
-                          Choose Another JSON
+                          Choose Another File (ZIP/JSON)
                         </button>
                       </div>
                     </div>

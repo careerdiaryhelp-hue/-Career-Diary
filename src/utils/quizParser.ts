@@ -82,7 +82,53 @@ function detectTopic(q: any, idx: number, totalQ: number): string {
   return 'General Studies';
 }
 
-export function parseQuizJson(input: string | object, fileName: string = ''): ParsedQuizResult {
+export function lookupImageInMap(
+  imageMap: Record<string, string> | undefined,
+  rawRef: string | null | undefined,
+  questionId: string | number,
+  type: 'q' | 's' = 'q'
+): string | null {
+  if (!imageMap || Object.keys(imageMap).length === 0) return null;
+
+  const idStr = String(questionId).trim();
+  const idNum = idStr.replace(/[^0-9]/g, '');
+
+  // 1. Direct raw reference match (e.g. "images/q118.jpg", "q118.jpg")
+  if (rawRef && typeof rawRef === 'string') {
+    const cleanRef = rawRef.trim().toLowerCase().replace(/\\/g, '/');
+    if (imageMap[cleanRef]) return imageMap[cleanRef];
+
+    const baseName = cleanRef.split('/').pop() || cleanRef;
+    if (imageMap[baseName]) return imageMap[baseName];
+
+    const noExt = baseName.replace(/\.[^/.]+$/, '');
+    if (imageMap[noExt]) return imageMap[noExt];
+  }
+
+  // 2. Lookup by Question ID and Prefix
+  const pad3 = idNum ? idNum.padStart(3, '0') : ''; // e.g. "010"
+  const candidates = type === 'q'
+    ? [`q${idStr}`, `q${idNum}`, `question_${idStr}`, `question_${idNum}`, `question${idNum}`, `q_${idNum}`, `q${pad3}`, `question_${pad3}`, idStr, idNum]
+    : [`s${idStr}`, `s${idNum}`, `e${idStr}`, `e${idNum}`, `e${pad3}`, `s${pad3}`, `sol${idNum}`, `solution_${idStr}`, `solution_${idNum}`, `exp${idNum}`, `explanation_${idStr}`, `explanation_${idNum}`];
+
+  for (const p of candidates) {
+    if (!p) continue;
+    const lowerP = p.toLowerCase();
+    if (imageMap[lowerP]) return imageMap[lowerP];
+    for (const ext of ['.jpg', '.jpeg', '.png', '.webp', '.svg']) {
+      if (imageMap[`${lowerP}${ext}`]) return imageMap[`${lowerP}${ext}`];
+      if (imageMap[`images/${lowerP}${ext}`]) return imageMap[`images/${lowerP}${ext}`];
+    }
+  }
+
+  return null;
+}
+
+export function parseQuizJson(
+  input: string | object,
+  fileName: string = '',
+  imageMap?: Record<string, string>
+): ParsedQuizResult {
   let raw: any = typeof input === 'string' ? JSON.parse(input) : input;
   let rawQuestions: any[] = [];
 
@@ -160,18 +206,28 @@ export function parseQuizJson(input: string | object, fileName: string = ''): Pa
       }
     }
 
-    // 3. Normalize Images
-    const isSet1 = fileName.toLowerCase().includes('set1') || fileName.toLowerCase().includes('set 1') || rawTitle.toLowerCase().includes('set 01') || rawTitle.toLowerCase().includes('set 1');
+    // 3. Normalize & Match Images (supports direct URL, Base64, and ZIP ImageMap matching)
     let qImg = q.question_image || q.questionImage || q.image || q.img || '';
     if (typeof qImg === 'string' && qImg.trim()) {
       qImg = qImg.trim();
-      if (qImg.startsWith('images/')) {
-        qImg = `/quiz/bssc-cgl4-set1/${qImg}`;
-      } else if (isSet1 && qImg.startsWith('data:image/')) {
-        // Use static high-speed CDN image for set1 if available
-        qImg = `/quiz/bssc-cgl4-set1/images/q${q.id}.jpg`;
+      if (imageMap) {
+        const matched = lookupImageInMap(imageMap, qImg, q.id, 'q');
+        if (matched) qImg = matched;
       }
-      questionsWithImage++;
+      if (qImg.startsWith('images/')) {
+        const isBsscSet1 = fileName.toLowerCase().includes('bssc_cgl4_set1') || rawTitle.toLowerCase().includes('set 01');
+        if (isBsscSet1) {
+          qImg = `/quiz/bssc-cgl4-set1/${qImg}`;
+        }
+      }
+      if (qImg) questionsWithImage++;
+    } else if (imageMap) {
+      // Check if imageMap has an image for this question id (e.g. q104.jpg)
+      const matched = lookupImageInMap(imageMap, '', q.id, 'q');
+      if (matched) {
+        qImg = matched;
+        questionsWithImage++;
+      }
     } else {
       qImg = '';
     }
@@ -179,13 +235,23 @@ export function parseQuizJson(input: string | object, fileName: string = ''): Pa
     let expImg = q.explanation_image || q.explanationImage || q.solution_image || q.solutionImage || '';
     if (typeof expImg === 'string' && expImg.trim()) {
       expImg = expImg.trim();
-      if (expImg.startsWith('images/')) {
-        expImg = `/quiz/bssc-cgl4-set1/${expImg}`;
-      } else if (isSet1 && expImg.startsWith('data:image/')) {
-        // Use static high-speed CDN image for set1 if available
-        expImg = `/quiz/bssc-cgl4-set1/images/s${q.id}.jpg`;
+      if (imageMap) {
+        const matched = lookupImageInMap(imageMap, expImg, q.id, 's');
+        if (matched) expImg = matched;
       }
-      solutionsWithImage++;
+      if (expImg.startsWith('images/')) {
+        const isBsscSet1 = fileName.toLowerCase().includes('bssc_cgl4_set1') || rawTitle.toLowerCase().includes('set 01');
+        if (isBsscSet1) {
+          expImg = `/quiz/bssc-cgl4-set1/${expImg}`;
+        }
+      }
+      if (expImg) solutionsWithImage++;
+    } else if (imageMap) {
+      const matched = lookupImageInMap(imageMap, '', q.id, 's');
+      if (matched) {
+        expImg = matched;
+        solutionsWithImage++;
+      }
     } else {
       expImg = '';
     }
@@ -313,4 +379,151 @@ export async function optimizeQuizQuestionsImages(
 
   return updatedQuestions;
 }
+
+/**
+ * Extracts and parses a ZIP archive containing a quiz JSON file and an images/ folder of diagrams.
+ * Automatically matches question and solution diagrams into optimized data URLs.
+ */
+export async function parseQuizZip(
+  zipFile: File | Blob,
+  onProgress?: (step: string, percent: number) => void
+): Promise<ParsedQuizResult> {
+  const JSZip = (await import('jszip')).default;
+  if (onProgress) onProgress('Unpacking ZIP archive...', 15);
+
+  const zip = await JSZip.loadAsync(zipFile);
+  const fileKeys = Object.keys(zip.files);
+
+  // 1. Locate JSON file in ZIP
+  const jsonEntries = fileKeys.filter(
+    k => !zip.files[k].dir && k.toLowerCase().endsWith('.json') && !k.startsWith('__MACOSX/')
+  );
+
+  if (jsonEntries.length === 0) {
+    throw new Error('No .json file found inside the ZIP package. Please make sure the ZIP contains your questions JSON file.');
+  }
+
+  const targetJson = jsonEntries.find(k => /quiz|question|test|set/i.test(k)) || jsonEntries[0];
+  if (onProgress) onProgress(`Reading ${targetJson}...`, 30);
+  const jsonText = await zip.files[targetJson].async('text');
+
+  // 2. Extract all images into memory map
+  const imageEntries = fileKeys.filter(
+    k => !zip.files[k].dir && /\.(png|jpe?g|webp|gif|svg)$/i.test(k) && !k.startsWith('__MACOSX/')
+  );
+
+  if (onProgress) onProgress(`Found ${imageEntries.length} diagrams. Extracting...`, 45);
+
+  const imageMap: Record<string, string> = {};
+  for (let i = 0; i < imageEntries.length; i++) {
+    const entryName = imageEntries[i];
+    const ext = entryName.split('.').pop()?.toLowerCase() || 'jpeg';
+    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+    const base64 = await zip.files[entryName].async('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const normKey = entryName.toLowerCase().replace(/\\/g, '/');
+    const baseName = normKey.split('/').pop() || normKey;
+    const nameWithoutExt = baseName.replace(/\.[^/.]+$/, '');
+
+    imageMap[normKey] = dataUrl;
+    imageMap[baseName] = dataUrl;
+    imageMap[nameWithoutExt] = dataUrl;
+  }
+
+  // 3. Parse JSON with imageMap
+  if (onProgress) onProgress('Matching diagrams to questions & options...', 70);
+  const fileName = zipFile instanceof File ? zipFile.name : targetJson;
+  const parsed = parseQuizJson(jsonText, fileName, imageMap);
+
+  // 4. Optimize/compress images to prevent Firestore limits
+  if (onProgress) onProgress('Optimizing diagrams for fast mobile CBT test...', 85);
+  parsed.questions = await optimizeQuizQuestionsImages(parsed.questions);
+
+  parsed.questionsWithImage = parsed.questions.filter(q => !!q.image).length;
+  parsed.solutionsWithImage = parsed.questions.filter(q => !!q.explanation_image).length;
+
+  if (onProgress) onProgress('Ready!', 100);
+  return parsed;
+}
+
+/**
+ * Attaches a standalone ZIP of images or a collection of image files to existing parsed questions.
+ */
+export async function attachImagesToQuestions(
+  questions: ParsedQuestion[],
+  zipOrFiles: File | Blob | File[] | FileList,
+  onProgress?: (step: string, percent: number) => void
+): Promise<{ updatedQuestions: ParsedQuestion[]; matchedQuestionImgs: number; matchedSolutionImgs: number }> {
+  const imageMap: Record<string, string> = {};
+
+  const isZip = (zipOrFiles instanceof File && zipOrFiles.name.toLowerCase().endsWith('.zip')) ||
+    (zipOrFiles instanceof Blob && !(zipOrFiles instanceof File));
+
+  if (isZip) {
+    if (onProgress) onProgress('Unpacking images ZIP...', 20);
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(zipOrFiles as Blob);
+    const imageEntries = Object.keys(zip.files).filter(
+      k => !zip.files[k].dir && /\.(png|jpe?g|webp|gif|svg)$/i.test(k) && !k.startsWith('__MACOSX/')
+    );
+    for (const entryName of imageEntries) {
+      const ext = entryName.split('.').pop()?.toLowerCase() || 'jpeg';
+      const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+      const base64 = await zip.files[entryName].async('base64');
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+
+      const normKey = entryName.toLowerCase().replace(/\\/g, '/');
+      const baseName = normKey.split('/').pop() || normKey;
+      const nameWithoutExt = baseName.replace(/\.[^/.]+$/, '');
+      imageMap[normKey] = dataUrl;
+      imageMap[baseName] = dataUrl;
+      imageMap[nameWithoutExt] = dataUrl;
+    }
+  } else {
+    // List of File objects
+    if (onProgress) onProgress('Reading image files...', 20);
+    const files = Array.from(zipOrFiles as Iterable<File>);
+    for (const f of files) {
+      if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(f.name)) continue;
+      const dataUrl = await new Promise<string>((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.readAsDataURL(f);
+      });
+      const normKey = f.name.toLowerCase().replace(/\\/g, '/');
+      const baseName = normKey.split('/').pop() || normKey;
+      const nameWithoutExt = baseName.replace(/\.[^/.]+$/, '');
+      imageMap[normKey] = dataUrl;
+      imageMap[baseName] = dataUrl;
+      imageMap[nameWithoutExt] = dataUrl;
+    }
+  }
+
+  if (onProgress) onProgress('Matching diagrams to questions...', 60);
+  let matchedQ = 0;
+  let matchedS = 0;
+
+  const updated = questions.map(q => {
+    const copy = { ...q };
+    const qImg = lookupImageInMap(imageMap, copy.image, copy.id, 'q');
+    if (qImg) {
+      copy.image = qImg;
+      matchedQ++;
+    }
+    const sImg = lookupImageInMap(imageMap, copy.explanation_image, copy.id, 's');
+    if (sImg) {
+      copy.explanation_image = sImg;
+      matchedS++;
+    }
+    return copy;
+  });
+
+  if (onProgress) onProgress('Optimizing attached images...', 80);
+  const optimized = await optimizeQuizQuestionsImages(updated);
+  if (onProgress) onProgress('Done!', 100);
+
+  return { updatedQuestions: optimized, matchedQuestionImgs: matchedQ, matchedSolutionImgs: matchedS };
+}
+
 
