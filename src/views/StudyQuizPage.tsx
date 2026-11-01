@@ -193,6 +193,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
   const [visitedQuestions, setVisitedQuestions] = useState<{ [qId: string]: boolean }>({});
   const [testSectionFilter, setTestSectionFilter] = useState<string>('All');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
+  const [isResultReadyModalOpen, setIsResultReadyModalOpen] = useState<boolean>(false);
   const [showPaletteMobile, setShowPaletteMobile] = useState<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -365,7 +366,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
   const handleFinalSubmit = () => {
     setIsTestRunning(false);
     setIsSubmitModalOpen(false);
-    setMode('result');
+    setIsResultReadyModalOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1685,11 +1686,6 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     </div>
                   </div>
 
-                  {/* Ad Banner inside Submit Modal */}
-                  <div style={{ margin: '14px auto 18px auto', maxWidth: '300px', textAlign: 'center' }}>
-                    <DisplayAd label="SPONSORED" style={{ margin: '0 auto' }} insStyle={{ width: '300px', minHeight: '250px' }} />
-                  </div>
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <button
                       onClick={() => setIsSubmitModalOpen(false)}
@@ -1722,6 +1718,155 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       हाँ, सबमिट करें (Submit)
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Post-Submit Interstitial Ad Modal (Exact design match) */}
+            {isResultReadyModalOpen && (
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 10000,
+                  backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                  backdropFilter: 'blur(6px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px'
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '20px',
+                    maxWidth: '480px',
+                    width: '100%',
+                    padding: '24px 22px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                    border: '1px solid #e2e8f0',
+                    maxHeight: '94vh',
+                    overflowY: 'auto',
+                    textAlign: 'center'
+                  }}
+                >
+                  {/* Top Bar Header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '18px',
+                      paddingBottom: '4px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#2563eb',
+                        fontWeight: 700,
+                        fontSize: '0.92rem'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.1rem' }}>✨</span>
+                      <span>परिणाम तैयार हो रहा है...</span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.84rem',
+                        color: '#64748b',
+                        fontWeight: 600
+                      }}
+                    >
+                      रिजल्ट तैयार है
+                    </div>
+                  </div>
+
+                  {/* Main Headings */}
+                  <h3
+                    style={{
+                      fontSize: '1.25rem',
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      margin: '0 0 8px 0',
+                      lineHeight: 1.35
+                    }}
+                  >
+                    आपका टेस्ट सफलतापूर्वक सबमिट हो गया है!
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: '0.88rem',
+                      color: '#64748b',
+                      margin: '0 0 18px 0',
+                      lineHeight: 1.5
+                    }}
+                  >
+                    हम आपके स्कोर, नेगेटिव मार्किंग और रैंक का विश्लेषण कर रहे हैं...
+                  </p>
+
+                  {/* Advertisement Box */}
+                  <div
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '16px 10px',
+                      marginBottom: '20px',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        marginBottom: '8px',
+                        fontWeight: 700
+                      }}
+                    >
+                      ADVERTISEMENT
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <DisplayAd
+                        slot="1202522135"
+                        label={null}
+                        style={{ margin: '0 auto', maxWidth: '300px' }}
+                        insStyle={{ width: '300px', minHeight: '250px' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Full Width View Scorecard Button */}
+                  <button
+                    onClick={() => {
+                      setIsResultReadyModalOpen(false);
+                      setMode('result');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      backgroundColor: '#059669',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '0.98rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                    }}
+                  >
+                    <span>स्कोरकार्ड और रैंक देखें (View Scorecard) →</span>
+                  </button>
                 </div>
               </div>
             )}
