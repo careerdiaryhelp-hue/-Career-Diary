@@ -30,6 +30,7 @@ import {
   sanitizeFirestoreData
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
+import { parseQuizJson } from '../utils/quizParser';
 
 const cleanSlug = (str) => {
   if (!str) return '';
@@ -278,6 +279,9 @@ export default function AdminDashboardPage({
   const [editingTsId, setEditingTsId] = useState(null);
   const [tsSearch, setTsSearch] = useState('');
   const [tsAlert, setTsAlert] = useState(null);
+  const [tsJsonFileStats, setTsJsonFileStats] = useState(null);
+  const [showTsJsonPreviewModal, setShowTsJsonPreviewModal] = useState(false);
+  const tsFileInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
     title: '',
     exam: 'BSSC CGL',
@@ -291,6 +295,8 @@ export default function AdminDashboardPage({
     negativeMarks: 1,
     totalQuestions: 150,
     content: '',
+    questions: [],
+    topicsSummary: {},
     status: 'Published'
   });
 
@@ -6354,6 +6360,7 @@ export default function AdminDashboardPage({
     const dateStr = `${day} ${month} ${year}`;
 
     setEditingTsId(null);
+    setTsJsonFileStats(null);
     setTsForm({
       title: `BSSC CGL 2026 Full Length Mock Test (Set 3)`,
       exam: 'BSSC CGL',
@@ -6367,6 +6374,8 @@ export default function AdminDashboardPage({
       negativeMarks: 1,
       totalQuestions: 150,
       content: '',
+      questions: [],
+      topicsSummary: {},
       status: 'Published'
     });
     setShowTsForm(true);
@@ -6386,13 +6395,77 @@ export default function AdminDashboardPage({
       durationMinutes: item.durationMinutes || 135,
       marksPerQuestion: item.marksPerQuestion || 4,
       negativeMarks: item.negativeMarks || 1,
-      totalQuestions: item.totalQuestions || item.total_questions || 150,
-      content: item.content || '',
+      totalQuestions: item.totalQuestions || item.total_questions || (item.questions ? item.questions.length : 150),
+      content: item.content || (item.questions ? JSON.stringify(item.questions, null, 2) : ''),
+      questions: item.questions || [],
+      topicsSummary: item.topicsSummary || {},
       status: item.status || 'Published'
     });
+    if (Array.isArray(item.questions) && item.questions.length > 0) {
+      const qImgCount = item.questions.filter(q => q.image || q.question_image).length;
+      const sImgCount = item.questions.filter(q => q.explanation_image || q.solution_image).length;
+      setTsJsonFileStats({
+        fileName: `${item.title || item.slug}.json`,
+        fileSize: `${item.questions.length} Questions`,
+        totalQuestions: item.questions.length,
+        questionsWithImage: qImgCount,
+        solutionsWithImage: sImgCount,
+        topicsSummary: item.topicsSummary || {},
+        previewQuestions: item.questions.slice(0, 5)
+      });
+    } else {
+      setTsJsonFileStats(null);
+    }
     setShowTsForm(true);
     setTsAlert(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleTsJsonFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target.result;
+        const parsed = parseQuizJson(content, file.name);
+
+        setTsForm(prev => ({
+          ...prev,
+          title: parsed.title,
+          exam: parsed.exam,
+          set: parsed.set,
+          category: parsed.category,
+          slug: parsed.slug,
+          description: parsed.description,
+          durationMinutes: parsed.durationMinutes,
+          marksPerQuestion: parsed.marksPerQuestion,
+          negativeMarks: parsed.negativeMarks,
+          totalQuestions: parsed.totalQuestions,
+          questions: parsed.questions,
+          topicsSummary: parsed.topicsSummary,
+          content: JSON.stringify(parsed.questions, null, 2)
+        }));
+
+        setTsJsonFileStats({
+          fileName: file.name,
+          fileSize: (file.size / 1024).toFixed(1) + ' KB',
+          totalQuestions: parsed.totalQuestions,
+          questionsWithImage: parsed.questionsWithImage,
+          solutionsWithImage: parsed.solutionsWithImage,
+          topicsSummary: parsed.topicsSummary,
+          previewQuestions: parsed.questions.slice(0, 5)
+        });
+
+        showToast(`✅ ${parsed.totalQuestions} questions successfully imported from "${file.name}"!`, 'success');
+      } catch (err) {
+        console.error('Error parsing quiz JSON:', err);
+        alert('Error parsing JSON file: ' + (err.message || String(err)));
+      }
+    };
+    reader.readAsText(file);
+    if (e.target) e.target.value = '';
   };
 
   const handleDeleteTs = async (item) => {
@@ -6418,7 +6491,13 @@ export default function AdminDashboardPage({
     }
 
     const safeSlug = cleanSlug(tsForm.slug || tsForm.title);
-    const parsedQuestions = extractQuestionsFromContent(tsForm.content);
+    let parsedQuestions = [];
+    if (Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
+      parsedQuestions = [...tsForm.questions];
+    } else {
+      parsedQuestions = extractQuestionsFromContent(tsForm.content);
+    }
+
     parsedQuestions.forEach(q => {
       if (!q.solution || !q.solution.trim()) {
         const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
@@ -6427,6 +6506,13 @@ export default function AdminDashboardPage({
           : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
       }
     });
+
+    const topicsSummary = {};
+    parsedQuestions.forEach(q => {
+      const t = q.topic || 'General Studies';
+      topicsSummary[t] = (topicsSummary[t] || 0) + 1;
+    });
+
     const cleanExamSlug = cleanSlug(tsForm.exam || 'bssc-cgl');
     const cleanSetSlug = cleanSlug(tsForm.set || 'set-1').replace(/[^a-z0-9]/g, '') || 'set1';
     const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(tsForm.totalQuestions) || 150);
@@ -6450,10 +6536,11 @@ export default function AdminDashboardPage({
       negativeMarks: Number(tsForm.negativeMarks) || 1,
       totalQuestions: totalQ,
       totalMarks: totalQ * marks,
-      questions: parsedQuestions.length > 0 ? parsedQuestions : (tsForm.questions || []),
+      topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (tsForm.topicsSummary || {}),
+      questions: parsedQuestions,
       updatedAt: new Date().toISOString(),
-      views: 180,
-      badge: 'Live CBT Mock',
+      views: tsForm.views || 180,
+      badge: tsForm.badge || 'Live CBT Mock',
       tags: [tsForm.exam, 'Test Series', 'Mock Test', 'CBT Test', 'Full Length Practice', `${totalQ} Questions`]
     };
 
@@ -6647,6 +6734,204 @@ export default function AdminDashboardPage({
             </div>
 
             <form onSubmit={handlePublishTs} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* JSON File Uploader Box (Drag & Drop or Select File) */}
+              <div
+                style={{
+                  background: tsJsonFileStats ? '#f0fdf4' : '#eff6ff',
+                  border: tsJsonFileStats ? '2px solid #86efac' : '2px dashed #60a5fa',
+                  borderRadius: '12px',
+                  padding: '18px 22px',
+                  transition: 'all 0.2s',
+                  position: 'relative'
+                }}
+              >
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={tsFileInputRef}
+                  accept=".json,application/json"
+                  onChange={handleTsJsonFileUpload}
+                  style={{ display: 'none' }}
+                />
+
+                {!tsJsonFileStats ? (
+                  <div
+                    onClick={() => tsFileInputRef.current && tsFileInputRef.current.click()}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      gap: '8px',
+                      padding: '10px 0'
+                    }}
+                  >
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                      <UploadCloud size={26} />
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e3a8a' }}>
+                      📂 Upload Test Series JSON File (ऑटोमैटिक 150 प्रश्न, इमेजेस व व्याख्या लोड करें)
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '580px', textAlign: 'center', lineHeight: 1.45 }}>
+                      BSSC CGL, EduTeria (जैसे <code style={{ color: '#2563eb', fontWeight: 700 }}>bssc_cgl4_set1_quiz_with_embedded_images.json</code>) या कोई भी क्विज़ JSON चुनें — प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Question Images) और विस्तृत व्याख्या (Solutions) स्वतः तैयार हो जाएँगे।
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        tsFileInputRef.current && tsFileInputRef.current.click();
+                      }}
+                      style={{
+                        marginTop: '6px',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '9px 18px',
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
+                      }}
+                    >
+                      <FileText size={16} /> Select JSON File (JSON फ़ाइल चुनें)
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
+                          <CheckCircle2 size={24} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#166534' }}>
+                            ✅ {tsJsonFileStats.fileName} ({tsJsonFileStats.fileSize})
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: '#475569' }}>
+                            JSON फ़ाइल से सभी {tsJsonFileStats.totalQuestions} प्रश्न, विकल्प, इमेज व व्याख्या सफलतापूर्वक लोड हो गए हैं!
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowTsJsonPreviewModal(!showTsJsonPreviewModal)}
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid #86efac',
+                            color: '#15803d',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <Eye size={14} /> {showTsJsonPreviewModal ? 'Hide Question Preview' : '👁️ Preview Questions'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => tsFileInputRef.current && tsFileInputRef.current.click()}
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            color: '#475569',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Choose Another JSON
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Stats Metric Pills */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Questions</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>{tsJsonFileStats.totalQuestions} Qs</div>
+                      </div>
+                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Question Diagrams</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7' }}>{tsJsonFileStats.questionsWithImage} Images</div>
+                      </div>
+                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Solution Diagrams</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{tsJsonFileStats.solutionsWithImage} Explanations</div>
+                      </div>
+                    </div>
+
+                    {/* Subject Distribution */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>शामिल विषय (Syllabus):</span>
+                      {Object.entries(tsJsonFileStats.topicsSummary || {}).map(([topic, count]) => (
+                        <span key={topic} style={{ fontSize: '0.75rem', background: '#ffffff', border: '1px solid #86efac', color: '#166534', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>
+                          {topic}: {count}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Preview Drawer */}
+                    {showTsJsonPreviewModal && (
+                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '16px', maxHeight: '360px', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
+                            🔍 प्रश्न पूर्वावलोकन (Previewing First 5 Questions):
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            Showing 5 of {tsJsonFileStats.totalQuestions}
+                          </span>
+                        </div>
+                        {(tsJsonFileStats.previewQuestions || []).map((q, pIdx) => (
+                          <div key={pIdx} style={{ padding: '12px', marginBottom: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                              <span style={{ fontWeight: 700, color: '#2563eb' }}>{q.id}. [{q.topic}]</span>
+                              <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                Ans: ({q.correct_answer})
+                              </span>
+                            </div>
+                            <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '8px', whiteSpace: 'pre-line' }}>
+                              {q.question}
+                            </div>
+                            {q.image && (
+                              <div style={{ margin: '8px 0', textAlign: 'center' }}>
+                                <img src={q.image} alt={`Q ${q.id}`} style={{ maxHeight: '120px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                              </div>
+                            )}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '6px', fontSize: '0.8rem', color: '#475569', marginBottom: '8px' }}>
+                              {Object.entries(q.options || {}).map(([key, val]) => (
+                                <span key={key} style={{ padding: '4px 8px', borderRadius: '4px', background: key === q.correct_answer ? '#dcfce7' : '#ffffff', border: `1px solid ${key === q.correct_answer ? '#86efac' : '#e2e8f0'}`, fontWeight: key === q.correct_answer ? 700 : 400, color: key === q.correct_answer ? '#166534' : 'inherit' }}>
+                                  ({key}) {val}
+                                </span>
+                              ))}
+                            </div>
+                            {q.explanation_image && (
+                              <div style={{ margin: '8px 0', textAlign: 'center' }}>
+                                <img src={q.explanation_image} alt={`Sol ${q.id}`} style={{ maxHeight: '120px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.78rem', color: '#166534', background: '#f0fdf4', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid #16a34a' }}>
+                              💡 {q.solution}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Row 1: Title */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
@@ -6996,6 +7281,28 @@ export default function AdminDashboardPage({
                   }}
                 />
                 {(() => {
+                  if (Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
+                    const qImg = tsForm.questions.filter(q => q.image).length;
+                    const sImg = tsForm.questions.filter(q => q.explanation_image).length;
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#f0fdf4',
+                        border: '1.5px solid #86efac',
+                        borderRadius: '8px',
+                        color: '#15803d',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#16a34a" />
+                        <span>✅ {tsForm.questions.length} Structured Questions Loaded! ({qImg} question images, {sImg} solution diagrams). Score: +{tsForm.marksPerQuestion || 4} / -{tsForm.negativeMarks || 1}.</span>
+                      </div>
+                    );
+                  }
                   const detected = extractQuestionsFromContent(tsForm.content);
                   if (detected.length > 0) {
                     return (
@@ -7021,8 +7328,8 @@ export default function AdminDashboardPage({
                 })()}
               </div>
 
-              {/* Live HTML Preview (Sandboxed & Isolated) */}
-              {tsForm.content && (
+              {/* Live HTML Preview (Sandboxed & Isolated - Only for HTML content) */}
+              {tsForm.content && !tsForm.content.trim().startsWith('[') && !tsForm.content.trim().startsWith('{') && (
                 <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>

@@ -73,31 +73,10 @@ function normalizeToQuizSet(item: any): QuizSet {
   const urlPath = item.urlPath || `/test-series/${examSlug}/${setSlug}`;
 
   let parsedQuestions: Question[] = [];
-  if (item.content) {
-    const raw = extractQuestionsFromContent(item.content);
-    if (raw && raw.length > 0) {
-      parsedQuestions = raw.map((q, idx) => ({
-        id: String(q.id || idx + 1),
-        topic: q.topic || 'General Studies',
-        subtopic: '',
-        difficulty: q.difficulty || getDefaultDifficulty(idx),
-        question: q.question,
-        options: {
-          A: q.options?.A || '',
-          B: q.options?.B || '',
-          C: q.options?.C || '',
-          D: q.options?.D || ''
-        },
-        correct_answer: q.correct_answer,
-        solution: q.solution || '',
-        image: q.image || ''
-      }));
-    }
-  }
 
-  const hasOptions = parsedQuestions.length > 0 && parsedQuestions.some(q => Boolean(q.options?.A || q.options?.B));
-  if (!hasOptions && Array.isArray(item.questions) && item.questions.length > 0) {
-    const fromQuestions = item.questions.map((q: any, idx: number) => {
+  // 1. Prefer structured questions array if present
+  if (Array.isArray(item.questions) && item.questions.length > 0) {
+    parsedQuestions = item.questions.map((q: any, idx: number) => {
       let normOptions: { [key: string]: string } = { A: '', B: '', C: '', D: '' };
       if (Array.isArray(q.options)) {
         q.options.forEach((opt: any) => {
@@ -137,9 +116,28 @@ function normalizeToQuizSet(item: any): QuizSet {
         explanation_image: q.explanation_image || ''
       };
     });
-    const questionsHasValidOptions = fromQuestions.some((q: any) => Boolean(q.options?.A || q.options?.B));
-    if (questionsHasValidOptions || parsedQuestions.length === 0) {
-      parsedQuestions = fromQuestions;
+  }
+
+  // 2. Fallback to extracting from HTML/text content if questions array was empty
+  if (parsedQuestions.length === 0 && item.content) {
+    const raw = extractQuestionsFromContent(item.content);
+    if (raw && raw.length > 0) {
+      parsedQuestions = raw.map((q, idx) => ({
+        id: String(q.id || idx + 1),
+        topic: q.topic || 'General Studies',
+        subtopic: '',
+        difficulty: q.difficulty || getDefaultDifficulty(idx),
+        question: q.question,
+        options: {
+          A: q.options?.A || '',
+          B: q.options?.B || '',
+          C: q.options?.C || '',
+          D: q.options?.D || ''
+        },
+        correct_answer: q.correct_answer,
+        solution: q.solution || '',
+        image: q.image || ''
+      }));
     }
   }
 
