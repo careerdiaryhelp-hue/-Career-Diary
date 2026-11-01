@@ -42,12 +42,11 @@ export default function AdSenseBanner({
     const checkStatus = () => {
       if (!isMounted || !el) return;
       const status = el.getAttribute('data-ad-status');
-      const googleStatus = el.getAttribute('data-adsbygoogle-status');
       const hasIframe = Boolean(el.querySelector('iframe'));
 
       if (status === 'filled' || hasIframe) {
         setAdStatus('filled');
-      } else if (status === 'unfilled' || (googleStatus === 'done' && !hasIframe)) {
+      } else if (status === 'unfilled') {
         setAdStatus('unfilled');
       }
     };
@@ -59,7 +58,7 @@ export default function AdSenseBanner({
 
     observer.observe(el, {
       attributes: true,
-      attributeFilter: ['data-ad-status', 'data-adsbygoogle-status'],
+      attributeFilter: ['data-ad-status'],
       childList: true,
       subtree: true,
     });

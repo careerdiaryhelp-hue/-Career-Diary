@@ -1004,18 +1004,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     )}
                   </div>
 
-                    {/* Ad after every 5 questions in Study Mode */}
+                    {/* Sponsored Ad after every 5 questions in Study Mode */}
                     {(idx + 1) % 5 === 0 && (
-                      <div
-                        style={{
-                          backgroundColor: '#ffffff',
-                          borderRadius: '12px',
-                          border: '1px dashed #cbd5e1',
-                          padding: '16px',
-                          textAlign: 'center',
-                          margin: '4px 0'
-                        }}
-                      >
+                      <div key={`study-ad-${idx}`} style={{ margin: '14px 0', textAlign: 'center' }}>
                         <DisplayAd label="SPONSORED UPDATE" />
                       </div>
                     )}
