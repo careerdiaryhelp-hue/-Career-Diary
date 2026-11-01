@@ -6525,6 +6525,11 @@ export default function AdminDashboardPage({
       parsedQuestions = extractQuestionsFromContent(tsForm.content);
     }
 
+    if (parsedQuestions.length === 0) {
+      alert('⚠️ No questions found! Please select or upload a valid Quiz JSON file before publishing.');
+      return;
+    }
+
     parsedQuestions.forEach(q => {
       if (!q.solution || !q.solution.trim()) {
         const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';

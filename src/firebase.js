@@ -1046,7 +1046,10 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
 
     const summaryItem = { ...sanitizedDoc };
     delete summaryItem.content;
-    delete summaryItem.questions; // Keep master list light
+    // Only strip questions from master list if it is huge (> 300KB) to prevent 1MB limit; otherwise retain questions directly
+    if (JSON.stringify(rawQuestions).length > 300000) {
+      delete summaryItem.questions;
+    }
 
     const updatedItems = [
       summaryItem,

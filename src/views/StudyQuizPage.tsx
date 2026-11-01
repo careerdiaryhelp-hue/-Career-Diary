@@ -233,6 +233,12 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
       if ((!match.questions || match.questions.length === 0) && selectedSet && selectedSet.questions && selectedSet.questions.length > 0 && (selectedSet.id === match.id || selectedSet.slug === match.slug)) {
         match.questions = selectedSet.questions;
       }
+      if (!match.questions || match.questions.length === 0) {
+        const baseFallback = initialBaseSets.find(b => b.slug === match.slug || b.id === match.id || (b.examSlug === match.examSlug && b.setSlug === match.setSlug));
+        if (baseFallback && baseFallback.questions && baseFallback.questions.length > 0) {
+          match.questions = baseFallback.questions;
+        }
+      }
       setSelectedSet(match);
       setTestTimeRemaining(match.durationMinutes * 60);
     }

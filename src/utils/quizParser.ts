@@ -161,11 +161,15 @@ export function parseQuizJson(input: string | object, fileName: string = ''): Pa
     }
 
     // 3. Normalize Images
+    const isSet1 = fileName.toLowerCase().includes('set1') || fileName.toLowerCase().includes('set 1') || rawTitle.toLowerCase().includes('set 01') || rawTitle.toLowerCase().includes('set 1');
     let qImg = q.question_image || q.questionImage || q.image || q.img || '';
     if (typeof qImg === 'string' && qImg.trim()) {
       qImg = qImg.trim();
       if (qImg.startsWith('images/')) {
         qImg = `/quiz/bssc-cgl4-set1/${qImg}`;
+      } else if (isSet1 && qImg.startsWith('data:image/')) {
+        // Use static high-speed CDN image for set1 if available
+        qImg = `/quiz/bssc-cgl4-set1/images/q${q.id}.jpg`;
       }
       questionsWithImage++;
     } else {
@@ -177,6 +181,9 @@ export function parseQuizJson(input: string | object, fileName: string = ''): Pa
       expImg = expImg.trim();
       if (expImg.startsWith('images/')) {
         expImg = `/quiz/bssc-cgl4-set1/${expImg}`;
+      } else if (isSet1 && expImg.startsWith('data:image/')) {
+        // Use static high-speed CDN image for set1 if available
+        expImg = `/quiz/bssc-cgl4-set1/images/s${q.id}.jpg`;
       }
       solutionsWithImage++;
     } else {

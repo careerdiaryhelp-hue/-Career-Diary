@@ -100,9 +100,12 @@ export default async function TestSeriesSetRoute({
     }
   }
 
-  // 2. Fallback to hardcoded sets if not found in Firestore
-  if (!set) {
-    set = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+  // 2. Fallback to hardcoded sets if not found or if dynamic set has 0 questions
+  if (!set || !set.questions || set.questions.length === 0) {
+    const fallbackStatic = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+    if (fallbackStatic && fallbackStatic.questions && fallbackStatic.questions.length > 0) {
+      set = set ? { ...set, questions: fallbackStatic.questions } : fallbackStatic;
+    }
   }
 
   if (!set) {
