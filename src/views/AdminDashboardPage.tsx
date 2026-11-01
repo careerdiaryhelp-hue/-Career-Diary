@@ -27,10 +27,11 @@ import {
   deleteTestSeriesFromFirestore,
   subscribeToTestSeries,
   fetchTestSeriesOnce,
+  fetchTestSeriesBySlug,
   sanitizeFirestoreData
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
-import { parseQuizJson } from '../utils/quizParser';
+import { parseQuizJson, optimizeQuizQuestionsImages } from '../utils/quizParser';
 
 const cleanSlug = (str) => {
   if (!str) return '';
@@ -6382,36 +6383,48 @@ export default function AdminDashboardPage({
     setTsAlert(null);
   };
 
-  const handleEditTs = (item) => {
-    setEditingTsId(item.id || item.slug);
+  const handleEditTs = async (item) => {
+    const safeId = item.id || item.slug;
+    setEditingTsId(safeId);
+    let fullItem = item;
+    // If questions were chunked or stripped in list, fetch full doc
+    if (!item.questions || item.questions.length <= 3 || item.isChunked) {
+      try {
+        const fetched = await fetchTestSeriesBySlug(safeId);
+        if (fetched && Array.isArray(fetched.questions) && fetched.questions.length > 0) {
+          fullItem = { ...item, ...fetched };
+        }
+      } catch (_) {}
+    }
+    const qCount = Array.isArray(fullItem.questions) ? fullItem.questions.length : 0;
     setTsForm({
-      title: item.title || '',
-      exam: item.exam || 'BSSC CGL',
-      set: item.set || item.setSlug || 'Set 1',
-      category: item.category || 'BIHAR GOVT EXAMS',
-      postDate: item.postDate || item.date || '',
-      slug: item.slug || cleanSlug(item.title) || item.id,
-      description: item.description || item.subtitle || '',
-      durationMinutes: item.durationMinutes || 135,
-      marksPerQuestion: item.marksPerQuestion || 4,
-      negativeMarks: item.negativeMarks || 1,
-      totalQuestions: item.totalQuestions || item.total_questions || (item.questions ? item.questions.length : 150),
-      content: item.content || (item.questions ? JSON.stringify(item.questions, null, 2) : ''),
-      questions: item.questions || [],
-      topicsSummary: item.topicsSummary || {},
-      status: item.status || 'Published'
+      title: fullItem.title || '',
+      exam: fullItem.exam || 'BSSC CGL',
+      set: fullItem.set || fullItem.setSlug || 'Set 1',
+      category: fullItem.category || 'BIHAR GOVT EXAMS',
+      postDate: fullItem.postDate || fullItem.date || '',
+      slug: fullItem.slug || cleanSlug(fullItem.title) || safeId,
+      description: fullItem.description || fullItem.subtitle || '',
+      durationMinutes: fullItem.durationMinutes || 135,
+      marksPerQuestion: fullItem.marksPerQuestion || 4,
+      negativeMarks: fullItem.negativeMarks || 1,
+      totalQuestions: fullItem.totalQuestions || fullItem.total_questions || (qCount || 150),
+      content: fullItem.content || (qCount > 0 ? `// ✅ ${qCount} questions loaded in structured CBT mode.` : ''),
+      questions: fullItem.questions || [],
+      topicsSummary: fullItem.topicsSummary || {},
+      status: fullItem.status || 'Published'
     });
-    if (Array.isArray(item.questions) && item.questions.length > 0) {
-      const qImgCount = item.questions.filter(q => q.image || q.question_image).length;
-      const sImgCount = item.questions.filter(q => q.explanation_image || q.solution_image).length;
+    if (qCount > 0) {
+      const qImgCount = fullItem.questions.filter(q => q.image || q.question_image).length;
+      const sImgCount = fullItem.questions.filter(q => q.explanation_image || q.solution_image).length;
       setTsJsonFileStats({
-        fileName: `${item.title || item.slug}.json`,
-        fileSize: `${item.questions.length} Questions`,
-        totalQuestions: item.questions.length,
+        fileName: `${fullItem.title || fullItem.slug}.json`,
+        fileSize: `${qCount} Questions`,
+        totalQuestions: qCount,
         questionsWithImage: qImgCount,
         solutionsWithImage: sImgCount,
-        topicsSummary: item.topicsSummary || {},
-        previewQuestions: item.questions.slice(0, 5)
+        topicsSummary: fullItem.topicsSummary || {},
+        previewQuestions: fullItem.questions.slice(0, 5)
       });
     } else {
       setTsJsonFileStats(null);
@@ -6426,11 +6439,23 @@ export default function AdminDashboardPage({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target.result;
         const parsed = parseQuizJson(content, file.name);
 
+        setTsJsonFileStats({
+          fileName: file.name,
+          fileSize: (file.size / 1024).toFixed(1) + ' KB',
+          totalQuestions: parsed.totalQuestions,
+          questionsWithImage: parsed.questionsWithImage,
+          solutionsWithImage: parsed.solutionsWithImage,
+          topicsSummary: parsed.topicsSummary,
+          previewQuestions: parsed.questions.slice(0, 5),
+          optimizing: parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0
+        });
+
+        // CRITICAL FIX: NEVER set content to JSON.stringify(parsed.questions) which causes Firestore 1MB property limit error!
         setTsForm(prev => ({
           ...prev,
           title: parsed.title,
@@ -6445,20 +6470,22 @@ export default function AdminDashboardPage({
           totalQuestions: parsed.totalQuestions,
           questions: parsed.questions,
           topicsSummary: parsed.topicsSummary,
-          content: JSON.stringify(parsed.questions, null, 2)
+          content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${parsed.questionsWithImage} question diagrams and ${parsed.solutionsWithImage} solution diagrams.\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
         }));
 
-        setTsJsonFileStats({
-          fileName: file.name,
-          fileSize: (file.size / 1024).toFixed(1) + ' KB',
-          totalQuestions: parsed.totalQuestions,
-          questionsWithImage: parsed.questionsWithImage,
-          solutionsWithImage: parsed.solutionsWithImage,
-          topicsSummary: parsed.topicsSummary,
-          previewQuestions: parsed.questions.slice(0, 5)
-        });
-
         showToast(`✅ ${parsed.totalQuestions} questions successfully imported from "${file.name}"!`, 'success');
+
+        // Automatically optimize high-res embedded diagrams in background to prevent Firestore bloat and speed up CBT
+        if (parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0) {
+          try {
+            const optimized = await optimizeQuizQuestionsImages(parsed.questions);
+            setTsForm(prev => ({ ...prev, questions: optimized }));
+            setTsJsonFileStats(prev => prev ? { ...prev, optimizing: false } : null);
+          } catch (optErr) {
+            console.warn('Image optimization skipped:', optErr);
+            setTsJsonFileStats(prev => prev ? { ...prev, optimizing: false } : null);
+          }
+        }
       } catch (err) {
         console.error('Error parsing quiz JSON:', err);
         alert('Error parsing JSON file: ' + (err.message || String(err)));
@@ -6518,6 +6545,11 @@ export default function AdminDashboardPage({
     const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(tsForm.totalQuestions) || 150);
     const marks = Number(tsForm.marksPerQuestion) || 4;
 
+    // Ensure images are optimized if not already
+    try {
+      parsedQuestions = await optimizeQuizQuestionsImages(parsedQuestions);
+    } catch (_) {}
+
     const postData = {
       ...tsForm,
       id: safeSlug,
@@ -6538,6 +6570,8 @@ export default function AdminDashboardPage({
       totalMarks: totalQ * marks,
       topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (tsForm.topicsSummary || {}),
       questions: parsedQuestions,
+      // CRITICAL: Clear massive string from content when structured questions exist to avoid Firestore 1MB property limit
+      content: parsedQuestions.length > 0 ? '' : (tsForm.content || ''),
       updatedAt: new Date().toISOString(),
       views: tsForm.views || 180,
       badge: tsForm.badge || 'Live CBT Mock',

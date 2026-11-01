@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { DisplayAd, SquareAd } from '../components/AdSenseBanner';
 import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug } from '../data/quizRegistry';
-import { subscribeToTestSeries, fetchTestSeriesOnce } from '../firebase';
+import { subscribeToTestSeries, fetchTestSeriesOnce, fetchTestSeriesBySlug } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
   BookOpen,
@@ -230,10 +230,28 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
 
     const match = merged.find(s => s.slug === initialSlug || s.id === initialSlug || s.setSlug === initialSlug);
     if (match) {
+      if ((!match.questions || match.questions.length === 0) && selectedSet && selectedSet.questions && selectedSet.questions.length > 0 && (selectedSet.id === match.id || selectedSet.slug === match.slug)) {
+        match.questions = selectedSet.questions;
+      }
       setSelectedSet(match);
       setTestTimeRemaining(match.durationMinutes * 60);
     }
   };
+
+  // Load full questions if selectedSet is missing questions (e.g. dynamic set from summary list)
+  useEffect(() => {
+    if (selectedSet && (!selectedSet.questions || selectedSet.questions.length === 0)) {
+      fetchTestSeriesBySlug(selectedSet.slug || selectedSet.id).then((fullDoc: any) => {
+        if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
+          const norm = normalizeToQuizSet(fullDoc);
+          setSelectedSet(norm);
+          setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
+        }
+      }).catch(err => {
+        console.warn('Could not fetch full test series questions:', err);
+      });
+    }
+  }, [selectedSet?.id, selectedSet?.slug]);
 
   // Subscribe to real-time Test Series updates from Firestore
   useEffect(() => {

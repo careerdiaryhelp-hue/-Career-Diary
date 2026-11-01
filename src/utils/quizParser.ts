@@ -236,3 +236,74 @@ export function parseQuizJson(input: string | object, fileName: string = ''): Pa
   };
 }
 
+/**
+ * Optimizes/compresses base64 images in quiz questions to prevent Firestore size limits
+ * and maximize mobile CBT test taking performance.
+ */
+export async function optimizeQuizQuestionsImages(
+  questions: ParsedQuestion[],
+  onProgress?: (done: number, total: number) => void
+): Promise<ParsedQuestion[]> {
+  if (typeof window === 'undefined' || !Array.isArray(questions) || questions.length === 0) {
+    return questions;
+  }
+
+  const compressOne = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/') || dataUrl.length < 35000) {
+        return resolve(dataUrl);
+      }
+      try {
+        const img = new window.Image();
+        img.onload = () => {
+          const maxW = 750;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxW) {
+            height = Math.round((height * maxW) / width);
+            width = maxW;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(dataUrl);
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.75);
+          resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      } catch (_) {
+        resolve(dataUrl);
+      }
+    });
+  };
+
+  const imagesToCompress: { qIdx: number; field: 'image' | 'explanation_image'; url: string }[] = [];
+  questions.forEach((q, qIdx) => {
+    if (q.image && q.image.startsWith('data:image/') && q.image.length >= 35000) {
+      imagesToCompress.push({ qIdx, field: 'image', url: q.image });
+    }
+    if (q.explanation_image && q.explanation_image.startsWith('data:image/') && q.explanation_image.length >= 35000) {
+      imagesToCompress.push({ qIdx, field: 'explanation_image', url: q.explanation_image });
+    }
+  });
+
+  if (imagesToCompress.length === 0) return questions;
+
+  const updatedQuestions = questions.map(q => ({ ...q }));
+  let done = 0;
+  for (const item of imagesToCompress) {
+    const comp = await compressOne(item.url);
+    updatedQuestions[item.qIdx] = {
+      ...updatedQuestions[item.qIdx],
+      [item.field]: comp
+    };
+    done++;
+    if (onProgress) onProgress(done, imagesToCompress.length);
+  }
+
+  return updatedQuestions;
+}
+
