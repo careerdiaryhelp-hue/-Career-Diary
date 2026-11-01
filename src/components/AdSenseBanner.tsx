@@ -69,7 +69,7 @@ export default function AdSenseBanner({
       checkStatus();
     }, 300);
 
-    // If Google has not filled within 3.5s, auto-collapse completely so no empty white space remains
+    // Generous 12s safety timeout: only if Google completely fails to bid or fill, mark unfilled
     safetyTimer = setTimeout(() => {
       if (!isMounted || !el) return;
       const hasIframe = Boolean(el.querySelector('iframe'));
@@ -77,7 +77,7 @@ export default function AdSenseBanner({
       if (!hasIframe && status !== 'filled') {
         setAdStatus('unfilled');
       }
-    }, 3500);
+    }, 12000);
 
     let retryCount = 0;
     const tryPush = () => {
@@ -191,7 +191,7 @@ export default function AdSenseBanner({
           style={{
             display: layout ? 'block' : ((format === 'vertical' || (responsive === 'false' && !layout)) ? 'inline-block' : 'block'),
             width: (!layout && responsive === 'false') ? (insStyle.width || '300px') : '100%',
-            minHeight: adStatus === 'filled' ? effectiveMinHeight : 'auto',
+            minHeight: effectiveMinHeight,
             ...(layout ? { textAlign: 'center' } : {}),
             ...insStyle
           }}

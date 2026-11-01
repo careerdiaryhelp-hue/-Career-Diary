@@ -1663,21 +1663,23 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     borderRadius: '16px',
                     maxWidth: '480px',
                     width: '100%',
-                    padding: '28px',
+                    padding: '24px 20px',
                     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    maxHeight: '92vh',
+                    overflowY: 'auto'
                   }}
                 >
                   <AlertCircle size={44} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f172a', margin: '0 0 8px 0' }}>
                     क्या आप टेस्ट सबमिट करना चाहते हैं?
                   </h3>
-                  <p style={{ fontSize: '0.9rem', color: '#64748b', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '0.9rem', color: '#64748b', margin: '0 0 16px 0', lineHeight: 1.5 }}>
                     Are you sure you want to submit? Once submitted, your scorecard and detailed answer key will be generated.
                   </p>
 
                   {/* Summary Table */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: '#f8fafc', padding: '14px', borderRadius: '10px', marginBottom: '24px', textAlign: 'center' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '10px', marginBottom: '16px', textAlign: 'center' }}>
                     <div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Total</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{selectedSet.total_questions}</div>
@@ -1690,6 +1692,11 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>Left</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#dc2626' }}>{selectedSet.total_questions - Object.keys(testAnswers).length}</div>
                     </div>
+                  </div>
+
+                  {/* Ad Banner inside Submit Modal */}
+                  <div style={{ margin: '14px auto 18px auto', maxWidth: '300px', textAlign: 'center' }}>
+                    <DisplayAd label="SPONSORED" style={{ margin: '0 auto' }} insStyle={{ width: '300px', minHeight: '250px' }} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
