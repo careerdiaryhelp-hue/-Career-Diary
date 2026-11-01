@@ -97,22 +97,46 @@ function normalizeToQuizSet(item: any): QuizSet {
 
   const hasOptions = parsedQuestions.length > 0 && parsedQuestions.some(q => Boolean(q.options?.A || q.options?.B));
   if (!hasOptions && Array.isArray(item.questions) && item.questions.length > 0) {
-    const fromQuestions = item.questions.map((q: any, idx: number) => ({
-      id: String(q.id || idx + 1),
-      topic: q.topic || 'General Studies',
-      subtopic: q.subtopic || '',
-      difficulty: q.difficulty || getDefaultDifficulty(idx),
-      question: q.question || '',
-      options: {
-        A: q.options?.A || '',
-        B: q.options?.B || '',
-        C: q.options?.C || '',
-        D: q.options?.D || ''
-      },
-      correct_answer: String(q.correct_answer || 'A').toUpperCase(),
-      solution: q.solution || '',
-      image: q.image || ''
-    }));
+    const fromQuestions = item.questions.map((q: any, idx: number) => {
+      let normOptions: { [key: string]: string } = { A: '', B: '', C: '', D: '' };
+      if (Array.isArray(q.options)) {
+        q.options.forEach((opt: any) => {
+          if (opt && opt.label) {
+            normOptions[String(opt.label).toUpperCase()] = opt.text || '';
+          }
+        });
+      } else if (q.options && typeof q.options === 'object') {
+        normOptions = {
+          A: q.options.A || '',
+          B: q.options.B || '',
+          C: q.options.C || '',
+          D: q.options.D || ''
+        };
+      }
+
+      let correctOpt = String(q.correct_option || q.correct_answer || 'A').trim().toUpperCase();
+      if (!['A', 'B', 'C', 'D'].includes(correctOpt)) {
+        const foundKey = Object.entries(normOptions).find(([_, val]) => val.trim() === String(q.correct_answer || '').trim());
+        if (foundKey) {
+          correctOpt = foundKey[0];
+        } else {
+          correctOpt = String(q.correct_option || 'A').toUpperCase();
+        }
+      }
+
+      return {
+        id: String(q.id || idx + 1),
+        topic: q.topic || q.section_en || q.section || 'General Studies',
+        subtopic: q.subtopic || '',
+        difficulty: q.difficulty || getDefaultDifficulty(idx),
+        question: q.question || '',
+        options: normOptions,
+        correct_answer: correctOpt,
+        solution: q.solution || q.explanation || '',
+        image: q.image || q.question_image || '',
+        explanation_image: q.explanation_image || ''
+      };
+    });
     const questionsHasValidOptions = fromQuestions.some((q: any) => Boolean(q.options?.A || q.options?.B));
     if (questionsHasValidOptions || parsedQuestions.length === 0) {
       parsedQuestions = fromQuestions;
@@ -1001,6 +1025,17 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                             </span>
                           )}
                         </div>
+
+                        {/* Optional Solution Explanation Diagram / Image */}
+                        {q.explanation_image && (
+                          <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                            <img
+                              src={q.explanation_image}
+                              alt={`Solution diagram for question ${q.id}`}
+                              style={{ maxWidth: '100%', maxHeight: '350px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
