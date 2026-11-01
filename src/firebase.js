@@ -23,13 +23,13 @@ async function getClientDb() {
   return _dbInstance;
 }
 
-// Helper to sanitize Firestore document IDs (no forward slashes, no spaces)
+// Helper to sanitize Firestore document IDs (no forward slashes, no spaces, retains underscores for ts_ prefixes and chunks)
 export function cleanJobId(id) {
   if (!id) return '';
   return String(id)
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^a-z0-9_]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
 
@@ -1229,13 +1229,13 @@ export async function fetchTestSeriesOnce() {
 
 export async function fetchTestSeriesBySlug(slug) {
   if (!slug) return null;
-  const safeId = cleanJobId(slug);
+  const rawClean = cleanJobId(slug).replace(/^ts_/, '');
 
   // Helper to reassemble chunks if doc was split
   const reassembleChunksIfNeeded = async (targetDoc) => {
     if (!targetDoc) return targetDoc;
     if (targetDoc.isChunked && targetDoc.chunkCount > 1) {
-      const parentSafeId = cleanJobId(targetDoc.id || targetDoc.slug);
+      const parentSafeId = cleanJobId(targetDoc.slug || targetDoc.id || '').replace(/^ts_/, '');
       const chunkPromises = [];
       for (let i = 0; i < targetDoc.chunkCount; i++) {
         chunkPromises.push(fetchFirestoreJobById(`ts_${parentSafeId}_c${i}`, 'jobs'));
@@ -1258,9 +1258,9 @@ export async function fetchTestSeriesBySlug(slug) {
     return targetDoc;
   };
 
-  // 1. Try single document fetch ts_${safeId} from permitted jobs collection
+  // 1. Try single document fetch ts_${rawClean} from permitted jobs collection
   try {
-    let doc = await fetchFirestoreJobById(`ts_${safeId}`, 'jobs');
+    let doc = await fetchFirestoreJobById(`ts_${rawClean}`, 'jobs');
     if (doc) {
       doc = await reassembleChunksIfNeeded(doc);
       if (doc.title || doc.content || (doc.questions && doc.questions.length > 0)) {
@@ -1272,12 +1272,17 @@ export async function fetchTestSeriesBySlug(slug) {
   // 2. Direct lookup from settings_testSeries / initial
   try {
     const all = await fetchTestSeriesOnce();
-    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
+    const found = all.find(item => {
+      const iId = cleanJobId(item.id || '').replace(/^ts_/, '');
+      const iSlug = cleanJobId(item.slug || '').replace(/^ts_/, '');
+      return iId === rawClean || iSlug === rawClean || cleanJobId(item.title || '') === rawClean;
+    });
     if (found) {
-      // If found in summary list but questions are empty or chunked, fetch full ts_${safeId}
+      // If found in summary list but questions are empty or chunked, fetch full ts_${rawClean}
       if (!found.questions || found.questions.length <= 3 || found.isChunked) {
         try {
-          let fullDoc = await fetchFirestoreJobById(`ts_${cleanJobId(found.id || found.slug)}`, 'jobs');
+          const targetParent = cleanJobId(found.slug || found.id || rawClean).replace(/^ts_/, '');
+          let fullDoc = await fetchFirestoreJobById(`ts_${targetParent}`, 'jobs');
           if (fullDoc) {
             fullDoc = await reassembleChunksIfNeeded(fullDoc);
             return { ...found, ...fullDoc };

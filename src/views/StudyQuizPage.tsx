@@ -230,23 +230,32 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
 
     const match = merged.find(s => s.slug === initialSlug || s.id === initialSlug || s.setSlug === initialSlug);
     if (match) {
-      if ((!match.questions || match.questions.length === 0) && selectedSet && selectedSet.questions && selectedSet.questions.length > 0 && (selectedSet.id === match.id || selectedSet.slug === match.slug)) {
+      const currentHasFull = selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3 && (selectedSet.id === match.id || selectedSet.slug === match.slug);
+      if (currentHasFull) {
         match.questions = selectedSet.questions;
-      }
-      if (!match.questions || match.questions.length === 0) {
-        const baseFallback = initialBaseSets.find(b => b.slug === match.slug || b.id === match.id || (b.examSlug === match.examSlug && b.setSlug === match.setSlug));
-        if (baseFallback && baseFallback.questions && baseFallback.questions.length > 0) {
-          match.questions = baseFallback.questions;
-        }
+      } else if (!match.questions || match.questions.length <= 3) {
+        fetchTestSeriesBySlug(match.slug || match.id).then((fullDoc: any) => {
+          if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
+            const norm = normalizeToQuizSet(fullDoc);
+            setSelectedSet(norm);
+            setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
+          }
+        }).catch(() => {});
       }
       setSelectedSet(match);
       setTestTimeRemaining(match.durationMinutes * 60);
     }
   };
 
-  // Load full questions if selectedSet is missing questions (e.g. dynamic set from summary list)
+  // Load full questions if selectedSet is missing questions or is chunked (e.g. dynamic set from summary list)
   useEffect(() => {
-    if (selectedSet && (!selectedSet.questions || selectedSet.questions.length === 0)) {
+    const isMissingFull = selectedSet && (
+      !selectedSet.questions ||
+      selectedSet.questions.length <= 3 ||
+      (selectedSet as any).isChunked ||
+      selectedSet.questions.length < (selectedSet.total_questions || 150)
+    );
+    if (isMissingFull) {
       fetchTestSeriesBySlug(selectedSet.slug || selectedSet.id).then((fullDoc: any) => {
         if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
           const norm = normalizeToQuizSet(fullDoc);
