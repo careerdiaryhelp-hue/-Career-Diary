@@ -12,7 +12,8 @@ import {
   Image, Video, Table, Maximize2, Minimize2, FileCode, Globe,
   ChevronDown, ChevronUp, Palette, Highlighter, CheckCircle2, AlertCircle, Info,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Copy, ExternalLink,
-  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns, Zap, Newspaper, BookOpen
+  Calendar, Link as LinkIcon, Menu, Pin, Bell, Star, Sparkles, Columns, Zap, Newspaper, BookOpen,
+  AlertTriangle, Loader2
 } from 'lucide-react';
 import {
   publishCurrentAffairsToFirestore,
@@ -28,7 +29,8 @@ import {
   subscribeToTestSeries,
   fetchTestSeriesOnce,
   fetchTestSeriesBySlug,
-  sanitizeFirestoreData
+  sanitizeFirestoreData,
+  cleanJobId
 } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 import { parseQuizJson, optimizeQuizQuestionsImages } from '../utils/quizParser';
@@ -394,6 +396,47 @@ export default function AdminDashboardPage({
   });
   const pdfFileInputRef = useRef(null);
   const savedSelectionRef = useRef(null);
+
+  // Dedicated In-App Center Delete Confirmation Modal State (Zero browser confirm popups)
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState({
+    isOpen: false,
+    title: 'डिलीट करें?',
+    itemName: '',
+    warningText: '',
+    onConfirm: null,
+    isDeleting: false
+  });
+
+  const openDeleteConfirm = ({ title, itemName, warningText, onConfirm }) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      title: title || 'डिलीट करें?',
+      itemName: itemName || '',
+      warningText: warningText || 'यह क्रिया पूर्ववत नहीं की जा सकती। डेटाबेस से तुरंत हटा दिया जाएगा।',
+      onConfirm,
+      isDeleting: false
+    });
+  };
+
+  const handleExecuteDeleteConfirm = async () => {
+    if (!deleteConfirmModal.onConfirm) return;
+    try {
+      setDeleteConfirmModal(prev => ({ ...prev, isDeleting: true }));
+      await deleteConfirmModal.onConfirm();
+      setDeleteConfirmModal({
+        isOpen: false,
+        title: 'डिलीट करें?',
+        itemName: '',
+        warningText: '',
+        onConfirm: null,
+        isDeleting: false
+      });
+    } catch (err) {
+      console.error('Delete action failed:', err);
+      alert('Delete failed: ' + (err.message || String(err)));
+      setDeleteConfirmModal(prev => ({ ...prev, isDeleting: false }));
+    }
+  };
 
   const saveSelection = () => {
     const sel = window.getSelection();
@@ -4747,19 +4790,26 @@ export default function AdminDashboardPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteCa = async (item) => {
+  const handleDeleteCa = (item) => {
     const id = item.id || item.slug;
-    if (!window.confirm(`Are you sure you want to delete "${item.title}"? This cannot be undone.`)) return;
-    try {
-      setCaLoading(true);
-      await deleteCurrentAffairsFromFirestore(id);
-      setCurrentAffairsList(prev => prev.filter(p => (p.id || p.slug) !== id));
-      setCaAlert({ type: 'success', message: 'Current Affairs post deleted successfully from Firestore.' });
-    } catch (err) {
-      setCaAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
-    } finally {
-      setCaLoading(false);
-    }
+    openDeleteConfirm({
+      title: 'करेंट अफेयर्स डिलीट करें?',
+      itemName: item.title,
+      warningText: 'यह करेंट अफेयर्स पोस्ट Firestore से हमेशा के लिए हटा दी जाएगी। यह क्रिया पूर्ववत नहीं की जा सकती।',
+      onConfirm: async () => {
+        setCaLoading(true);
+        try {
+          await deleteCurrentAffairsFromFirestore(id);
+          setCurrentAffairsList(prev => prev.filter(p => (p.id || p.slug) !== id));
+          setCaAlert({ type: 'success', message: 'Current Affairs post deleted successfully from Firestore.' });
+        } catch (err) {
+          setCaAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+          throw err;
+        } finally {
+          setCaLoading(false);
+        }
+      }
+    });
   };
 
   const handlePublishCa = async (e) => {
@@ -5504,19 +5554,26 @@ export default function AdminDashboardPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeletePyq = async (item) => {
+  const handleDeletePyq = (item) => {
     const id = item.id || item.slug;
-    if (!window.confirm(`Are you sure you want to delete PYQ Paper "${item.title}"? This cannot be undone.`)) return;
-    try {
-      setPyqLoading(true);
-      await deletePyqFromFirestore(id);
-      setPyqList(prev => prev.filter(p => (p.id || p.slug) !== id));
-      setPyqAlert({ type: 'success', message: 'PYQ paper deleted successfully from Firestore.' });
-    } catch (err) {
-      setPyqAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
-    } finally {
-      setPyqLoading(false);
-    }
+    openDeleteConfirm({
+      title: 'PYQ पेपर डिलीट करें?',
+      itemName: item.title,
+      warningText: 'यह PYQ पेपर और इसके विवरण Firestore से हमेशा के लिए हटा दिए जाएंगे। यह क्रिया पूर्ववत नहीं की जा सकती।',
+      onConfirm: async () => {
+        setPyqLoading(true);
+        try {
+          await deletePyqFromFirestore(id);
+          setPyqList(prev => prev.filter(p => (p.id || p.slug) !== id));
+          setPyqAlert({ type: 'success', message: 'PYQ paper deleted successfully from Firestore.' });
+        } catch (err) {
+          setPyqAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+          throw err;
+        } finally {
+          setPyqLoading(false);
+        }
+      }
+    });
   };
 
   const handlePublishPyq = async (e) => {
@@ -6495,19 +6552,44 @@ export default function AdminDashboardPage({
     if (e.target) e.target.value = '';
   };
 
-  const handleDeleteTs = async (item) => {
+  const handleDeleteTs = (item) => {
     const id = item.id || item.slug;
-    if (!window.confirm(`Are you sure you want to delete Test Series "${item.title}"? This cannot be undone.`)) return;
-    try {
-      setTsLoading(true);
-      await deleteTestSeriesFromFirestore(id);
-      setTestSeriesList(prev => prev.filter(p => (p.id || p.slug) !== id));
-      setTsAlert({ type: 'success', message: 'Test Series deleted successfully from Firestore.' });
-    } catch (err) {
-      setTsAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
-    } finally {
-      setTsLoading(false);
-    }
+    openDeleteConfirm({
+      title: 'टेस्ट सीरीज़ डिलीट करें?',
+      itemName: item.title || item.slug || id,
+      warningText: 'यह टेस्ट सीरीज़ और इसके सभी प्रश्न Firestore डेटाबेस से हमेशा के लिए हटा दिए जाएंगे। यह क्रिया पूर्ववत नहीं की जा सकती।',
+      onConfirm: async () => {
+        setTsLoading(true);
+        try {
+          const res = await deleteTestSeriesFromFirestore(id, item);
+          if (res && res.success === false) {
+            throw res.error || new Error('Failed to delete from Firestore');
+          }
+
+          // Filter out immediately from local list
+          const targetSafeId = cleanJobId(id);
+          const targetSlug = cleanJobId(item.slug || '');
+          setTestSeriesList(prev => prev.filter(p => {
+            const pSafeId = cleanJobId(p.id || '');
+            const pSafeSlug = cleanJobId(p.slug || '');
+            const pRawId = String(p.id || '').trim();
+            const pRawSlug = String(p.slug || '').trim();
+
+            if (pSafeId === targetSafeId || pSafeSlug === targetSafeId || pSafeId === targetSlug || pSafeSlug === targetSlug) return false;
+            if (pRawId === id || pRawSlug === id) return false;
+            if (item.title && p.title === item.title) return false;
+            return true;
+          }));
+
+          setTsAlert({ type: 'success', message: `Test Series "${item.title || id}" deleted successfully from Firestore.` });
+        } catch (err) {
+          setTsAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
+          throw err;
+        } finally {
+          setTsLoading(false);
+        }
+      }
+    });
   };
 
   const handlePublishTs = async (e) => {
@@ -8171,9 +8253,15 @@ export default function AdminDashboardPage({
                           </button>
                           <button
                             onClick={() => {
-                              if (window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
-                                onDeleteJob(job.id);
-                              }
+                              openDeleteConfirm({
+                                title: 'पोस्ट डिलीट करें?',
+                                itemName: job.title,
+                                warningText: 'यह पोस्ट वेबसाइट और डेटाबेस से हमेशा के लिए हटा दी जाएगी। यह क्रिया पूर्ववत नहीं की जा सकती।',
+                                onConfirm: async () => {
+                                  await onDeleteJob(job.id);
+                                  showToast('Post deleted', 'success');
+                                }
+                              });
                             }}
                             style={{
                               background: '#fef2f2',
@@ -8258,15 +8346,20 @@ export default function AdminDashboardPage({
   };
 
   const handleDeleteCategory = (catId, catName) => {
-    if (window.confirm(`Are you sure you want to delete category "${catName}"?`)) {
-      const updated = localCategories.filter(c => c.id !== catId);
-      setLocalCategories(updated);
-      if (onSaveCategories) onSaveCategories(updated);
-      try {
-        localStorage.setItem('career_diary_categories', JSON.stringify(updated));
-      } catch (err) {}
-      showToast(`Category "${catName}" deleted`, 'info');
-    }
+    openDeleteConfirm({
+      title: 'कैटेगरी डिलीट करें?',
+      itemName: catName,
+      warningText: 'यह कैटेगरी हमेशा के लिए हटा दी जाएगी।',
+      onConfirm: async () => {
+        const updated = localCategories.filter(c => c.id !== catId);
+        setLocalCategories(updated);
+        if (onSaveCategories) onSaveCategories(updated);
+        try {
+          localStorage.setItem('career_diary_categories', JSON.stringify(updated));
+        } catch (err) {}
+        showToast(`Category "${catName}" deleted`, 'info');
+      }
+    });
   };
 
   const renderCategories = () => {
@@ -10469,23 +10562,28 @@ export default function AdminDashboardPage({
   };
 
   const handleDeleteNews = (newsId, jobId) => {
-    if (window.confirm('Are you sure you want to delete this breaking news alert?')) {
-      const targetJobId = jobId || (newsId && newsId.startsWith('job-news-') ? newsId.replace('job-news-', '') : null);
-      if (targetJobId) {
-        const targetJob = jobs.find(j => j.id === targetJobId);
-        if (targetJob) {
-          const updatedJob = { ...targetJob, isBreakingNews: false, updatedAt: new Date().toISOString() };
-          onAddJob(updatedJob);
+    openDeleteConfirm({
+      title: 'ब्रेकिंग न्यूज़ अलर्ट हटाएं?',
+      itemName: 'Breaking News Alert',
+      warningText: 'यह ब्रेकिंग न्यूज़ अलर्ट हटा दिया जाएगा।',
+      onConfirm: async () => {
+        const targetJobId = jobId || (newsId && newsId.startsWith('job-news-') ? newsId.replace('job-news-', '') : null);
+        if (targetJobId) {
+          const targetJob = jobs.find(j => j.id === targetJobId);
+          if (targetJob) {
+            const updatedJob = { ...targetJob, isBreakingNews: false, updatedAt: new Date().toISOString() };
+            onAddJob(updatedJob);
+          }
         }
+        const updated = localBreakingNews.filter(n => n.id !== newsId && n.jobId !== targetJobId);
+        setLocalBreakingNews(updated);
+        if (onSaveBreakingNews) onSaveBreakingNews(updated);
+        try {
+          localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
+        } catch (err) {}
+        showToast('Breaking news alert deleted', 'info');
       }
-      const updated = localBreakingNews.filter(n => n.id !== newsId && n.jobId !== targetJobId);
-      setLocalBreakingNews(updated);
-      if (onSaveBreakingNews) onSaveBreakingNews(updated);
-      try {
-        localStorage.setItem('career_diary_breaking_news', JSON.stringify(updated));
-      } catch (err) {}
-      showToast('Breaking news alert deleted', 'info');
-    }
+    });
   };
 
   const renderBreakingNews = () => {
@@ -11716,10 +11814,15 @@ export default function AdminDashboardPage({
                           </button>
                           <button
                             onClick={() => {
-                              if (window.confirm(`Are you sure you want to completely delete "${job.title}"?`)) {
-                                onDeleteJob(job.id);
-                                showToast('Post deleted', 'success');
-                              }
+                              openDeleteConfirm({
+                                title: 'पोस्ट हमेशा के लिए हटाएं?',
+                                itemName: job.title,
+                                warningText: 'यह पोस्ट वेबसाइट और डेटाबेस से पूरी तरह हटा दी जाएगी। यह क्रिया पूर्ववत नहीं की जा सकती।',
+                                onConfirm: async () => {
+                                  await onDeleteJob(job.id);
+                                  showToast('Post deleted', 'success');
+                                }
+                              });
                             }}
                             style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
                             title="Delete Permanently"
@@ -12513,6 +12616,168 @@ export default function AdminDashboardPage({
                   boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)'
                 }}>
                 <CheckCircle2 size={16} /> Insert into Table &amp; Links
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Universal Centered In-App Delete Confirmation Modal (Zero browser alert popups at top) */}
+      {deleteConfirmModal.isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.68)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleteConfirmModal.isDeleting) {
+              setDeleteConfirmModal(prev => ({ ...prev, isOpen: false }));
+            }
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '450px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              border: '1px solid #fee2e2',
+              overflow: 'hidden',
+              textAlign: 'center',
+              padding: '28px 24px 24px 24px',
+              position: 'relative'
+            }}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              disabled={deleteConfirmModal.isDeleting}
+              onClick={() => setDeleteConfirmModal(prev => ({ ...prev, isOpen: false }))}
+              style={{
+                position: 'absolute',
+                top: '14px',
+                right: '14px',
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: deleteConfirmModal.isDeleting ? 'not-allowed' : 'pointer',
+                padding: '4px'
+              }}
+              title="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Trash Icon */}
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: '#fee2e2',
+                color: '#dc2626',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+              }}
+            >
+              <Trash2 size={26} />
+            </div>
+
+            {/* Title */}
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+              {deleteConfirmModal.title || 'डिलीट की पुष्टि करें'}
+            </h3>
+
+            {/* Subtitle / Item Name */}
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.92rem', color: '#64748b', lineHeight: 1.5 }}>
+              क्या आप वाकई <strong style={{ color: '#1e293b' }}>&ldquo;{deleteConfirmModal.itemName}&rdquo;</strong> को हटाना चाहते हैं?
+            </p>
+
+            {/* Warning Alert Note */}
+            <div
+              style={{
+                background: '#fff1f2',
+                border: '1px solid #fecdd3',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                fontSize: '0.82rem',
+                color: '#be123c',
+                marginBottom: '22px',
+                textAlign: 'left',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'flex-start'
+              }}
+            >
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span>{deleteConfirmModal.warningText || 'यह क्रिया पूर्ववत नहीं की जा सकती। डेटाबेस से तुरंत हटा दिया जाएगा।'}</span>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                type="button"
+                disabled={deleteConfirmModal.isDeleting}
+                onClick={() => setDeleteConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                style={{
+                  flex: 1,
+                  padding: '11px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#334155',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  cursor: deleteConfirmModal.isDeleting ? 'not-allowed' : 'pointer'
+                }}
+              >
+                रद्द करें (Cancel)
+              </button>
+
+              <button
+                type="button"
+                disabled={deleteConfirmModal.isDeleting}
+                onClick={handleExecuteDeleteConfirm}
+                style={{
+                  flex: 1,
+                  padding: '11px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  cursor: deleteConfirmModal.isDeleting ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(220, 38, 38, 0.35)',
+                  opacity: deleteConfirmModal.isDeleting ? 0.7 : 1
+                }}
+              >
+                {deleteConfirmModal.isDeleting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    डिलीट हो रहा है...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    हाँ, डिलीट करें
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -1072,42 +1072,81 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
   }
 }
 
-export async function deleteTestSeriesFromFirestore(id) {
-  const safeId = cleanJobId(id);
-  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+export async function deleteTestSeriesFromFirestore(id, itemMeta = null) {
+  const rawId = String(id || itemMeta?.id || itemMeta?.slug || '').trim();
+  const safeId = cleanJobId(rawId);
+  if (!safeId && !rawId) return { success: false, error: new Error('Invalid ID') };
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
 
-    // 1. Delete individual ts_${safeId} doc & potential chunks
-    try {
-      await deleteDoc(doc(db, 'jobs', `ts_${safeId}`));
-    } catch (_) {}
+    // Collect all candidate keys for matching docs and array items
+    const candidateKeys = new Set();
+    [rawId, safeId, itemMeta?.id, itemMeta?.slug, itemMeta?.permalink].forEach(val => {
+      if (val) {
+        candidateKeys.add(String(val).trim().toLowerCase());
+        const cleaned = cleanJobId(val);
+        if (cleaned) candidateKeys.add(cleaned.toLowerCase());
+      }
+    });
 
-    for (let i = 0; i < 30; i++) {
+    // 1. Delete individual ts_${id} docs & potential chunks
+    for (const cand of candidateKeys) {
+      if (!cand) continue;
+      const docKey = cand.startsWith('ts_') ? cand : `ts_${cand}`;
       try {
-        await deleteDoc(doc(db, 'jobs', `ts_${safeId}_c${i}`));
-      } catch (_) {}
+        await deleteDoc(doc(db, 'jobs', docKey));
+      } catch (e) {
+        console.warn(`Could not delete doc jobs/${docKey}:`, e);
+      }
+
+      for (let i = 0; i < 30; i++) {
+        try {
+          await deleteDoc(doc(db, 'jobs', `${docKey}_c${i}`));
+        } catch (_) {}
+      }
     }
 
     // 2. Update settings_testSeries list
     const listRef = doc(db, 'jobs', 'settings_testSeries');
-    try {
-      const snap = await getDoc(listRef);
-      if (snap.exists()) {
-        const d = snap.data();
-        if (Array.isArray(d.items)) {
-          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
-          await setDoc(listRef, {
-            id: 'settings_testSeries',
-            items: filtered,
-            updatedAt: new Date().toISOString(),
-            isSystemDoc: true
-          }, { merge: true });
-        }
+    const snap = await getDoc(listRef);
+    if (snap.exists()) {
+      const d = snap.data();
+      if (Array.isArray(d.items)) {
+        const filtered = d.items.filter(p => {
+          const pId = String(p.id || '').trim().toLowerCase();
+          const pSlug = String(p.slug || '').trim().toLowerCase();
+          const pPermalink = String(p.permalink || '').trim().toLowerCase();
+          const pTitle = String(p.title || '').trim().toLowerCase();
+          const pSafeId = cleanJobId(pId);
+          const pSafeSlug = cleanJobId(pSlug);
+          const pSafePerm = cleanJobId(pPermalink);
+
+          for (const cand of candidateKeys) {
+            if (
+              cand === pId ||
+              cand === pSlug ||
+              cand === pPermalink ||
+              cand === pSafeId ||
+              cand === pSafeSlug ||
+              cand === pSafePerm ||
+              (itemMeta?.title && pTitle === String(itemMeta.title).trim().toLowerCase())
+            ) {
+              return false; // Match found -> delete from list
+            }
+          }
+          return true; // Keep
+        });
+
+        await setDoc(listRef, sanitizeFirestoreData({
+          id: 'settings_testSeries',
+          items: filtered,
+          updatedAt: new Date().toISOString(),
+          isSystemDoc: true
+        }), { merge: true });
       }
-    } catch (_) {}
+    }
 
     testSeriesCache.data = null;
     testSeriesCache.timestamp = 0;
