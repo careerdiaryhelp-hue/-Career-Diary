@@ -164,18 +164,38 @@ export const ALL_COLUMNS = [
 export const getJobUrl = (job) => {
   if (!job) return '/';
   if (job.isExternal && job.directLink) return job.directLink;
-  if (!job.id) return '/';
+  if (job.permalink && typeof job.permalink === 'string' && job.permalink.startsWith('/')) {
+    return job.permalink;
+  }
+  if (!job.id && !job.slug) return '/';
+  
+  const rawId = String(job.id || job.slug || '').trim();
+
+  // Test Series handling (e.g. ts_bssc-cgl-set2 or isTestSeries)
+  if (job.isTestSeries || rawId.startsWith('ts_')) {
+    if (job.permalink) return job.permalink;
+    const cleanId = rawId.replace(/^ts_/, '');
+    const cleanExam = String(job.examSlug || job.exam || 'bssc-cgl').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const cleanSet = String(job.setSlug || job.set || cleanId || 'set1').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    return `/test-series/${cleanExam}/${cleanSet}`;
+  }
+
+  // PYQ handling (e.g. pyq_bssc-cgl or isPyq)
+  if (job.isPyq || rawId.startsWith('pyq_')) {
+    const cleanId = String(job.slug || rawId).replace(/^pyq_/, '');
+    return `/pyq/${cleanId}`;
+  }
   
   // Use category classification to determine URL prefix
-  if (isResult(job)) return `/result/${job.id}`;
-  if (isAdmitCard(job)) return `/admitcard/${job.id}`;
-  if (isAnswerKey(job)) return `/answerkey/${job.id}`;
-  if (isAdmission(job)) return `/admission/${job.id}`;
-  if (isSyllabus(job)) return `/syllabus/${job.id}`;
-  if (isDocument(job) || isImportant(job)) return `/important/${job.id}`;
+  if (isResult(job)) return `/result/${rawId}`;
+  if (isAdmitCard(job)) return `/admitcard/${rawId}`;
+  if (isAnswerKey(job)) return `/answerkey/${rawId}`;
+  if (isAdmission(job)) return `/admission/${rawId}`;
+  if (isSyllabus(job)) return `/syllabus/${rawId}`;
+  if (isDocument(job) || isImportant(job)) return `/important/${rawId}`;
   
   // Default to job prefix
-  return `/job/${job.id}`;
+  return `/job/${rawId}`;
 };
 
 export const getJobBadgeInfo = (job) => {

@@ -75,6 +75,18 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 1. Process primary posts first (user edits & Firestore take highest priority)
   for (const post of primaryPosts) {
     if (!post || !post.title) continue;
+    const rawId = String(post.id || post.slug || '');
+    if (
+      post.isTestSeries ||
+      post.isChunk ||
+      post.isPyq ||
+      rawId.startsWith('ts_') ||
+      rawId.startsWith('pyq_') ||
+      rawId.startsWith('settings_') ||
+      rawId.startsWith('ca_')
+    ) {
+      continue;
+    }
     const safeId = post._safeId || (post.id && cleanJobId(post.id)) || (post.slug && cleanJobId(post.slug)) || cleanJobId(post.title);
     const normTitle = post._normTitle || normalize(post.title);
 
@@ -108,6 +120,18 @@ export function mergeAndSortJobs(primaryPosts = [], fallbackPosts = []) {
   // 2. Add fallback posts if not already present by ID or normalized title
   for (const post of fallbackPosts) {
     if (!post || !post.title) continue;
+    const rawId = String(post.id || post.slug || '');
+    if (
+      post.isTestSeries ||
+      post.isChunk ||
+      post.isPyq ||
+      rawId.startsWith('ts_') ||
+      rawId.startsWith('pyq_') ||
+      rawId.startsWith('settings_') ||
+      rawId.startsWith('ca_')
+    ) {
+      continue;
+    }
     const safeId = post._safeId || (post.id && cleanJobId(post.id)) || (post.slug && cleanJobId(post.slug)) || cleanJobId(post.title);
     const normTitle = post._normTitle || normalize(post.title);
 
@@ -182,7 +206,9 @@ export async function getAllJobsServer() {
 export async function getTopRecentJobsSummary(limit = 15) {
   const jobs = await getAllJobsServer();
   return (Array.isArray(jobs) ? jobs : [])
-    .filter(j => j && j.title && j.status !== 'Draft' && j.status !== 'draft')
+    .filter(j => j && j.title && j.status !== 'Draft' && j.status !== 'draft' &&
+      !j.isTestSeries && !j.isChunk && !j.isPyq &&
+      !String(j.id || '').startsWith('ts_') && !String(j.id || '').startsWith('pyq_'))
     .slice(0, limit);
 }
 

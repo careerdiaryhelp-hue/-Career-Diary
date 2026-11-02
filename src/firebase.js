@@ -243,7 +243,24 @@ export function subscribeToFirestoreJobs(onUpdate, onError, maxJobs = 150) {
       unsubscribe = onSnapshot(q, (snapshot) => {
         const posts = [];
         snapshot.forEach((d) => {
-          posts.push(d.data());
+          const data = d.data();
+          const docId = String(d.id || data.id || '');
+          if (
+            docId &&
+            !docId.startsWith('settings_') &&
+            !docId.startsWith('ca_') &&
+            !docId.startsWith('ts_') &&
+            !docId.startsWith('pyq_') &&
+            !data.isTestSeries &&
+            !data.isChunk &&
+            !data.isPyq &&
+            !data.isCurrentAffairs &&
+            data.title &&
+            data.status !== 'Draft' &&
+            data.status !== 'draft'
+          ) {
+            posts.push(data);
+          }
         });
         onUpdate(posts);
       }, (err) => {
@@ -376,7 +393,18 @@ export async function fetchFirestoreJobsOnce() {
       const parsed = data
         .filter(item => item && item.document)
         .map(item => parseFirestoreDoc(item.document))
-        .filter(doc => doc && doc.id && !doc.id.startsWith('settings_') && !doc.id.startsWith('ca_') && !doc.isCurrentAffairs && doc.title && doc.status !== 'Draft' && doc.status !== 'draft');
+        .filter(doc => doc && doc.id &&
+          !doc.id.startsWith('settings_') &&
+          !doc.id.startsWith('ca_') &&
+          !doc.id.startsWith('ts_') &&
+          !doc.id.startsWith('pyq_') &&
+          !doc.isTestSeries &&
+          !doc.isChunk &&
+          !doc.isPyq &&
+          !doc.isCurrentAffairs &&
+          doc.title &&
+          doc.status !== 'Draft' &&
+          doc.status !== 'draft');
         
       memoryCache = {
         data: parsed,
@@ -544,7 +572,24 @@ export function subscribeToTopForms(onUpdate) {
       unsubscribe = onSnapshot(q, (snapshot) => {
         const posts = [];
         snapshot.forEach((d) => {
-          posts.push(d.data());
+          const data = d.data();
+          const docId = String(d.id || data.id || '');
+          if (
+            docId &&
+            !docId.startsWith('settings_') &&
+            !docId.startsWith('ca_') &&
+            !docId.startsWith('ts_') &&
+            !docId.startsWith('pyq_') &&
+            !data.isTestSeries &&
+            !data.isChunk &&
+            !data.isPyq &&
+            !data.isCurrentAffairs &&
+            data.title &&
+            data.status !== 'Draft' &&
+            data.status !== 'draft'
+          ) {
+            posts.push(data);
+          }
         });
         onUpdate(posts);
       }, (err) => {

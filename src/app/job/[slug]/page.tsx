@@ -1,16 +1,20 @@
 import { isResult, isAdmitCard, isAnswerKey, isAdmission, isSyllabus, isDocument, isImportant } from '../../../data/categoryHelpers';
 import { getJobBySlug, getAllJobsServer, getTopRecentJobsSummary, getSocialImageUrl } from '../../../utils/jobsService';
 import JobDetailWrapper from '../../../components/JobDetailWrapper';
-import { notFound } from 'next/navigation';
-
-
-
+import { notFound, redirect } from 'next/navigation';
+import { resolveDestinationUrl } from '../../../utils/redirectService';
 
 export const revalidate = 300; // 5-minute edge cache protects Firestore quota while keeping data fresh
 
-
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+  const destination = await resolveDestinationUrl(slug, 'job');
+  if (destination && destination !== `/job/${slug}`) {
+    return {
+      title: 'Redirecting... | Career Diary',
+    };
+  }
+
   const job = await getJobBySlug(slug);
 
   if (!job) {
@@ -57,6 +61,13 @@ export async function generateMetadata({ params }) {
 
 export default async function JobPage({ params }) {
   const { slug } = await params;
+
+  // Check if this slug belongs to a Test Series, PYQ, or another canonical category
+  const destination = await resolveDestinationUrl(slug, 'job');
+  if (destination && destination !== `/job/${slug}`) {
+    redirect(destination);
+  }
+
   const [job, allJobs] = await Promise.all([
     getJobBySlug(slug),
     getTopRecentJobsSummary(15),
