@@ -286,6 +286,8 @@ export default function AdminDashboardPage({
   const [showTsJsonPreviewModal, setShowTsJsonPreviewModal] = useState(false);
   const [tsPreviewTab, setTsPreviewTab] = useState<'all' | 'diagrams'>('all');
   const [tsPreviewSearch, setTsPreviewSearch] = useState('');
+  const [tsPreviewPage, setTsPreviewPage] = useState<number>(1);
+  const [tsPreviewPageSize, setTsPreviewPageSize] = useState<number>(10);
   const tsFileInputRef = useRef(null);
   const tsImagesInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
@@ -7175,12 +7177,15 @@ export default function AdminDashboardPage({
 
                     {/* Preview Drawer */}
                     {showTsJsonPreviewModal && (
-                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '10px', border: '2px solid #cbd5e1', padding: '16px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                      <div id="admin-ts-preview-container" style={{ marginTop: '16px', background: '#ffffff', borderRadius: '10px', border: '2px solid #cbd5e1', padding: '16px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               type="button"
-                              onClick={() => setTsPreviewTab('all')}
+                              onClick={() => {
+                                setTsPreviewTab('all');
+                                setTsPreviewPage(1);
+                              }}
                               style={{
                                 padding: '7px 14px',
                                 borderRadius: '6px',
@@ -7196,7 +7201,10 @@ export default function AdminDashboardPage({
                             </button>
                             <button
                               type="button"
-                              onClick={() => setTsPreviewTab('diagrams')}
+                              onClick={() => {
+                                setTsPreviewTab('diagrams');
+                                setTsPreviewPage(1);
+                              }}
                               style={{
                                 padding: '7px 14px',
                                 borderRadius: '6px',
@@ -7215,7 +7223,10 @@ export default function AdminDashboardPage({
                             <input
                               type="text"
                               value={tsPreviewSearch}
-                              onChange={(e) => setTsPreviewSearch(e.target.value)}
+                              onChange={(e) => {
+                                setTsPreviewSearch(e.target.value);
+                                setTsPreviewPage(1);
+                              }}
                               placeholder="🔍 प्रश्न संख्या या शब्द खोजें (उदा. 45, दर्पण, त्रिभुज)..."
                               style={{
                                 padding: '6px 12px',
@@ -7229,7 +7240,10 @@ export default function AdminDashboardPage({
                             {tsPreviewSearch && (
                               <button
                                 type="button"
-                                onClick={() => setTsPreviewSearch('')}
+                                onClick={() => {
+                                  setTsPreviewSearch('');
+                                  setTsPreviewPage(1);
+                                }}
                                 style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
                               >
                                 ✕ Clear
@@ -7243,13 +7257,18 @@ export default function AdminDashboardPage({
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                             <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>सीधे जाएँ (Quick Jump):</span>
                             {[1, 25, 50, 75, 100, 125, 150].filter(n => n <= tsJsonFileStats.totalQuestions).map(qNum => (
-                              <a
+                              <button
                                 key={qNum}
-                                href={`#admin-q-preview-${qNum}`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const el = document.getElementById(`admin-q-preview-${qNum}`);
-                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                type="button"
+                                onClick={() => {
+                                  if (tsPreviewPageSize > 0) {
+                                    const targetPage = Math.ceil(qNum / tsPreviewPageSize);
+                                    setTsPreviewPage(targetPage);
+                                  }
+                                  setTimeout(() => {
+                                    const el = document.getElementById(`admin-q-preview-${qNum}`);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }, 80);
                                 }}
                                 style={{
                                   fontSize: '0.74rem',
@@ -7259,11 +7278,11 @@ export default function AdminDashboardPage({
                                   border: '1px solid #cbd5e1',
                                   color: '#2563eb',
                                   fontWeight: 600,
-                                  textDecoration: 'none'
+                                  cursor: 'pointer'
                                 }}
                               >
                                 Q{qNum}
-                              </a>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -7295,12 +7314,206 @@ export default function AdminDashboardPage({
                             );
                           }
 
+                          const totalFiltered = filteredQuestions.length;
+                          const pageSize = tsPreviewPageSize;
+                          const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalFiltered / pageSize)) : 1;
+                          const safePage = Math.min(Math.max(1, tsPreviewPage), totalPages);
+                          const startIndex = pageSize > 0 ? (safePage - 1) * pageSize : 0;
+                          const endIndex = pageSize > 0 ? Math.min(startIndex + pageSize, totalFiltered) : totalFiltered;
+                          const displayedQuestions = filteredQuestions.slice(startIndex, endIndex);
+
+                          const goToPage = (p: number) => {
+                            const target = Math.min(Math.max(1, p), totalPages);
+                            setTsPreviewPage(target);
+                            const modal = document.getElementById('admin-ts-preview-container');
+                            if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
+                          };
+
+                          const getPageNumbers = () => {
+                            if (totalPages <= 7) {
+                              return Array.from({ length: totalPages }, (_, i) => i + 1);
+                            }
+                            const pages: (number | string)[] = [];
+                            pages.push(1);
+                            if (safePage > 3) pages.push('...');
+                            const start = Math.max(2, safePage - 1);
+                            const end = Math.min(totalPages - 1, safePage + 1);
+                            for (let i = start; i <= end; i++) {
+                              if (!pages.includes(i)) pages.push(i);
+                            }
+                            if (safePage < totalPages - 2) pages.push('...');
+                            if (!pages.includes(totalPages)) pages.push(totalPages);
+                            return pages;
+                          };
+
+                          const renderPaginationBar = (pos: 'top' | 'bottom') => (
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                gap: '10px',
+                                padding: '10px 14px',
+                                background: '#f8fafc',
+                                borderRadius: '8px',
+                                border: '1px solid #e2e8f0',
+                                marginBottom: pos === 'top' ? '14px' : '0px',
+                                marginTop: pos === 'bottom' ? '14px' : '0px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
+                                  प्रदर्शित: <span style={{ color: '#1e40af', fontWeight: 700 }}>प्रश्न {totalFiltered > 0 ? startIndex + 1 : 0} से {endIndex}</span> (कुल <span style={{ fontWeight: 700 }}>{totalFiltered}</span>)
+                                  {pageSize > 0 && totalPages > 1 && (
+                                    <span style={{ color: '#64748b', marginLeft: '6px' }}>• पेज {safePage} / {totalPages}</span>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <label style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>प्रति पेज:</label>
+                                  <select
+                                    value={tsPreviewPageSize}
+                                    onChange={(e) => {
+                                      setTsPreviewPageSize(Number(e.target.value));
+                                      setTsPreviewPage(1);
+                                    }}
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      border: '1px solid #cbd5e1',
+                                      fontSize: '0.78rem',
+                                      fontWeight: 600,
+                                      color: '#1e293b',
+                                      background: '#ffffff',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <option value={10}>10 प्रश्न</option>
+                                    <option value={20}>20 प्रश्न</option>
+                                    <option value={25}>25 प्रश्न</option>
+                                    <option value={50}>50 प्रश्न</option>
+                                    <option value={0}>सभी (All {totalFiltered})</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              {pageSize > 0 && totalPages > 1 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    disabled={safePage === 1}
+                                    onClick={() => goToPage(1)}
+                                    title="पहला पेज"
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #cbd5e1',
+                                      background: safePage === 1 ? '#f1f5f9' : '#ffffff',
+                                      color: safePage === 1 ? '#94a3b8' : '#334155',
+                                      cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    « First
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={safePage === 1}
+                                    onClick={() => goToPage(safePage - 1)}
+                                    title="पिछला पेज"
+                                    style={{
+                                      padding: '4px 9px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #cbd5e1',
+                                      background: safePage === 1 ? '#f1f5f9' : '#ffffff',
+                                      color: safePage === 1 ? '#94a3b8' : '#334155',
+                                      cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    ‹ Prev
+                                  </button>
+
+                                  {getPageNumbers().map((pn, idx) => {
+                                    if (pn === '...') {
+                                      return (
+                                        <span key={`dots-${idx}`} style={{ padding: '2px 5px', color: '#94a3b8', fontSize: '0.75rem' }}>
+                                          ...
+                                        </span>
+                                      );
+                                    }
+                                    const pageNum = Number(pn);
+                                    const isActive = pageNum === safePage;
+                                    return (
+                                      <button
+                                        key={pageNum}
+                                        type="button"
+                                        onClick={() => goToPage(pageNum)}
+                                        style={{
+                                          minWidth: '28px',
+                                          height: '28px',
+                                          padding: '0 6px',
+                                          borderRadius: '5px',
+                                          border: isActive ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                                          background: isActive ? '#eff6ff' : '#ffffff',
+                                          color: isActive ? '#1e40af' : '#334155',
+                                          fontWeight: isActive ? 800 : 600,
+                                          fontSize: '0.78rem',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {pageNum}
+                                      </button>
+                                    );
+                                  })}
+
+                                  <button
+                                    type="button"
+                                    disabled={safePage === totalPages}
+                                    onClick={() => goToPage(safePage + 1)}
+                                    title="अगला पेज"
+                                    style={{
+                                      padding: '4px 9px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #cbd5e1',
+                                      background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
+                                      color: safePage === totalPages ? '#94a3b8' : '#334155',
+                                      cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    Next ›
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={safePage === totalPages}
+                                    onClick={() => goToPage(totalPages)}
+                                    title="अंतिम पेज"
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #cbd5e1',
+                                      background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
+                                      color: safePage === totalPages ? '#94a3b8' : '#334155',
+                                      cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    Last »
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+
                           return (
                             <div>
-                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '10px', fontWeight: 600 }}>
-                                कुल {filteredQuestions.length} प्रश्न प्रदर्शित हो रहे हैं (Showing all {filteredQuestions.length} questions):
-                              </div>
-                              {filteredQuestions.map((q: any, pIdx: number) => (
+                              {renderPaginationBar('top')}
+                              {displayedQuestions.map((q: any, pIdx: number) => (
                                 <div
                                   id={`admin-q-preview-${q.id}`}
                                   key={pIdx}
@@ -7369,6 +7582,7 @@ export default function AdminDashboardPage({
                                   </div>
                                 </div>
                               ))}
+                              {renderPaginationBar('bottom')}
                             </div>
                           );
                         })()}
