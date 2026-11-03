@@ -60,6 +60,7 @@ const EMPTY_FORM = {
   postUpdateDate: '',
   category: 'LATEST JOB',
   secondaryCategories: [],
+  status: 'Published',
   organization: '',
   vacancies: '',
   totalPosts: '',
@@ -4594,6 +4595,8 @@ export default function AdminDashboardPage({
       visualEditorRef.current.innerHTML = '';
     }
     setActiveSection('dashboard');
+    setStatusFilter('draft');
+    setCurrentPage(1);
   };
 
   // ── Sarkari Guide Import Section ──────────────────────────
@@ -9249,8 +9252,8 @@ export default function AdminDashboardPage({
                 <span>⟨/⟩ HTML Source</span>
               </div>
 
-              {/* Row 1: Category + Total Posts + Display Order */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1.5fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              {/* Row 1: Category + Status + Total Posts + Display Order */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1.8fr 1.4fr 1.3fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>CATEGORY</label>
                   <select
@@ -9258,6 +9261,25 @@ export default function AdminDashboardPage({
                     onChange={e => set('category', e.target.value)}
                     style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem', background: '#fff' }}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>STATUS</label>
+                  <select
+                    value={form.status || 'Published'}
+                    onChange={e => set('status', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: form.status === 'Draft' ? '1px solid #f59e0b' : '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      background: form.status === 'Draft' ? '#fef3c7' : '#fff',
+                      color: form.status === 'Draft' ? '#92400e' : '#1e293b'
+                    }}>
+                    <option value="Published">Published (Live)</option>
+                    <option value="Draft">Draft (Hidden)</option>
                   </select>
                 </div>
                 <div>
@@ -11030,6 +11052,84 @@ export default function AdminDashboardPage({
 
         </div>
 
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div style={{
+        marginTop: '24px',
+        padding: '16px 20px',
+        background: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #cbd5e1',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+          {editingJobId ? (
+            <span>Editing post: <strong style={{ color: '#1e293b' }}>{form.title || editingJobId}</strong></span>
+          ) : (
+            <span>You can save as a private <strong>Draft</strong> anytime or <strong>Publish LIVE</strong> immediately.</span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => {
+              setEditingJobId(null);
+              setForm({ ...EMPTY_FORM });
+              setIsCustomBadge(false);
+              setActiveSection('dashboard');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem' }}
+          >
+            <X size={15} /> Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            style={{
+              background: '#f59e0b',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '9px 20px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.9rem',
+              boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)'
+            }}
+          >
+            <Save size={15} /> Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={handlePublish}
+            style={{
+              background: editingJobId ? '#2563eb' : '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '9px 22px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.9rem',
+              boxShadow: editingJobId ? '0 2px 6px rgba(37, 99, 235, 0.3)' : '0 2px 6px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            <UploadCloud size={16} /> {editingJobId ? 'Update Post' : 'Publish Post'}
+          </button>
+        </div>
       </div>
     </div>
   );

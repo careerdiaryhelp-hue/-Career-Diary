@@ -112,18 +112,38 @@ export default function AdminPage() {
 
     // Subscribe to Firestore jobs and load static jobs
     let active = true;
+
+    const getLocalDrafts = () => {
+      try {
+        const raw = localStorage.getItem('career_diary_admin_drafts');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (_) {}
+      return [];
+    };
+
+    const initialDrafts = getLocalDrafts();
+
     getInitialJobs().then(staticJobs => {
       if (!active) return;
-      setJobs(prev => mergeAndSortJobs(prev, staticJobs));
+      setJobs(prev => mergeAndSortJobs([...initialDrafts, ...prev], staticJobs));
     });
 
-    const unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
-      if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
-        getInitialJobs().then(staticJobs => {
-          if (active) setJobs(() => mergeAndSortJobs(firestorePosts, staticJobs));
-        });
-      }
-    });
+    const unsubscribe = subscribeToFirestoreJobs(
+      (firestorePosts) => {
+        if (Array.isArray(firestorePosts) && firestorePosts.length > 0) {
+          const currentDrafts = getLocalDrafts();
+          getInitialJobs().then(staticJobs => {
+            if (active) setJobs(() => mergeAndSortJobs([...currentDrafts, ...firestorePosts], staticJobs));
+          });
+        }
+      },
+      undefined,
+      300,
+      true // includeDrafts = true for Admin Dashboard
+    );
 
     const unsubNews = subscribeToBreakingNews((newsData) => {
       if (active && Array.isArray(newsData)) {
@@ -164,6 +184,21 @@ export default function AdminPage() {
       updatedAt: nowIso
     };
 
+    const isDraft = sanitizedJob.status === 'Draft' || sanitizedJob.status === 'draft';
+
+    // Keep drafts synchronized in localStorage as reliable offline/persistent backup
+    try {
+      const storedDrafts = JSON.parse(localStorage.getItem('career_diary_admin_drafts') || '[]');
+      const filteredDrafts = storedDrafts.filter(d => d.id !== safeId && d.id !== newJob.id);
+      if (isDraft) {
+        localStorage.setItem('career_diary_admin_drafts', JSON.stringify([sanitizedJob, ...filteredDrafts]));
+      } else {
+        localStorage.setItem('career_diary_admin_drafts', JSON.stringify(filteredDrafts));
+      }
+    } catch (e) {
+      console.warn('Could not sync drafts to localStorage:', e);
+    }
+
     setJobs((prevJobs) => {
       const filtered = prevJobs.filter(j => j.id !== safeId && j.id !== newJob.id);
       return mergeAndSortJobs([sanitizedJob, ...filtered], []);
@@ -181,6 +216,11 @@ export default function AdminPage() {
 
   const handleDeleteJob = async (id) => {
     const safeId = cleanJobId(id);
+    try {
+      const storedDrafts = JSON.parse(localStorage.getItem('career_diary_admin_drafts') || '[]');
+      const filteredDrafts = storedDrafts.filter(d => d.id !== id && d.id !== safeId);
+      localStorage.setItem('career_diary_admin_drafts', JSON.stringify(filteredDrafts));
+    } catch (_) {}
     setJobs(jobs.filter(j => j.id !== id && j.id !== safeId));
     try {
       await deleteJobFromFirestore(safeId || id);

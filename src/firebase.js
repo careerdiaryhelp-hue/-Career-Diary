@@ -229,7 +229,7 @@ export async function saveBreakingNewsToFirestore(items) {
 }
 
 // Real-time listener for Firestore jobs (client-side only)
-export function subscribeToFirestoreJobs(onUpdate, onError, maxJobs = 150) {
+export function subscribeToFirestoreJobs(onUpdate, onError, maxJobs = 150, includeDrafts = false) {
   if (typeof window === 'undefined') return () => {};
   let unsubscribe = null;
   let active = true;
@@ -256,8 +256,7 @@ export function subscribeToFirestoreJobs(onUpdate, onError, maxJobs = 150) {
             !data.isPyq &&
             !data.isCurrentAffairs &&
             data.title &&
-            data.status !== 'Draft' &&
-            data.status !== 'draft'
+            (includeDrafts || (data.status !== 'Draft' && data.status !== 'draft'))
           ) {
             posts.push(data);
           }
