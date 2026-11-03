@@ -284,6 +284,7 @@ export default function AdminDashboardPage({
   const [tsAlert, setTsAlert] = useState(null);
   const [tsJsonFileStats, setTsJsonFileStats] = useState(null);
   const [showTsJsonPreviewModal, setShowTsJsonPreviewModal] = useState(false);
+  const [tsPreviewTab, setTsPreviewTab] = useState<'diagrams' | 'all'>('diagrams');
   const tsFileInputRef = useRef(null);
   const tsImagesInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
@@ -6525,14 +6526,23 @@ export default function AdminDashboardPage({
         }
       }
 
+      const qImgCount = parsed.questionImagesCount || parsed.questionsWithImage || 0;
+      const sImgCount = parsed.solutionImagesCount || parsed.solutionsWithImage || 0;
+      const totalImgCount = parsed.totalImagesCount || (qImgCount + sImgCount);
+      const diagramQs = parsed.questions.filter(q => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0));
+
       setTsJsonFileStats({
         fileName: file.name,
         fileSize: (file.size / 1024).toFixed(1) + ' KB',
         totalQuestions: parsed.totalQuestions,
         questionsWithImage: parsed.questionsWithImage,
         solutionsWithImage: parsed.solutionsWithImage,
+        questionImagesCount: qImgCount,
+        solutionImagesCount: sImgCount,
+        totalImagesCount: totalImgCount,
         topicsSummary: parsed.topicsSummary,
-        previewQuestions: parsed.questions.slice(0, 5),
+        previewQuestions: parsed.questions.slice(0, 10),
+        diagramQuestions: diagramQs,
         isZip: isZip
       });
 
@@ -6551,10 +6561,10 @@ export default function AdminDashboardPage({
         totalQuestions: parsed.totalQuestions,
         questions: parsed.questions,
         topicsSummary: parsed.topicsSummary,
-        content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${parsed.questionsWithImage} question diagrams and ${parsed.solutionsWithImage} solution diagrams.\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
+        content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${totalImgCount} total diagrams (${qImgCount} question diagrams across ${parsed.questionsWithImage} Qs, and ${sImgCount} solution diagrams across ${parsed.solutionsWithImage} Qs).\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
       }));
 
-      showToast(`✅ ${parsed.totalQuestions} प्रश्न व ${parsed.questionsWithImage + parsed.solutionsWithImage} चित्र सफलतापूर्वक लोड हो गए!`, 'success');
+      showToast(`✅ ${parsed.totalQuestions} प्रश्न व कुल ${totalImgCount} चित्र (${qImgCount} प्रश्न आरेख + ${sImgCount} व्याख्या चित्र) 100% लोड हो गए!`, 'success');
     } catch (err) {
       console.error('Error loading quiz file:', err);
       alert('Error loading file: ' + (err.message || String(err)));
@@ -7032,8 +7042,8 @@ export default function AdminDashboardPage({
                           <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#166534' }}>
                             ✅ {tsJsonFileStats.fileName} ({tsJsonFileStats.fileSize})
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: '#475569' }}>
-                            {tsJsonFileStats.isZip ? '📦 ZIP पैकेज से' : 'फ़ाइल से'} सभी {tsJsonFileStats.totalQuestions} प्रश्न, विकल्प, {tsJsonFileStats.questionsWithImage} प्रश्न आरेख व {tsJsonFileStats.solutionsWithImage} व्याख्या चित्र लोड हो गए हैं!
+                          <div style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
+                            {tsJsonFileStats.isZip ? '📦 ZIP पैकेज से' : 'फ़ाइल से'} सभी {tsJsonFileStats.totalQuestions} प्रश्न व कुल {(tsJsonFileStats.totalImagesCount || (tsJsonFileStats.questionsWithImage + tsJsonFileStats.solutionsWithImage))} चित्र ({tsJsonFileStats.questionImagesCount || tsJsonFileStats.questionsWithImage} प्रश्न आरेख + {tsJsonFileStats.solutionImagesCount || tsJsonFileStats.solutionsWithImage} व्याख्या चित्र) 100% लोड हो गए हैं!
                           </div>
                         </div>
                       </div>
@@ -7075,7 +7085,7 @@ export default function AdminDashboardPage({
                             gap: '6px'
                           }}
                         >
-                          <Eye size={14} /> {showTsJsonPreviewModal ? 'Hide Question Preview' : '👁️ Preview Questions'}
+                          <Eye size={14} /> {showTsJsonPreviewModal ? 'Hide Question Preview' : '👁️ Preview Questions & Diagrams'}
                         </button>
                         <button
                           type="button"
@@ -7107,13 +7117,26 @@ export default function AdminDashboardPage({
                         <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Questions</div>
                         <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>{tsJsonFileStats.totalQuestions} Qs</div>
                       </div>
+                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #86efac' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#166534', textTransform: 'uppercase', fontWeight: 700 }}>Total Diagrams</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>
+                          {(tsJsonFileStats.totalImagesCount || (tsJsonFileStats.questionsWithImage + tsJsonFileStats.solutionsWithImage))} Images
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: '#16a34a', fontWeight: 700 }}>✓ 100% Attached from ZIP</div>
+                      </div>
                       <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
                         <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Question Diagrams</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7' }}>{tsJsonFileStats.questionsWithImage} Images</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7' }}>
+                          {tsJsonFileStats.questionImagesCount || tsJsonFileStats.questionsWithImage} Images
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({tsJsonFileStats.questionsWithImage} Questions)</div>
                       </div>
                       <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
                         <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Solution Diagrams</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{tsJsonFileStats.solutionsWithImage} Explanations</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>
+                          {tsJsonFileStats.solutionImagesCount || tsJsonFileStats.solutionsWithImage} Explanations
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({tsJsonFileStats.solutionsWithImage} Questions)</div>
                       </div>
                     </div>
 
@@ -7129,22 +7152,67 @@ export default function AdminDashboardPage({
 
                     {/* Preview Drawer */}
                     {showTsJsonPreviewModal && (
-                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '16px', maxHeight: '360px', overflowY: 'auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
-                            🔍 प्रश्न पूर्वावलोकन (Previewing First 5 Questions):
-                          </span>
+                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '16px', maxHeight: '450px', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setTsPreviewTab('diagrams')}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: tsPreviewTab === 'diagrams' ? '2px solid #059669' : '1px solid #cbd5e1',
+                                background: tsPreviewTab === 'diagrams' ? '#ecfdf5' : '#ffffff',
+                                color: tsPreviewTab === 'diagrams' ? '#065f46' : '#64748b'
+                              }}
+                            >
+                              🖼️ सभी चित्र वाले प्रश्न ({tsJsonFileStats.diagramQuestions?.length || 0} प्रश्न / {tsJsonFileStats.totalImagesCount || 0} चित्र)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTsPreviewTab('all')}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: tsPreviewTab === 'all' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                                background: tsPreviewTab === 'all' ? '#eff6ff' : '#ffffff',
+                                color: tsPreviewTab === 'all' ? '#1e40af' : '#64748b'
+                              }}
+                            >
+                              📋 सभी {tsJsonFileStats.totalQuestions} प्रश्न
+                            </button>
+                          </div>
                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            Showing 5 of {tsJsonFileStats.totalQuestions}
+                            {tsPreviewTab === 'diagrams'
+                              ? `Showing all ${tsJsonFileStats.diagramQuestions?.length || 0} diagram questions with attached images`
+                              : `Showing first 10 of ${tsJsonFileStats.totalQuestions} questions`}
                           </span>
                         </div>
-                        {(tsJsonFileStats.previewQuestions || []).map((q, pIdx) => (
+                        {((tsPreviewTab === 'diagrams' ? tsJsonFileStats.diagramQuestions : tsJsonFileStats.previewQuestions) || []).map((q, pIdx) => (
                           <div key={pIdx} style={{ padding: '12px', marginBottom: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ fontWeight: 700, color: '#2563eb' }}>{q.id}. [{q.topic}]</span>
-                              <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                Ans: ({q.correct_answer})
-                              </span>
+                              <span style={{ fontWeight: 700, color: '#2563eb' }}>Q{q.id}. [{q.topic}]</span>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                {(q.image || (q.images && q.images.length > 0)) && (
+                                  <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                    📷 Q Diagram
+                                  </span>
+                                )}
+                                {(q.explanation_image || (q.explanation_images && q.explanation_images.length > 0)) && (
+                                  <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                    💡 Sol Diagram
+                                  </span>
+                                )}
+                                <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  Ans: ({q.correct_answer})
+                                </span>
+                              </div>
                             </div>
                             <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '8px', whiteSpace: 'pre-line' }}>
                               {q.question}

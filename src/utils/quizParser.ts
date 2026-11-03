@@ -34,6 +34,9 @@ export interface ParsedQuizResult {
   topicsSummary: { [topic: string]: number };
   questionsWithImage: number;
   solutionsWithImage: number;
+  totalImagesCount?: number;
+  questionImagesCount?: number;
+  solutionImagesCount?: number;
 }
 
 function cleanSlug(str: string): string {
@@ -334,12 +337,28 @@ export function parseQuizJson(
     return questionItem;
   });
 
-  // Calculate Topics Summary
+  // Calculate Topics Summary & Total Images Count
   const topicsSummary: { [topic: string]: number } = {};
+  let questionImagesCount = 0;
+  let solutionImagesCount = 0;
+
   parsedQuestions.forEach(q => {
     topicsSummary[q.topic] = (topicsSummary[q.topic] || 0) + 1;
+
+    if (Array.isArray(q.images) && q.images.length > 0) {
+      questionImagesCount += q.images.length;
+    } else if (q.image) {
+      questionImagesCount += 1;
+    }
+
+    if (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) {
+      solutionImagesCount += q.explanation_images.length;
+    } else if (q.explanation_image) {
+      solutionImagesCount += 1;
+    }
   });
 
+  const totalImagesCount = questionImagesCount + solutionImagesCount;
   const description = raw.description || raw.subtitle || `${parsedQuestions.length} Questions • Full Syllabus • Negative Marking • Official Pattern & Detailed Solution`;
 
   return {
@@ -356,7 +375,10 @@ export function parseQuizJson(
     questions: parsedQuestions,
     topicsSummary,
     questionsWithImage,
-    solutionsWithImage
+    solutionsWithImage,
+    questionImagesCount,
+    solutionImagesCount,
+    totalImagesCount
   };
 }
 
@@ -526,6 +548,19 @@ export async function parseQuizZip(
 
   parsed.questionsWithImage = parsed.questions.filter(q => !!q.image || (Array.isArray(q.images) && q.images.length > 0)).length;
   parsed.solutionsWithImage = parsed.questions.filter(q => !!q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0)).length;
+
+  let qCount = 0;
+  let sCount = 0;
+  parsed.questions.forEach(q => {
+    if (Array.isArray(q.images) && q.images.length > 0) qCount += q.images.length;
+    else if (q.image) qCount += 1;
+
+    if (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) sCount += q.explanation_images.length;
+    else if (q.explanation_image) sCount += 1;
+  });
+  parsed.questionImagesCount = qCount;
+  parsed.solutionImagesCount = sCount;
+  parsed.totalImagesCount = qCount + sCount;
 
   if (onProgress) onProgress('Ready!', 100);
   return parsed;
