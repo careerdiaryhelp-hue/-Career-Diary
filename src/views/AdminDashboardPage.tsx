@@ -284,7 +284,8 @@ export default function AdminDashboardPage({
   const [tsAlert, setTsAlert] = useState(null);
   const [tsJsonFileStats, setTsJsonFileStats] = useState(null);
   const [showTsJsonPreviewModal, setShowTsJsonPreviewModal] = useState(false);
-  const [tsPreviewTab, setTsPreviewTab] = useState<'diagrams' | 'all'>('diagrams');
+  const [tsPreviewTab, setTsPreviewTab] = useState<'all' | 'diagrams'>('all');
+  const [tsPreviewSearch, setTsPreviewSearch] = useState('');
   const tsFileInputRef = useRef(null);
   const tsImagesInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
@@ -6474,16 +6475,34 @@ export default function AdminDashboardPage({
       status: fullItem.status || 'Published'
     });
     if (qCount > 0) {
-      const qImgCount = fullItem.questions.filter(q => q.image || q.question_image).length;
-      const sImgCount = fullItem.questions.filter(q => q.explanation_image || q.solution_image).length;
+      let qImages = 0;
+      let sImages = 0;
+      let qWithImgs = 0;
+      let sWithImgs = 0;
+      fullItem.questions.forEach((q: any) => {
+        const hasQ = q.image || q.question_image || (Array.isArray(q.images) && q.images.length > 0) || (Array.isArray(q.question_images) && q.question_images.length > 0);
+        if (hasQ) {
+          qWithImgs++;
+          qImages += Array.isArray(q.images) ? q.images.length : (Array.isArray(q.question_images) ? q.question_images.length : 1);
+        }
+        const hasS = q.explanation_image || q.solution_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) || (Array.isArray(q.solution_images) && q.solution_images.length > 0);
+        if (hasS) {
+          sWithImgs++;
+          sImages += Array.isArray(q.explanation_images) ? q.explanation_images.length : (Array.isArray(q.solution_images) ? q.solution_images.length : 1);
+        }
+      });
       setTsJsonFileStats({
         fileName: `${fullItem.title || fullItem.slug}.json`,
         fileSize: `${qCount} Questions`,
         totalQuestions: qCount,
-        questionsWithImage: qImgCount,
-        solutionsWithImage: sImgCount,
+        questionsWithImage: qWithImgs,
+        solutionsWithImage: sWithImgs,
+        questionImagesCount: qImages,
+        solutionImagesCount: sImages,
+        totalImagesCount: qImages + sImages,
         topicsSummary: fullItem.topicsSummary || {},
-        previewQuestions: fullItem.questions.slice(0, 5)
+        previewQuestions: fullItem.questions,
+        diagramQuestions: fullItem.questions.filter((q: any) => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0))
       });
     } else {
       setTsJsonFileStats(null);
@@ -6541,7 +6560,7 @@ export default function AdminDashboardPage({
         solutionImagesCount: sImgCount,
         totalImagesCount: totalImgCount,
         topicsSummary: parsed.topicsSummary,
-        previewQuestions: parsed.questions.slice(0, 10),
+        previewQuestions: parsed.questions,
         diagramQuestions: diagramQs,
         isZip: isZip
       });
@@ -6598,11 +6617,14 @@ export default function AdminDashboardPage({
       const totalQImgs = updatedQuestions.filter(q => !!q.image).length;
       const totalSImgs = updatedQuestions.filter(q => !!q.explanation_image).length;
 
+      const diagramQs = updatedQuestions.filter(q => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0));
+
       setTsJsonFileStats(prev => prev ? {
         ...prev,
         questionsWithImage: totalQImgs,
         solutionsWithImage: totalSImgs,
-        previewQuestions: updatedQuestions.slice(0, 5)
+        previewQuestions: updatedQuestions,
+        diagramQuestions: diagramQs
       } : {
         fileName: 'Quiz Package',
         fileSize: `${tsForm.questions.length} Questions`,
@@ -6610,7 +6632,8 @@ export default function AdminDashboardPage({
         questionsWithImage: totalQImgs,
         solutionsWithImage: totalSImgs,
         topicsSummary: tsForm.topicsSummary || {},
-        previewQuestions: updatedQuestions.slice(0, 5)
+        previewQuestions: updatedQuestions,
+        diagramQuestions: diagramQs
       });
 
       showToast(`✅ ${matchedQuestionImgs} प्रश्न आरेख और ${matchedSolutionImgs} व्याख्या चित्र सफलतापूर्वक जुड़ गए!`, 'success');
@@ -7152,32 +7175,16 @@ export default function AdminDashboardPage({
 
                     {/* Preview Drawer */}
                     {showTsJsonPreviewModal && (
-                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '16px', maxHeight: '450px', overflowY: 'auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                              type="button"
-                              onClick={() => setTsPreviewTab('diagrams')}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                border: tsPreviewTab === 'diagrams' ? '2px solid #059669' : '1px solid #cbd5e1',
-                                background: tsPreviewTab === 'diagrams' ? '#ecfdf5' : '#ffffff',
-                                color: tsPreviewTab === 'diagrams' ? '#065f46' : '#64748b'
-                              }}
-                            >
-                              🖼️ सभी चित्र वाले प्रश्न ({tsJsonFileStats.diagramQuestions?.length || 0} प्रश्न / {tsJsonFileStats.totalImagesCount || 0} चित्र)
-                            </button>
+                      <div style={{ marginTop: '16px', background: '#ffffff', borderRadius: '10px', border: '2px solid #cbd5e1', padding: '16px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               type="button"
                               onClick={() => setTsPreviewTab('all')}
                               style={{
-                                padding: '6px 12px',
+                                padding: '7px 14px',
                                 borderRadius: '6px',
-                                fontSize: '0.8rem',
+                                fontSize: '0.82rem',
                                 fontWeight: 700,
                                 cursor: 'pointer',
                                 border: tsPreviewTab === 'all' ? '2px solid #2563eb' : '1px solid #cbd5e1',
@@ -7185,60 +7192,186 @@ export default function AdminDashboardPage({
                                 color: tsPreviewTab === 'all' ? '#1e40af' : '#64748b'
                               }}
                             >
-                              📋 सभी {tsJsonFileStats.totalQuestions} प्रश्न
+                              📋 सभी {tsJsonFileStats.totalQuestions} प्रश्न (All Questions)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTsPreviewTab('diagrams')}
+                              style={{
+                                padding: '7px 14px',
+                                borderRadius: '6px',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: tsPreviewTab === 'diagrams' ? '2px solid #059669' : '1px solid #cbd5e1',
+                                background: tsPreviewTab === 'diagrams' ? '#ecfdf5' : '#ffffff',
+                                color: tsPreviewTab === 'diagrams' ? '#065f46' : '#64748b'
+                              }}
+                            >
+                              🖼️ केवल चित्र वाले प्रश्न ({tsJsonFileStats.diagramQuestions?.length || 0} प्रश्न / {tsJsonFileStats.totalImagesCount || 0} चित्र)
                             </button>
                           </div>
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            {tsPreviewTab === 'diagrams'
-                              ? `Showing all ${tsJsonFileStats.diagramQuestions?.length || 0} diagram questions with attached images`
-                              : `Showing first 10 of ${tsJsonFileStats.totalQuestions} questions`}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                              type="text"
+                              value={tsPreviewSearch}
+                              onChange={(e) => setTsPreviewSearch(e.target.value)}
+                              placeholder="🔍 प्रश्न संख्या या शब्द खोजें (उदा. 45, दर्पण, त्रिभुज)..."
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #cbd5e1',
+                                fontSize: '0.82rem',
+                                minWidth: '220px',
+                                outline: 'none'
+                              }}
+                            />
+                            {tsPreviewSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setTsPreviewSearch('')}
+                                style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                              >
+                                ✕ Clear
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {((tsPreviewTab === 'diagrams' ? tsJsonFileStats.diagramQuestions : tsJsonFileStats.previewQuestions) || []).map((q, pIdx) => (
-                          <div key={pIdx} style={{ padding: '12px', marginBottom: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ fontWeight: 700, color: '#2563eb' }}>Q{q.id}. [{q.topic}]</span>
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                {(q.image || (q.images && q.images.length > 0)) && (
-                                  <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                    📷 Q Diagram
-                                  </span>
-                                )}
-                                {(q.explanation_image || (q.explanation_images && q.explanation_images.length > 0)) && (
-                                  <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                    💡 Sol Diagram
-                                  </span>
-                                )}
-                                <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                  Ans: ({q.correct_answer})
-                                </span>
-                              </div>
-                            </div>
-                            <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '8px', whiteSpace: 'pre-line' }}>
-                              {q.question}
-                            </div>
-                            {(q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : [])).map((imgSrc, imgI) => (
-                              <div key={imgI} style={{ margin: '8px 0', textAlign: 'center' }}>
-                                <img src={imgSrc} alt={`Q ${q.id} diagram ${imgI + 1}`} style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
-                              </div>
+
+                        {/* Quick Jump Bar for 100/150 Questions */}
+                        {tsPreviewTab === 'all' && !tsPreviewSearch && tsJsonFileStats.totalQuestions > 20 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>सीधे जाएँ (Quick Jump):</span>
+                            {[1, 25, 50, 75, 100, 125, 150].filter(n => n <= tsJsonFileStats.totalQuestions).map(qNum => (
+                              <a
+                                key={qNum}
+                                href={`#admin-q-preview-${qNum}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const el = document.getElementById(`admin-q-preview-${qNum}`);
+                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }}
+                                style={{
+                                  fontSize: '0.74rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  background: '#ffffff',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#2563eb',
+                                  fontWeight: 600,
+                                  textDecoration: 'none'
+                                }}
+                              >
+                                Q{qNum}
+                              </a>
                             ))}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '6px', fontSize: '0.8rem', color: '#475569', marginBottom: '8px' }}>
-                              {Object.entries(q.options || {}).map(([key, val]) => (
-                                <span key={key} style={{ padding: '4px 8px', borderRadius: '4px', background: key === q.correct_answer ? '#dcfce7' : '#ffffff', border: `1px solid ${key === q.correct_answer ? '#86efac' : '#e2e8f0'}`, fontWeight: key === q.correct_answer ? 700 : 400, color: key === q.correct_answer ? '#166534' : 'inherit' }}>
-                                  ({key}) {val}
-                                </span>
+                          </div>
+                        )}
+
+                        {(() => {
+                          const baseList = tsPreviewTab === 'diagrams'
+                            ? (tsJsonFileStats.diagramQuestions || [])
+                            : (tsJsonFileStats.previewQuestions || []);
+
+                          const filteredQuestions = baseList.filter((q: any) => {
+                            if (!tsPreviewSearch.trim()) return true;
+                            const term = tsPreviewSearch.toLowerCase().trim();
+                            const idStr = String(q.id || '').toLowerCase();
+                            return (
+                              idStr === term ||
+                              idStr.includes(term) ||
+                              String(q.question || '').toLowerCase().includes(term) ||
+                              String(q.topic || '').toLowerCase().includes(term) ||
+                              String(q.solution || '').toLowerCase().includes(term) ||
+                              Object.values(q.options || {}).some((optVal: any) => String(optVal || '').toLowerCase().includes(term))
+                            );
+                          });
+
+                          if (filteredQuestions.length === 0) {
+                            return (
+                              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                                🔍 कोई प्रश्न नहीं मिला। कृपया अलग सर्च शब्द आज़माएँ।
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '10px', fontWeight: 600 }}>
+                                कुल {filteredQuestions.length} प्रश्न प्रदर्शित हो रहे हैं (Showing all {filteredQuestions.length} questions):
+                              </div>
+                              {filteredQuestions.map((q: any, pIdx: number) => (
+                                <div
+                                  id={`admin-q-preview-${q.id}`}
+                                  key={pIdx}
+                                  style={{ padding: '14px', marginBottom: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.92rem' }}>
+                                      प्रश्न {q.id}. <span style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600 }}>[{q.topic}]</span>
+                                    </span>
+                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                      {(q.image || (Array.isArray(q.images) && q.images.length > 0)) && (
+                                        <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                          📷 प्रश्न चित्र ({(Array.isArray(q.images) && q.images.length > 0 ? q.images.length : 1)})
+                                        </span>
+                                      )}
+                                      {(q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0)) && (
+                                        <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                          💡 समाधान चित्र ({(Array.isArray(q.explanation_images) && q.explanation_images.length > 0 ? q.explanation_images.length : 1)})
+                                        </span>
+                                      )}
+                                      <span style={{ fontSize: '0.78rem', background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: '4px', fontWeight: 800 }}>
+                                        सही उत्तर: ({q.correct_answer})
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '10px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                                    {q.question}
+                                  </div>
+                                  {(q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : [])).map((imgSrc: string, imgI: number) => (
+                                    <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
+                                      <img
+                                        src={imgSrc}
+                                        alt={`Q ${q.id} diagram ${imgI + 1}`}
+                                        style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                                      />
+                                    </div>
+                                  ))}
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', fontSize: '0.82rem', color: '#334155', marginBottom: '10px' }}>
+                                    {Object.entries(q.options || {}).map(([key, val]) => (
+                                      <span
+                                        key={key}
+                                        style={{
+                                          padding: '6px 10px',
+                                          borderRadius: '6px',
+                                          background: key === q.correct_answer ? '#dcfce7' : '#ffffff',
+                                          border: `1px solid ${key === q.correct_answer ? '#86efac' : '#e2e8f0'}`,
+                                          fontWeight: key === q.correct_answer ? 700 : 400,
+                                          color: key === q.correct_answer ? '#166534' : 'inherit'
+                                        }}
+                                      >
+                                        <strong>({key})</strong> {String(val)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {(q.explanation_images && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : [])).map((imgSrc: string, imgI: number) => (
+                                    <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
+                                      <img
+                                        src={imgSrc}
+                                        alt={`Sol ${q.id} diagram ${imgI + 1}`}
+                                        style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                                      />
+                                    </div>
+                                  ))}
+                                  <div style={{ fontSize: '0.82rem', color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid #16a34a', lineHeight: 1.5 }}>
+                                    <strong>💡 व्याख्या / Solution:</strong> {q.solution}
+                                  </div>
+                                </div>
                               ))}
                             </div>
-                            {(q.explanation_images && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : [])).map((imgSrc, imgI) => (
-                              <div key={imgI} style={{ margin: '8px 0', textAlign: 'center' }}>
-                                <img src={imgSrc} alt={`Sol ${q.id} diagram ${imgI + 1}`} style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
-                              </div>
-                            ))}
-                            <div style={{ fontSize: '0.78rem', color: '#166534', background: '#f0fdf4', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid #16a34a' }}>
-                              💡 {q.solution}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
