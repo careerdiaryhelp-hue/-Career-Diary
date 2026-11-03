@@ -66,6 +66,28 @@ function getDefaultDifficulty(idx: number): 'Easy' | 'Medium' | 'Hard' {
   return 'Medium';
 }
 
+function normalizeQuizImageUrl(url: string | undefined, item?: any): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('images/')) {
+    const metaStr = `${item?.id || ''} ${item?.slug || ''} ${item?.setSlug || ''} ${item?.set || ''} ${item?.examSlug || ''} ${item?.title || ''}`.toLowerCase();
+    if (metaStr.includes('set2') || metaStr.includes('set-2') || metaStr.includes('set 2')) {
+      return `/quiz/bssc-cgl-set2/${trimmed}`;
+    }
+    if (metaStr.includes('set1') || metaStr.includes('set-1') || metaStr.includes('set 01') || metaStr.includes('set 1')) {
+      return `/quiz/bssc-cgl4-set1/${trimmed}`;
+    }
+    return `/${trimmed}`;
+  }
+  return `/${trimmed}`;
+}
+
 function normalizeToQuizSet(item: any): QuizSet {
   const cleanId = item.id || item.slug;
   const examSlug = item.examSlug || String(item.exam || 'bssc-cgl').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -103,6 +125,16 @@ function normalizeToQuizSet(item: any): QuizSet {
         }
       }
 
+      const rawImg = q.image || q.question_image || (Array.isArray(q.images) && q.images[0]) || (Array.isArray(q.question_images) && q.question_images[0]) || '';
+      const rawImgs = Array.isArray(q.images) && q.images.length > 0 ? q.images : (Array.isArray(q.question_images) && q.question_images.length > 0 ? q.question_images : (rawImg ? [rawImg] : []));
+      const rawExpImg = q.explanation_image || q.solution_image || (Array.isArray(q.explanation_images) && q.explanation_images[0]) || (Array.isArray(q.solution_images) && q.solution_images[0]) || '';
+      const rawExpImgs = Array.isArray(q.explanation_images) && q.explanation_images.length > 0 ? q.explanation_images : (Array.isArray(q.solution_images) && q.solution_images.length > 0 ? q.solution_images : (rawExpImg ? [rawExpImg] : []));
+
+      const normQImg = normalizeQuizImageUrl(rawImg, item);
+      const normQImgs = rawImgs.map((u: string) => normalizeQuizImageUrl(u, item)).filter(Boolean);
+      const normSImg = normalizeQuizImageUrl(rawExpImg, item);
+      const normSImgs = rawExpImgs.map((u: string) => normalizeQuizImageUrl(u, item)).filter(Boolean);
+
       return {
         id: String(q.id || idx + 1),
         topic: q.topic || q.section_en || q.section || 'General Studies',
@@ -112,8 +144,10 @@ function normalizeToQuizSet(item: any): QuizSet {
         options: normOptions,
         correct_answer: correctOpt,
         solution: q.solution || q.explanation || '',
-        image: q.image || q.question_image || '',
-        explanation_image: q.explanation_image || ''
+        image: normQImg || (normQImgs[0] || ''),
+        images: normQImgs,
+        explanation_image: normSImg || (normSImgs[0] || ''),
+        explanation_images: normSImgs
       };
     });
   }
@@ -228,12 +262,28 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
     ];
     setAllSets(merged);
 
-    const match = merged.find(s => s.slug === initialSlug || s.id === initialSlug || s.setSlug === initialSlug);
+    const match = merged.find(s => {
+      const sExam = s.examSlug || '';
+      const sSet = s.setSlug || '';
+      const initialClean = initialSlug.toLowerCase().replace(/[-_]/g, '');
+      return s.slug === initialSlug || s.id === initialSlug || s.setSlug === initialSlug || sSet === initialClean;
+    });
+
     if (match) {
-      const currentHasFull = selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3 && (selectedSet.id === match.id || selectedSet.slug === match.slug);
+      const currentHasFull = selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3 && (
+        selectedSet.id === match.id || selectedSet.slug === match.slug ||
+        (selectedSet.examSlug === match.examSlug && selectedSet.setSlug === match.setSlug)
+      );
+
       if (currentHasFull) {
         match.questions = selectedSet.questions;
+        setSelectedSet(prev => ({ ...match, questions: prev.questions }));
       } else if (!match.questions || match.questions.length <= 3) {
+        // Preserve existing full questions if selectedSet currently has them
+        if (selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3) {
+          match.questions = selectedSet.questions;
+          setSelectedSet(prev => ({ ...match, questions: prev.questions }));
+        }
         fetchTestSeriesBySlug(match.slug || match.id).then((fullDoc: any) => {
           if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
             const norm = normalizeToQuizSet(fullDoc);
@@ -241,8 +291,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
             setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
           }
         }).catch(() => {});
+      } else {
+        setSelectedSet(match);
       }
-      setSelectedSet(match);
       setTestTimeRemaining(match.durationMinutes * 60);
     }
   };
@@ -916,19 +967,19 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       {q.question}
                     </div>
 
-                    {/* Optional Question Image */}
-                    {q.image && (
-                      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                    {/* Optional Question Images */}
+                    {(q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : [])).map((imgSrc, iIdx) => (
+                      <div key={iIdx} style={{ marginBottom: '16px', textAlign: 'center' }}>
                         <img
-                          src={q.image}
-                          alt={`Question ${q.id}`}
-                          style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                          src={imgSrc}
+                          alt={`Question ${q.id} diagram ${iIdx + 1}`}
+                          style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           onError={(e) => {
                             (e.currentTarget as HTMLElement).style.display = 'none';
                           }}
                         />
                       </div>
-                    )}
+                    ))}
 
                     {/* Options (A, B, C, D) */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', marginBottom: '16px' }}>
@@ -1065,18 +1116,18 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                         </div>
 
                         {/* Optional Solution Explanation Diagram / Image */}
-                        {q.explanation_image && (
-                          <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        {(q.explanation_images && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : [])).map((imgSrc, iIdx) => (
+                          <div key={iIdx} style={{ marginTop: '12px', textAlign: 'center' }}>
                             <img
-                              src={q.explanation_image}
-                              alt={`Solution diagram for question ${q.id}`}
+                              src={imgSrc}
+                              alt={`Solution diagram for question ${q.id} ${iIdx + 1}`}
                               style={{ maxWidth: '100%', maxHeight: '350px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                               onError={(e) => {
                                 (e.currentTarget as HTMLElement).style.display = 'none';
                               }}
                             />
                           </div>
-                        )}
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1255,19 +1306,19 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     {currentTestQuestion.question}
                   </div>
 
-                  {/* Optional Question Image */}
-                  {currentTestQuestion.image && (
-                    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                  {/* Optional Question Images */}
+                  {(currentTestQuestion.images && currentTestQuestion.images.length > 0 ? currentTestQuestion.images : (currentTestQuestion.image ? [currentTestQuestion.image] : [])).map((imgSrc, iIdx) => (
+                    <div key={iIdx} style={{ marginBottom: '20px', textAlign: 'center' }}>
                       <img
-                        src={currentTestQuestion.image}
-                        alt="Question"
+                        src={imgSrc}
+                        alt={`Question diagram ${iIdx + 1}`}
                         style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px' }}
                         onError={(e) => {
                           (e.currentTarget as HTMLElement).style.display = 'none';
                         }}
                       />
                     </div>
-                  )}
+                  ))}
 
                   {/* 1. Ad directly under Question Text & Image (Before Options) */}
                   <div

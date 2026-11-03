@@ -1320,7 +1320,8 @@ export async function fetchTestSeriesBySlug(slug) {
     const found = all.find(item => {
       const iId = cleanJobId(item.id || '').replace(/^ts_/, '');
       const iSlug = cleanJobId(item.slug || '').replace(/^ts_/, '');
-      return iId === rawClean || iSlug === rawClean || cleanJobId(item.title || '') === rawClean;
+      const iSet = cleanJobId(item.setSlug || item.set || '');
+      return iId === rawClean || iSlug === rawClean || iSet === rawClean || cleanJobId(item.title || '') === rawClean || (item.urlPath && item.urlPath.endsWith('/' + rawClean));
     });
     if (found) {
       // If found in summary list but questions are empty or chunked, fetch full ts_${rawClean}

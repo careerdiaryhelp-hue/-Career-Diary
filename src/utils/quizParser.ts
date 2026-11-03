@@ -14,7 +14,9 @@ export interface ParsedQuestion {
   correct_answer: string;
   solution: string;
   image?: string;
+  images?: string[];
   explanation_image?: string;
+  explanation_images?: string[];
 }
 
 export interface ParsedQuizResult {
@@ -93,7 +95,7 @@ export function lookupImageInMap(
   const idStr = String(questionId).trim();
   const idNum = idStr.replace(/[^0-9]/g, '');
 
-  // 1. Direct raw reference match (e.g. "images/q118.jpg", "q118.jpg")
+  // 1. Direct raw reference match (e.g. "images/q118.jpg", "q118.jpg", "images/q45_q.jpg")
   if (rawRef && typeof rawRef === 'string') {
     const cleanRef = rawRef.trim().toLowerCase().replace(/\\/g, '/');
     if (imageMap[cleanRef]) return imageMap[cleanRef];
@@ -105,11 +107,21 @@ export function lookupImageInMap(
     if (imageMap[noExt]) return imageMap[noExt];
   }
 
-  // 2. Lookup by Question ID and Prefix
+  // 2. Lookup by Question ID and Prefix with broad naming pattern support
   const pad3 = idNum ? idNum.padStart(3, '0') : ''; // e.g. "010"
   const candidates = type === 'q'
-    ? [`q${idStr}`, `q${idNum}`, `question_${idStr}`, `question_${idNum}`, `question${idNum}`, `q_${idNum}`, `q${pad3}`, `question_${pad3}`, idStr, idNum]
-    : [`s${idStr}`, `s${idNum}`, `e${idStr}`, `e${idNum}`, `e${pad3}`, `s${pad3}`, `sol${idNum}`, `solution_${idStr}`, `solution_${idNum}`, `exp${idNum}`, `explanation_${idStr}`, `explanation_${idNum}`];
+    ? [
+        `q${idStr}`, `q${idNum}`, `q${idNum}_q`, `q${idNum}-q`, `q${idNum}_question`, `q${idNum}_opts`,
+        `question_${idStr}`, `question_${idNum}`, `question${idNum}`, `question_${idNum}_q`, `q_${idNum}`, `q_${idNum}_q`,
+        `q${pad3}`, `q${pad3}_q`, `question_${pad3}`, `question_${pad3}_q`, idStr, idNum
+      ]
+    : [
+        `q${idStr}_sol`, `q${idNum}_sol`, `q${idNum}-sol`, `q${idNum}_s`, `q${idNum}_ans`, `q${idNum}_explanation`, `q${idNum}_exp`,
+        `q${pad3}_sol`, `q${pad3}-sol`, `q_${idNum}_sol`,
+        `s${idStr}`, `s${idNum}`, `e${idStr}`, `e${idNum}`, `e${pad3}`, `s${pad3}`,
+        `sol${idNum}`, `sol_${idNum}`, `solution_${idStr}`, `solution_${idNum}`, `solution${idNum}`,
+        `exp${idNum}`, `exp_${idNum}`, `explanation_${idStr}`, `explanation_${idNum}`, `explanation${idNum}`
+      ];
 
   for (const p of candidates) {
     if (!p) continue;
@@ -122,6 +134,60 @@ export function lookupImageInMap(
   }
 
   return null;
+}
+
+/**
+ * Resolves one or multiple diagram images for a question or explanation from raw JSON references and memory map.
+ */
+export function resolveImages(
+  rawRefs: any,
+  questionId: string | number,
+  type: 'q' | 's',
+  imageMap?: Record<string, string>
+): string[] {
+  const refs: string[] = [];
+  if (Array.isArray(rawRefs)) {
+    rawRefs.forEach(r => {
+      if (typeof r === 'string' && r.trim()) refs.push(r.trim());
+    });
+  } else if (typeof rawRefs === 'string' && rawRefs.trim()) {
+    refs.push(rawRefs.trim());
+  }
+
+  const results: string[] = [];
+  const seenUrls = new Set<string>();
+
+  if (refs.length > 0) {
+    for (const r of refs) {
+      if (imageMap) {
+        const matched = lookupImageInMap(imageMap, r, questionId, type);
+        if (matched && !seenUrls.has(matched)) {
+          results.push(matched);
+          seenUrls.add(matched);
+          continue;
+        }
+      }
+      // If already a valid absolute path or data URL or remote URL, keep it
+      if (
+        (r.startsWith('data:') || r.startsWith('http://') || r.startsWith('https://') || r.startsWith('/')) &&
+        !seenUrls.has(r)
+      ) {
+        results.push(r);
+        seenUrls.add(r);
+      }
+    }
+  }
+
+  // Fallback: if no references matched from array/string, try matching by question ID in imageMap
+  if (results.length === 0 && imageMap) {
+    const matched = lookupImageInMap(imageMap, '', questionId, type);
+    if (matched && !seenUrls.has(matched)) {
+      results.push(matched);
+      seenUrls.add(matched);
+    }
+  }
+
+  return results;
 }
 
 export function parseQuizJson(
@@ -143,13 +209,32 @@ export function parseQuizJson(
 
   const baseName = fileName.replace(/\.[^/.]+$/, '').trim();
   const rawTitle = raw.title || raw.name || baseName || 'BSSC CGL Full Mock Test';
-  let rawExam = raw.exam || raw.examName || 'BSSC CGL';
+  let rawExam = raw.exam || raw.examName || '';
+  if (!rawExam) {
+    const titleLower = (rawTitle + ' ' + baseName).toLowerCase();
+    if (titleLower.includes('bihar daroga') || titleLower.includes('bihar si') || titleLower.includes('daroga')) {
+      rawExam = 'Bihar Daroga (SI)';
+    } else if (titleLower.includes('bssc')) {
+      rawExam = 'BSSC CGL';
+    } else if (titleLower.includes('bpsc')) {
+      rawExam = 'BPSC';
+    } else if (titleLower.includes('railway') || titleLower.includes('rrb')) {
+      rawExam = 'Railway RRB';
+    } else if (titleLower.includes('ssc gd')) {
+      rawExam = 'SSC GD';
+    } else if (titleLower.includes('up police')) {
+      rawExam = 'UP Police';
+    } else {
+      rawExam = 'BSSC CGL';
+    }
+  }
+
   if (rawExam.includes('प्रारंभिक') || rawExam.includes('परीक्षा')) {
     rawExam = rawExam.replace(/प्रारंभिक\s*परीक्षा/g, '').trim() || 'BSSC CGL-4';
   }
 
   let detectedSet = 'Set 1';
-  const setMatch = (rawTitle + ' ' + (raw.set || '') + ' ' + baseName).match(/set[\s\-_]*(\d+)/i);
+  const setMatch = (rawTitle + ' ' + (raw.set || '') + ' ' + baseName).match(/(?:set|v\d+s|s)[\s\-_]*0*(\d+)/i);
   if (setMatch) {
     detectedSet = `Set ${parseInt(setMatch[1], 10)}`;
   } else if (raw.set) {
@@ -195,66 +280,26 @@ export function parseQuizJson(
     }
 
     // 2. Determine Correct Answer (Single uppercase letter A, B, C, D)
-    let correct = String(q.correct_option || q.correctOption || q.correct_answer || q.answer || q.ans || 'A').trim().toUpperCase();
+    let correct = String(q.correct || q.correct_option || q.correctOption || q.correct_answer || q.answer || q.ans || q.ans_key || 'A').trim().toUpperCase();
     if (!['A', 'B', 'C', 'D'].includes(correct)) {
       // Find if correct was given as the actual answer text (e.g. "1963")
-      const foundMatch = Object.entries(opts).find(([_, text]) => text && text.trim() === String(q.correct_answer || '').trim());
+      const foundMatch = Object.entries(opts).find(([_, text]) => text && text.trim() === String(q.correct_answer || q.correct || '').trim());
       if (foundMatch) {
         correct = foundMatch[0];
       } else {
-        correct = String(q.correct_option || 'A').trim().toUpperCase();
+        correct = String(q.correct_option || q.correct || 'A').trim().toUpperCase();
       }
     }
 
-    // 3. Normalize & Match Images (supports direct URL, Base64, and ZIP ImageMap matching)
-    let qImg = q.question_image || q.questionImage || q.image || q.img || '';
-    if (typeof qImg === 'string' && qImg.trim()) {
-      qImg = qImg.trim();
-      if (imageMap) {
-        const matched = lookupImageInMap(imageMap, qImg, q.id, 'q');
-        if (matched) qImg = matched;
-      }
-      if (qImg.startsWith('images/')) {
-        const isBsscSet1 = fileName.toLowerCase().includes('bssc_cgl4_set1') || rawTitle.toLowerCase().includes('set 01');
-        if (isBsscSet1) {
-          qImg = `/quiz/bssc-cgl4-set1/${qImg}`;
-        }
-      }
-      if (qImg) questionsWithImage++;
-    } else if (imageMap) {
-      // Check if imageMap has an image for this question id (e.g. q104.jpg)
-      const matched = lookupImageInMap(imageMap, '', q.id, 'q');
-      if (matched) {
-        qImg = matched;
-        questionsWithImage++;
-      }
-    } else {
-      qImg = '';
-    }
+    // 3. Normalize & Match Question and Explanation Images
+    const rawQImgRef = q.question_images || q.images || q.q_images || q.question_image || q.questionImage || q.image || q.img;
+    const matchedQImgs = resolveImages(rawQImgRef, q.id, 'q', imageMap);
 
-    let expImg = q.explanation_image || q.explanationImage || q.solution_image || q.solutionImage || '';
-    if (typeof expImg === 'string' && expImg.trim()) {
-      expImg = expImg.trim();
-      if (imageMap) {
-        const matched = lookupImageInMap(imageMap, expImg, q.id, 's');
-        if (matched) expImg = matched;
-      }
-      if (expImg.startsWith('images/')) {
-        const isBsscSet1 = fileName.toLowerCase().includes('bssc_cgl4_set1') || rawTitle.toLowerCase().includes('set 01');
-        if (isBsscSet1) {
-          expImg = `/quiz/bssc-cgl4-set1/${expImg}`;
-        }
-      }
-      if (expImg) solutionsWithImage++;
-    } else if (imageMap) {
-      const matched = lookupImageInMap(imageMap, '', q.id, 's');
-      if (matched) {
-        expImg = matched;
-        solutionsWithImage++;
-      }
-    } else {
-      expImg = '';
-    }
+    const rawSImgRef = q.explanation_images || q.solution_images || q.explanation_image || q.explanationImage || q.solution_image || q.solutionImage || q.sol_image;
+    const matchedSImgs = resolveImages(rawSImgRef, q.id, 's', imageMap);
+
+    if (matchedQImgs.length > 0) questionsWithImage++;
+    if (matchedSImgs.length > 0) solutionsWithImage++;
 
     // 4. Solution / Detailed Explanation
     const rawSol = q.explanation || q.solution || q.detailed_solution || q.desc || '';
@@ -277,8 +322,14 @@ export function parseQuizJson(
       solution: sol
     };
 
-    if (qImg) questionItem.image = qImg;
-    if (expImg) questionItem.explanation_image = expImg;
+    if (matchedQImgs.length > 0) {
+      questionItem.image = matchedQImgs[0];
+      questionItem.images = matchedQImgs;
+    }
+    if (matchedSImgs.length > 0) {
+      questionItem.explanation_image = matchedSImgs[0];
+      questionItem.explanation_images = matchedSImgs;
+    }
 
     return questionItem;
   });
@@ -353,28 +404,61 @@ export async function optimizeQuizQuestionsImages(
     });
   };
 
-  const imagesToCompress: { qIdx: number; field: 'image' | 'explanation_image'; url: string }[] = [];
+  // Collect all images across image and explanation_image, including arrays
+  const tasks: { qIdx: number; type: 'q' | 's'; imgIdx?: number; url: string }[] = [];
   questions.forEach((q, qIdx) => {
-    if (q.image && q.image.startsWith('data:image/') && q.image.length >= 35000) {
-      imagesToCompress.push({ qIdx, field: 'image', url: q.image });
+    if (Array.isArray(q.images) && q.images.length > 0) {
+      q.images.forEach((url, i) => {
+        if (url && url.startsWith('data:image/') && url.length >= 35000) {
+          tasks.push({ qIdx, type: 'q', imgIdx: i, url });
+        }
+      });
+    } else if (q.image && q.image.startsWith('data:image/') && q.image.length >= 35000) {
+      tasks.push({ qIdx, type: 'q', url: q.image });
     }
-    if (q.explanation_image && q.explanation_image.startsWith('data:image/') && q.explanation_image.length >= 35000) {
-      imagesToCompress.push({ qIdx, field: 'explanation_image', url: q.explanation_image });
+
+    if (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) {
+      q.explanation_images.forEach((url, i) => {
+        if (url && url.startsWith('data:image/') && url.length >= 35000) {
+          tasks.push({ qIdx, type: 's', imgIdx: i, url });
+        }
+      });
+    } else if (q.explanation_image && q.explanation_image.startsWith('data:image/') && q.explanation_image.length >= 35000) {
+      tasks.push({ qIdx, type: 's', url: q.explanation_image });
     }
   });
 
-  if (imagesToCompress.length === 0) return questions;
+  if (tasks.length === 0) return questions;
 
-  const updatedQuestions = questions.map(q => ({ ...q }));
+  const updatedQuestions = questions.map(q => ({
+    ...q,
+    images: Array.isArray(q.images) ? [...q.images] : (q.image ? [q.image] : undefined),
+    explanation_images: Array.isArray(q.explanation_images) ? [...q.explanation_images] : (q.explanation_image ? [q.explanation_image] : undefined)
+  }));
+
   let done = 0;
-  for (const item of imagesToCompress) {
+  for (const item of tasks) {
     const comp = await compressOne(item.url);
-    updatedQuestions[item.qIdx] = {
-      ...updatedQuestions[item.qIdx],
-      [item.field]: comp
-    };
+    const targetQ = updatedQuestions[item.qIdx];
+    if (item.type === 'q') {
+      if (typeof item.imgIdx === 'number' && targetQ.images) {
+        targetQ.images[item.imgIdx] = comp;
+        if (item.imgIdx === 0) targetQ.image = comp;
+      } else {
+        targetQ.image = comp;
+        if (targetQ.images && targetQ.images.length > 0) targetQ.images[0] = comp;
+      }
+    } else {
+      if (typeof item.imgIdx === 'number' && targetQ.explanation_images) {
+        targetQ.explanation_images[item.imgIdx] = comp;
+        if (item.imgIdx === 0) targetQ.explanation_image = comp;
+      } else {
+        targetQ.explanation_image = comp;
+        if (targetQ.explanation_images && targetQ.explanation_images.length > 0) targetQ.explanation_images[0] = comp;
+      }
+    }
     done++;
-    if (onProgress) onProgress(done, imagesToCompress.length);
+    if (onProgress) onProgress(done, tasks.length);
   }
 
   return updatedQuestions;
@@ -440,8 +524,8 @@ export async function parseQuizZip(
   if (onProgress) onProgress('Optimizing diagrams for fast mobile CBT test...', 85);
   parsed.questions = await optimizeQuizQuestionsImages(parsed.questions);
 
-  parsed.questionsWithImage = parsed.questions.filter(q => !!q.image).length;
-  parsed.solutionsWithImage = parsed.questions.filter(q => !!q.explanation_image).length;
+  parsed.questionsWithImage = parsed.questions.filter(q => !!q.image || (Array.isArray(q.images) && q.images.length > 0)).length;
+  parsed.solutionsWithImage = parsed.questions.filter(q => !!q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0)).length;
 
   if (onProgress) onProgress('Ready!', 100);
   return parsed;
@@ -506,14 +590,19 @@ export async function attachImagesToQuestions(
 
   const updated = questions.map(q => {
     const copy = { ...q };
-    const qImg = lookupImageInMap(imageMap, copy.image, copy.id, 'q');
-    if (qImg) {
-      copy.image = qImg;
+    const rawQ = copy.images && copy.images.length > 0 ? copy.images : (copy.image ? [copy.image] : []);
+    const foundQ = resolveImages(rawQ, copy.id, 'q', imageMap);
+    if (foundQ.length > 0) {
+      copy.image = foundQ[0];
+      copy.images = foundQ;
       matchedQ++;
     }
-    const sImg = lookupImageInMap(imageMap, copy.explanation_image, copy.id, 's');
-    if (sImg) {
-      copy.explanation_image = sImg;
+
+    const rawS = copy.explanation_images && copy.explanation_images.length > 0 ? copy.explanation_images : (copy.explanation_image ? [copy.explanation_image] : []);
+    const foundS = resolveImages(rawS, copy.id, 's', imageMap);
+    if (foundS.length > 0) {
+      copy.explanation_image = foundS[0];
+      copy.explanation_images = foundS;
       matchedS++;
     }
     return copy;

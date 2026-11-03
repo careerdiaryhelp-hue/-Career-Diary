@@ -18,7 +18,9 @@ export interface Question {
   correct_answer: string;
   solution: string;
   image?: string;
+  images?: string[];
   explanation_image?: string;
+  explanation_images?: string[];
 }
 
 export interface QuizSet {

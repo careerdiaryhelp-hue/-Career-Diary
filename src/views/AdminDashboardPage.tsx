@@ -7149,11 +7149,11 @@ export default function AdminDashboardPage({
                             <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '8px', whiteSpace: 'pre-line' }}>
                               {q.question}
                             </div>
-                            {q.image && (
-                              <div style={{ margin: '8px 0', textAlign: 'center' }}>
-                                <img src={q.image} alt={`Q ${q.id}`} style={{ maxHeight: '120px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                            {(q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : [])).map((imgSrc, imgI) => (
+                              <div key={imgI} style={{ margin: '8px 0', textAlign: 'center' }}>
+                                <img src={imgSrc} alt={`Q ${q.id} diagram ${imgI + 1}`} style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                               </div>
-                            )}
+                            ))}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '6px', fontSize: '0.8rem', color: '#475569', marginBottom: '8px' }}>
                               {Object.entries(q.options || {}).map(([key, val]) => (
                                 <span key={key} style={{ padding: '4px 8px', borderRadius: '4px', background: key === q.correct_answer ? '#dcfce7' : '#ffffff', border: `1px solid ${key === q.correct_answer ? '#86efac' : '#e2e8f0'}`, fontWeight: key === q.correct_answer ? 700 : 400, color: key === q.correct_answer ? '#166534' : 'inherit' }}>
@@ -7161,11 +7161,11 @@ export default function AdminDashboardPage({
                                 </span>
                               ))}
                             </div>
-                            {q.explanation_image && (
-                              <div style={{ margin: '8px 0', textAlign: 'center' }}>
-                                <img src={q.explanation_image} alt={`Sol ${q.id}`} style={{ maxHeight: '120px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                            {(q.explanation_images && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : [])).map((imgSrc, imgI) => (
+                              <div key={imgI} style={{ margin: '8px 0', textAlign: 'center' }}>
+                                <img src={imgSrc} alt={`Sol ${q.id} diagram ${imgI + 1}`} style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                               </div>
-                            )}
+                            ))}
                             <div style={{ fontSize: '0.78rem', color: '#166534', background: '#f0fdf4', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid #16a34a' }}>
                               💡 {q.solution}
                             </div>
