@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import Link from 'next/link';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { DisplayAd, SquareAd } from './AdSenseBanner';
+import { DisplayAd, Dis2Ad, SquareAd } from './AdSenseBanner';
 import { CAQuestion } from '../data/currentAffairs50Questions';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
+import { fetchPyqBySlug } from '../firebase';
 import {
   Clock, CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, ArrowLeft,
   Bookmark, Flag, HelpCircle, Check, Eye, EyeOff, Trophy, AlertTriangle,
@@ -27,14 +29,32 @@ interface PyqPost {
   content?: string;
   questions?: CAQuestion[];
   durationMinutes?: number;
+  marksPerQuestion?: number;
+  negativeMarks?: number;
   totalQuestions?: number;
+  isChunked?: boolean;
+  chunkCount?: number;
+  topicsSummary?: { [topic: string]: number };
+}
+
+function getQuestionImages(q: CAQuestion): string[] {
+  if (Array.isArray(q.images) && q.images.length > 0) return q.images.filter(Boolean);
+  if (q.image && String(q.image).trim()) return [String(q.image).trim()];
+  return [];
+}
+
+function getSolutionImages(q: CAQuestion): string[] {
+  if (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) return q.explanation_images.filter(Boolean);
+  if (q.explanation_image && String(q.explanation_image).trim()) return [String(q.explanation_image).trim()];
+  return [];
 }
 
 function renderOptionContent(text: string) {
   if (!text) return '';
-  const imgTagMatch = text.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  const trimmed = String(text).trim();
+  const imgTagMatch = trimmed.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
   if (imgTagMatch) {
-    const remainingText = text.replace(/<img[^>]*>/gi, '').trim();
+    const remainingText = trimmed.replace(/<img[^>]*>/gi, '').trim();
     return (
       <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
         <img src={imgTagMatch[1]} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />
@@ -42,11 +62,25 @@ function renderOptionContent(text: string) {
       </span>
     );
   }
-  if (/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(text.trim())) {
-    return <img src={text.trim()} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />;
+  if (/^data:image\//i.test(trimmed) || /^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(trimmed)) {
+    return <img src={trimmed} alt="Option" style={{ maxHeight: '110px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />;
   }
   return text;
 }
+
+function formatMark(n: number): string {
+  return Number.isInteger(n) ? `${n}.00` : String(Number(n.toFixed(2)));
+}
+
+const subscribeToHistory = (callback: () => void) => {
+  window.addEventListener('popstate', callback);
+  return () => window.removeEventListener('popstate', callback);
+};
+const getPyqUrlModeSnapshot = (): 'test' | 'study' | null => {
+  const m = new URLSearchParams(window.location.search).get('mode');
+  return m === 'study' || m === 'test' ? m : null;
+};
+const getServerModeSnapshot = () => null;
 
 export default function PyqQuizClient({
   post,
@@ -55,77 +89,155 @@ export default function PyqQuizClient({
   post: PyqPost;
   relatedPosts?: any[];
 }) {
+  const [fetchedDoc, setFetchedDoc] = useState<{ key: string; data: PyqPost } | null>(null);
+  const postKey = `${post?.id || ''}:${post?.slug || ''}:${Array.isArray(post?.questions) ? post.questions.length : 0}:${post?.isChunked ? 1 : 0}`;
+  const hasFetchedFull = fetchedDoc?.key === postKey;
+  const slugOrId = post?.slug || post?.id;
+  const needsFullFetch =
+    !hasFetchedFull &&
+    Boolean(slugOrId) &&
+    (Boolean(post?.isChunked) ||
+      (typeof post?.totalQuestions === 'number' &&
+        post.totalQuestions > 3 &&
+        Array.isArray(post.questions) &&
+        post.questions.length <= 3));
+
+  const activePost: PyqPost =
+    hasFetchedFull && fetchedDoc
+      ? {
+          ...post,
+          ...fetchedDoc.data,
+          questions:
+            Array.isArray(fetchedDoc.data.questions) && fetchedDoc.data.questions.length > 0
+              ? fetchedDoc.data.questions
+              : post.questions
+        }
+      : post;
+
+  // Safety net: if post was chunked or only preview slice arrived, reassemble full paper from Firestore
+  useEffect(() => {
+    if (!needsFullFetch || !slugOrId) return;
+
+    let cancelled = false;
+    fetchPyqBySlug(slugOrId)
+      .then((fullDoc) => {
+        if (!cancelled && fullDoc) {
+          setFetchedDoc({ key: postKey, data: fullDoc });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needsFullFetch, slugOrId, postKey]);
+
   const questions: CAQuestion[] = React.useMemo(() => {
-    if (post.content) {
-      const extracted = extractQuestionsFromContent(post.content);
+    if (Array.isArray(activePost.questions) && activePost.questions.length > 0) {
+      return activePost.questions.map((q: any, idx: number) => {
+        let normOpts: { A: string; B: string; C: string; D: string; [key: string]: string } = {
+          A: '',
+          B: '',
+          C: '',
+          D: ''
+        };
+        if (Array.isArray(q.options)) {
+          q.options.forEach((opt: any, oIdx: number) => {
+            const rawKey = String(opt?.label || ['A', 'B', 'C', 'D'][oIdx] || 'A').trim().toUpperCase();
+            const m = rawKey.match(/^\(?([A-D])\)?\.?$/);
+            const k = m ? m[1] : rawKey;
+            normOpts[k] = String(opt?.text ?? opt ?? '').trim();
+          });
+        } else if (q.options && typeof q.options === 'object') {
+          normOpts = {
+            A: String(q.options.A ?? q.options.a ?? ''),
+            B: String(q.options.B ?? q.options.b ?? ''),
+            C: String(q.options.C ?? q.options.c ?? ''),
+            D: String(q.options.D ?? q.options.d ?? '')
+          };
+        }
+        const rawAns = String(q.correct_answer ?? q.correct_option ?? q.correct ?? 'A').trim().toUpperCase();
+        const ansMatch = rawAns.match(/^\(?([A-D])\)?\.?$/);
+        const correctAns = ansMatch ? ansMatch[1] : rawAns;
+
+        return {
+          ...q,
+          id: q.id !== undefined && q.id !== null && String(q.id).trim() !== '' ? String(q.id) : String(idx + 1),
+          options: normOpts,
+          correct_answer: correctAns,
+          solution: q.solution || q.explanation || ''
+        };
+      });
+    }
+    if (activePost.content) {
+      const extracted = extractQuestionsFromContent(activePost.content);
       if (extracted && extracted.length > 0) {
-        return extracted;
+        return extracted.map((q, idx) => ({
+          ...q,
+          id: q.id !== undefined && q.id !== null && String(q.id).trim() !== '' ? String(q.id) : String(idx + 1),
+          correct_answer: String(q.correct_answer || 'A').trim().toUpperCase()
+        }));
       }
     }
-    if (Array.isArray(post.questions) && post.questions.length > 0) {
-      return post.questions;
-    }
     return [];
-  }, [post.questions, post.content]);
+  }, [activePost.questions, activePost.content]);
 
   const totalQuestions = questions.length;
-  const durationMinutes = post.durationMinutes || (totalQuestions > 50 ? 120 : 30);
+  const durationMinutes =
+    activePost.durationMinutes && Number(activePost.durationMinutes) > 0
+      ? Number(activePost.durationMinutes)
+      : (totalQuestions > 50 ? 120 : 30);
   const durationSeconds = durationMinutes * 60;
 
-  const [mode, setMode] = useState<'test' | 'study' | 'result'>('test');
+  const marksPerQuestion =
+    activePost.marksPerQuestion !== undefined &&
+    activePost.marksPerQuestion !== null &&
+    !Number.isNaN(Number(activePost.marksPerQuestion))
+      ? Number(activePost.marksPerQuestion)
+      : 1;
+  const negativeMarks =
+    activePost.negativeMarks !== undefined &&
+    activePost.negativeMarks !== null &&
+    !Number.isNaN(Number(activePost.negativeMarks))
+      ? Math.abs(Number(activePost.negativeMarks))
+      : 0.25;
+  const maxScore = Number((totalQuestions * marksPerQuestion).toFixed(2));
+  const posMarkLabel = formatMark(marksPerQuestion);
+  const negMarkLabel = formatMark(negativeMarks);
+
+  const urlMode = useSyncExternalStore(subscribeToHistory, getPyqUrlModeSnapshot, getServerModeSnapshot);
+  const [userMode, setMode] = useState<'test' | 'study' | 'result' | null>(null);
+  const mode: 'test' | 'study' | 'result' = userMode ?? urlMode ?? 'test';
   const [currentIdx, setCurrentIdx] = useState(0);
 
   // Test mode states
-  const [timeLeft, setTimeLeft] = useState(durationSeconds);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timeLeft = Math.max(0, durationSeconds - elapsedSeconds);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: number]: string }>({});
-  const [markedForReview, setMarkedForReview] = useState<{ [qId: number]: boolean }>({});
-  const [visitedQuestions, setVisitedQuestions] = useState<{ [qId: number]: boolean }>({ 1: true });
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: string }>({});
+  const [markedForReview, setMarkedForReview] = useState<{ [qId: string]: boolean }>({});
+  const [visitedQuestions, setVisitedQuestions] = useState<{ [qId: string]: boolean }>({});
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   // Study mode states
-  const [studyAnswers, setStudyAnswers] = useState<{ [qId: number]: string }>({});
-  const [revealedSolutions, setRevealedSolutions] = useState<{ [qId: number]: boolean }>({});
+  const [studyAnswers, setStudyAnswers] = useState<{ [qId: string]: string }>({});
+  const [revealedSolutions, setRevealedSolutions] = useState<{ [qId: string]: boolean }>({});
 
   // Result states
-  const [score, setScore] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [incorrectCount, setIncorrectCount] = useState(0);
   const [timeTakenSeconds, setTimeTakenSeconds] = useState(0);
+  const elapsedRef = useRef(0);
 
-  // Handle URL mode query param (?mode=study or ?mode=test)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlMode = params.get('mode');
-      if (urlMode === 'study') setMode('study');
-      else if (urlMode === 'test') setMode('test');
-    }
-  }, []);
-
-  // Timer Countdown in Test Mode
-  useEffect(() => {
-    if (mode !== 'test' || !isTimerRunning || timeLeft <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitTest();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [mode, isTimerRunning, timeLeft]);
+  const effectiveVisitedQuestions = React.useMemo(
+    () => (questions[0] ? { [String(questions[0].id)]: true, ...visitedQuestions } : visitedQuestions),
+    [questions, visitedQuestions]
+  );
 
   // Format mm:ss or hh:mm:ss
   const formatTimer = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    const safeSecs = Math.max(0, seconds);
+    const hrs = Math.floor(safeSecs / 3600);
+    const mins = Math.floor((safeSecs % 3600) / 60);
+    const secs = safeSecs % 60;
     if (hrs > 0) {
       return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -133,6 +245,7 @@ export default function PyqQuizClient({
   };
 
   const currentQ = questions[currentIdx] || null;
+  const currentQId = currentQ ? String(currentQ.id) : '';
 
   // Jump to Question
   const handleJumpToQuestion = (idx: number) => {
@@ -140,32 +253,35 @@ export default function PyqQuizClient({
     setCurrentIdx(idx);
     const targetQ = questions[idx];
     if (targetQ) {
-      setVisitedQuestions(prev => ({ ...prev, [targetQ.id]: true }));
+      setVisitedQuestions(prev => ({ ...prev, [String(targetQ.id)]: true }));
     }
   };
 
   // Option selection in Test Mode
-  const handleSelectOptionInTest = (qId: number, optKey: string) => {
+  const handleSelectOptionInTest = (qId: string | number, optKey: string) => {
+    const key = String(qId);
     setSelectedAnswers(prev => ({
       ...prev,
-      [qId]: optKey
+      [key]: optKey
     }));
   };
 
   // Clear current response
-  const handleClearResponse = (qId: number) => {
+  const handleClearResponse = (qId: string | number) => {
+    const key = String(qId);
     setSelectedAnswers(prev => {
       const updated = { ...prev };
-      delete updated[qId];
+      delete updated[key];
       return updated;
     });
   };
 
   // Mark for review toggle
-  const handleToggleMarkReview = (qId: number) => {
+  const handleToggleMarkReview = (qId: string | number) => {
+    const key = String(qId);
     setMarkedForReview(prev => ({
       ...prev,
-      [qId]: !prev[qId]
+      [key]: !prev[key]
     }));
   };
 
@@ -178,39 +294,43 @@ export default function PyqQuizClient({
     }
   };
 
-  // Submit test and calculate score
+  // Submit test and transition to result mode
   const handleSubmitTest = () => {
     setIsTimerRunning(false);
-    setTimeTakenSeconds(durationSeconds - timeLeft);
-
-    let correct = 0;
-    let incorrect = 0;
-
-    questions.forEach(q => {
-      const userAns = selectedAnswers[q.id];
-      if (userAns) {
-        if (userAns.toUpperCase() === q.correct_answer.toUpperCase()) {
-          correct++;
-        } else {
-          incorrect++;
-        }
-      }
-    });
-
-    setScore(correct);
-    setCorrectCount(correct);
-    setIncorrectCount(incorrect);
+    setTimeTakenSeconds(Math.min(durationSeconds, Math.max(0, elapsedRef.current)));
     setShowSubmitModal(false);
     setMode('result');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Timer Countdown & auto-submit in Test Mode
+  useEffect(() => {
+    if (mode !== 'test' || !isTimerRunning || totalQuestions === 0) return;
+
+    const timer = setInterval(() => {
+      const next = elapsedRef.current + 1;
+      elapsedRef.current = next;
+      setElapsedSeconds(next);
+      if (next >= durationSeconds) {
+        clearInterval(timer);
+        setIsTimerRunning(false);
+        setTimeTakenSeconds(durationSeconds);
+        setShowSubmitModal(false);
+        setMode('result');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [mode, isTimerRunning, totalQuestions, durationSeconds]);
+
   // Restart Test
   const handleRestartTest = () => {
     setSelectedAnswers({});
     setMarkedForReview({});
-    setVisitedQuestions({ 1: true });
-    setTimeLeft(durationSeconds);
+    setVisitedQuestions(questions[0] ? { [String(questions[0].id)]: true } : {});
+    elapsedRef.current = 0;
+    setElapsedSeconds(0);
     setIsTimerRunning(true);
     setCurrentIdx(0);
     setMode('test');
@@ -218,20 +338,21 @@ export default function PyqQuizClient({
   };
 
   // Study mode option selection
-  const handleSelectOptionInStudy = (qId: number, optKey: string) => {
+  const handleSelectOptionInStudy = (qId: string | number, optKey: string) => {
+    const key = String(qId);
     setStudyAnswers(prev => ({
       ...prev,
-      [qId]: optKey
+      [key]: optKey
     }));
     setRevealedSolutions(prev => ({
       ...prev,
-      [qId]: true
+      [key]: true
     }));
   };
 
   // Share handlers
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://careerdiary.in/pyq/${post.slug || post.id}`;
-  const shareTitle = `${post.title} – Free Online PYQ Mock Test on Career Diary!`;
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://careerdiary.in/pyq/${activePost.slug || activePost.id}`;
+  const shareTitle = `${activePost.title} – Free Online PYQ Mock Test on Career Diary!`;
 
   const copyToClipboard = () => {
     if (navigator?.clipboard) {
@@ -240,9 +361,24 @@ export default function PyqQuizClient({
     }
   };
 
+  // Derive counts & score reactively from selectedAnswers & questions
+  let correctCount = 0;
+  let incorrectCount = 0;
+  questions.forEach(q => {
+    const userAns = selectedAnswers[String(q.id)];
+    if (userAns) {
+      if (userAns.trim().toUpperCase() === String(q.correct_answer || '').trim().toUpperCase()) {
+        correctCount++;
+      } else {
+        incorrectCount++;
+      }
+    }
+  });
+  const rawScore = correctCount * marksPerQuestion - incorrectCount * negativeMarks;
+  const score = Math.max(0, Number(rawScore.toFixed(2)));
   const answeredCount = Object.keys(selectedAnswers).length;
   const markedCount = Object.values(markedForReview).filter(Boolean).length;
-  const unvisitedCount = Math.max(0, totalQuestions - Object.keys(visitedQuestions).length);
+  const unvisitedCount = Math.max(0, totalQuestions - Object.keys(effectiveVisitedQuestions).length);
   const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   return (
@@ -254,11 +390,11 @@ export default function PyqQuizClient({
       <main style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '16px 14px 40px' }}>
         {/* Top Breadcrumb & Ad */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', color: '#64748b', marginBottom: '14px', flexWrap: 'wrap' }}>
-          <a href="/" style={{ color: '#2563eb', textDecoration: 'none' }}>Home</a>
+          <Link href="/" style={{ color: '#2563eb', textDecoration: 'none' }}>Home</Link>
           <span>/</span>
-          <a href="/pyq" style={{ color: '#047857', textDecoration: 'none', fontWeight: 600 }}>Previous Year Questions (PYQ)</a>
+          <Link href="/pyq" style={{ color: '#047857', textDecoration: 'none', fontWeight: 600 }}>Previous Year Questions (PYQ)</Link>
           <span>/</span>
-          <span style={{ color: '#0f172a', fontWeight: 600 }}>{post.title}</span>
+          <span style={{ color: '#0f172a', fontWeight: 600 }}>{activePost.title}</span>
         </div>
 
         <div style={{ marginBottom: '16px' }}>
@@ -279,15 +415,15 @@ export default function PyqQuizClient({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', padding: '3px 12px', borderRadius: '14px', fontSize: '0.78rem', fontWeight: 700, color: '#fef08a', marginBottom: '8px', textTransform: 'uppercase' }}>
-                <Flame size={13} color="#f59e0b" /> {post.exam || 'Official Exam PYQ'} {post.year ? `• ${post.year}` : ''}
+                <Flame size={13} color="#f59e0b" /> {activePost.exam || 'Official Exam PYQ'} {activePost.year ? `• ${activePost.year}` : ''} {activePost.shift ? `• ${activePost.shift}` : ''}
               </div>
               <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, margin: '0 0 6px 0', lineHeight: 1.3 }}>
-                {post.title}
+                {activePost.title}
               </h1>
               <div style={{ fontSize: '0.85rem', color: '#d1fae5', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                <span>📅 Date: {post.date || (post.postDate ? post.postDate.split('|')[0].trim() : '2026')}</span>
+                <span>📅 Date: {activePost.date || (activePost.postDate ? activePost.postDate.split('|')[0].trim() : '2026')}</span>
                 <span>⏱️ Time: {durationMinutes} Mins</span>
-                <span>📊 {totalQuestions} MCQs Questions</span>
+                <span>📊 {totalQuestions} MCQs • +{posMarkLabel} / -{negMarkLabel}</span>
               </div>
             </div>
 
@@ -350,19 +486,24 @@ export default function PyqQuizClient({
                 }}
               >
                 {/* Question Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ background: '#047857', color: '#ffffff', fontWeight: 800, fontSize: '0.9rem', padding: '4px 12px', borderRadius: '6px' }}>
                       Question {currentIdx + 1} of {totalQuestions}
                     </span>
-                    {markedForReview[currentQ.id] && (
+                    {currentQ.topic && (
+                      <span style={{ background: '#ecfdf5', color: '#047857', fontSize: '0.78rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
+                        {currentQ.topic}
+                      </span>
+                    )}
+                    {markedForReview[currentQId] && (
                       <span style={{ background: '#f3e8ff', color: '#7e22ce', fontSize: '0.78rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Flag size={12} /> Marked for Review
                       </span>
                     )}
                   </div>
                   <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                    Marks: <strong style={{ color: '#16a34a' }}>+1.00</strong> / <strong style={{ color: '#dc2626' }}>-0.25</strong>
+                    Marks: <strong style={{ color: '#16a34a' }}>+{posMarkLabel}</strong> / <strong style={{ color: '#dc2626' }}>-{negMarkLabel}</strong>
                   </div>
                 </div>
 
@@ -371,23 +512,28 @@ export default function PyqQuizClient({
                   {currentQ.question}
                 </div>
 
-                {/* Optional Question Image */}
-                {currentQ.image && (
-                  <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                    <img src={currentQ.image} alt={`Question ${currentQ.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                {/* Optional Question Images (Single or Multiple Diagrams) */}
+                {getQuestionImages(currentQ).map((imgSrc, imgIdx) => (
+                  <div key={imgIdx} style={{ marginBottom: '18px', textAlign: 'center' }}>
+                    <img
+                      src={imgSrc}
+                      alt={`Question ${currentQ.id} diagram ${imgIdx + 1}`}
+                      style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }}
+                      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                    />
                   </div>
-                )}
+                ))}
 
                 {/* Options List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {Object.entries(currentQ.options).map(([optKey, optVal]) => {
                     if (!optVal) return null;
-                    const isSelected = selectedAnswers[currentQ.id] === optKey;
+                    const isSelected = selectedAnswers[currentQId] === optKey;
 
                     return (
                       <div
                         key={optKey}
-                        onClick={() => handleSelectOptionInTest(currentQ.id, optKey)}
+                        onClick={() => handleSelectOptionInTest(currentQId, optKey)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -438,28 +584,28 @@ export default function PyqQuizClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginTop: '26px', paddingTop: '18px', borderTop: '1px solid #f1f5f9' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
-                      onClick={() => handleClearResponse(currentQ.id)}
-                      disabled={!selectedAnswers[currentQ.id]}
+                      onClick={() => handleClearResponse(currentQId)}
+                      disabled={!selectedAnswers[currentQId]}
                       style={{
                         padding: '8px 14px',
                         borderRadius: '7px',
                         border: '1px solid #cbd5e1',
-                        background: selectedAnswers[currentQ.id] ? '#ffffff' : '#f8fafc',
-                        color: selectedAnswers[currentQ.id] ? '#64748b' : '#cbd5e1',
+                        background: selectedAnswers[currentQId] ? '#ffffff' : '#f8fafc',
+                        color: selectedAnswers[currentQId] ? '#64748b' : '#cbd5e1',
                         fontSize: '0.84rem',
                         fontWeight: 600,
-                        cursor: selectedAnswers[currentQ.id] ? 'pointer' : 'not-allowed'
+                        cursor: selectedAnswers[currentQId] ? 'pointer' : 'not-allowed'
                       }}
                     >
                       Clear Response
                     </button>
                     <button
-                      onClick={() => handleToggleMarkReview(currentQ.id)}
+                      onClick={() => handleToggleMarkReview(currentQId)}
                       style={{
                         padding: '8px 14px',
                         borderRadius: '7px',
                         border: '1px solid #d8b4fe',
-                        background: markedForReview[currentQ.id] ? '#f3e8ff' : '#ffffff',
+                        background: markedForReview[currentQId] ? '#f3e8ff' : '#ffffff',
                         color: '#7e22ce',
                         fontSize: '0.84rem',
                         fontWeight: 700,
@@ -469,7 +615,7 @@ export default function PyqQuizClient({
                         gap: '4px'
                       }}
                     >
-                      <Flag size={14} /> {markedForReview[currentQ.id] ? 'Unmark Review' : 'Mark for Review'}
+                      <Flag size={14} /> {markedForReview[currentQId] ? 'Unmark Review' : 'Mark for Review'}
                     </button>
                   </div>
 
@@ -531,7 +677,7 @@ export default function PyqQuizClient({
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
                   ADVERTISEMENT
                 </div>
-                <SquareAd label={null} />
+                <SquareAd slot="7208581106" label={null} />
               </div>
             </div>
 
@@ -600,13 +746,14 @@ export default function PyqQuizClient({
                   </div>
                 </div>
 
-                {/* 50-Question Palette Grid */}
+                {/* Question Palette Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
                   {questions.map((q, idx) => {
-                    const isAnswered = Boolean(selectedAnswers[q.id]);
-                    const isMarked = Boolean(markedForReview[q.id]);
+                    const qKey = String(q.id);
+                    const isAnswered = Boolean(selectedAnswers[qKey]);
+                    const isMarked = Boolean(markedForReview[qKey]);
                     const isCurrent = currentIdx === idx;
-                    const isVisited = Boolean(visitedQuestions[q.id]);
+                    const isVisited = Boolean(effectiveVisitedQuestions[qKey]);
 
                     let bg = '#ffffff';
                     let col = '#334155';
@@ -636,7 +783,7 @@ export default function PyqQuizClient({
 
                     return (
                       <button
-                        key={q.id}
+                        key={qKey}
                         onClick={() => handleJumpToQuestion(idx)}
                         style={{
                           height: '36px',
@@ -695,7 +842,7 @@ export default function PyqQuizClient({
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
                   ADVERTISEMENT
                 </div>
-                <SquareAd label={null} />
+                <SquareAd slot="6233897431" label={null} />
               </div>
             </aside>
           </div>
@@ -726,11 +873,14 @@ export default function PyqQuizClient({
             </div>
 
             {questions.map((q, idx) => {
-              const userAns = studyAnswers[q.id];
-              const isRevealed = revealedSolutions[q.id];
+              const qKey = String(q.id);
+              const userAns = studyAnswers[qKey];
+              const isRevealed = revealedSolutions[qKey];
+              const qImgs = getQuestionImages(q);
+              const solImgs = getSolutionImages(q);
 
               return (
-                <React.Fragment key={q.id}>
+                <React.Fragment key={qKey}>
                   <div
                     style={{
                       background: '#ffffff',
@@ -740,28 +890,38 @@ export default function PyqQuizClient({
                       boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                       <span style={{ background: '#f0fdf4', color: '#047857', fontWeight: 800, fontSize: '0.85rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
                         Question {idx + 1}
                       </span>
+                      {q.topic && (
+                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: '0.78rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {q.topic}
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.6, marginBottom: '18px', whiteSpace: 'pre-line' }}>
                       {q.question}
                     </div>
 
-                    {/* Optional Question Image */}
-                    {q.image && (
-                      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                        <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '280px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                    {/* Optional Question Images */}
+                    {qImgs.map((imgSrc, imgIdx) => (
+                      <div key={imgIdx} style={{ marginBottom: '16px', textAlign: 'center' }}>
+                        <img
+                          src={imgSrc}
+                          alt={`Question ${q.id} diagram ${imgIdx + 1}`}
+                          style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }}
+                          onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                        />
                       </div>
-                    )}
+                    ))}
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                       {Object.entries(q.options).map(([optKey, optVal]) => {
                         if (!optVal) return null;
                         const isSelected = userAns === optKey;
-                        const isCorrect = q.correct_answer === optKey;
+                        const isCorrect = String(q.correct_answer || '').trim().toUpperCase() === optKey.trim().toUpperCase();
 
                         let optBg = '#ffffff';
                         let optBorder = '1.5px solid #cbd5e1';
@@ -782,7 +942,7 @@ export default function PyqQuizClient({
                         return (
                           <div
                             key={optKey}
-                            onClick={() => handleSelectOptionInStudy(q.id, optKey)}
+                            onClick={() => handleSelectOptionInStudy(qKey, optKey)}
                             style={{
                               padding: '12px 16px',
                               borderRadius: '8px',
@@ -830,6 +990,16 @@ export default function PyqQuizClient({
                             </span>
                           )}
                         </div>
+                        {solImgs.map((imgSrc, imgIdx) => (
+                          <div key={imgIdx} style={{ marginTop: '12px', textAlign: 'center' }}>
+                            <img
+                              src={imgSrc}
+                              alt={`Solution diagram ${q.id} (${imgIdx + 1})`}
+                              style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }}
+                              onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -849,7 +1019,10 @@ export default function PyqQuizClient({
                       <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
                         ADVERTISEMENT
                       </div>
-                      <SquareAd label={null} />
+                      <SquareAd
+                        slot={['1202522135', '7208581106', '6233897431'][Math.floor(idx / 5) % 3]}
+                        label={null}
+                      />
                     </div>
                   )}
                 </React.Fragment>
@@ -877,14 +1050,14 @@ export default function PyqQuizClient({
                 PYQ Mock Test Completed!
               </h2>
               <p style={{ margin: '0 0 20px 0', fontSize: '1rem', color: '#d1fae5' }}>
-                Here is your detailed performance report for {post.title}:
+                Here is your detailed performance report for {activePost.title}:
               </p>
 
               {/* Stats Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px', maxWidth: '800px', margin: '0 auto' }}>
                 <div style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', borderRadius: '12px', padding: '16px 12px' }}>
                   <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 700 }}>TOTAL SCORE</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fef08a', marginTop: '4px' }}>{score} / {totalQuestions}</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fef08a', marginTop: '4px' }}>{score} / {maxScore}</div>
                 </div>
                 <div style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', borderRadius: '12px', padding: '16px 12px' }}>
                   <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 700 }}>ACCURACY</div>
@@ -927,8 +1100,8 @@ export default function PyqQuizClient({
               </div>
             </div>
 
-            {/* In-Between Ad */}
-            <DisplayAd label="ADVERTISEMENT" />
+            {/* In-Between Ad (Dis2) */}
+            <Dis2Ad label="ADVERTISEMENT" />
 
             {/* Question by Question Review */}
             <div>
@@ -938,13 +1111,16 @@ export default function PyqQuizClient({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {questions.map((q, idx) => {
-                  const userAns = selectedAnswers[q.id];
-                  const isCorrect = userAns && userAns.toUpperCase() === q.correct_answer.toUpperCase();
+                  const qKey = String(q.id);
+                  const userAns = selectedAnswers[qKey];
+                  const isCorrect = userAns && userAns.trim().toUpperCase() === String(q.correct_answer || '').trim().toUpperCase();
                   const isAttempted = Boolean(userAns);
+                  const qImgs = getQuestionImages(q);
+                  const solImgs = getSolutionImages(q);
 
                   return (
                     <div
-                      key={q.id}
+                      key={qKey}
                       style={{
                         background: '#ffffff',
                         borderRadius: '12px',
@@ -953,17 +1129,17 @@ export default function PyqQuizClient({
                         boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                         <span style={{ fontWeight: 800, color: '#047857', fontSize: '0.9rem' }}>
-                          Q{idx + 1}.
+                          Q{idx + 1}. {q.topic ? <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>[{q.topic}]</span> : null}
                         </span>
                         {isCorrect ? (
                           <span style={{ background: '#dcfce7', color: '#15803d', fontWeight: 800, fontSize: '0.78rem', padding: '3px 10px', borderRadius: '4px' }}>
-                            ✓ Correct (+1.00)
+                            ✓ Correct (+{posMarkLabel})
                           </span>
                         ) : isAttempted ? (
                           <span style={{ background: '#fee2e2', color: '#b91c1c', fontWeight: 800, fontSize: '0.78rem', padding: '3px 10px', borderRadius: '4px' }}>
-                            ✗ Incorrect (-0.25)
+                            ✗ Incorrect (-{negMarkLabel})
                           </span>
                         ) : (
                           <span style={{ background: '#f1f5f9', color: '#64748b', fontWeight: 700, fontSize: '0.78rem', padding: '3px 10px', borderRadius: '4px' }}>
@@ -976,17 +1152,22 @@ export default function PyqQuizClient({
                         {q.question}
                       </div>
 
-                      {/* Optional Question Image */}
-                      {q.image && (
-                        <div style={{ marginBottom: '14px', textAlign: 'center' }}>
-                          <img src={q.image} alt={`Question ${q.id}`} style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }} />
+                      {/* Optional Question Images */}
+                      {qImgs.map((imgSrc, imgIdx) => (
+                        <div key={imgIdx} style={{ marginBottom: '14px', textAlign: 'center' }}>
+                          <img
+                            src={imgSrc}
+                            alt={`Question ${q.id} diagram ${imgIdx + 1}`}
+                            style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }}
+                            onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                          />
                         </div>
-                      )}
+                      ))}
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', marginBottom: '14px' }}>
                         {Object.entries(q.options).map(([optKey, optVal]) => {
                           if (!optVal) return null;
-                          const isOptionCorrect = q.correct_answer === optKey;
+                          const isOptionCorrect = String(q.correct_answer || '').trim().toUpperCase() === optKey.trim().toUpperCase();
                           const isOptionChosen = userAns === optKey;
 
                           let bg = '#ffffff';
@@ -1029,6 +1210,16 @@ export default function PyqQuizClient({
                       <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '6px', borderLeft: '4px solid #047857', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                         <strong style={{ color: '#064e3b' }}>Detailed Solution:</strong>{' '}
                         {q.solution && q.solution.trim() ? q.solution : `सही उत्तर विकल्प (${q.correct_answer}) ${q.options?.[q.correct_answer] ? ': ' + q.options[q.correct_answer] : ''} है।`}
+                        {solImgs.map((imgSrc, imgIdx) => (
+                          <div key={imgIdx} style={{ marginTop: '10px', textAlign: 'center' }}>
+                            <img
+                              src={imgSrc}
+                              alt={`Solution diagram ${q.id} (${imgIdx + 1})`}
+                              style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid #e2e8f0', objectFit: 'contain' }}
+                              onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -1039,7 +1230,10 @@ export default function PyqQuizClient({
         )}
 
         {/* ───────── 4. FALLBACK RAW HTML / EMBEDDED CONTENT (If no extracted questions) ───────── */}
-        {totalQuestions === 0 && post.content && (
+        {totalQuestions === 0 && activePost.content && (() => {
+          const trimmed = activePost.content.trim();
+          return !trimmed.startsWith('{') && !trimmed.startsWith('[') && !trimmed.startsWith('// ✅');
+        })() && (
           <div
             style={{
               background: '#ffffff',
@@ -1050,14 +1244,14 @@ export default function PyqQuizClient({
             }}
           >
             {(() => {
-              const lower = post.content.toLowerCase();
+              const lower = activePost.content.toLowerCase();
               const isFullDoc = lower.includes('<!doctype') || lower.includes('<html') || lower.includes('<script');
 
               if (isFullDoc) {
                 return (
                   <iframe
-                    srcDoc={post.content}
-                    title={post.title}
+                    srcDoc={activePost.content}
+                    title={activePost.title}
                     sandbox="allow-same-origin allow-scripts"
                     style={{
                       width: '100%',
@@ -1073,7 +1267,7 @@ export default function PyqQuizClient({
               return (
                 <div
                   className="pyq-rich-html-content"
-                  dangerouslySetInnerHTML={{ __html: post.content }}
+                  dangerouslySetInnerHTML={{ __html: activePost.content }}
                   style={{ fontSize: '1rem', lineHeight: 1.7, color: '#1e293b' }}
                 />
               );

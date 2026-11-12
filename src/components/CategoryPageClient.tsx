@@ -5,7 +5,7 @@ import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import JobColumnsGrid from './JobColumnsGrid';
-import { DisplayAd, SidebarAd } from './AdSenseBanner';
+import { Dis2Ad, Ds3Ad, SidebarAd } from './AdSenseBanner';
 import { getJobUrl, getJobsForCategory } from '../data/categoryHelpers';
 import { subscribeToFirestoreJobs } from '../firebase';
 import { mergeAndSortJobs } from '../utils/jobsService';
@@ -102,10 +102,10 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
     <div className="app-root">
       {/* Sidebar Ads for Desktop */}
       <div className="side-ad-container side-ad-left">
-        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
+        <SidebarAd slot="1202522135" style={{ position: 'sticky', top: '150px' }} />
       </div>
       <div className="side-ad-container side-ad-right">
-        <SidebarAd style={{ position: 'sticky', top: '150px' }} />
+        <SidebarAd slot="7208581106" style={{ position: 'sticky', top: '150px' }} />
       </div>
 
       <Header
@@ -130,7 +130,7 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
         </div>
 
         <div style={{ margin: '12px 0' }}>
-          <DisplayAd label="ADVERTISEMENT" />
+          <Dis2Ad label="ADVERTISEMENT" />
         </div>
 
         <JobColumnsGrid
@@ -146,9 +146,9 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
           }}
         />
 
-        {/* Single Clean AdSense Bottom Display Ad */}
+        {/* Single Clean AdSense Bottom Display Ad (Ds3) */}
         <div style={{ margin: '24px 0' }}>
-          <DisplayAd label="ADVERTISEMENT" />
+          <Ds3Ad label="ADVERTISEMENT" />
         </div>
       </main>
       <Footer />

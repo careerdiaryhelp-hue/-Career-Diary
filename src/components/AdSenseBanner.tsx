@@ -88,9 +88,14 @@ export default function AdSenseBanner({
       if (el.dataset.adPushDone) return;
 
       const currentWidth = el.offsetWidth || (el.parentElement && el.parentElement.offsetWidth) || 0;
-      if (currentWidth === 0 && retryCount < 4) {
-        retryCount++;
-        timer = setTimeout(tryPush, 150);
+      if (currentWidth === 0) {
+        if (retryCount < 4) {
+          retryCount++;
+          timer = setTimeout(tryPush, 150);
+        } else {
+          // Container is hidden (e.g., mobile < 1360px sidebar or mobile 3-column ad); skip push to avoid availableWidth=0 error
+          setAdStatus('unfilled');
+        }
         return;
       }
 
@@ -209,7 +214,7 @@ export default function AdSenseBanner({
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
 // 1. Display Ad (Slot 1202522135) - Responsive Graphic & Image Banner Ad Unit (300x250, 336x280, 728x90, Rich Media)
-export function DisplayAd(props: any) {
+export function DisplayAd({ style, insStyle, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
@@ -217,15 +222,25 @@ export function DisplayAd(props: any) {
       responsive="true"
       minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
-      {...props}
+      {...rest}
+      style={{ width: '100%', maxWidth: '100%', margin: '20px auto', ...(style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(insStyle || {}) }}
     />
   );
 }
 
-// 2. Sidebar Ad (Slot 1202522135) - Fixed 160x600 Vertical Skyscraper or Responsive Tower Banner
-export function SidebarAd(props: any) {
+// 1b. Dis2 Display Ad (Slot 7208581106) - Responsive Auto Display Ad Unit
+export function Dis2Ad(props: any) {
+  return <DisplayAd slot="7208581106" {...props} />;
+}
+
+// 1c. Ds3 Display Ad (Slot 6233897431) - Responsive Auto Display Ad Unit
+export function Ds3Ad(props: any) {
+  return <DisplayAd slot="6233897431" {...props} />;
+}
+
+// 2. Sidebar Ad (Default Slot 1202522135; override via slot prop e.g. 7208581106 / 6233897431)
+export function SidebarAd({ style, insStyle, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
@@ -233,15 +248,15 @@ export function SidebarAd(props: any) {
       responsive="true"
       minHeight="600px"
       label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '300px', margin: '0 auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '600px', display: 'block', ...(props.insStyle || {}) }}
-      {...props}
+      {...rest}
+      style={{ width: '100%', maxWidth: '300px', margin: '0 auto', ...(style || {}) }}
+      insStyle={{ width: '100%', minHeight: '600px', display: 'block', ...(insStyle || {}) }}
     />
   );
 }
 
-// 3. Rectangle Ad (Slot 1202522135) - Standard 300x250 Medium Rectangle Display Banner
-export function RectangleAd(props: any) {
+// 3. Rectangle Ad (Default Slot 1202522135; override via slot prop) - Standard 300x250 Medium Rectangle Display Banner
+export function RectangleAd({ style, insStyle, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
@@ -249,15 +264,15 @@ export function RectangleAd(props: any) {
       responsive="true"
       minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
-      {...props}
+      {...rest}
+      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(insStyle || {}) }}
     />
   );
 }
 
-// 4. Square Ad (Slot 1202522135) - 300x250 Fixed Square Display Banner
-export function SquareAd(props: any) {
+// 4. Square Ad (Default Slot 1202522135; override via slot prop) - 300x250 Fixed Square Display Banner
+export function SquareAd({ style, insStyle, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="1202522135"
@@ -265,9 +280,9 @@ export function SquareAd(props: any) {
       responsive="true"
       minHeight="250px"
       label="ADVERTISEMENT"
-      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(props.style || {}) }}
-      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(props.insStyle || {}) }}
-      {...props}
+      {...rest}
+      style={{ width: '100%', maxWidth: '336px', margin: '16px auto', ...(style || {}) }}
+      insStyle={{ width: '100%', minHeight: '250px', display: 'block', ...(insStyle || {}) }}
     />
   );
 }
@@ -276,65 +291,73 @@ export function DisplayBannerAd(props: any) {
   return <DisplayAd {...props} />;
 }
 
+export function DisplayAdDis2(props: any) {
+  return <Dis2Ad {...props} />;
+}
+
+export function DisplayAdDs3(props: any) {
+  return <Ds3Ad {...props} />;
+}
+
 // 2. In feed Ad (Slot 2542955740) - Standard Display Banner
 export function InFeedAd(props: any) {
   return <DisplayAd slot="2542955740" {...props} />;
 }
 
-// 3. Ut Multiplex (Formerly Slot 1963114002 - Converted to Clean Display Banner)
+// 3. Ut Multiplex (Formerly Slot 1963114002 - Converted to Clean Display Banner Dis2)
 export function MultiplexUt1963(props: any) {
-  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
+  return <Dis2Ad label="ADVERTISEMENT" {...props} />;
 }
 
-// 4. Mt Multiplex (Formerly Slot 5566657954 - Converted to Clean Display Banner)
+// 4. Mt Multiplex (Formerly Slot 5566657954 - Converted to Clean Display Banner Ds3)
 export function MultiplexMt5566(props: any) {
-  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
+  return <Ds3Ad label="ADVERTISEMENT" {...props} />;
 }
 
-// 5. Multiplexad (Slot 3880243672 - Converted to Clean Display Banner)
+// 5. Multiplexad (Formerly Slot 3880243672 - Converted to Clean Display Banner Ds3)
 export function MultiplexAd3880(props: any) {
-  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
+  return <Ds3Ad label="ADVERTISEMENT" {...props} />;
 }
 
 export function MultiplexAd(props: any) {
-  return <DisplayAd slot="1202522135" label="ADVERTISEMENT" {...props} />;
+  return <Ds3Ad label="ADVERTISEMENT" {...props} />;
 }
 
 // 6. Po In-Article Native Ad (Slot 2022998762)
-export function InArticlePo2022(props: any) {
+export function InArticlePo2022({ style, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="2022998762"
       layout="in-article"
       format="fluid"
-      style={{ textAlign: 'center' }}
-      {...props}
+      {...rest}
+      style={{ textAlign: 'center', ...(style || {}) }}
     />
   );
 }
 
 // 7. Hg In-Article Native Ad (Slot 1100799336)
-export function InArticleHg1100(props: any) {
+export function InArticleHg1100({ style, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="1100799336"
       layout="in-article"
       format="fluid"
-      style={{ textAlign: 'center' }}
-      {...props}
+      {...rest}
+      style={{ textAlign: 'center', ...(style || {}) }}
     />
   );
 }
 
 // 8. InPost In-Article Native Ad (Slot 7544533819)
-export function InPostAd7544(props: any) {
+export function InPostAd7544({ style, ...rest }: any) {
   return (
     <AdSenseBanner
       slot="7544533819"
       layout="in-article"
       format="fluid"
-      style={{ textAlign: 'center' }}
-      {...props}
+      {...rest}
+      style={{ textAlign: 'center', ...(style || {}) }}
     />
   );
 }

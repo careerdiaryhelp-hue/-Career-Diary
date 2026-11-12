@@ -19,17 +19,35 @@ export interface ParsedQuestion {
   explanation_images?: string[];
 }
 
+export interface ParseQuizOptions {
+  mode?: 'test-series' | 'pyq' | 'current-affairs';
+  defaultTitle?: string;
+  defaultExam?: string;
+  defaultCategory?: string;
+  defaultDurationMinutes?: number;
+  defaultMarks?: number;
+  defaultNeg?: number;
+  defaultYear?: string;
+  defaultShift?: string;
+  defaultTopic?: string;
+}
+
 export interface ParsedQuizResult {
   title: string;
   exam: string;
   set: string;
   category: string;
+  year?: string;
+  shift?: string;
+  postDate?: string;
   durationMinutes: number;
   marksPerQuestion: number;
   negativeMarks: number;
   totalQuestions: number;
   description: string;
   slug: string;
+  hasExplicitTitle?: boolean;
+  isGenericFileName?: boolean;
   questions: ParsedQuestion[];
   topicsSummary: { [topic: string]: number };
   questionsWithImage: number;
@@ -55,12 +73,26 @@ function getDefaultDifficulty(idx: number): 'Easy' | 'Medium' | 'Hard' {
   return 'Medium';
 }
 
-function detectTopic(q: any, idx: number, totalQ: number): string {
+function detectTopic(
+  q: any,
+  idx: number,
+  totalQ: number,
+  mode: ParseQuizOptions['mode'] = 'test-series',
+  defaultTopic?: string
+): string {
   if (q.topic && typeof q.topic === 'string' && q.topic.trim()) {
     return q.topic.trim();
   }
 
-  const sec = String((q.section_en || '') + ' ' + (q.section || '')).toLowerCase();
+  if (mode === 'current-affairs') {
+    const directCat = q.subject || q.category || q.section_en || q.section;
+    if (directCat && typeof directCat === 'string' && directCat.trim()) {
+      return directCat.trim();
+    }
+    return defaultTopic || 'Current Affairs & GK';
+  }
+
+  const sec = String((q.section_en || '') + ' ' + (q.section || '') + ' ' + (q.subject || '')).toLowerCase();
   if (sec.includes('math') || sec.includes('गणित') || sec.includes('संख्यात्मक') || sec.includes('arithmetic')) {
     return 'Mathematics';
   }
@@ -84,7 +116,11 @@ function detectTopic(q: any, idx: number, totalQ: number): string {
     return 'General Studies';
   }
 
-  return 'General Studies';
+  if (q.category && typeof q.category === 'string' && q.category.trim()) {
+    return q.category.trim();
+  }
+
+  return defaultTopic || 'General Studies';
 }
 
 export function lookupImageInMap(
@@ -196,39 +232,78 @@ export function resolveImages(
 export function parseQuizJson(
   input: string | object,
   fileName: string = '',
-  imageMap?: Record<string, string>
+  imageMap?: Record<string, string>,
+  options?: ParseQuizOptions
 ): ParsedQuizResult {
+  const mode: ParseQuizOptions['mode'] = options?.mode || 'test-series';
   let raw: any = typeof input === 'string' ? JSON.parse(input) : input;
   let rawQuestions: any[] = [];
 
   if (Array.isArray(raw)) {
     rawQuestions = raw;
     raw = {};
-  } else if (Array.isArray(raw.questions)) {
-    rawQuestions = raw.questions;
-  } else if (Array.isArray(raw.data)) {
-    rawQuestions = raw.data;
+  } else if (raw && typeof raw === 'object') {
+    if (Array.isArray(raw.questions)) {
+      rawQuestions = raw.questions;
+    } else if (Array.isArray(raw.data)) {
+      rawQuestions = raw.data;
+    } else if (Array.isArray(raw.mcqs)) {
+      rawQuestions = raw.mcqs;
+    } else if (Array.isArray(raw.items)) {
+      rawQuestions = raw.items;
+    }
+  } else {
+    raw = {};
   }
 
   const baseName = fileName.replace(/\.[^/.]+$/, '').trim();
-  const rawTitle = raw.title || raw.name || baseName || 'BSSC CGL Full Mock Test';
-  let rawExam = raw.exam || raw.examName || '';
+  const isGenericFileName = !baseName || /^(questions|quiz|data|mcqs|test|pyq|current[-_\s]*affairs|set|questions[-_\s]*data)$/i.test(baseName);
+  const explicitRawTitle = String(raw.title || raw.name || '').trim();
+  const hasExplicitTitle = Boolean(explicitRawTitle);
+  const fallbackDefaultTitle = options?.defaultTitle || (
+    mode === 'pyq'
+      ? 'Solved Previous Year Question Paper'
+      : mode === 'current-affairs'
+        ? 'Current Affairs Mock Test'
+        : 'BSSC CGL Full Mock Test'
+  );
+  const rawTitle = explicitRawTitle || (!isGenericFileName ? baseName : '') || baseName || fallbackDefaultTitle;
+
+  let rawExam = String(raw.exam || raw.examName || '').trim();
   if (!rawExam) {
     const titleLower = (rawTitle + ' ' + baseName).toLowerCase();
     if (titleLower.includes('bihar daroga') || titleLower.includes('bihar si') || titleLower.includes('daroga')) {
       rawExam = 'Bihar Daroga (SI)';
+    } else if (titleLower.includes('bssc inter')) {
+      rawExam = 'BSSC Inter Level';
     } else if (titleLower.includes('bssc')) {
       rawExam = 'BSSC CGL';
     } else if (titleLower.includes('bpsc')) {
       rawExam = 'BPSC';
-    } else if (titleLower.includes('railway') || titleLower.includes('rrb')) {
-      rawExam = 'Railway RRB';
+    } else if (titleLower.includes('ssc cgl')) {
+      rawExam = 'SSC CGL';
+    } else if (titleLower.includes('ssc chsl')) {
+      rawExam = 'SSC CHSL';
     } else if (titleLower.includes('ssc gd')) {
       rawExam = 'SSC GD';
+    } else if (titleLower.includes('rrb ntpc')) {
+      rawExam = 'RRB NTPC';
+    } else if (titleLower.includes('rrb group d')) {
+      rawExam = 'RRB Group D';
+    } else if (titleLower.includes('rrb alp')) {
+      rawExam = 'RRB ALP';
+    } else if (titleLower.includes('railway') || titleLower.includes('rrb')) {
+      rawExam = 'Railway RRB';
+    } else if (titleLower.includes('bihar police')) {
+      rawExam = 'Bihar Police';
     } else if (titleLower.includes('up police')) {
       rawExam = 'UP Police';
+    } else if (titleLower.includes('ctet') || titleLower.includes('stet')) {
+      rawExam = 'CTET / STET';
+    } else if (titleLower.includes('bank') || titleLower.includes('ibps') || titleLower.includes('sbi')) {
+      rawExam = 'Banking';
     } else {
-      rawExam = 'BSSC CGL';
+      rawExam = options?.defaultExam ?? (mode === 'current-affairs' ? '' : 'BSSC CGL');
     }
   }
 
@@ -244,20 +319,51 @@ export function parseQuizJson(
     detectedSet = String(raw.set);
   }
 
-  const duration = Number(raw.duration_minutes || raw.durationMinutes || raw.duration) || 135;
-  const marks = Number(raw.marking?.correct ?? raw.marksPerQuestion ?? raw.marks ?? 4) || 4;
-  const neg = Math.abs(Number(raw.marking?.wrong ?? raw.negativeMarks ?? 1)) || 1;
-  const totalQ = rawQuestions.length > 0 ? rawQuestions.length : (Number(raw.total_questions || raw.totalQuestions) || 150);
+  const detectedYear = String(raw.year || raw.exam_year || '').trim()
+    || (rawTitle + ' ' + baseName).match(/\b(20\d{2}|199\d)\b/)?.[1]
+    || options?.defaultYear
+    || '';
+
+  const detectedShift = String(raw.shift || raw.tier || raw.paper || '').trim()
+    || (rawTitle + ' ' + baseName).match(/\b(?:shift|tier|sitting|phase|paper)[\s\-_]*[0-9ivx]+\b/i)?.[0]
+    || options?.defaultShift
+    || '';
+
+  const detectedPostDate = String(raw.postDate || raw.date || '').trim();
+
+  const defaultDuration = options?.defaultDurationMinutes ?? (mode === 'test-series' ? 135 : mode === 'pyq' ? 60 : 30);
+  const parsedDuration = raw.duration_minutes ?? raw.durationMinutes ?? raw.duration ?? raw.time_minutes;
+  const duration = (parsedDuration !== undefined && parsedDuration !== null && parsedDuration !== '' && Number(parsedDuration) > 0)
+    ? Number(parsedDuration)
+    : defaultDuration;
+
+  const defaultMarks = options?.defaultMarks ?? (mode === 'test-series' ? 4 : 1);
+  const parsedCorrect = raw.marking?.correct ?? raw.marksPerQuestion ?? raw.marks ?? raw.positive_marks;
+  const marks = (parsedCorrect !== undefined && parsedCorrect !== null && parsedCorrect !== '' && !Number.isNaN(Number(parsedCorrect)))
+    ? Number(parsedCorrect)
+    : defaultMarks;
+
+  const defaultNeg = options?.defaultNeg ?? (mode === 'test-series' ? 1 : 0.25);
+  const parsedWrong = raw.marking?.wrong ?? raw.negativeMarks ?? raw.negative_marks ?? raw.penalty;
+  const neg = (parsedWrong !== undefined && parsedWrong !== null && parsedWrong !== '' && !Number.isNaN(Number(parsedWrong)))
+    ? Math.abs(Number(parsedWrong))
+    : defaultNeg;
+
+  const totalQ = rawQuestions.length > 0
+    ? rawQuestions.length
+    : (Number(raw.total_questions || raw.totalQuestions) || (mode === 'test-series' ? 150 : 50));
 
   const cleanExamSlug = cleanSlug(rawExam || 'bssc-cgl');
   const cleanSetSlug = cleanSlug(detectedSet).replace(/[^a-z0-9]/g, '') || 'set1';
-  const slug = cleanSlug(raw.slug || raw.id || `${cleanExamSlug}-${cleanSetSlug}`);
+  const slug = mode === 'test-series'
+    ? cleanSlug(raw.slug || raw.id || `${cleanExamSlug}-${cleanSetSlug}`)
+    : cleanSlug(raw.slug || raw.id || ((!isGenericFileName || hasExplicitTitle) ? rawTitle : fallbackDefaultTitle));
 
   let questionsWithImage = 0;
   let solutionsWithImage = 0;
 
   const parsedQuestions: ParsedQuestion[] = rawQuestions.map((q: any, idx: number) => {
-    // 1. Parse Options (supports array of [{label, text}] or object {A, B, C, D})
+    // 1. Parse Options (supports array of [{label, text}] or strings, or object {A, B, C, D})
     const opts: { A: string; B: string; C: string; D: string; [key: string]: string } = {
       A: '',
       B: '',
@@ -265,61 +371,75 @@ export function parseQuizJson(
       D: ''
     };
 
-    if (Array.isArray(q.options)) {
-      q.options.forEach((item: any, oIdx: number) => {
+    const rawOpts = q.options || q.opts || q.choices || q.answers;
+    if (Array.isArray(rawOpts)) {
+      rawOpts.forEach((item: any, oIdx: number) => {
         if (typeof item === 'string') {
           const l = ['A', 'B', 'C', 'D'][oIdx] || String(oIdx + 1);
           opts[l] = item.trim();
         } else if (item && typeof item === 'object') {
-          const l = String(item.label || item.key || item.opt || ['A', 'B', 'C', 'D'][oIdx] || 'A').trim().toUpperCase();
+          let l = String(item.label || item.key || item.opt || ['A', 'B', 'C', 'D'][oIdx] || 'A').trim().toUpperCase();
+          const m = l.match(/^\(?([A-D])\)?\.?$/);
+          if (m) l = m[1];
           opts[l] = String(item.text ?? item.value ?? item.option ?? '').trim();
         }
       });
-    } else if (q.options && typeof q.options === 'object') {
-      opts.A = String(q.options.A || q.options.a || q.options[0] || '').trim();
-      opts.B = String(q.options.B || q.options.b || q.options[1] || '').trim();
-      opts.C = String(q.options.C || q.options.c || q.options[2] || '').trim();
-      opts.D = String(q.options.D || q.options.d || q.options[3] || '').trim();
+    } else if (rawOpts && typeof rawOpts === 'object') {
+      const hasZeroKey = '0' in rawOpts;
+      opts.A = String(rawOpts.A ?? rawOpts.a ?? rawOpts[0] ?? (!hasZeroKey ? rawOpts['1'] : '') ?? '').trim();
+      opts.B = String(rawOpts.B ?? rawOpts.b ?? rawOpts[1] ?? (!hasZeroKey ? rawOpts['2'] : '') ?? '').trim();
+      opts.C = String(rawOpts.C ?? rawOpts.c ?? rawOpts[2] ?? (!hasZeroKey ? rawOpts['3'] : '') ?? '').trim();
+      opts.D = String(rawOpts.D ?? rawOpts.d ?? rawOpts[3] ?? (!hasZeroKey ? rawOpts['4'] : '') ?? '').trim();
     }
 
     // 2. Determine Correct Answer (Single uppercase letter A, B, C, D)
-    let correct = String(q.correct || q.correct_option || q.correctOption || q.correct_answer || q.answer || q.ans || q.ans_key || 'A').trim().toUpperCase();
-    if (!['A', 'B', 'C', 'D'].includes(correct)) {
-      // Find if correct was given as the actual answer text (e.g. "1963")
-      const foundMatch = Object.entries(opts).find(([_, text]) => text && text.trim() === String(q.correct_answer || q.correct || '').trim());
-      if (foundMatch) {
-        correct = foundMatch[0];
+    const rawAnsVal = q.correct ?? q.correct_option ?? q.correctOption ?? q.correct_answer ?? q.answer ?? q.ans ?? q.ans_key;
+    let correct = 'A';
+    if (typeof rawAnsVal === 'number') {
+      correct = ['A', 'B', 'C', 'D'][rawAnsVal] || 'A';
+    } else if (rawAnsVal !== undefined && rawAnsVal !== null && String(rawAnsVal).trim()) {
+      const ansStr = String(rawAnsVal).trim();
+      const letterMatch = ansStr.match(/^(?:option|opt)?\s*\(?([A-D])\)?\.?$/i);
+      if (letterMatch) {
+        correct = letterMatch[1].toUpperCase();
       } else {
-        correct = String(q.correct_option || q.correct || 'A').trim().toUpperCase();
+        // Find if correct was given as the actual answer text (e.g. "1963")
+        const foundMatch = Object.entries(opts).find(([_, text]) => text && text.trim() === ansStr);
+        if (foundMatch) {
+          correct = foundMatch[0];
+        } else {
+          correct = ansStr.toUpperCase();
+        }
       }
     }
 
     // 3. Normalize & Match Question and Explanation Images
+    const qIdForImg = q.id !== undefined && q.id !== null && String(q.id).trim() !== '' ? q.id : idx + 1;
     const rawQImgRef = q.question_images || q.images || q.q_images || q.question_image || q.questionImage || q.image || q.img;
-    const matchedQImgs = resolveImages(rawQImgRef, q.id, 'q', imageMap);
+    const matchedQImgs = resolveImages(rawQImgRef, qIdForImg, 'q', imageMap);
 
     const rawSImgRef = q.explanation_images || q.solution_images || q.explanation_image || q.explanationImage || q.solution_image || q.solutionImage || q.sol_image;
-    const matchedSImgs = resolveImages(rawSImgRef, q.id, 's', imageMap);
+    const matchedSImgs = resolveImages(rawSImgRef, qIdForImg, 's', imageMap);
 
     if (matchedQImgs.length > 0) questionsWithImage++;
     if (matchedSImgs.length > 0) solutionsWithImage++;
 
     // 4. Solution / Detailed Explanation
     const rawSol = q.explanation || q.solution || q.detailed_solution || q.desc || '';
-    const sol = rawSol && rawSol.trim()
-      ? rawSol.trim()
+    const sol = rawSol && String(rawSol).trim()
+      ? String(rawSol).trim()
       : (opts[correct]
         ? `इस प्रश्न का सही उत्तर विकल्प (${correct}): "${opts[correct]}" है।`
         : `इस प्रश्न का सही उत्तर विकल्प (${correct}) है।`);
 
-    const topic = detectTopic(q, idx, totalQ);
+    const topic = detectTopic(q, idx, totalQ, mode, options?.defaultTopic);
 
     const questionItem: ParsedQuestion = {
-      id: String(q.id || idx + 1),
+      id: String(q.id !== undefined && q.id !== null && String(q.id).trim() !== '' ? q.id : idx + 1),
       topic,
       subtopic: q.subtopic || q.section_en || q.section || '',
       difficulty: q.difficulty || getDefaultDifficulty(idx),
-      question: String(q.question || q.title || q.text || '').trim(),
+      question: String(q.question || q.q || q.title || q.text || '').trim(),
       options: opts,
       correct_answer: correct,
       solution: sol
@@ -359,19 +479,29 @@ export function parseQuizJson(
   });
 
   const totalImagesCount = questionImagesCount + solutionImagesCount;
-  const description = raw.description || raw.subtitle || `${parsedQuestions.length} Questions • Full Syllabus • Negative Marking • Official Pattern & Detailed Solution`;
+  const defaultDesc = mode === 'test-series'
+    ? `${parsedQuestions.length} Questions • Full Syllabus • Negative Marking • Official Pattern & Detailed Solution`
+    : mode === 'pyq'
+      ? `${parsedQuestions.length} Questions • Official PYQ Solved Paper (+${marks} / -${neg}) • Detailed Solutions & Timer`
+      : `${parsedQuestions.length} MCQs • ${duration} Min Live Test (+${marks} / -${neg}) • Detailed Solutions`;
+  const description = raw.description || raw.subtitle || defaultDesc;
 
   return {
     title: rawTitle,
     exam: rawExam,
     set: detectedSet,
-    category: raw.category || 'BIHAR GOVT EXAMS',
+    category: String(raw.category || raw.exam_category || options?.defaultCategory || 'BIHAR GOVT EXAMS').trim(),
+    year: detectedYear,
+    shift: detectedShift,
+    postDate: detectedPostDate,
     durationMinutes: duration,
     marksPerQuestion: marks,
     negativeMarks: neg,
     totalQuestions: parsedQuestions.length,
     description,
     slug,
+    hasExplicitTitle,
+    isGenericFileName,
     questions: parsedQuestions,
     topicsSummary,
     questionsWithImage,
@@ -492,7 +622,8 @@ export async function optimizeQuizQuestionsImages(
  */
 export async function parseQuizZip(
   zipFile: File | Blob,
-  onProgress?: (step: string, percent: number) => void
+  onProgress?: (step: string, percent: number) => void,
+  options?: ParseQuizOptions
 ): Promise<ParsedQuizResult> {
   const JSZip = (await import('jszip')).default;
   if (onProgress) onProgress('Unpacking ZIP archive...', 15);
@@ -509,7 +640,7 @@ export async function parseQuizZip(
     throw new Error('No .json file found inside the ZIP package. Please make sure the ZIP contains your questions JSON file.');
   }
 
-  const targetJson = jsonEntries.find(k => /quiz|question|test|set/i.test(k)) || jsonEntries[0];
+  const targetJson = jsonEntries.find(k => /quiz|question|test|set|pyq|affairs/i.test(k)) || jsonEntries[0];
   if (onProgress) onProgress(`Reading ${targetJson}...`, 30);
   const jsonText = await zip.files[targetJson].async('text');
 
@@ -524,7 +655,15 @@ export async function parseQuizZip(
   for (let i = 0; i < imageEntries.length; i++) {
     const entryName = imageEntries[i];
     const ext = entryName.split('.').pop()?.toLowerCase() || 'jpeg';
-    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+    const mimeType = ext === 'png'
+      ? 'image/png'
+      : ext === 'webp'
+        ? 'image/webp'
+        : ext === 'gif'
+          ? 'image/gif'
+          : ext === 'svg'
+            ? 'image/svg+xml'
+            : 'image/jpeg';
     const base64 = await zip.files[entryName].async('base64');
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
@@ -540,7 +679,7 @@ export async function parseQuizZip(
   // 3. Parse JSON with imageMap
   if (onProgress) onProgress('Matching diagrams to questions & options...', 70);
   const fileName = zipFile instanceof File ? zipFile.name : targetJson;
-  const parsed = parseQuizJson(jsonText, fileName, imageMap);
+  const parsed = parseQuizJson(jsonText, fileName, imageMap, options);
 
   // 4. Optimize/compress images to prevent Firestore limits
   if (onProgress) onProgress('Optimizing diagrams for fast mobile CBT test...', 85);
@@ -588,7 +727,15 @@ export async function attachImagesToQuestions(
     );
     for (const entryName of imageEntries) {
       const ext = entryName.split('.').pop()?.toLowerCase() || 'jpeg';
-      const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+      const mimeType = ext === 'png'
+        ? 'image/png'
+        : ext === 'webp'
+          ? 'image/webp'
+          : ext === 'gif'
+            ? 'image/gif'
+            : ext === 'svg'
+              ? 'image/svg+xml'
+              : 'image/jpeg';
       const base64 = await zip.files[entryName].async('base64');
       const dataUrl = `data:${mimeType};base64,${base64}`;
 

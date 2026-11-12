@@ -1,5 +1,5 @@
 export interface CAQuestion {
-  id: number;
+  id: number | string;
   question: string;
   options: {
     A: string;
@@ -11,8 +11,12 @@ export interface CAQuestion {
   correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   solution: string;
   image?: string;
+  images?: string[];
+  explanation_image?: string;
+  explanation_images?: string[];
   difficulty?: 'Easy' | 'Medium' | 'Hard' | string;
   topic?: string;
+  subtopic?: string;
 }
 
 /**
@@ -93,6 +97,114 @@ export function cleanOptionText(val: any): string {
  */
 export function extractQuestionsFromContent(content: string): CAQuestion[] {
   if (!content || typeof content !== 'string') return [];
+
+  const trimmed = content.trim();
+
+  // ─────────────────────────────────────────────────────────────
+  // Strategy 0: Direct JSON Payload ({ questions: [...] } or [...])
+  // ─────────────────────────────────────────────────────────────
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsedJson: any = JSON.parse(trimmed);
+      const rawArr = Array.isArray(parsedJson)
+        ? parsedJson
+        : (Array.isArray(parsedJson?.questions)
+          ? parsedJson.questions
+          : (Array.isArray(parsedJson?.data)
+            ? parsedJson.data
+            : (Array.isArray(parsedJson?.mcqs)
+              ? parsedJson.mcqs
+              : (Array.isArray(parsedJson?.items) ? parsedJson.items : null))));
+
+      if (Array.isArray(rawArr) && rawArr.length > 0) {
+        const jsonQuestions: CAQuestion[] = [];
+        rawArr.forEach((item: any, idx: number) => {
+          if (!item || typeof item !== 'object') return;
+          const qText = String(item.question || item.q || item.title || item.text || '').trim();
+          if (!qText) return;
+
+          const opts: { A: string; B: string; C: string; D: string; [key: string]: string } = {
+            A: '',
+            B: '',
+            C: '',
+            D: ''
+          };
+
+          const rawOpts = item.options || item.opts || item.choices || item.answers;
+          if (Array.isArray(rawOpts)) {
+            rawOpts.forEach((opt: any, oIdx: number) => {
+              if (typeof opt === 'string') {
+                const l = ['A', 'B', 'C', 'D'][oIdx] || String(oIdx + 1);
+                opts[l] = cleanOptionText(opt);
+              } else if (opt && typeof opt === 'object') {
+                const l = String(opt.label || opt.key || opt.opt || ['A', 'B', 'C', 'D'][oIdx] || 'A').trim().toUpperCase();
+                opts[l] = String(opt.text ?? opt.value ?? opt.option ?? '').trim();
+              }
+            });
+          } else if (rawOpts && typeof rawOpts === 'object') {
+            opts.A = String(rawOpts.A ?? rawOpts.a ?? rawOpts['1'] ?? '').trim();
+            opts.B = String(rawOpts.B ?? rawOpts.b ?? rawOpts['2'] ?? '').trim();
+            opts.C = String(rawOpts.C ?? rawOpts.c ?? rawOpts['3'] ?? '').trim();
+            opts.D = String(rawOpts.D ?? rawOpts.d ?? rawOpts['4'] ?? '').trim();
+          }
+
+          let correct = 'A';
+          const rawAns = item.correct_option ?? item.correctOption ?? item.correct_answer ?? item.correct ?? item.answer ?? item.ans ?? item.ans_key;
+          if (typeof rawAns === 'number') {
+            correct = (['A', 'B', 'C', 'D'][rawAns] || 'A');
+          } else if (rawAns !== undefined && rawAns !== null && String(rawAns).trim()) {
+            const ansStr = String(rawAns).trim();
+            const letterMatch = ansStr.match(/^(?:option|opt)?\s*\(?([A-D])\)?$/i);
+            if (letterMatch) {
+              correct = letterMatch[1].toUpperCase();
+            } else {
+              const matchedEntry = Object.entries(opts).find(([, val]) => val && val.trim() === ansStr);
+              correct = matchedEntry ? matchedEntry[0] : (ansStr.match(/^[A-D]/i)?.[0]?.toUpperCase() || 'A');
+            }
+          }
+
+          const qImages = Array.isArray(item.images)
+            ? item.images.filter(Boolean)
+            : (Array.isArray(item.question_images)
+              ? item.question_images.filter(Boolean)
+              : ((item.image || item.question_image || item.img) ? [String(item.image || item.question_image || item.img).trim()] : []));
+          const sImages = Array.isArray(item.explanation_images)
+            ? item.explanation_images.filter(Boolean)
+            : (Array.isArray(item.solution_images)
+              ? item.solution_images.filter(Boolean)
+              : ((item.explanation_image || item.solution_image || item.sol_image) ? [String(item.explanation_image || item.solution_image || item.sol_image).trim()] : []));
+
+          const rawSol = String(item.solution || item.explanation || item.detailed_solution || item.desc || '').trim();
+          const sol = rawSol || (opts[correct]
+            ? `सही उत्तर विकल्प (${correct}): ${opts[correct]} है।`
+            : `सही उत्तर विकल्प (${correct}) है।`);
+
+          const qObj: CAQuestion = {
+            id: item.id !== undefined && item.id !== null ? item.id : (idx + 1),
+            question: qText,
+            options: opts,
+            correct_answer: correct,
+            solution: sol,
+            difficulty: item.difficulty || ((idx % 10 === 4 || idx % 10 === 9) ? 'Hard' : (idx % 2 === 0 ? 'Easy' : 'Medium')),
+            topic: item.topic || item.subject || item.section_en || item.section || 'General Studies',
+          };
+          if (item.subtopic) qObj.subtopic = String(item.subtopic);
+          if (qImages.length > 0) {
+            qObj.image = qImages[0];
+            qObj.images = qImages;
+          }
+          if (sImages.length > 0) {
+            qObj.explanation_image = sImages[0];
+            qObj.explanation_images = sImages;
+          }
+          jsonQuestions.push(qObj);
+        });
+        if (jsonQuestions.length > 0) return jsonQuestions;
+      }
+    } catch (_) {
+      // Fallback to JS/HTML strategies if not strict JSON
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Strategy 1: Bracket-matching search for JavaScript array

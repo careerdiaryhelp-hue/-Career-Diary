@@ -1,7 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { ALL_COLUMNS, getJobsForCategory, getJobUrl, getJobBadgeInfo } from '../data/categoryHelpers.js';
-import { DisplayAd, RectangleAd } from './AdSenseBanner';
+import { RectangleAd } from './AdSenseBanner';
+
+const GRID_DISPLAY_SLOTS = ['1202522135', '7208581106', '6233897431'];
 
 export default function JobColumnsGrid({
   jobs = [],
@@ -54,7 +56,7 @@ export default function JobColumnsGrid({
     );
   };
 
-  const renderColumnCard = (col, catJobs, isSingle = false) => {
+  const renderColumnCard = (col, catJobs, isSingle = false, colIndex = 0) => {
     // Show exactly 10 posts in homepage grid mode as requested; full list in single category view
     const displayedJobs = isSingle ? catJobs : catJobs.slice(0, 10);
 
@@ -90,7 +92,11 @@ export default function JobColumnsGrid({
                   {renderJobItem(job, isSingle)}
                   {((isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : (!isMobile && idx === 4))) && (
                     <li className="in-column-ad-item" style={{ listStyle: 'none', margin: '8px 0', padding: 0 }}>
-                      <RectangleAd label="" style={{ margin: '4px 0' }} />
+                      <RectangleAd
+                        slot={GRID_DISPLAY_SLOTS[(isSingle ? Math.floor(idx / 5) : colIndex) % GRID_DISPLAY_SLOTS.length]}
+                        label=""
+                        style={{ margin: '4px 0' }}
+                      />
                     </li>
                   )}
                 </React.Fragment>
@@ -208,7 +214,7 @@ export default function JobColumnsGrid({
       <main className="main-content">
         <div className="container">
           <div className="columns-3x3-grid">
-            {populatedCols.map((col) => renderColumnCard(col, col.items))}
+            {populatedCols.map((col, colIdx) => renderColumnCard(col, col.items, false, colIdx))}
           </div>
         </div>
       </main>
@@ -220,8 +226,8 @@ export default function JobColumnsGrid({
     <main className="main-content">
       <div className="container">
         <div className="columns-3x3-grid">
-          {ALL_COLUMNS.map((col) =>
-            renderColumnCard(col, getJobsForCategory(jobs, col.key))
+          {ALL_COLUMNS.map((col, colIdx) =>
+            renderColumnCard(col, getJobsForCategory(jobs, col.key), false, colIdx)
           )}
         </div>
       </div>

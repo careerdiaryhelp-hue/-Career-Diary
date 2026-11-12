@@ -356,10 +356,13 @@ export default function PyqListingClient({ initialPosts = [] }: { initialPosts: 
                         </div>
                       </div>
 
-                      {/* Clean In-feed Display Ad every 3 posts */}
+                      {/* Clean In-feed Display Ad every 3 posts (Dis2 / Ds3) */}
                       {(index + 1) % 3 === 0 && index !== filteredPosts.length - 1 && (
                         <div style={{ margin: '6px 0' }}>
-                          <DisplayAd label="ADVERTISEMENT" />
+                          <DisplayAd
+                            slot={Math.floor(index / 3) % 2 === 0 ? '7208581106' : '6233897431'}
+                            label="ADVERTISEMENT"
+                          />
                         </div>
                       )}
                     </React.Fragment>
@@ -428,7 +431,7 @@ export default function PyqListingClient({ initialPosts = [] }: { initialPosts: 
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '8px' }}>
                 ADVERTISEMENT
               </div>
-              <SquareAd label={null} />
+              <SquareAd slot="6233897431" label={null} />
             </div>
 
             {/* Quick Navigation Box */}

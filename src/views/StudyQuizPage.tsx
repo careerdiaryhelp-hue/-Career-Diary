@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { DisplayAd, SquareAd } from '../components/AdSenseBanner';
+import { DisplayAd, Dis2Ad, Ds3Ad } from '../components/AdSenseBanner';
 import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug } from '../data/quizRegistry';
 import { subscribeToTestSeries, fetchTestSeriesOnce, fetchTestSeriesBySlug } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
@@ -1135,7 +1135,10 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     {/* Sponsored Ad after every 5 questions in Study Mode */}
                     {(idx + 1) % 5 === 0 && (
                       <div key={`study-ad-${idx}`} style={{ margin: '14px 0', textAlign: 'center' }}>
-                        <DisplayAd label="SPONSORED UPDATE" />
+                        <DisplayAd
+                          slot={['1202522135', '7208581106', '6233897431'][Math.floor(idx / 5) % 3]}
+                          label="SPONSORED UPDATE"
+                        />
                       </div>
                     )}
                   </React.Fragment>
@@ -1175,9 +1178,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               )
             )}
 
-            {/* Ad Banner after questions list */}
+            {/* Ad Banner after questions list (Ds3) */}
             <div style={{ marginTop: '36px' }}>
-              <DisplayAd label="ADVERTISEMENT" />
+              <Ds3Ad label="ADVERTISEMENT" />
             </div>
           </div>
         )}
@@ -1320,7 +1323,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     </div>
                   ))}
 
-                  {/* 1. Ad directly under Question Text & Image (Before Options) */}
+                  {/* 1. Ad directly under Question Text & Image (Before Options - Dis2) */}
                   <div
                     key={`cbt-question-ad-${currentTestQuestion.id}`}
                     style={{
@@ -1328,7 +1331,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       textAlign: 'center'
                     }}
                   >
-                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
+                    <Dis2Ad label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
                   </div>
 
                   {/* Options */}
@@ -1376,7 +1379,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     })}
                   </div>
 
-                  {/* 2. Ad directly under Options (Before Navigation Toolbar) */}
+                  {/* 2. Ad directly under Options (Before Navigation Toolbar - Ds3) */}
                   <div
                     key={`cbt-options-ad-${currentTestQuestion.id}`}
                     style={{
@@ -1384,7 +1387,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       textAlign: 'center'
                     }}
                   >
-                    <DisplayAd label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
+                    <Ds3Ad label="ADVERTISEMENT" style={{ margin: '0 auto', minHeight: '90px' }} />
                   </div>
 
                   {/* Bottom Navigation Toolbar */}
@@ -1599,9 +1602,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                   </button>
                 </div>
 
-                {/* Question Palette Sticky Ad */}
+                {/* Question Palette Sticky Ad (Dis2) */}
                 <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
-                  <DisplayAd label="SPONSORED" style={{ minHeight: '120px' }} />
+                  <Dis2Ad label="SPONSORED" style={{ minHeight: '120px' }} />
                 </div>
               </div>
             </div>
@@ -1966,8 +1969,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       ADVERTISEMENT
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <DisplayAd
-                        slot="1202522135"
+                      <Ds3Ad
                         label={null}
                         style={{ margin: '0 auto', maxWidth: '300px' }}
                         insStyle={{ width: '300px', minHeight: '250px' }}
@@ -2155,9 +2157,9 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               </button>
             </div>
 
-            {/* Clean Display Ad in Result View */}
+            {/* Clean Display Ad in Result View (Dis2) */}
             <div style={{ marginTop: '20px' }}>
-              <DisplayAd label="ADVERTISEMENT" />
+              <Dis2Ad label="ADVERTISEMENT" />
             </div>
           </div>
         )}

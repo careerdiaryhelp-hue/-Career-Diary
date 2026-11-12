@@ -605,7 +605,21 @@ export function subscribeToTopForms(onUpdate) {
   };
 }
 
-// ─── Current Affairs Service ─────────────────────────────────
+// Helper to invalidate DOC_MEM_CACHE entries for a post and its chunks
+function clearDocMemCache(prefix, keyList) {
+  if (!DOC_MEM_CACHE || DOC_MEM_CACHE.size === 0) return;
+  keyList.forEach(k => {
+    const clean = cleanJobId(k);
+    if (!clean) return;
+    const base = clean.startsWith(prefix) ? clean : `${prefix}${clean}`;
+    DOC_MEM_CACHE.delete(`jobs/${base}`);
+    for (let i = 0; i < 30; i++) {
+      DOC_MEM_CACHE.delete(`jobs/${base}_c${i}`);
+    }
+  });
+}
+
+// ─── Current Affairs & Quiz Service ──────────────────────────
 let caCache = { data: null, timestamp: 0 };
 
 export async function publishCurrentAffairsToFirestore(caPost) {
@@ -616,6 +630,9 @@ export async function publishCurrentAffairsToFirestore(caPost) {
   }
 
   const nowIso = new Date().toISOString();
+  const rawQuestions = Array.isArray(caPost.questions) ? caPost.questions : [];
+  const rawContentStr = typeof caPost.content === 'string' ? caPost.content.trim() : '';
+
   const safeDoc = {
     ...caPost,
     id: safeId,
@@ -625,17 +642,72 @@ export async function publishCurrentAffairsToFirestore(caPost) {
     status: caPost.status || 'Published'
   };
 
+  // Never store massive stringified JSON or status comments in 'content'; preserve HTML notes under 400KB
+  if (
+    rawQuestions.length > 0 &&
+    (!rawContentStr || rawContentStr.startsWith('// ✅') || rawContentStr.startsWith('{') || rawContentStr.startsWith('['))
+  ) {
+    safeDoc.content = '';
+  } else if (typeof safeDoc.content === 'string' && safeDoc.content.length > 400000) {
+    safeDoc.content = safeDoc.content.slice(0, 400000);
+  }
+
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // Determine chunking for questions so every Firestore document stays well below 1 MiB
+    const questionsJson = JSON.stringify(rawQuestions);
+    const needsChunking = questionsJson.length > 400000;
+
+    if (needsChunking) {
+      const chunks = [];
+      let cur = [];
+      let curBytes = 0;
+      const MAX_CHUNK_BYTES = 300000;
+
+      for (const q of rawQuestions) {
+        const qBytes = JSON.stringify(q).length;
+        if (cur.length > 0 && curBytes + qBytes > MAX_CHUNK_BYTES) {
+          chunks.push(cur);
+          cur = [q];
+          curBytes = qBytes;
+        } else {
+          cur.push(q);
+          curBytes += qBytes;
+        }
+      }
+      if (cur.length > 0) chunks.push(cur);
+
+      const chunkCount = chunks.length;
+      safeDoc.isChunked = true;
+      safeDoc.chunkCount = chunkCount;
+      safeDoc.questions = rawQuestions.slice(0, 3);
+
+      for (let i = 0; i < chunkCount; i++) {
+        const chunkRef = doc(db, 'jobs', `ca_${safeId}_c${i}`);
+        await setDoc(chunkRef, sanitizeFirestoreData({
+          id: `ca_${safeId}_c${i}`,
+          parentId: safeId,
+          chunkIndex: i,
+          questions: chunks[i],
+          isChunk: true,
+          updatedAt: nowIso
+        }), { merge: true });
+      }
+    } else {
+      safeDoc.isChunked = false;
+      safeDoc.chunkCount = 1;
+      safeDoc.questions = rawQuestions;
+    }
 
     // 1. Save individual full post in permitted 'jobs' collection as ca_${safeId}
     const caRef = doc(db, 'jobs', `ca_${safeId}`);
     const sanitizedDoc = sanitizeFirestoreData(safeDoc);
     await setDoc(caRef, sanitizedDoc, { merge: true });
 
-    // 2. Also update master settings_currentAffairs array doc in 'jobs' collection
+    // 2. Update master settings_currentAffairs list doc (strip heavy content & questions to avoid 1MB limit)
     const listRef = doc(db, 'jobs', 'settings_currentAffairs');
     let existingItems = [];
     try {
@@ -646,8 +718,15 @@ export async function publishCurrentAffairsToFirestore(caPost) {
       }
     } catch (_) {}
 
+    const summaryItem = { ...sanitizedDoc };
+    delete summaryItem.content;
+    delete summaryItem.questions;
+    if (!summaryItem.totalQuestions && rawQuestions.length > 0) {
+      summaryItem.totalQuestions = rawQuestions.length;
+    }
+
     const updatedItems = [
-      sanitizedDoc,
+      summaryItem,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
@@ -658,6 +737,7 @@ export async function publishCurrentAffairsToFirestore(caPost) {
       isSystemDoc: true
     }), { merge: true });
 
+    clearDocMemCache('ca_', [safeId]);
     caCache.data = null;
     caCache.timestamp = 0;
     return { success: true, cleanId: safeId };
@@ -667,18 +747,38 @@ export async function publishCurrentAffairsToFirestore(caPost) {
   }
 }
 
-export async function deleteCurrentAffairsFromFirestore(id) {
-  const safeId = cleanJobId(id);
-  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+export async function deleteCurrentAffairsFromFirestore(id, itemMeta = null) {
+  const rawId = String(id || itemMeta?.id || itemMeta?.slug || '').trim();
+  const safeId = cleanJobId(rawId);
+  if (!safeId && !rawId) return { success: false, error: new Error('Invalid ID') };
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
 
-    // 1. Delete individual ca_${safeId} doc
-    try {
-      await deleteDoc(doc(db, 'jobs', `ca_${safeId}`));
-    } catch (_) {}
+    const candidateKeys = new Set();
+    [rawId, safeId, itemMeta?.id, itemMeta?.slug].forEach(val => {
+      if (val) {
+        candidateKeys.add(String(val).trim().toLowerCase());
+        const cleaned = cleanJobId(val);
+        if (cleaned) candidateKeys.add(cleaned.toLowerCase());
+      }
+    });
+
+    // 1. Delete individual ca_${id} docs & potential chunks
+    for (const cand of candidateKeys) {
+      if (!cand) continue;
+      const docKey = cand.startsWith('ca_') ? cand : `ca_${cand}`;
+      try {
+        await deleteDoc(doc(db, 'jobs', docKey));
+      } catch (_) {}
+
+      for (let i = 0; i < 30; i++) {
+        try {
+          await deleteDoc(doc(db, 'jobs', `${docKey}_c${i}`));
+        } catch (_) {}
+      }
+    }
 
     // 2. Update settings_currentAffairs list
     const listRef = doc(db, 'jobs', 'settings_currentAffairs');
@@ -687,17 +787,38 @@ export async function deleteCurrentAffairsFromFirestore(id) {
       if (snap.exists()) {
         const d = snap.data();
         if (Array.isArray(d.items)) {
-          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
-          await setDoc(listRef, {
+          const filtered = d.items.filter(p => {
+            const pId = String(p.id || '').trim().toLowerCase();
+            const pSlug = String(p.slug || '').trim().toLowerCase();
+            const pTitle = String(p.title || '').trim().toLowerCase();
+            const pSafeId = cleanJobId(pId);
+            const pSafeSlug = cleanJobId(pSlug);
+
+            for (const cand of candidateKeys) {
+              if (
+                cand === pId ||
+                cand === pSlug ||
+                cand === pSafeId ||
+                cand === pSafeSlug ||
+                (itemMeta?.title && pTitle === String(itemMeta.title).trim().toLowerCase())
+              ) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          await setDoc(listRef, sanitizeFirestoreData({
             id: 'settings_currentAffairs',
             items: filtered,
             updatedAt: new Date().toISOString(),
             isSystemDoc: true
-          }, { merge: true });
+          }), { merge: true });
         }
       }
     } catch (_) {}
 
+    clearDocMemCache('ca_', Array.from(candidateKeys));
     caCache.data = null;
     caCache.timestamp = 0;
     return { success: true };
@@ -779,19 +900,62 @@ export async function fetchCurrentAffairsOnce() {
 
 export async function fetchCurrentAffairsBySlug(slug) {
   if (!slug) return null;
-  const safeId = cleanJobId(slug);
+  const rawClean = cleanJobId(slug).replace(/^ca_/, '');
 
-  // 1. Try single document fetch ca_${safeId} from permitted jobs collection
+  const reassembleChunksIfNeeded = async (targetDoc) => {
+    if (!targetDoc) return targetDoc;
+    if (targetDoc.isChunked && targetDoc.chunkCount >= 1) {
+      const parentSafeId = cleanJobId(targetDoc.slug || targetDoc.id || '').replace(/^ca_/, '');
+      const chunkPromises = [];
+      for (let i = 0; i < targetDoc.chunkCount; i++) {
+        chunkPromises.push(fetchFirestoreJobById(`ca_${parentSafeId}_c${i}`, 'jobs'));
+      }
+      try {
+        const chunkResults = await Promise.all(chunkPromises);
+        let assembled = [];
+        chunkResults.forEach(c => {
+          if (c && Array.isArray(c.questions)) {
+            assembled = assembled.concat(c.questions);
+          }
+        });
+        if (assembled.length > 0) {
+          targetDoc.questions = assembled;
+        }
+      } catch (err) {
+        console.warn('Error fetching current affairs chunks:', err);
+      }
+    }
+    return targetDoc;
+  };
+
+  // 1. Try single document fetch ca_${rawClean} from permitted jobs collection
   try {
-    const doc = await fetchFirestoreJobById(`ca_${safeId}`, 'jobs');
-    if (doc && (doc.title || doc.content)) return doc;
+    let doc = await fetchFirestoreJobById(`ca_${rawClean}`, 'jobs');
+    if (doc) {
+      doc = await reassembleChunksIfNeeded(doc);
+      if (doc.title || doc.content || (doc.questions && doc.questions.length > 0)) {
+        return doc;
+      }
+    }
   } catch (_) {}
 
   // 2. Direct lookup from settings_currentAffairs / initial
   try {
     const all = await fetchCurrentAffairsOnce();
-    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
-    if (found) return found;
+    const found = all.find(item => item.id === rawClean || item.slug === rawClean || cleanJobId(item.title) === rawClean);
+    if (found) {
+      if (!found.questions || found.questions.length <= 3 || found.isChunked || !found.content) {
+        try {
+          const targetParent = cleanJobId(found.slug || found.id || rawClean).replace(/^ca_/, '');
+          let fullDoc = await fetchFirestoreJobById(`ca_${targetParent}`, 'jobs');
+          if (fullDoc) {
+            fullDoc = await reassembleChunksIfNeeded(fullDoc);
+            return { ...found, ...fullDoc };
+          }
+        } catch (_) {}
+      }
+      return found;
+    }
   } catch (_) {}
 
   return null;
@@ -808,6 +972,9 @@ export async function publishPyqToFirestore(pyqPost) {
   }
 
   const nowIso = new Date().toISOString();
+  const rawQuestions = Array.isArray(pyqPost.questions) ? pyqPost.questions : [];
+  const rawContentStr = typeof pyqPost.content === 'string' ? pyqPost.content.trim() : '';
+
   const safeDoc = {
     ...pyqPost,
     id: safeId,
@@ -817,17 +984,72 @@ export async function publishPyqToFirestore(pyqPost) {
     status: pyqPost.status || 'Published'
   };
 
+  // Never store massive stringified JSON or status comments in 'content'; preserve HTML under 400KB
+  if (
+    rawQuestions.length > 0 &&
+    (!rawContentStr || rawContentStr.startsWith('// ✅') || rawContentStr.startsWith('{') || rawContentStr.startsWith('['))
+  ) {
+    safeDoc.content = '';
+  } else if (typeof safeDoc.content === 'string' && safeDoc.content.length > 400000) {
+    safeDoc.content = safeDoc.content.slice(0, 400000);
+  }
+
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // Determine chunking for questions so every Firestore document stays well below 1 MiB
+    const questionsJson = JSON.stringify(rawQuestions);
+    const needsChunking = questionsJson.length > 400000;
+
+    if (needsChunking) {
+      const chunks = [];
+      let cur = [];
+      let curBytes = 0;
+      const MAX_CHUNK_BYTES = 300000;
+
+      for (const q of rawQuestions) {
+        const qBytes = JSON.stringify(q).length;
+        if (cur.length > 0 && curBytes + qBytes > MAX_CHUNK_BYTES) {
+          chunks.push(cur);
+          cur = [q];
+          curBytes = qBytes;
+        } else {
+          cur.push(q);
+          curBytes += qBytes;
+        }
+      }
+      if (cur.length > 0) chunks.push(cur);
+
+      const chunkCount = chunks.length;
+      safeDoc.isChunked = true;
+      safeDoc.chunkCount = chunkCount;
+      safeDoc.questions = rawQuestions.slice(0, 3);
+
+      for (let i = 0; i < chunkCount; i++) {
+        const chunkRef = doc(db, 'jobs', `pyq_${safeId}_c${i}`);
+        await setDoc(chunkRef, sanitizeFirestoreData({
+          id: `pyq_${safeId}_c${i}`,
+          parentId: safeId,
+          chunkIndex: i,
+          questions: chunks[i],
+          isChunk: true,
+          updatedAt: nowIso
+        }), { merge: true });
+      }
+    } else {
+      safeDoc.isChunked = false;
+      safeDoc.chunkCount = 1;
+      safeDoc.questions = rawQuestions;
+    }
 
     // 1. Save individual full post in permitted 'jobs' collection as pyq_${safeId}
     const pyqRef = doc(db, 'jobs', `pyq_${safeId}`);
     const sanitizedDoc = sanitizeFirestoreData(safeDoc);
     await setDoc(pyqRef, sanitizedDoc, { merge: true });
 
-    // 2. Also update master settings_pyq array doc in 'jobs' collection
+    // 2. Update master settings_pyq array doc (strip heavy content & questions to prevent 1MB limit)
     const listRef = doc(db, 'jobs', 'settings_pyq');
     let existingItems = [];
     try {
@@ -838,8 +1060,15 @@ export async function publishPyqToFirestore(pyqPost) {
       }
     } catch (_) {}
 
+    const summaryItem = { ...sanitizedDoc };
+    delete summaryItem.content;
+    delete summaryItem.questions;
+    if (!summaryItem.totalQuestions && rawQuestions.length > 0) {
+      summaryItem.totalQuestions = rawQuestions.length;
+    }
+
     const updatedItems = [
-      sanitizedDoc,
+      summaryItem,
       ...existingItems.filter(p => (p.id || p.slug) !== safeId)
     ];
 
@@ -850,6 +1079,7 @@ export async function publishPyqToFirestore(pyqPost) {
       isSystemDoc: true
     }), { merge: true });
 
+    clearDocMemCache('pyq_', [safeId]);
     pyqCache.data = null;
     pyqCache.timestamp = 0;
     return { success: true, cleanId: safeId };
@@ -859,18 +1089,38 @@ export async function publishPyqToFirestore(pyqPost) {
   }
 }
 
-export async function deletePyqFromFirestore(id) {
-  const safeId = cleanJobId(id);
-  if (!safeId) return { success: false, error: new Error('Invalid ID') };
+export async function deletePyqFromFirestore(id, itemMeta = null) {
+  const rawId = String(id || itemMeta?.id || itemMeta?.slug || '').trim();
+  const safeId = cleanJobId(rawId);
+  if (!safeId && !rawId) return { success: false, error: new Error('Invalid ID') };
   try {
     const db = await getClientDb();
     if (!db) throw new Error('Firestore is only available in browser');
     const { doc, deleteDoc, getDoc, setDoc } = await import('firebase/firestore');
 
-    // 1. Delete individual pyq_${safeId} doc
-    try {
-      await deleteDoc(doc(db, 'jobs', `pyq_${safeId}`));
-    } catch (_) {}
+    const candidateKeys = new Set();
+    [rawId, safeId, itemMeta?.id, itemMeta?.slug].forEach(val => {
+      if (val) {
+        candidateKeys.add(String(val).trim().toLowerCase());
+        const cleaned = cleanJobId(val);
+        if (cleaned) candidateKeys.add(cleaned.toLowerCase());
+      }
+    });
+
+    // 1. Delete individual pyq_${id} docs & potential chunks
+    for (const cand of candidateKeys) {
+      if (!cand) continue;
+      const docKey = cand.startsWith('pyq_') ? cand : `pyq_${cand}`;
+      try {
+        await deleteDoc(doc(db, 'jobs', docKey));
+      } catch (_) {}
+
+      for (let i = 0; i < 30; i++) {
+        try {
+          await deleteDoc(doc(db, 'jobs', `${docKey}_c${i}`));
+        } catch (_) {}
+      }
+    }
 
     // 2. Update settings_pyq list
     const listRef = doc(db, 'jobs', 'settings_pyq');
@@ -879,17 +1129,38 @@ export async function deletePyqFromFirestore(id) {
       if (snap.exists()) {
         const d = snap.data();
         if (Array.isArray(d.items)) {
-          const filtered = d.items.filter(p => (p.id || p.slug) !== safeId);
-          await setDoc(listRef, {
+          const filtered = d.items.filter(p => {
+            const pId = String(p.id || '').trim().toLowerCase();
+            const pSlug = String(p.slug || '').trim().toLowerCase();
+            const pTitle = String(p.title || '').trim().toLowerCase();
+            const pSafeId = cleanJobId(pId);
+            const pSafeSlug = cleanJobId(pSlug);
+
+            for (const cand of candidateKeys) {
+              if (
+                cand === pId ||
+                cand === pSlug ||
+                cand === pSafeId ||
+                cand === pSafeSlug ||
+                (itemMeta?.title && pTitle === String(itemMeta.title).trim().toLowerCase())
+              ) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          await setDoc(listRef, sanitizeFirestoreData({
             id: 'settings_pyq',
             items: filtered,
             updatedAt: new Date().toISOString(),
             isSystemDoc: true
-          }, { merge: true });
+          }), { merge: true });
         }
       }
     } catch (_) {}
 
+    clearDocMemCache('pyq_', Array.from(candidateKeys));
     pyqCache.data = null;
     pyqCache.timestamp = 0;
     return { success: true };
@@ -971,19 +1242,62 @@ export async function fetchPyqOnce() {
 
 export async function fetchPyqBySlug(slug) {
   if (!slug) return null;
-  const safeId = cleanJobId(slug);
+  const rawClean = cleanJobId(slug).replace(/^pyq_/, '');
 
-  // 1. Try single document fetch pyq_${safeId} from permitted jobs collection
+  const reassembleChunksIfNeeded = async (targetDoc) => {
+    if (!targetDoc) return targetDoc;
+    if (targetDoc.isChunked && targetDoc.chunkCount >= 1) {
+      const parentSafeId = cleanJobId(targetDoc.slug || targetDoc.id || '').replace(/^pyq_/, '');
+      const chunkPromises = [];
+      for (let i = 0; i < targetDoc.chunkCount; i++) {
+        chunkPromises.push(fetchFirestoreJobById(`pyq_${parentSafeId}_c${i}`, 'jobs'));
+      }
+      try {
+        const chunkResults = await Promise.all(chunkPromises);
+        let assembled = [];
+        chunkResults.forEach(c => {
+          if (c && Array.isArray(c.questions)) {
+            assembled = assembled.concat(c.questions);
+          }
+        });
+        if (assembled.length > 0) {
+          targetDoc.questions = assembled;
+        }
+      } catch (err) {
+        console.warn('Error fetching PYQ chunks:', err);
+      }
+    }
+    return targetDoc;
+  };
+
+  // 1. Try single document fetch pyq_${rawClean} from permitted jobs collection
   try {
-    const doc = await fetchFirestoreJobById(`pyq_${safeId}`, 'jobs');
-    if (doc && (doc.title || doc.content || doc.questions)) return doc;
+    let doc = await fetchFirestoreJobById(`pyq_${rawClean}`, 'jobs');
+    if (doc) {
+      doc = await reassembleChunksIfNeeded(doc);
+      if (doc.title || doc.content || (doc.questions && doc.questions.length > 0)) {
+        return doc;
+      }
+    }
   } catch (_) {}
 
   // 2. Direct lookup from settings_pyq / initial
   try {
     const all = await fetchPyqOnce();
-    const found = all.find(item => item.id === safeId || item.slug === safeId || cleanJobId(item.title) === safeId);
-    if (found) return found;
+    const found = all.find(item => item.id === rawClean || item.slug === rawClean || cleanJobId(item.title) === rawClean);
+    if (found) {
+      if (!found.questions || found.questions.length <= 3 || found.isChunked || !found.content) {
+        try {
+          const targetParent = cleanJobId(found.slug || found.id || rawClean).replace(/^pyq_/, '');
+          let fullDoc = await fetchFirestoreJobById(`pyq_${targetParent}`, 'jobs');
+          if (fullDoc) {
+            fullDoc = await reassembleChunksIfNeeded(fullDoc);
+            return { ...found, ...fullDoc };
+          }
+        } catch (_) {}
+      }
+      return found;
+    }
   } catch (_) {}
 
   return null;
@@ -1107,6 +1421,7 @@ export async function publishTestSeriesToFirestore(testSeriesPost) {
       isSystemDoc: true
     }), { merge: true });
 
+    clearDocMemCache('ts_', [safeId]);
     testSeriesCache.data = null;
     testSeriesCache.timestamp = 0;
     return { success: true, cleanId: safeId };
@@ -1192,6 +1507,7 @@ export async function deleteTestSeriesFromFirestore(id, itemMeta = null) {
       }
     }
 
+    clearDocMemCache('ts_', Array.from(candidateKeys));
     testSeriesCache.data = null;
     testSeriesCache.timestamp = 0;
     return { success: true };

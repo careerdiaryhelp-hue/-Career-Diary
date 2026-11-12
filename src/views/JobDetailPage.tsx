@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { ArrowLeft, Send, MessageCircle, Share2, Copy, Check } from 'lucide-react';
-import AdSenseBanner, { DisplayAd, InPostAd, InArticleAd1100, MultiplexAd, MultiplexAd1963 } from '../components/AdSenseBanner';
+import AdSenseBanner, { DisplayAd, Dis2Ad, Ds3Ad, InPostAd, InArticleAd1100, MultiplexAd, MultiplexAd1963 } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
@@ -300,16 +300,19 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       return '';
     }
 
-    // 1. Google Display Banner Ad 1 (Slot 1202522135)
-    const displaySnippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1202522135" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+    // 1. Google Display Banner Ad - Dis2 (Slot 7208581106)
+    const dis2Snippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7208581106" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
 
     // 2. Google In-Article Native Ad Unit 1 (Po - Slot 2022998762)
     const inArticleSnippet1 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="2022998762" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
-    // 3. Google In-Article Native Ad Unit 2 (Hg - Slot 1100799336)
+    // 3. Google Display Banner Ad - Ds3 (Slot 6233897431)
+    const ds3Snippet = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;min-height:250px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="6233897431" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+
+    // 4. Google In-Article Native Ad Unit 2 (Hg - Slot 1100799336)
     const inArticleSnippet2 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="1100799336" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
-    // 4. Google In-Article Native Ad Unit 3 (InPost - Slot 7544533819)
+    // 5. Google In-Article Native Ad Unit 3 (InPost - Slot 7544533819)
     const inArticleSnippet3 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
@@ -363,8 +366,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
       }
     }
 
-    // Distribute display banners and all 3 in-article native ads harmoniously across the article
-    const snippets = [displaySnippet, inArticleSnippet1, inArticleSnippet2, inArticleSnippet3];
+    // Distribute Dis2, Ds3 display banners and all 3 in-article native ads harmoniously across the article
+    const snippets = [dis2Snippet, inArticleSnippet1, ds3Snippet, inArticleSnippet2, inArticleSnippet3];
     const sortedAsc = Array.from(new Set(insertionIndices)).sort((a, b) => a - b);
     const insertions = sortedAsc.map((idx, i) => ({
       idx,
@@ -900,7 +903,7 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         {/* Important Links Table - Only rendered if content does not already embed links */}
         {!hasEmbeddedLinks && (
           <>
-            <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+            <Dis2Ad label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
             <table className="sr-table sr-links-table">
               <tbody>
                 <tr>
@@ -1169,8 +1172,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </div>
         )}
 
-        {/* AdSense Bottom Display Ad (Guarantees min 4 ads on all pages) */}
-        <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
+        {/* AdSense Bottom Display Ad - Ds3 (Slot 6233897431) */}
+        <Ds3Ad label="ADVERTISEMENT" style={{ margin: '24px 0' }} />
 
         {/* Latest Posts & Related Posts Section */}
         <div style={{ margin: '24px 0' }}>

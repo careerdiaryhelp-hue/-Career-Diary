@@ -313,7 +313,7 @@ export default function ScrollPopupAd() {
                 Scroll Popup Ad (Preview)
               </div>
               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                Slot: <span style={{ fontWeight: 700 }}>1202522135</span> (300x250)
+                Slot: <span style={{ fontWeight: 700 }}>6233897431</span> (Ds3 • 300x250)
               </div>
               <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '6px' }}>
                 Live AdSense ad serves on careerdiary.in
@@ -376,7 +376,7 @@ export default function ScrollPopupAd() {
                   zIndex: 2,
                 }}
                 data-ad-client="ca-pub-2108299943580613"
-                data-ad-slot="1202522135"
+                data-ad-slot="6233897431"
                 data-ad-format="auto"
                 data-full-width-responsive="true"
               />

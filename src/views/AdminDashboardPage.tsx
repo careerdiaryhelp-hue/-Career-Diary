@@ -20,10 +20,12 @@ import {
   deleteCurrentAffairsFromFirestore,
   subscribeToCurrentAffairs,
   fetchCurrentAffairsOnce,
+  fetchCurrentAffairsBySlug,
   publishPyqToFirestore,
   deletePyqFromFirestore,
   subscribeToPyq,
   fetchPyqOnce,
+  fetchPyqBySlug,
   publishTestSeriesToFirestore,
   deleteTestSeriesFromFirestore,
   subscribeToTestSeries,
@@ -109,6 +111,725 @@ const EMPTY_FORM = {
   howToFill: [],
 };
 
+function renderPreviewOptionValue(val: any) {
+  const s = String(val ?? '').trim();
+  if (!s) return '';
+  const imgMatch = s.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (imgMatch) {
+    const rest = s.replace(/<img[^>]*>/gi, '').trim();
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', verticalAlign: 'middle' }}>
+        <img src={imgMatch[1]} alt="Option" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', borderRadius: '4px' }} />
+        {rest && <span>{rest}</span>}
+      </span>
+    );
+  }
+  if (/^data:image\//i.test(s) || /^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i.test(s)) {
+    return <img src={s} alt="Option" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', borderRadius: '4px', verticalAlign: 'middle' }} />;
+  }
+  return s;
+}
+
+function QuizPackageUploader({
+  prefixKey,
+  headingText,
+  subtitleText,
+  stats,
+  onFileUpload,
+  onImagesAttach,
+  onClearJson,
+  showPreview,
+  setShowPreview,
+  previewTab,
+  setPreviewTab,
+  previewSearch,
+  setPreviewSearch,
+  previewPage,
+  setPreviewPage,
+  previewPageSize,
+  setPreviewPageSize
+}: any) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imagesInputRef = useRef<HTMLInputElement | null>(null);
+  const containerId = `admin-${prefixKey}-preview-container`;
+
+  const totalImgsCount = stats ? (stats.totalImagesCount || (stats.questionsWithImage + stats.solutionsWithImage)) : 0;
+  const qImgsCount = stats ? (stats.questionImagesCount || stats.questionsWithImage) : 0;
+  const sImgsCount = stats ? (stats.solutionImagesCount || stats.solutionsWithImage) : 0;
+
+  return (
+    <div
+      style={{
+        background: stats ? '#f0fdf4' : '#eff6ff',
+        border: stats ? '2px solid #86efac' : '2px dashed #60a5fa',
+        borderRadius: '12px',
+        padding: '18px 22px',
+        transition: 'all 0.2s',
+        position: 'relative'
+      }}
+    >
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".zip,.json,application/zip,application/json,application/x-zip-compressed,multipart/x-zip"
+        onChange={onFileUpload}
+        style={{ display: 'none' }}
+      />
+
+      <input
+        type="file"
+        ref={imagesInputRef}
+        accept=".zip,image/*"
+        multiple
+        onChange={onImagesAttach}
+        style={{ display: 'none' }}
+      />
+
+      {!stats ? (
+        <div
+          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            gap: '8px',
+            padding: '12px 0'
+          }}
+        >
+          <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+            <UploadCloud size={28} />
+          </div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', textAlign: 'center' }}>
+            {headingText}
+          </div>
+          <div style={{ fontSize: '0.84rem', color: '#64748b', maxWidth: '640px', textAlign: 'center', lineHeight: 1.5 }}>
+            {subtitleText || (
+              <>
+                <strong>ZIP पैकेज</strong> (जिसमें JSON और <code style={{ color: '#0284c7', background: '#f0f9ff', padding: '1px 5px', borderRadius: '4px' }}>images/</code> फ़ोल्डर दोनों हों) या अकेला <strong>JSON</strong> चुनें — सभी प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Question Images) और विस्तृत व्याख्या (Solutions) स्वतः तैयार हो जाएँगे।
+              </>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (fileInputRef.current) {
+                  fileInputRef.current.accept = '.zip,application/zip,application/x-zip-compressed';
+                  fileInputRef.current.click();
+                }
+              }}
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '9px 18px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
+              }}
+            >
+              📦 Upload ZIP Package (.zip) (JSON + Images एक साथ)
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (fileInputRef.current) {
+                  fileInputRef.current.accept = '.json,application/json';
+                  fileInputRef.current.click();
+                }
+              }}
+              style={{
+                background: '#ffffff',
+                color: '#1e293b',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                padding: '9px 16px',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <FileText size={16} /> Upload JSON Only (.json)
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', flexShrink: 0 }}>
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#166534' }}>
+                  ✅ {stats.fileName} ({stats.fileSize})
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
+                  {stats.isZip ? '📦 ZIP पैकेज से' : 'फ़ाइल से'} सभी {stats.totalQuestions} प्रश्न व कुल {totalImgsCount} चित्र ({qImgsCount} प्रश्न आरेख + {sImgsCount} व्याख्या चित्र) 100% लोड हो गए हैं!
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => imagesInputRef.current && imagesInputRef.current.click()}
+                title="Attach diagrams ZIP or images folder"
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #86efac',
+                  color: '#166534',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                📷 Attach Images (.zip/files)
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Eye size={14} /> {showPreview ? 'Hide Question Preview' : '👁️ Preview Questions & Diagrams'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = '.zip,.json,application/zip,application/json,application/x-zip-compressed';
+                    fileInputRef.current.click();
+                  }
+                }}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#475569',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Choose Another File (ZIP/JSON)
+              </button>
+              {onClearJson && (
+                <button
+                  type="button"
+                  onClick={onClearJson}
+                  style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fca5a5',
+                    color: '#dc2626',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕ Clear JSON
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Metric Pills (4 Cards) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Questions</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>{stats.totalQuestions} Qs</div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #86efac' }}>
+              <div style={{ fontSize: '0.72rem', color: '#166534', textTransform: 'uppercase', fontWeight: 700 }}>Total Diagrams</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>{totalImgsCount} Images</div>
+              <div style={{ fontSize: '0.68rem', color: '#16a34a', fontWeight: 700 }}>
+                {totalImgsCount > 0 ? (stats.isZip ? '✓ 100% Attached from ZIP' : '✓ Diagrams Ready') : 'Attach ZIP/Images if needed'}
+              </div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Question Diagrams</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7' }}>{qImgsCount} Images</div>
+              <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({stats.questionsWithImage} Questions)</div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Solution Diagrams</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{sImgsCount} Explanations</div>
+              <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({stats.solutionsWithImage} Questions)</div>
+            </div>
+          </div>
+
+          {/* Subject Distribution */}
+          {Object.entries(stats.topicsSummary || {}).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>शामिल विषय (Syllabus):</span>
+              {Object.entries(stats.topicsSummary || {}).map(([topic, count]) => (
+                <span key={topic} style={{ fontSize: '0.75rem', background: '#ffffff', border: '1px solid #86efac', color: '#166534', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>
+                  {topic}: {String(count)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Paginated Preview Drawer */}
+          {showPreview && (
+            <div id={containerId} style={{ marginTop: '16px', background: '#ffffff', borderRadius: '10px', border: '2px solid #cbd5e1', padding: '16px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewTab('all');
+                      setPreviewPage(1);
+                    }}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: previewTab === 'all' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      background: previewTab === 'all' ? '#eff6ff' : '#ffffff',
+                      color: previewTab === 'all' ? '#1e40af' : '#64748b'
+                    }}
+                  >
+                    📋 सभी {stats.totalQuestions} प्रश्न (All Questions)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewTab('diagrams');
+                      setPreviewPage(1);
+                    }}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: previewTab === 'diagrams' ? '2px solid #059669' : '1px solid #cbd5e1',
+                      background: previewTab === 'diagrams' ? '#ecfdf5' : '#ffffff',
+                      color: previewTab === 'diagrams' ? '#065f46' : '#64748b'
+                    }}
+                  >
+                    🖼️ केवल चित्र वाले प्रश्न ({stats.diagramQuestions?.length || 0} प्रश्न / {totalImgsCount} चित्र)
+                  </button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={previewSearch}
+                    onChange={(e) => {
+                      setPreviewSearch(e.target.value);
+                      setPreviewPage(1);
+                    }}
+                    placeholder="🔍 प्रश्न संख्या या शब्द खोजें (उदा. 45, दर्पण, त्रिभुज)..."
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.82rem',
+                      minWidth: '220px',
+                      outline: 'none'
+                    }}
+                  />
+                  {previewSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewSearch('');
+                        setPreviewPage(1);
+                      }}
+                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                    >
+                      ✕ Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Jump Bar */}
+              {previewTab === 'all' && !previewSearch && stats.totalQuestions > 20 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>सीधे जाएँ (Quick Jump):</span>
+                  {[1, 10, 25, 50, 75, 100, 125, 150].filter(n => n <= stats.totalQuestions).map(qNum => (
+                    <button
+                      key={qNum}
+                      type="button"
+                      onClick={() => {
+                        if (previewPageSize > 0) {
+                          const targetPage = Math.ceil(qNum / previewPageSize);
+                          setPreviewPage(targetPage);
+                        }
+                        setTimeout(() => {
+                          const el = document.getElementById(`${prefixKey}-q-preview-${qNum}`);
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 80);
+                      }}
+                      style={{
+                        fontSize: '0.74rem',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        color: '#2563eb',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Q{qNum}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {(() => {
+                const baseList = previewTab === 'diagrams'
+                  ? (stats.diagramQuestions || [])
+                  : (stats.previewQuestions || []);
+
+                const filteredQuestions = baseList.filter((q: any) => {
+                  if (!previewSearch.trim()) return true;
+                  const term = previewSearch.toLowerCase().trim();
+                  const idStr = String(q.id || '').toLowerCase();
+                  return (
+                    idStr === term ||
+                    idStr.includes(term) ||
+                    String(q.question || '').toLowerCase().includes(term) ||
+                    String(q.topic || '').toLowerCase().includes(term) ||
+                    String(q.solution || '').toLowerCase().includes(term) ||
+                    Object.values(q.options || {}).some((optVal: any) => String(optVal || '').toLowerCase().includes(term))
+                  );
+                });
+
+                if (filteredQuestions.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                      🔍 कोई प्रश्न नहीं मिला। कृपया अलग सर्च शब्द आज़माएँ।
+                    </div>
+                  );
+                }
+
+                const totalFiltered = filteredQuestions.length;
+                const pageSize = previewPageSize;
+                const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalFiltered / pageSize)) : 1;
+                const safePage = Math.min(Math.max(1, previewPage), totalPages);
+                const startIndex = pageSize > 0 ? (safePage - 1) * pageSize : 0;
+                const endIndex = pageSize > 0 ? Math.min(startIndex + pageSize, totalFiltered) : totalFiltered;
+                const displayedQuestions = filteredQuestions.slice(startIndex, endIndex);
+
+                const goToPage = (p: number) => {
+                  const target = Math.min(Math.max(1, p), totalPages);
+                  setPreviewPage(target);
+                  const modal = document.getElementById(containerId);
+                  if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+
+                const getPageNumbers = () => {
+                  if (totalPages <= 7) {
+                    return Array.from({ length: totalPages }, (_, i) => i + 1);
+                  }
+                  const pages: (number | string)[] = [];
+                  pages.push(1);
+                  if (safePage > 3) pages.push('...');
+                  const start = Math.max(2, safePage - 1);
+                  const end = Math.min(totalPages - 1, safePage + 1);
+                  for (let i = start; i <= end; i++) {
+                    if (!pages.includes(i)) pages.push(i);
+                  }
+                  if (safePage < totalPages - 2) pages.push('...');
+                  if (!pages.includes(totalPages)) pages.push(totalPages);
+                  return pages;
+                };
+
+                const renderPaginationBar = (pos: 'top' | 'bottom') => (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                      padding: '10px 14px',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      marginBottom: pos === 'top' ? '14px' : '0px',
+                      marginTop: pos === 'bottom' ? '14px' : '0px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
+                        प्रदर्शित: <span style={{ color: '#1e40af', fontWeight: 700 }}>प्रश्न {totalFiltered > 0 ? startIndex + 1 : 0} से {endIndex}</span> (कुल <span style={{ fontWeight: 700 }}>{totalFiltered}</span>)
+                        {pageSize > 0 && totalPages > 1 && (
+                          <span style={{ color: '#64748b', marginLeft: '6px' }}>• पेज {safePage} / {totalPages}</span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <label style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>प्रति पेज:</label>
+                        <select
+                          value={previewPageSize}
+                          onChange={(e) => {
+                            setPreviewPageSize(Number(e.target.value));
+                            setPreviewPage(1);
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            background: '#ffffff',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value={10}>10 प्रश्न</option>
+                          <option value={20}>20 प्रश्न</option>
+                          <option value={25}>25 प्रश्न</option>
+                          <option value={50}>50 प्रश्न</option>
+                          <option value={0}>सभी (All {totalFiltered})</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {pageSize > 0 && totalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          disabled={safePage === 1}
+                          onClick={() => goToPage(1)}
+                          title="पहला पेज"
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '5px',
+                            border: '1px solid #cbd5e1',
+                            background: safePage === 1 ? '#f1f5f9' : '#ffffff',
+                            color: safePage === 1 ? '#94a3b8' : '#334155',
+                            cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          « First
+                        </button>
+                        <button
+                          type="button"
+                          disabled={safePage === 1}
+                          onClick={() => goToPage(safePage - 1)}
+                          title="पिछला पेज"
+                          style={{
+                            padding: '4px 9px',
+                            borderRadius: '5px',
+                            border: '1px solid #cbd5e1',
+                            background: safePage === 1 ? '#f1f5f9' : '#ffffff',
+                            color: safePage === 1 ? '#94a3b8' : '#334155',
+                            cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          ‹ Prev
+                        </button>
+
+                        {getPageNumbers().map((pn, idx) => {
+                          if (pn === '...') {
+                            return (
+                              <span key={`dots-${idx}`} style={{ padding: '2px 5px', color: '#94a3b8', fontSize: '0.75rem' }}>
+                                ...
+                              </span>
+                            );
+                          }
+                          const pageNum = Number(pn);
+                          const isActive = pageNum === safePage;
+                          return (
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => goToPage(pageNum)}
+                              style={{
+                                minWidth: '28px',
+                                height: '28px',
+                                padding: '0 6px',
+                                borderRadius: '5px',
+                                border: isActive ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                                background: isActive ? '#eff6ff' : '#ffffff',
+                                color: isActive ? '#1e40af' : '#334155',
+                                fontWeight: isActive ? 800 : 600,
+                                fontSize: '0.78rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+
+                        <button
+                          type="button"
+                          disabled={safePage === totalPages}
+                          onClick={() => goToPage(safePage + 1)}
+                          title="अगला पेज"
+                          style={{
+                            padding: '4px 9px',
+                            borderRadius: '5px',
+                            border: '1px solid #cbd5e1',
+                            background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
+                            color: safePage === totalPages ? '#94a3b8' : '#334155',
+                            cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          Next ›
+                        </button>
+                        <button
+                          type="button"
+                          disabled={safePage === totalPages}
+                          onClick={() => goToPage(totalPages)}
+                          title="अंतिम पेज"
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '5px',
+                            border: '1px solid #cbd5e1',
+                            background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
+                            color: safePage === totalPages ? '#94a3b8' : '#334155',
+                            cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          Last »
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+
+                return (
+                  <div>
+                    {renderPaginationBar('top')}
+                    {displayedQuestions.map((q: any, pIdx: number) => {
+                      const displayNum = startIndex + pIdx + 1;
+                      const normCorrect = String(q.correct_answer || '').trim().toUpperCase();
+                      const qImagesArr = Array.isArray(q.images) && q.images.length > 0 ? q.images : (q.image ? [q.image] : []);
+                      const sImagesArr = Array.isArray(q.explanation_images) && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : []);
+
+                      return (
+                        <div
+                          id={`${prefixKey}-q-preview-${displayNum}`}
+                          key={`${q.id || displayNum}-${pIdx}`}
+                          style={{ padding: '14px', marginBottom: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.92rem' }}>
+                              प्रश्न {q.id || displayNum}. {q.topic && <span style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600 }}>[{q.topic}]</span>}
+                            </span>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                              {qImagesArr.length > 0 && (
+                                <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  📷 प्रश्न चित्र ({qImagesArr.length})
+                                </span>
+                              )}
+                              {sImagesArr.length > 0 && (
+                                <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  💡 समाधान चित्र ({sImagesArr.length})
+                                </span>
+                              )}
+                              <span style={{ fontSize: '0.78rem', background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: '4px', fontWeight: 800 }}>
+                                सही उत्तर: ({normCorrect})
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '10px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                            {q.question}
+                          </div>
+                          {qImagesArr.map((imgSrc: string, imgI: number) => (
+                            <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
+                              <img
+                                src={imgSrc}
+                                alt={`Q ${q.id || displayNum} diagram ${imgI + 1}`}
+                                style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                              />
+                            </div>
+                          ))}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', fontSize: '0.82rem', color: '#334155', marginBottom: '10px' }}>
+                            {Object.entries(q.options || {}).map(([key, val]) => {
+                              if (!val && val !== 0) return null;
+                              const isRight = key.trim().toUpperCase() === normCorrect;
+                              return (
+                                <span
+                                  key={key}
+                                  style={{
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    background: isRight ? '#dcfce7' : '#ffffff',
+                                    border: `1px solid ${isRight ? '#86efac' : '#e2e8f0'}`,
+                                    fontWeight: isRight ? 700 : 400,
+                                    color: isRight ? '#166534' : 'inherit'
+                                  }}
+                                >
+                                  <strong>({key})</strong> {renderPreviewOptionValue(val)}
+                                </span>
+                              );
+                            })}
+                          </div>
+                          {sImagesArr.map((imgSrc: string, imgI: number) => (
+                            <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
+                              <img
+                                src={imgSrc}
+                                alt={`Sol ${q.id || displayNum} diagram ${imgI + 1}`}
+                                style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                              />
+                            </div>
+                          ))}
+                          <div style={{ fontSize: '0.82rem', color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid #16a34a', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                            <strong>💡 व्याख्या / Solution:</strong> {q.solution}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {renderPaginationBar('bottom')}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboardPage({
   jobs,
   onAddJob,
@@ -192,7 +913,7 @@ export default function AdminDashboardPage({
     active: true
   });
 
-  // ── Current Affairs Management State ──
+  // ── Current Affairs / Quiz Management State ──
   const [currentAffairsList, setCurrentAffairsList] = useState([]);
   const [caLoading, setCaLoading] = useState(false);
   const [caSaving, setCaSaving] = useState(false);
@@ -200,13 +921,25 @@ export default function AdminDashboardPage({
   const [editingCaId, setEditingCaId] = useState(null);
   const [caSearch, setCaSearch] = useState('');
   const [caAlert, setCaAlert] = useState(null);
+  const [caJsonFileStats, setCaJsonFileStats] = useState(null);
+  const [showCaJsonPreviewModal, setShowCaJsonPreviewModal] = useState(false);
+  const [caPreviewTab, setCaPreviewTab] = useState<'all' | 'diagrams'>('all');
+  const [caPreviewSearch, setCaPreviewSearch] = useState('');
+  const [caPreviewPage, setCaPreviewPage] = useState<number>(1);
+  const [caPreviewPageSize, setCaPreviewPageSize] = useState<number>(10);
   const [caForm, setCaForm] = useState({
     title: '',
     postDate: '',
     category: 'Daily Current Affairs',
     slug: '',
     description: '',
+    durationMinutes: 30,
+    marksPerQuestion: 1,
+    negativeMarks: 0.25,
+    totalQuestions: 50,
     content: '',
+    questions: [],
+    topicsSummary: {},
     status: 'Published'
   });
 
@@ -239,6 +972,12 @@ export default function AdminDashboardPage({
   const [editingPyqId, setEditingPyqId] = useState(null);
   const [pyqSearch, setPyqSearch] = useState('');
   const [pyqAlert, setPyqAlert] = useState(null);
+  const [pyqJsonFileStats, setPyqJsonFileStats] = useState(null);
+  const [showPyqJsonPreviewModal, setShowPyqJsonPreviewModal] = useState(false);
+  const [pyqPreviewTab, setPyqPreviewTab] = useState<'all' | 'diagrams'>('all');
+  const [pyqPreviewSearch, setPyqPreviewSearch] = useState('');
+  const [pyqPreviewPage, setPyqPreviewPage] = useState<number>(1);
+  const [pyqPreviewPageSize, setPyqPreviewPageSize] = useState<number>(10);
   const [pyqForm, setPyqForm] = useState({
     title: '',
     exam: 'BSSC CGL',
@@ -249,8 +988,12 @@ export default function AdminDashboardPage({
     slug: '',
     description: '',
     durationMinutes: 60,
+    marksPerQuestion: 1,
+    negativeMarks: 0.25,
     totalQuestions: 50,
     content: '',
+    questions: [],
+    topicsSummary: {},
     status: 'Published'
   });
 
@@ -289,8 +1032,6 @@ export default function AdminDashboardPage({
   const [tsPreviewSearch, setTsPreviewSearch] = useState('');
   const [tsPreviewPage, setTsPreviewPage] = useState<number>(1);
   const [tsPreviewPageSize, setTsPreviewPageSize] = useState<number>(10);
-  const tsFileInputRef = useRef(null);
-  const tsImagesInputRef = useRef(null);
   const [tsForm, setTsForm] = useState({
     title: '',
     exam: 'BSSC CGL',
@@ -4756,7 +5497,62 @@ export default function AdminDashboardPage({
     </div>
   );
 
-  // ── Current Affairs Management Handlers & Section ────────
+  // ── Shared Quiz Package Helpers (Test Series, Current Affairs / Quiz & PYQ) ──
+  const buildQuizStatsFromQuestions = (questionsList: any[] = [], meta: any = {}) => {
+    let qImages = 0;
+    let sImages = 0;
+    let qWithImgs = 0;
+    let sWithImgs = 0;
+    const computedTopics: Record<string, number> = {};
+
+    const diagramQuestions = questionsList.filter((q: any) => {
+      const qArr = Array.isArray(q.images) && q.images.length > 0
+        ? q.images.filter(Boolean)
+        : (Array.isArray(q.question_images) && q.question_images.length > 0
+          ? q.question_images.filter(Boolean)
+          : (q.image || q.question_image ? [q.image || q.question_image] : []));
+      const sArr = Array.isArray(q.explanation_images) && q.explanation_images.length > 0
+        ? q.explanation_images.filter(Boolean)
+        : (Array.isArray(q.solution_images) && q.solution_images.length > 0
+          ? q.solution_images.filter(Boolean)
+          : (q.explanation_image || q.solution_image ? [q.explanation_image || q.solution_image] : []));
+
+      if (qArr.length > 0) {
+        qWithImgs++;
+        qImages += qArr.length;
+      }
+      if (sArr.length > 0) {
+        sWithImgs++;
+        sImages += sArr.length;
+      }
+
+      const topicName = (q.topic && String(q.topic).trim()) || meta.defaultTopic || 'General Studies';
+      computedTopics[topicName] = (computedTopics[topicName] || 0) + 1;
+      return qArr.length > 0 || sArr.length > 0;
+    });
+
+    const topicsSummary =
+      meta.topicsSummary && Object.keys(meta.topicsSummary).length > 0
+        ? meta.topicsSummary
+        : computedTopics;
+
+    return {
+      fileName: meta.fileName || 'questions.json',
+      fileSize: meta.fileSize || `${questionsList.length} Questions`,
+      totalQuestions: questionsList.length,
+      questionsWithImage: qWithImgs,
+      solutionsWithImage: sWithImgs,
+      questionImagesCount: qImages,
+      solutionImagesCount: sImages,
+      totalImagesCount: qImages + sImages,
+      topicsSummary,
+      previewQuestions: questionsList,
+      diagramQuestions,
+      isZip: Boolean(meta.isZip)
+    };
+  };
+
+  // ── Current Affairs / Quiz Management Handlers & Section ────────
   const handleStartNewCa = () => {
     const today = new Date();
     const day = today.getDate();
@@ -4765,6 +5561,11 @@ export default function AdminDashboardPage({
     const dateStr = `${day} ${month} ${year}`;
 
     setEditingCaId(null);
+    setCaJsonFileStats(null);
+    setShowCaJsonPreviewModal(false);
+    setCaPreviewTab('all');
+    setCaPreviewSearch('');
+    setCaPreviewPage(1);
     setCaForm({
       title: `Daily Current Affairs ${dateStr} – 50 MCQs Mock Test (30 Minutes)`,
       postDate: `${dateStr} | 08:00 AM`,
@@ -4772,44 +5573,269 @@ export default function AdminDashboardPage({
       slug: `daily-current-affairs-${cleanSlug(dateStr)}`,
       description: `Attempt 50 MCQs Daily Current Affairs Mock Test with 30-minute timer for SSC CGL, BSSC, Railways RRB, Banking, and State PSC exams.`,
       durationMinutes: 30,
+      marksPerQuestion: 1,
+      negativeMarks: 0.25,
       totalQuestions: 50,
       content: '',
+      questions: [],
+      topicsSummary: {},
       status: 'Published'
     });
     setShowCaForm(true);
     setCaAlert(null);
   };
 
-  const handleEditCa = (item) => {
-    setEditingCaId(item.id || item.slug);
+  const handleEditCa = async (item) => {
+    const safeId = item.id || item.slug;
+    setEditingCaId(safeId);
+    let fullItem = item;
+    if (
+      !Array.isArray(item.questions) ||
+      item.questions.length === 0 ||
+      item.questions.length <= 3 ||
+      item.isChunked ||
+      !item.content
+    ) {
+      try {
+        const fetched = await fetchCurrentAffairsBySlug(safeId);
+        if (fetched && ((Array.isArray(fetched.questions) && fetched.questions.length > 0) || fetched.content)) {
+          fullItem = { ...item, ...fetched };
+        }
+      } catch (_) {}
+    }
+
+    const loadedQuestions = Array.isArray(fullItem.questions) ? fullItem.questions : [];
+    const qCount = loadedQuestions.length;
+    const negVal =
+      fullItem.negativeMarks !== undefined && fullItem.negativeMarks !== null && !Number.isNaN(Number(fullItem.negativeMarks))
+        ? Math.abs(Number(fullItem.negativeMarks))
+        : 0.25;
+    const marksVal =
+      fullItem.marksPerQuestion !== undefined && fullItem.marksPerQuestion !== null && !Number.isNaN(Number(fullItem.marksPerQuestion))
+        ? Number(fullItem.marksPerQuestion)
+        : 1;
+
+    setCaPreviewTab('all');
+    setCaPreviewSearch('');
+    setCaPreviewPage(1);
+    setShowCaJsonPreviewModal(false);
+
     setCaForm({
-      title: item.title || '',
-      postDate: item.postDate || item.date || '',
-      category: item.category || 'Daily Current Affairs',
-      slug: item.slug || cleanSlug(item.title) || item.id,
-      description: item.description || '',
-      durationMinutes: item.durationMinutes || 30,
-      totalQuestions: item.totalQuestions || 50,
-      content: item.content || '',
-      status: item.status || 'Published'
+      title: fullItem.title || '',
+      postDate: fullItem.postDate || fullItem.date || '',
+      category: fullItem.category || 'Daily Current Affairs',
+      slug: fullItem.slug || cleanSlug(fullItem.title) || safeId,
+      description: fullItem.description || '',
+      durationMinutes: fullItem.durationMinutes || 30,
+      marksPerQuestion: marksVal,
+      negativeMarks: negVal,
+      totalQuestions: fullItem.totalQuestions || (qCount > 0 ? qCount : 50),
+      content: fullItem.content || (qCount > 0 ? `// ✅ ${qCount} questions loaded in structured CBT mode.` : ''),
+      questions: loadedQuestions,
+      topicsSummary: fullItem.topicsSummary || {},
+      status: fullItem.status || 'Published'
     });
+
+    if (qCount > 0) {
+      setCaJsonFileStats(
+        buildQuizStatsFromQuestions(loadedQuestions, {
+          fileName: `${fullItem.title || fullItem.slug || safeId}.json`,
+          fileSize: `${qCount} Questions`,
+          topicsSummary: fullItem.topicsSummary || {},
+          defaultTopic: fullItem.category || 'Current Affairs & GK'
+        })
+      );
+    } else {
+      setCaJsonFileStats(null);
+    }
+
     setShowCaForm(true);
     setCaAlert(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCaJsonFileUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const isZip = file.name.toLowerCase().endsWith('.zip');
+    const curDur = Number(caForm.durationMinutes) || 30;
+    const curMarks =
+      caForm.marksPerQuestion !== '' && caForm.marksPerQuestion !== undefined && !Number.isNaN(Number(caForm.marksPerQuestion))
+        ? Number(caForm.marksPerQuestion)
+        : 1;
+    const curNeg =
+      caForm.negativeMarks !== '' && caForm.negativeMarks !== undefined && !Number.isNaN(Number(caForm.negativeMarks))
+        ? Math.abs(Number(caForm.negativeMarks))
+        : 0.25;
+
+    const parserOptions = {
+      mode: 'current-affairs' as const,
+      defaultTitle: caForm.title || '',
+      defaultCategory: caForm.category || 'Daily Current Affairs',
+      defaultDurationMinutes: curDur,
+      defaultMarks: curMarks,
+      defaultNeg: curNeg,
+      defaultTopic: caForm.category || 'Current Affairs & GK'
+    };
+
+    try {
+      showToast(isZip ? `📦 Unpacking ZIP & diagrams from "${file.name}"...` : `Reading "${file.name}"...`, 'info');
+
+      let parsed;
+      if (isZip) {
+        parsed = await parseQuizZip(file, (step) => {
+          console.log(`[CA ZIP Loader] ${step}`);
+        }, parserOptions);
+      } else {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsText(file);
+        });
+        parsed = parseQuizJson(text, file.name, undefined, parserOptions);
+
+        if (parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0) {
+          try {
+            parsed.questions = await optimizeQuizQuestionsImages(parsed.questions);
+          } catch (optErr) {
+            console.warn('Image optimization skipped:', optErr);
+          }
+        }
+      }
+
+      const nextStats = buildQuizStatsFromQuestions(parsed.questions, {
+        fileName: file.name,
+        fileSize: (file.size / 1024).toFixed(1) + ' KB',
+        topicsSummary: parsed.topicsSummary,
+        defaultTopic: caForm.category || 'Current Affairs & GK',
+        isZip
+      });
+
+      setCaPreviewTab('all');
+      setCaPreviewSearch('');
+      setCaPreviewPage(1);
+      setShowCaJsonPreviewModal(false);
+      setCaJsonFileStats(nextStats);
+
+      setCaForm(prev => {
+        const keepExistingTitle = !parsed.hasExplicitTitle && parsed.isGenericFileName && Boolean(prev.title && prev.title.trim());
+        const nextTitle = keepExistingTitle ? prev.title : parsed.title;
+        const nextSlug = keepExistingTitle ? (prev.slug || cleanSlug(prev.title)) : parsed.slug;
+        const nextDesc = (!keepExistingTitle || !prev.description || !prev.description.trim() || prev.description.includes('Attempt 50 MCQs'))
+          ? parsed.description
+          : prev.description;
+        return {
+          ...prev,
+          title: nextTitle,
+          postDate: parsed.postDate || prev.postDate,
+          category: parsed.category || prev.category,
+          slug: nextSlug,
+          description: nextDesc,
+          durationMinutes: parsed.durationMinutes,
+          marksPerQuestion: parsed.marksPerQuestion,
+          negativeMarks: parsed.negativeMarks,
+          totalQuestions: parsed.totalQuestions,
+          questions: parsed.questions,
+          topicsSummary: parsed.topicsSummary,
+          content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${nextStats.totalImagesCount} total diagrams (${nextStats.questionImagesCount} question diagrams across ${nextStats.questionsWithImage} Qs, and ${nextStats.solutionImagesCount} solution diagrams across ${nextStats.solutionsWithImage} Qs).\n// Structured Quiz Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
+        };
+      });
+
+      showToast(`✅ ${parsed.totalQuestions} प्रश्न व कुल ${nextStats.totalImagesCount} चित्र (${nextStats.questionImagesCount} प्रश्न आरेख + ${nextStats.solutionImagesCount} व्याख्या चित्र) 100% लोड हो गए!`, 'success');
+    } catch (err) {
+      console.error('Error loading CA quiz file:', err);
+      alert('Error loading file: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleCaImagesAttach = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!caForm.questions || caForm.questions.length === 0) {
+      alert('कृपया पहले JSON फ़ाइल लोड करें, उसके बाद इमेज जोड़ें।');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    try {
+      showToast(`📷 Diagrams sync kiye ja rahe hain...`, 'info');
+      const isSingleZip = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip');
+      const { updatedQuestions, matchedQuestionImgs, matchedSolutionImgs } = await attachImagesToQuestions(
+        caForm.questions,
+        isSingleZip ? files[0] : files
+      );
+
+      setCaForm(prev => ({
+        ...prev,
+        questions: updatedQuestions
+      }));
+
+      setCaJsonFileStats(prev =>
+        buildQuizStatsFromQuestions(updatedQuestions, {
+          fileName: prev?.fileName || `${caForm.title || 'quiz'}.json`,
+          fileSize: prev?.fileSize || `${updatedQuestions.length} Questions`,
+          topicsSummary: caForm.topicsSummary || prev?.topicsSummary || {},
+          defaultTopic: caForm.category || 'Current Affairs & GK',
+          isZip: isSingleZip || prev?.isZip
+        })
+      );
+
+      showToast(`✅ ${matchedQuestionImgs} प्रश्न आरेख और ${matchedSolutionImgs} व्याख्या चित्र सफलतापूर्वक जुड़ गए!`, 'success');
+    } catch (err) {
+      console.error('Error attaching CA images:', err);
+      alert('Error attaching images: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleClearCaJson = () => {
+    setCaJsonFileStats(null);
+    setShowCaJsonPreviewModal(false);
+    setCaPreviewTab('all');
+    setCaPreviewSearch('');
+    setCaPreviewPage(1);
+    setCaForm(prev => ({
+      ...prev,
+      questions: [],
+      topicsSummary: {},
+      content: prev.content && prev.content.trim().startsWith('// ✅') ? '' : prev.content
+    }));
+  };
+
   const handleDeleteCa = (item) => {
     const id = item.id || item.slug;
     openDeleteConfirm({
-      title: 'करेंट अफेयर्स डिलीट करें?',
-      itemName: item.title,
-      warningText: 'यह करेंट अफेयर्स पोस्ट Firestore से हमेशा के लिए हटा दी जाएगी। यह क्रिया पूर्ववत नहीं की जा सकती।',
+      title: 'करेंट अफेयर्स / क्विज़ डिलीट करें?',
+      itemName: item.title || item.slug || id,
+      warningText: 'यह करेंट अफेयर्स / क्विज़ पोस्ट और इसके सभी प्रश्न Firestore डेटाबेस से हमेशा के लिए हटा दिए जाएंगे। यह क्रिया पूर्ववत नहीं की जा सकती।',
       onConfirm: async () => {
         setCaLoading(true);
         try {
-          await deleteCurrentAffairsFromFirestore(id);
-          setCurrentAffairsList(prev => prev.filter(p => (p.id || p.slug) !== id));
-          setCaAlert({ type: 'success', message: 'Current Affairs post deleted successfully from Firestore.' });
+          const res = await deleteCurrentAffairsFromFirestore(id, item);
+          if (res && res.success === false) {
+            throw res.error || new Error('Failed to delete from Firestore');
+          }
+
+          const targetSafeId = cleanJobId(id);
+          const targetSlug = cleanJobId(item.slug || '');
+          setCurrentAffairsList(prev => prev.filter(p => {
+            const pSafeId = cleanJobId(p.id || '');
+            const pSafeSlug = cleanJobId(p.slug || '');
+            const pRawId = String(p.id || '').trim();
+            const pRawSlug = String(p.slug || '').trim();
+
+            if (pSafeId === targetSafeId || pSafeSlug === targetSafeId || pSafeId === targetSlug || pSafeSlug === targetSlug) return false;
+            if (pRawId === id || pRawSlug === id) return false;
+            if (item.title && p.title === item.title) return false;
+            return true;
+          }));
+
+          setCaAlert({ type: 'success', message: `Quiz "${item.title || id}" deleted successfully from Firestore.` });
         } catch (err) {
           setCaAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
           throw err;
@@ -4823,12 +5849,31 @@ export default function AdminDashboardPage({
   const handlePublishCa = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!caForm.title.trim()) {
-      alert('Please enter a Title for the Current Affairs post.');
+      alert('Please enter a Title for the Current Affairs / Quiz post.');
       return;
     }
 
     const safeSlug = cleanSlug(caForm.slug || caForm.title);
-    const parsedQuestions = extractQuestionsFromContent(caForm.content);
+    const trimmedContent = (caForm.content || '').trim();
+    const contentIsJson = trimmedContent.startsWith('[') || trimmedContent.startsWith('{');
+    const contentQuestions = (!trimmedContent || trimmedContent.startsWith('// ✅'))
+      ? []
+      : extractQuestionsFromContent(trimmedContent);
+
+    let parsedQuestions = [];
+    if (contentIsJson) {
+      parsedQuestions = contentQuestions;
+    } else if (Array.isArray(caForm.questions) && caForm.questions.length > 0) {
+      parsedQuestions = [...caForm.questions];
+    } else {
+      parsedQuestions = contentQuestions;
+    }
+
+    if (contentIsJson && parsedQuestions.length === 0) {
+      alert('⚠️ Invalid JSON or 0 questions found in Source Code! Please upload a valid Quiz ZIP/JSON or fix the JSON syntax.');
+      return;
+    }
+
     parsedQuestions.forEach(q => {
       if (!q.solution || !q.solution.trim()) {
         const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
@@ -4837,6 +5882,35 @@ export default function AdminDashboardPage({
           : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
       }
     });
+
+    if (parsedQuestions.length > 0) {
+      try {
+        parsedQuestions = await optimizeQuizQuestionsImages(parsedQuestions);
+      } catch (_) {}
+    }
+
+    const topicsSummary = {};
+    parsedQuestions.forEach(q => {
+      const t = (q.topic && String(q.topic).trim()) || caForm.category || 'Current Affairs & GK';
+      topicsSummary[t] = (topicsSummary[t] || 0) + 1;
+    });
+
+    const statsMeta = buildQuizStatsFromQuestions(parsedQuestions, {
+      topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (caForm.topicsSummary || {}),
+      defaultTopic: caForm.category || 'Current Affairs & GK'
+    });
+
+    const marks =
+      caForm.marksPerQuestion !== '' && caForm.marksPerQuestion !== undefined && caForm.marksPerQuestion !== null && !Number.isNaN(Number(caForm.marksPerQuestion))
+        ? Number(caForm.marksPerQuestion)
+        : 1;
+    const neg =
+      caForm.negativeMarks !== '' && caForm.negativeMarks !== undefined && caForm.negativeMarks !== null && !Number.isNaN(Number(caForm.negativeMarks))
+        ? Math.abs(Number(caForm.negativeMarks))
+        : 0.25;
+    const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(caForm.totalQuestions) || 50);
+    const shouldClearContent = parsedQuestions.length > 0 && (!trimmedContent || trimmedContent.startsWith('// ✅') || contentIsJson);
+
     const postData = {
       ...caForm,
       id: safeSlug,
@@ -4844,11 +5918,19 @@ export default function AdminDashboardPage({
       title: caForm.title.trim(),
       date: caForm.postDate ? caForm.postDate.split('|')[0].trim() : '',
       durationMinutes: Number(caForm.durationMinutes) || 30,
-      totalQuestions: parsedQuestions.length > 0 ? parsedQuestions.length : (Number(caForm.totalQuestions) || 50),
-      questions: parsedQuestions.length > 0 ? parsedQuestions : (caForm.questions || []),
+      marksPerQuestion: marks,
+      negativeMarks: neg,
+      totalQuestions: totalQ,
+      totalMarks: Number((totalQ * marks).toFixed(2)),
+      topicsSummary: statsMeta.topicsSummary,
+      questionsWithImage: statsMeta.questionsWithImage,
+      solutionsWithImage: statsMeta.solutionsWithImage,
+      totalImagesCount: statsMeta.totalImagesCount,
+      questions: parsedQuestions,
+      content: shouldClearContent ? '' : (trimmedContent.startsWith('// ✅') ? '' : (caForm.content || '')),
       updatedAt: new Date().toISOString(),
-      views: 100,
-      tags: ['Current Affairs 2026', '50 MCQs', '30 Min Test', 'Daily GK', 'SSC', 'Railways', 'BSSC']
+      views: caForm.views || 100,
+      tags: ['Current Affairs 2026', `${totalQ} MCQs`, `${Number(caForm.durationMinutes) || 30} Min Test`, 'Daily GK Quiz', 'SSC', 'Railways', 'BSSC']
     };
 
     const cleanPostData = sanitizeFirestoreData(postData);
@@ -4858,12 +5940,12 @@ export default function AdminDashboardPage({
       const res = await publishCurrentAffairsToFirestore(cleanPostData);
       if (res && res.success) {
         setCurrentAffairsList(prev => {
-          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          const filtered = prev.filter(p => cleanJobId(p.id || p.slug) !== cleanJobId(safeSlug));
           return [cleanPostData, ...filtered];
         });
         setCaAlert({
           type: 'success',
-          message: 'Current Affairs post has been published LIVE on the website!',
+          message: 'Current Affairs / Quiz post has been published LIVE on the website!',
           link: `/current-affairs/${safeSlug}`
         });
         setShowCaForm(false);
@@ -4873,7 +5955,7 @@ export default function AdminDashboardPage({
     } catch (err) {
       setCaAlert({
         type: 'error',
-        message: 'Error saving Current Affairs: ' + (err.message || String(err))
+        message: 'Error saving Current Affairs / Quiz: ' + (err.message || String(err))
       });
     } finally {
       setCaSaving(false);
@@ -4891,6 +5973,17 @@ export default function AdminDashboardPage({
       );
     });
 
+    const caPosLabel =
+      caForm.marksPerQuestion !== '' && caForm.marksPerQuestion !== undefined && !Number.isNaN(Number(caForm.marksPerQuestion))
+        ? caForm.marksPerQuestion
+        : 1;
+    const caNegLabel =
+      caForm.negativeMarks !== '' && caForm.negativeMarks !== undefined && !Number.isNaN(Number(caForm.negativeMarks))
+        ? caForm.negativeMarks
+        : 0.25;
+    const caTrim = (caForm.content || '').trim();
+    const caIsHtmlContent = Boolean(caTrim && !caTrim.startsWith('[') && !caTrim.startsWith('{') && !caTrim.startsWith('// ✅'));
+
     return (
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Section Header */}
@@ -4899,11 +5992,11 @@ export default function AdminDashboardPage({
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Newspaper size={28} style={{ color: '#2563eb' }} />
               <h1 style={{ fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Current Affairs & GK Management
+                Current Affairs & Quiz Management
               </h1>
             </div>
             <p style={{ margin: '6px 0 0', fontSize: '0.92rem', color: '#64748b' }}>
-              Paste raw HTML questions/MCQs to publish daily Current Affairs sets live on the website
+              Upload JSON / ZIP packages (with diagrams) or paste raw HTML / JSON source to publish Current Affairs & Quiz sets live on the website.
             </p>
           </div>
 
@@ -4954,7 +6047,7 @@ export default function AdminDashboardPage({
               }}
             >
               {showCaForm ? <X size={16} /> : <Plus size={16} />}
-              <span>{showCaForm ? 'Close Form' : '+ New Current Affairs'}</span>
+              <span>{showCaForm ? 'Close Form' : '+ New Quiz / Current Affairs'}</span>
             </button>
           </div>
         </div>
@@ -5022,8 +6115,13 @@ export default function AdminDashboardPage({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Edit3 size={20} color="#2563eb" />
                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                  {editingCaId ? 'Edit Current Affairs Post' : 'Create & Publish New Current Affairs Set'}
+                  {editingCaId ? 'Edit Current Affairs / Quiz Post' : 'Create & Publish New Current Affairs / Quiz Set'}
                 </h2>
+                {editingCaId && (
+                  <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    Editing: {editingCaId}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => setShowCaForm(false)}
@@ -5034,6 +6132,31 @@ export default function AdminDashboardPage({
             </div>
 
             <form onSubmit={handlePublishCa} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* ZIP / JSON Package Uploader (Same Parity as Test Series) */}
+              <QuizPackageUploader
+                prefixKey="ca"
+                headingText="📦 Upload Quiz / Current Affairs Package (ZIP या JSON फ़ाइल)"
+                subtitleText={
+                  <>
+                    <strong>ZIP पैकेज</strong> (जिसमें JSON और <code style={{ color: '#0284c7', background: '#f0f9ff', padding: '1px 5px', borderRadius: '4px' }}>images/</code> फ़ोल्डर दोनों हों) या अकेला <strong>JSON</strong> चुनें — सभी प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Images) और विस्तृत व्याख्या स्वतः लोड हो जाएँगी।
+                  </>
+                }
+                stats={caJsonFileStats}
+                onFileUpload={handleCaJsonFileUpload}
+                onImagesAttach={handleCaImagesAttach}
+                onClearJson={handleClearCaJson}
+                showPreview={showCaJsonPreviewModal}
+                setShowPreview={setShowCaJsonPreviewModal}
+                previewTab={caPreviewTab}
+                setPreviewTab={setCaPreviewTab}
+                previewSearch={caPreviewSearch}
+                setPreviewSearch={setCaPreviewSearch}
+                previewPage={caPreviewPage}
+                setPreviewPage={setCaPreviewPage}
+                previewPageSize={caPreviewPageSize}
+                setPreviewPageSize={setCaPreviewPageSize}
+              />
+
               {/* Title */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
@@ -5042,14 +6165,14 @@ export default function AdminDashboardPage({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Daily Current Affairs 25 October 2026 – Top 20 MCQs with Explanation"
+                  placeholder="e.g. Daily Current Affairs 25 October 2026 – Top 50 MCQs with Explanation"
                   value={caForm.title}
                   onChange={(e) => {
                     const title = e.target.value;
                     setCaForm(prev => ({
                       ...prev,
                       title,
-                      slug: prev.slug === cleanSlug(prev.title) || !prev.slug ? cleanSlug(title) : prev.slug
+                      slug: (prev.slug === cleanSlug(prev.title) || !prev.slug) && !editingCaId ? cleanSlug(title) : prev.slug
                     }));
                   }}
                   style={{
@@ -5065,8 +6188,8 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* 3 Fields Row: Date, Category, Slug */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {/* 4 Fields Row: Date, Category, Slug, Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
                     POST DATE
@@ -5110,6 +6233,9 @@ export default function AdminDashboardPage({
                     <option value="GK Questions">GK Questions</option>
                     <option value="Exam Special">Exam Special</option>
                     <option value="State Special">State Special</option>
+                    {!['Daily Current Affairs', 'Monthly Current Affairs', 'GK Questions', 'Exam Special', 'State Special'].includes(caForm.category) && caForm.category && (
+                      <option value={caForm.category}>{caForm.category}</option>
+                    )}
                   </select>
                 </div>
 
@@ -5135,6 +6261,29 @@ export default function AdminDashboardPage({
                     Live URL: careerdiary.in/current-affairs/{cleanSlug(caForm.slug || caForm.title)}
                   </div>
                 </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    STATUS
+                  </label>
+                  <select
+                    value={caForm.status || 'Published'}
+                    onChange={(e) => setCaForm(prev => ({ ...prev, status: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="Published">Published (Live)</option>
+                    <option value="Draft">Draft (Hidden)</option>
+                  </select>
+                </div>
               </div>
 
               {/* Description */}
@@ -5146,7 +6295,7 @@ export default function AdminDashboardPage({
                   rows={2}
                   value={caForm.description}
                   onChange={(e) => setCaForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Brief 1-2 line summary about this Current Affairs set..."
+                  placeholder="Brief 1-2 line summary about this Current Affairs / Quiz set..."
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -5160,18 +6309,21 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* Test Settings: 50 Questions, 30 Min Timer */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              {/* 4-Column Test Settings: Timer, Total Questions, Marks Per Q, Negative Marks */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px', background: '#eff6ff', padding: '14px 16px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
-                    ⏱️ TEST TIME DURATION (MINUTES)
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ⏱️ TIMER (MINUTES)
                   </label>
                   <input
                     type="number"
                     min="1"
-                    max="180"
-                    value={caForm.durationMinutes || 30}
-                    onChange={(e) => setCaForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 30 }))}
+                    max="240"
+                    value={caForm.durationMinutes === '' ? '' : (caForm.durationMinutes ?? 30)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCaForm(prev => ({ ...prev, durationMinutes: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -5179,24 +6331,28 @@ export default function AdminDashboardPage({
                       border: '1px solid #cbd5e1',
                       fontSize: '0.92rem',
                       fontWeight: 700,
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
                     }}
                   />
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
-                    Countdown timer for student test (Default: 30 Minutes)
+                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8', marginTop: '4px' }}>
+                    Countdown timer (Default: 30 Mins)
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
-                    📝 TOTAL MCQ QUESTIONS
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    📝 TOTAL QUESTIONS
                   </label>
                   <input
                     type="number"
                     min="1"
-                    max="200"
-                    value={caForm.totalQuestions || 50}
-                    onChange={(e) => setCaForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 50 }))}
+                    max="300"
+                    value={caForm.totalQuestions === '' ? '' : (caForm.totalQuestions ?? 50)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCaForm(prev => ({ ...prev, totalQuestions: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -5204,28 +6360,89 @@ export default function AdminDashboardPage({
                       border: '1px solid #cbd5e1',
                       fontSize: '0.92rem',
                       fontWeight: 700,
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
                     }}
                   />
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
-                    Total interactive questions in test (Default: 50 Questions)
+                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8', marginTop: '4px' }}>
+                    Question count (Default: 50)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➕ MARKS PER QUESTION
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.25"
+                    value={caForm.marksPerQuestion === '' ? '' : (caForm.marksPerQuestion ?? 1)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCaForm(prev => ({ ...prev, marksPerQuestion: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8', marginTop: '4px' }}>
+                    Positive (+{caPosLabel} mark)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➖ NEGATIVE MARKS
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.25"
+                    value={caForm.negativeMarks === '' ? '' : (caForm.negativeMarks ?? 0.25)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCaForm(prev => ({ ...prev, negativeMarks: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8', marginTop: '4px' }}>
+                    Penalty (-{caNegLabel} per wrong)
                   </div>
                 </div>
               </div>
 
-              {/* HTML SOURCE CODE Textarea (Styled exactly as requested by user) */}
+              {/* QUESTIONS HTML / JSON SOURCE CODE Textarea */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-                    HTML SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
+                    QUESTIONS HTML / JSON SOURCE CODE
                   </label>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    💡 Paste question tables, MCQs, or notes HTML here
+                    💡 Upload ZIP/JSON above OR paste raw JSON / question HTML here
                   </span>
                 </div>
                 <textarea
                   rows={14}
-                  placeholder="Paste HTML here..."
+                  placeholder="Paste question cards HTML, quizData script, or raw JSON [{...}] here (or use ZIP/JSON uploader above)..."
                   value={caForm.content}
                   onChange={(e) => setCaForm(prev => ({ ...prev, content: e.target.value }))}
                   style={{
@@ -5244,7 +6461,29 @@ export default function AdminDashboardPage({
                   }}
                 />
                 {(() => {
-                  const detected = extractQuestionsFromContent(caForm.content);
+                  const isJsonText = caTrim.startsWith('[') || caTrim.startsWith('{');
+                  if (!isJsonText && Array.isArray(caForm.questions) && caForm.questions.length > 0) {
+                    const st = caJsonFileStats || buildQuizStatsFromQuestions(caForm.questions);
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#f0fdf4',
+                        border: '1.5px solid #86efac',
+                        borderRadius: '8px',
+                        color: '#15803d',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#16a34a" />
+                        <span>✅ {caForm.questions.length} Structured Questions Loaded! ({st.questionImagesCount} question diagrams, {st.solutionImagesCount} solution diagrams). Score: +{caPosLabel} / -{caNegLabel}.</span>
+                      </div>
+                    );
+                  }
+                  const detected = caTrim && !caTrim.startsWith('// ✅') ? extractQuestionsFromContent(caForm.content) : [];
                   if (detected.length > 0) {
                     return (
                       <div style={{
@@ -5261,7 +6500,7 @@ export default function AdminDashboardPage({
                         gap: '8px'
                       }}>
                         <CheckCircle2 size={18} color="#16a34a" />
-                        <span>✅ {detected.length} Questions Detected! The 30-Minute Live Mock Test will use these questions with +1.00 / -0.25 scoring.</span>
+                        <span>✅ {detected.length} Questions Detected! The Live Quiz Test will use these questions with +{caPosLabel} / -{caNegLabel} scoring.</span>
                       </div>
                     );
                   }
@@ -5269,8 +6508,8 @@ export default function AdminDashboardPage({
                 })()}
               </div>
 
-              {/* Live HTML Preview Box (Sandboxed Iframe prevents external CSS/body styles from leaking into Admin Dashboard) */}
-              {caForm.content && (
+              {/* Live HTML Preview Box (Only for actual HTML content, never raw JSON or status comment) */}
+              {caIsHtmlContent && (
                 <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
@@ -5341,7 +6580,7 @@ export default function AdminDashboardPage({
           </div>
         )}
 
-        {/* Current Affairs Posts Table & List */}
+        {/* Current Affairs / Quiz Posts Table & List */}
         <div
           style={{
             background: '#ffffff',
@@ -5355,7 +6594,7 @@ export default function AdminDashboardPage({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
-                Published Current Affairs Sets
+                Published Current Affairs & Quiz Sets
               </span>
               <span style={{ background: '#eff6ff', color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', padding: '3px 10px', borderRadius: '14px' }}>
                 {filteredCa.length} Sets
@@ -5368,7 +6607,7 @@ export default function AdminDashboardPage({
                 type="text"
                 value={caSearch}
                 onChange={(e) => setCaSearch(e.target.value)}
-                placeholder="Search current affairs sets..."
+                placeholder="Search quiz / current affairs sets..."
                 style={{
                   width: '100%',
                   padding: '8px 12px 8px 36px',
@@ -5385,8 +6624,8 @@ export default function AdminDashboardPage({
           {filteredCa.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
               <Newspaper size={36} style={{ color: '#cbd5e1', margin: '0 auto 10px' }} />
-              <p style={{ margin: 0, fontWeight: 600 }}>No Current Affairs posts found.</p>
-              <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>Click "+ New Current Affairs" above to paste HTML questions and publish live!</p>
+              <p style={{ margin: 0, fontWeight: 600 }}>No Current Affairs / Quiz posts found.</p>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>Click &quot;+ New Quiz / Current Affairs&quot; above to upload JSON/ZIP or paste HTML and publish live!</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -5394,9 +6633,10 @@ export default function AdminDashboardPage({
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <th style={{ padding: '12px 16px' }}>Title & Slug</th>
-                    <th style={{ padding: '12px 16px', width: '160px' }}>Date</th>
-                    <th style={{ padding: '12px 16px', width: '170px' }}>Category</th>
-                    <th style={{ padding: '12px 16px', width: '110px' }}>Status</th>
+                    <th style={{ padding: '12px 16px' }}>Questions & Pattern</th>
+                    <th style={{ padding: '12px 16px', width: '150px' }}>Date</th>
+                    <th style={{ padding: '12px 16px', width: '155px' }}>Category</th>
+                    <th style={{ padding: '12px 16px', width: '105px' }}>Status</th>
                     <th style={{ padding: '12px 16px', width: '220px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -5404,6 +6644,9 @@ export default function AdminDashboardPage({
                   {filteredCa.map((item) => {
                     const slug = item.slug || item.id;
                     const liveUrl = `/current-affairs/${slug}`;
+                    const itemMarks = item.marksPerQuestion !== undefined && item.marksPerQuestion !== null ? item.marksPerQuestion : 1;
+                    const itemNeg = item.negativeMarks !== undefined && item.negativeMarks !== null ? item.negativeMarks : 0.25;
+                    const qCount = item.totalQuestions || (Array.isArray(item.questions) && item.questions.length > 0 ? item.questions.length : 50);
 
                     return (
                       <tr
@@ -5420,6 +6663,17 @@ export default function AdminDashboardPage({
                             /current-affairs/{slug}
                           </div>
                         </td>
+                        <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 700, color: '#334155' }}>
+                            {qCount} MCQs • ⏱️ {item.durationMinutes || 30}m
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: '#16a34a', fontWeight: 600, marginTop: '2px' }}>
+                            +{itemMarks} / -{itemNeg}
+                            {Number(item.totalImagesCount) > 0 && (
+                              <span style={{ color: '#0284c7', marginLeft: '6px' }}>• 📷 {item.totalImagesCount}</span>
+                            )}
+                          </div>
+                        </td>
                         <td style={{ padding: '14px 16px', color: '#334155', fontSize: '0.85rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             <Calendar size={13} color="#64748b" />
@@ -5432,8 +6686,15 @@ export default function AdminDashboardPage({
                           </span>
                         </td>
                         <td style={{ padding: '14px 16px' }}>
-                          <span style={{ background: '#f0fdf4', color: '#16a34a', fontSize: '0.76rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
-                            Live
+                          <span style={{
+                            background: item.status === 'Draft' ? '#f1f5f9' : '#f0fdf4',
+                            color: item.status === 'Draft' ? '#64748b' : '#16a34a',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '4px'
+                          }}>
+                            {item.status || 'Published'}
                           </span>
                         </td>
                         <td style={{ padding: '14px 16px', textAlign: 'right' }}>
@@ -5462,7 +6723,7 @@ export default function AdminDashboardPage({
 
                             <button
                               onClick={() => handleEditCa(item)}
-                              title="Edit Current Affairs content"
+                              title="Edit Quiz / Current Affairs content"
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -5523,6 +6784,11 @@ export default function AdminDashboardPage({
     const dateStr = `${day} ${month} ${year}`;
 
     setEditingPyqId(null);
+    setPyqJsonFileStats(null);
+    setShowPyqJsonPreviewModal(false);
+    setPyqPreviewTab('all');
+    setPyqPreviewSearch('');
+    setPyqPreviewPage(1);
     setPyqForm({
       title: `BSSC CGL 2024 Solved Official PYQ Paper (Set 1)`,
       exam: 'BSSC CGL',
@@ -5533,47 +6799,278 @@ export default function AdminDashboardPage({
       slug: `bssc-cgl-2024-solved-pyq-paper-set-1`,
       description: `Attempt BSSC CGL 2024 Solved Official Previous Year Question Paper with step-by-step solutions, CBT timer & instant study mode.`,
       durationMinutes: 60,
+      marksPerQuestion: 1,
+      negativeMarks: 0.25,
       totalQuestions: 50,
       content: '',
+      questions: [],
+      topicsSummary: {},
       status: 'Published'
     });
     setShowPyqForm(true);
     setPyqAlert(null);
   };
 
-  const handleEditPyq = (item) => {
-    setEditingPyqId(item.id || item.slug);
+  const handleEditPyq = async (item) => {
+    const safeId = item.id || item.slug;
+    setEditingPyqId(safeId);
+    let fullItem = item;
+    if (
+      !Array.isArray(item.questions) ||
+      item.questions.length === 0 ||
+      item.questions.length <= 3 ||
+      item.isChunked ||
+      !item.content
+    ) {
+      try {
+        const fetched = await fetchPyqBySlug(safeId);
+        if (fetched && ((Array.isArray(fetched.questions) && fetched.questions.length > 0) || fetched.content)) {
+          fullItem = { ...item, ...fetched };
+        }
+      } catch (_) {}
+    }
+
+    const loadedQuestions = Array.isArray(fullItem.questions) ? fullItem.questions : [];
+    const qCount = loadedQuestions.length;
+    const negVal =
+      fullItem.negativeMarks !== undefined && fullItem.negativeMarks !== null && !Number.isNaN(Number(fullItem.negativeMarks))
+        ? Math.abs(Number(fullItem.negativeMarks))
+        : 0.25;
+    const marksVal =
+      fullItem.marksPerQuestion !== undefined && fullItem.marksPerQuestion !== null && !Number.isNaN(Number(fullItem.marksPerQuestion))
+        ? Number(fullItem.marksPerQuestion)
+        : 1;
+
+    setPyqPreviewTab('all');
+    setPyqPreviewSearch('');
+    setPyqPreviewPage(1);
+    setShowPyqJsonPreviewModal(false);
+
     setPyqForm({
-      title: item.title || '',
-      exam: item.exam || 'BSSC CGL',
-      year: item.year || '2024',
-      shift: item.shift || 'Shift 1',
-      postDate: item.postDate || item.date || '',
-      category: item.category || 'PYQ',
-      slug: item.slug || cleanSlug(item.title) || item.id,
-      description: item.description || '',
-      durationMinutes: item.durationMinutes || 60,
-      totalQuestions: item.totalQuestions || 50,
-      content: item.content || '',
-      status: item.status || 'Published'
+      title: fullItem.title || '',
+      exam: fullItem.exam || 'BSSC CGL',
+      year: String(fullItem.year || '2024'),
+      shift: fullItem.shift || 'Shift 1',
+      postDate: fullItem.postDate || fullItem.date || '',
+      category: fullItem.category || 'PYQ',
+      slug: fullItem.slug || cleanSlug(fullItem.title) || safeId,
+      description: fullItem.description || '',
+      durationMinutes: fullItem.durationMinutes || 60,
+      marksPerQuestion: marksVal,
+      negativeMarks: negVal,
+      totalQuestions: fullItem.totalQuestions || (qCount > 0 ? qCount : 50),
+      content: fullItem.content || (qCount > 0 ? `// ✅ ${qCount} questions loaded in structured CBT mode.` : ''),
+      questions: loadedQuestions,
+      topicsSummary: fullItem.topicsSummary || {},
+      status: fullItem.status || 'Published'
     });
+
+    if (qCount > 0) {
+      setPyqJsonFileStats(
+        buildQuizStatsFromQuestions(loadedQuestions, {
+          fileName: `${fullItem.title || fullItem.slug || safeId}.json`,
+          fileSize: `${qCount} Questions`,
+          topicsSummary: fullItem.topicsSummary || {},
+          defaultTopic: fullItem.exam ? `${fullItem.exam} PYQ` : 'General Studies'
+        })
+      );
+    } else {
+      setPyqJsonFileStats(null);
+    }
+
     setShowPyqForm(true);
     setPyqAlert(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePyqJsonFileUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const isZip = file.name.toLowerCase().endsWith('.zip');
+    const curDur = Number(pyqForm.durationMinutes) || 60;
+    const curMarks =
+      pyqForm.marksPerQuestion !== '' && pyqForm.marksPerQuestion !== undefined && !Number.isNaN(Number(pyqForm.marksPerQuestion))
+        ? Number(pyqForm.marksPerQuestion)
+        : 1;
+    const curNeg =
+      pyqForm.negativeMarks !== '' && pyqForm.negativeMarks !== undefined && !Number.isNaN(Number(pyqForm.negativeMarks))
+        ? Math.abs(Number(pyqForm.negativeMarks))
+        : 0.25;
+
+    const parserOptions = {
+      mode: 'pyq' as const,
+      defaultTitle: pyqForm.title || '',
+      defaultExam: pyqForm.exam || 'BSSC CGL',
+      defaultYear: String(pyqForm.year || '2024'),
+      defaultShift: pyqForm.shift || 'Shift 1',
+      defaultCategory: pyqForm.category || 'PYQ',
+      defaultDurationMinutes: curDur,
+      defaultMarks: curMarks,
+      defaultNeg: curNeg,
+      defaultTopic: pyqForm.exam ? `${pyqForm.exam} PYQ` : 'General Studies'
+    };
+
+    try {
+      showToast(isZip ? `📦 Unpacking ZIP & diagrams from "${file.name}"...` : `Reading "${file.name}"...`, 'info');
+
+      let parsed;
+      if (isZip) {
+        parsed = await parseQuizZip(file, (step) => {
+          console.log(`[PYQ ZIP Loader] ${step}`);
+        }, parserOptions);
+      } else {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsText(file);
+        });
+        parsed = parseQuizJson(text, file.name, undefined, parserOptions);
+
+        if (parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0) {
+          try {
+            parsed.questions = await optimizeQuizQuestionsImages(parsed.questions);
+          } catch (optErr) {
+            console.warn('Image optimization skipped:', optErr);
+          }
+        }
+      }
+
+      const nextStats = buildQuizStatsFromQuestions(parsed.questions, {
+        fileName: file.name,
+        fileSize: (file.size / 1024).toFixed(1) + ' KB',
+        topicsSummary: parsed.topicsSummary,
+        defaultTopic: pyqForm.exam ? `${pyqForm.exam} PYQ` : 'General Studies',
+        isZip
+      });
+
+      setPyqPreviewTab('all');
+      setPyqPreviewSearch('');
+      setPyqPreviewPage(1);
+      setShowPyqJsonPreviewModal(false);
+      setPyqJsonFileStats(nextStats);
+
+      setPyqForm(prev => {
+        const keepExistingTitle = !parsed.hasExplicitTitle && parsed.isGenericFileName && Boolean(prev.title && prev.title.trim());
+        const nextTitle = keepExistingTitle ? prev.title : parsed.title;
+        const nextSlug = keepExistingTitle ? (prev.slug || cleanSlug(prev.title)) : parsed.slug;
+        const nextDesc = (!keepExistingTitle || !prev.description || !prev.description.trim() || prev.description.includes('Solved Official Previous Year'))
+          ? parsed.description
+          : prev.description;
+        return {
+          ...prev,
+          title: nextTitle,
+          exam: keepExistingTitle ? prev.exam : (parsed.exam || prev.exam),
+          year: keepExistingTitle ? prev.year : (parsed.year || prev.year),
+          shift: keepExistingTitle ? prev.shift : (parsed.shift || prev.shift),
+          postDate: parsed.postDate || prev.postDate,
+          category: parsed.category || prev.category || 'PYQ',
+          slug: nextSlug,
+          description: nextDesc,
+          durationMinutes: parsed.durationMinutes,
+          marksPerQuestion: parsed.marksPerQuestion,
+          negativeMarks: parsed.negativeMarks,
+          totalQuestions: parsed.totalQuestions,
+          questions: parsed.questions,
+          topicsSummary: parsed.topicsSummary,
+          content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${nextStats.totalImagesCount} total diagrams (${nextStats.questionImagesCount} question diagrams across ${nextStats.questionsWithImage} Qs, and ${nextStats.solutionImagesCount} solution diagrams across ${nextStats.solutionsWithImage} Qs).\n// Structured PYQ Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
+        };
+      });
+
+      showToast(`✅ ${parsed.totalQuestions} प्रश्न व कुल ${nextStats.totalImagesCount} चित्र (${nextStats.questionImagesCount} प्रश्न आरेख + ${nextStats.solutionImagesCount} व्याख्या चित्र) 100% लोड हो गए!`, 'success');
+    } catch (err) {
+      console.error('Error loading PYQ file:', err);
+      alert('Error loading file: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handlePyqImagesAttach = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!pyqForm.questions || pyqForm.questions.length === 0) {
+      alert('कृपया पहले JSON फ़ाइल लोड करें, उसके बाद इमेज जोड़ें।');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    try {
+      showToast(`📷 Diagrams sync kiye ja rahe hain...`, 'info');
+      const isSingleZip = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip');
+      const { updatedQuestions, matchedQuestionImgs, matchedSolutionImgs } = await attachImagesToQuestions(
+        pyqForm.questions,
+        isSingleZip ? files[0] : files
+      );
+
+      setPyqForm(prev => ({
+        ...prev,
+        questions: updatedQuestions
+      }));
+
+      setPyqJsonFileStats(prev =>
+        buildQuizStatsFromQuestions(updatedQuestions, {
+          fileName: prev?.fileName || `${pyqForm.title || 'pyq-paper'}.json`,
+          fileSize: prev?.fileSize || `${updatedQuestions.length} Questions`,
+          topicsSummary: pyqForm.topicsSummary || prev?.topicsSummary || {},
+          defaultTopic: pyqForm.exam ? `${pyqForm.exam} PYQ` : 'General Studies',
+          isZip: isSingleZip || prev?.isZip
+        })
+      );
+
+      showToast(`✅ ${matchedQuestionImgs} प्रश्न आरेख और ${matchedSolutionImgs} व्याख्या चित्र सफलतापूर्वक जुड़ गए!`, 'success');
+    } catch (err) {
+      console.error('Error attaching PYQ images:', err);
+      alert('Error attaching images: ' + (err.message || String(err)));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleClearPyqJson = () => {
+    setPyqJsonFileStats(null);
+    setShowPyqJsonPreviewModal(false);
+    setPyqPreviewTab('all');
+    setPyqPreviewSearch('');
+    setPyqPreviewPage(1);
+    setPyqForm(prev => ({
+      ...prev,
+      questions: [],
+      topicsSummary: {},
+      content: prev.content && prev.content.trim().startsWith('// ✅') ? '' : prev.content
+    }));
   };
 
   const handleDeletePyq = (item) => {
     const id = item.id || item.slug;
     openDeleteConfirm({
       title: 'PYQ पेपर डिलीट करें?',
-      itemName: item.title,
+      itemName: item.title || item.slug || id,
       warningText: 'यह PYQ पेपर और इसके विवरण Firestore से हमेशा के लिए हटा दिए जाएंगे। यह क्रिया पूर्ववत नहीं की जा सकती।',
       onConfirm: async () => {
         setPyqLoading(true);
         try {
-          await deletePyqFromFirestore(id);
-          setPyqList(prev => prev.filter(p => (p.id || p.slug) !== id));
-          setPyqAlert({ type: 'success', message: 'PYQ paper deleted successfully from Firestore.' });
+          const res = await deletePyqFromFirestore(id, item);
+          if (res && res.success === false) {
+            throw res.error || new Error('Failed to delete from Firestore');
+          }
+
+          const targetSafeId = cleanJobId(id);
+          const targetSlug = cleanJobId(item.slug || '');
+          setPyqList(prev => prev.filter(p => {
+            const pSafeId = cleanJobId(p.id || '');
+            const pSafeSlug = cleanJobId(p.slug || '');
+            const pRawId = String(p.id || '').trim();
+            const pRawSlug = String(p.slug || '').trim();
+
+            if (pSafeId === targetSafeId || pSafeSlug === targetSafeId || pSafeId === targetSlug || pSafeSlug === targetSlug) return false;
+            if (pRawId === id || pRawSlug === id) return false;
+            if (item.title && p.title === item.title) return false;
+            return true;
+          }));
+
+          setPyqAlert({ type: 'success', message: `PYQ paper "${item.title || id}" deleted successfully from Firestore.` });
         } catch (err) {
           setPyqAlert({ type: 'error', message: 'Failed to delete: ' + (err.message || String(err)) });
           throw err;
@@ -5592,7 +7089,26 @@ export default function AdminDashboardPage({
     }
 
     const safeSlug = cleanSlug(pyqForm.slug || pyqForm.title);
-    const parsedQuestions = extractQuestionsFromContent(pyqForm.content);
+    const trimmedContent = (pyqForm.content || '').trim();
+    const contentIsJson = trimmedContent.startsWith('[') || trimmedContent.startsWith('{');
+    const contentQuestions = (!trimmedContent || trimmedContent.startsWith('// ✅'))
+      ? []
+      : extractQuestionsFromContent(trimmedContent);
+
+    let parsedQuestions = [];
+    if (contentIsJson) {
+      parsedQuestions = contentQuestions;
+    } else if (Array.isArray(pyqForm.questions) && pyqForm.questions.length > 0) {
+      parsedQuestions = [...pyqForm.questions];
+    } else {
+      parsedQuestions = contentQuestions;
+    }
+
+    if (contentIsJson && parsedQuestions.length === 0) {
+      alert('⚠️ Invalid JSON or 0 questions found in Source Code! Please upload a valid PYQ ZIP/JSON or fix the JSON syntax.');
+      return;
+    }
+
     parsedQuestions.forEach(q => {
       if (!q.solution || !q.solution.trim()) {
         const optText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : '';
@@ -5601,8 +7117,37 @@ export default function AdminDashboardPage({
           : `इस प्रश्न का सही उत्तर विकल्प (${q.correct_answer}) है।`;
       }
     });
+
+    if (parsedQuestions.length > 0) {
+      try {
+        parsedQuestions = await optimizeQuizQuestionsImages(parsedQuestions);
+      } catch (_) {}
+    }
+
     const safeExam = pyqForm.exam || 'General';
     const safeYear = String(pyqForm.year || '2024');
+    const topicsSummary = {};
+    parsedQuestions.forEach(q => {
+      const t = (q.topic && String(q.topic).trim()) || (safeExam ? `${safeExam} PYQ` : 'General Studies');
+      topicsSummary[t] = (topicsSummary[t] || 0) + 1;
+    });
+
+    const statsMeta = buildQuizStatsFromQuestions(parsedQuestions, {
+      topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (pyqForm.topicsSummary || {}),
+      defaultTopic: safeExam ? `${safeExam} PYQ` : 'General Studies'
+    });
+
+    const marks =
+      pyqForm.marksPerQuestion !== '' && pyqForm.marksPerQuestion !== undefined && pyqForm.marksPerQuestion !== null && !Number.isNaN(Number(pyqForm.marksPerQuestion))
+        ? Number(pyqForm.marksPerQuestion)
+        : 1;
+    const neg =
+      pyqForm.negativeMarks !== '' && pyqForm.negativeMarks !== undefined && pyqForm.negativeMarks !== null && !Number.isNaN(Number(pyqForm.negativeMarks))
+        ? Math.abs(Number(pyqForm.negativeMarks))
+        : 0.25;
+    const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(pyqForm.totalQuestions) || 50);
+    const shouldClearContent = parsedQuestions.length > 0 && (!trimmedContent || trimmedContent.startsWith('// ✅') || contentIsJson);
+
     const postData = {
       ...pyqForm,
       id: safeSlug,
@@ -5613,10 +7158,18 @@ export default function AdminDashboardPage({
       shift: pyqForm.shift || 'Shift 1',
       date: pyqForm.postDate ? pyqForm.postDate.split('|')[0].trim() : '',
       durationMinutes: Number(pyqForm.durationMinutes) || 60,
-      totalQuestions: parsedQuestions.length > 0 ? parsedQuestions.length : (Number(pyqForm.totalQuestions) || 50),
-      questions: parsedQuestions.length > 0 ? parsedQuestions : (pyqForm.questions || []),
+      marksPerQuestion: marks,
+      negativeMarks: neg,
+      totalQuestions: totalQ,
+      totalMarks: Number((totalQ * marks).toFixed(2)),
+      topicsSummary: statsMeta.topicsSummary,
+      questionsWithImage: statsMeta.questionsWithImage,
+      solutionsWithImage: statsMeta.solutionsWithImage,
+      totalImagesCount: statsMeta.totalImagesCount,
+      questions: parsedQuestions,
+      content: shouldClearContent ? '' : (trimmedContent.startsWith('// ✅') ? '' : (pyqForm.content || '')),
       updatedAt: new Date().toISOString(),
-      views: 120,
+      views: pyqForm.views || 120,
       tags: [safeExam, 'PYQ', `${safeYear} Paper`, 'Solved Paper', 'Official Answer Key', 'Mock Test'].filter(Boolean)
     };
 
@@ -5627,7 +7180,7 @@ export default function AdminDashboardPage({
       const res = await publishPyqToFirestore(cleanPostData);
       if (res && res.success) {
         setPyqList(prev => {
-          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          const filtered = prev.filter(p => cleanJobId(p.id || p.slug) !== cleanJobId(safeSlug));
           return [cleanPostData, ...filtered];
         });
         setPyqAlert({
@@ -5662,6 +7215,17 @@ export default function AdminDashboardPage({
       );
     });
 
+    const pyqPosLabel =
+      pyqForm.marksPerQuestion !== '' && pyqForm.marksPerQuestion !== undefined && !Number.isNaN(Number(pyqForm.marksPerQuestion))
+        ? pyqForm.marksPerQuestion
+        : 1;
+    const pyqNegLabel =
+      pyqForm.negativeMarks !== '' && pyqForm.negativeMarks !== undefined && !Number.isNaN(Number(pyqForm.negativeMarks))
+        ? pyqForm.negativeMarks
+        : 0.25;
+    const pyqTrim = (pyqForm.content || '').trim();
+    const pyqIsHtmlContent = Boolean(pyqTrim && !pyqTrim.startsWith('[') && !pyqTrim.startsWith('{') && !pyqTrim.startsWith('// ✅'));
+
     return (
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Section Header */}
@@ -5674,7 +7238,7 @@ export default function AdminDashboardPage({
               </h1>
             </div>
             <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '6px', margin: '6px 0 0 0' }}>
-              Create, edit, and publish official solved PYQ papers with interactive CBT mock tests, instant study mode & live countdown timer.
+              Upload JSON / ZIP packages (with diagrams) or paste HTML / JSON source to publish official solved PYQ papers live with CBT mock test & study mode.
             </p>
           </div>
 
@@ -5811,6 +7375,31 @@ export default function AdminDashboardPage({
             </div>
 
             <form onSubmit={handlePublishPyq} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* ZIP / JSON Package Uploader (Same Parity as Test Series) */}
+              <QuizPackageUploader
+                prefixKey="pyq"
+                headingText="📦 Upload PYQ Paper Package (ZIP या JSON फ़ाइल)"
+                subtitleText={
+                  <>
+                    <strong>ZIP पैकेज</strong> (जिसमें JSON और <code style={{ color: '#0284c7', background: '#f0f9ff', padding: '1px 5px', borderRadius: '4px' }}>images/</code> फ़ोल्डर दोनों हों) या अकेला <strong>JSON</strong> चुनें — सभी प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Images) और विस्तृत व्याख्या स्वतः तैयार हो जाएँगी।
+                  </>
+                }
+                stats={pyqJsonFileStats}
+                onFileUpload={handlePyqJsonFileUpload}
+                onImagesAttach={handlePyqImagesAttach}
+                onClearJson={handleClearPyqJson}
+                showPreview={showPyqJsonPreviewModal}
+                setShowPreview={setShowPyqJsonPreviewModal}
+                previewTab={pyqPreviewTab}
+                setPreviewTab={setPyqPreviewTab}
+                previewSearch={pyqPreviewSearch}
+                setPreviewSearch={setPyqPreviewSearch}
+                previewPage={pyqPreviewPage}
+                setPreviewPage={setPyqPreviewPage}
+                previewPageSize={pyqPreviewPageSize}
+                setPreviewPageSize={setPyqPreviewPageSize}
+              />
+
               {/* Row 1: Title */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
@@ -5826,7 +7415,7 @@ export default function AdminDashboardPage({
                     setPyqForm(prev => ({
                       ...prev,
                       title,
-                      slug: prev.slug && !editingPyqId ? cleanSlug(title) : prev.slug
+                      slug: (prev.slug === cleanSlug(prev.title) || !prev.slug) && !editingPyqId ? cleanSlug(title) : prev.slug
                     }));
                   }}
                   style={{
@@ -6017,43 +7606,21 @@ export default function AdminDashboardPage({
                 />
               </div>
 
-              {/* Row 5: CBT Timer & Total Questions */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              {/* Row 5: CBT Timer, Total Questions, Marks Per Q, Negative Marks */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px', background: '#ecfdf5', padding: '14px', borderRadius: '10px', border: '1px solid #a7f3d0' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
-                    ⏱️ CBT TEST DURATION (MINUTES)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="180"
-                    value={pyqForm.durationMinutes || 60}
-                    onChange={(e) => setPyqForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 60 }))}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.92rem',
-                      fontWeight: 700,
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
-                    Countdown timer for student test mode (Default: 60 Minutes)
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px', textTransform: 'uppercase' }}>
-                    📝 TOTAL MCQ QUESTIONS
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ⏱️ TIMER (MINUTES)
                   </label>
                   <input
                     type="number"
                     min="1"
-                    max="200"
-                    value={pyqForm.totalQuestions || 50}
-                    onChange={(e) => setPyqForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 50 }))}
+                    max="240"
+                    value={pyqForm.durationMinutes === '' ? '' : (pyqForm.durationMinutes ?? 60)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPyqForm(prev => ({ ...prev, durationMinutes: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -6061,28 +7628,118 @@ export default function AdminDashboardPage({
                       border: '1px solid #cbd5e1',
                       fontSize: '0.92rem',
                       fontWeight: 700,
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
                     }}
                   />
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
-                    Total interactive questions in test (Default: 50 Questions)
+                  <div style={{ fontSize: '0.72rem', color: '#047857', marginTop: '4px' }}>
+                    Countdown timer (Default: 60 Mins)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    📝 TOTAL QUESTIONS
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={pyqForm.totalQuestions === '' ? '' : (pyqForm.totalQuestions ?? 50)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPyqForm(prev => ({ ...prev, totalQuestions: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#047857', marginTop: '4px' }}>
+                    Question count (Default: 50)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➕ MARKS PER QUESTION
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.25"
+                    value={pyqForm.marksPerQuestion === '' ? '' : (pyqForm.marksPerQuestion ?? 1)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPyqForm(prev => ({ ...prev, marksPerQuestion: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#047857', marginTop: '4px' }}>
+                    Positive (+{pyqPosLabel} mark)
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    ➖ NEGATIVE MARKS
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.25"
+                    value={pyqForm.negativeMarks === '' ? '' : (pyqForm.negativeMarks ?? 0.25)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPyqForm(prev => ({ ...prev, negativeMarks: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      boxSizing: 'border-box',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#047857', marginTop: '4px' }}>
+                    Penalty (-{pyqNegLabel} per wrong)
                   </div>
                 </div>
               </div>
 
-              {/* HTML SOURCE CODE Textarea */}
+              {/* QUESTIONS HTML / JSON SOURCE CODE Textarea */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-                    HTML SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
+                    QUESTIONS HTML / JSON SOURCE CODE
                   </label>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    💡 Paste question tables, MCQs, or notes HTML here
+                    💡 Upload ZIP/JSON above OR paste raw JSON / question HTML here
                   </span>
                 </div>
                 <textarea
                   rows={14}
-                  placeholder="Paste HTML here..."
+                  placeholder="Paste question tables HTML, quizData script, or raw JSON [{...}] here (or use ZIP/JSON uploader above)..."
                   value={pyqForm.content}
                   onChange={(e) => setPyqForm(prev => ({ ...prev, content: e.target.value }))}
                   style={{
@@ -6099,7 +7756,29 @@ export default function AdminDashboardPage({
                   }}
                 />
                 {(() => {
-                  const detected = extractQuestionsFromContent(pyqForm.content);
+                  const isJsonText = pyqTrim.startsWith('[') || pyqTrim.startsWith('{');
+                  if (!isJsonText && Array.isArray(pyqForm.questions) && pyqForm.questions.length > 0) {
+                    const st = pyqJsonFileStats || buildQuizStatsFromQuestions(pyqForm.questions);
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        background: '#ecfdf5',
+                        border: '1.5px solid #a7f3d0',
+                        borderRadius: '8px',
+                        color: '#065f46',
+                        fontSize: '0.86rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <CheckCircle2 size={18} color="#059669" />
+                        <span>✅ {pyqForm.questions.length} Structured Questions Loaded! ({st.questionImagesCount} question diagrams, {st.solutionImagesCount} solution diagrams). Score: +{pyqPosLabel} / -{pyqNegLabel}.</span>
+                      </div>
+                    );
+                  }
+                  const detected = pyqTrim && !pyqTrim.startsWith('// ✅') ? extractQuestionsFromContent(pyqForm.content) : [];
                   if (detected.length > 0) {
                     return (
                       <div style={{
@@ -6116,7 +7795,7 @@ export default function AdminDashboardPage({
                         gap: '8px'
                       }}>
                         <CheckCircle2 size={18} color="#059669" />
-                        <span>✅ {detected.length} Questions Detected! The PYQ Quiz Test will use these questions with +1.00 / -0.25 scoring.</span>
+                        <span>✅ {detected.length} Questions Detected! The PYQ Quiz Test will use these questions with +{pyqPosLabel} / -{pyqNegLabel} scoring.</span>
                       </div>
                     );
                   }
@@ -6124,8 +7803,8 @@ export default function AdminDashboardPage({
                 })()}
               </div>
 
-              {/* Live HTML Preview (Sandboxed & Isolated) */}
-              {pyqForm.content && (
+              {/* Live HTML Preview (Sandboxed & Isolated - Only for actual HTML content) */}
+              {pyqIsHtmlContent && (
                 <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
@@ -6251,7 +7930,7 @@ export default function AdminDashboardPage({
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase' }}>
                     <th style={{ padding: '12px 14px', fontWeight: 700 }}>Paper & Exam</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Questions & Duration</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700 }}>Questions & Pattern</th>
                     <th style={{ padding: '12px 14px', fontWeight: 700 }}>Slug / URL</th>
                     <th style={{ padding: '12px 14px', fontWeight: 700 }}>Status</th>
                     <th style={{ padding: '12px 14px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
@@ -6261,6 +7940,10 @@ export default function AdminDashboardPage({
                   {filteredPyq.map((item, index) => {
                     const itemSlug = item.slug || cleanSlug(item.title) || item.id;
                     const liveUrl = `/pyq/${itemSlug}`;
+                    const itemMarks = item.marksPerQuestion !== undefined && item.marksPerQuestion !== null ? item.marksPerQuestion : 1;
+                    const itemNeg = item.negativeMarks !== undefined && item.negativeMarks !== null ? item.negativeMarks : 0.25;
+                    const qCount = item.totalQuestions || (Array.isArray(item.questions) && item.questions.length > 0 ? item.questions.length : 50);
+
                     return (
                       <tr
                         key={item.id || itemSlug || index}
@@ -6294,10 +7977,13 @@ export default function AdminDashboardPage({
 
                         <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                           <div style={{ fontWeight: 700, color: '#334155' }}>
-                            {item.totalQuestions || (Array.isArray(item.questions) ? item.questions.length : 50)} MCQs
+                            {qCount} MCQs • ⏱️ {item.durationMinutes || 60}m
                           </div>
-                          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                            ⏱️ {item.durationMinutes || 60} Mins CBT
+                          <div style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                            +{itemMarks} / -{itemNeg}
+                            {Number(item.totalImagesCount) > 0 && (
+                              <span style={{ color: '#0284c7', marginLeft: '6px' }}>• 📷 {item.totalImagesCount}</span>
+                            )}
                           </div>
                         </td>
 
@@ -6427,6 +8113,10 @@ export default function AdminDashboardPage({
 
     setEditingTsId(null);
     setTsJsonFileStats(null);
+    setShowTsJsonPreviewModal(false);
+    setTsPreviewTab('all');
+    setTsPreviewSearch('');
+    setTsPreviewPage(1);
     setTsForm({
       title: `BSSC CGL 2026 Full Length Mock Test (Set 3)`,
       exam: 'BSSC CGL',
@@ -6453,15 +8143,31 @@ export default function AdminDashboardPage({
     setEditingTsId(safeId);
     let fullItem = item;
     // If questions were chunked or stripped in list, fetch full doc
-    if (!item.questions || item.questions.length <= 3 || item.isChunked) {
+    if (!Array.isArray(item.questions) || item.questions.length === 0 || item.questions.length <= 3 || item.isChunked) {
       try {
         const fetched = await fetchTestSeriesBySlug(safeId);
-        if (fetched && Array.isArray(fetched.questions) && fetched.questions.length > 0) {
+        if (fetched && ((Array.isArray(fetched.questions) && fetched.questions.length > 0) || fetched.content)) {
           fullItem = { ...item, ...fetched };
         }
       } catch (_) {}
     }
-    const qCount = Array.isArray(fullItem.questions) ? fullItem.questions.length : 0;
+
+    const loadedQuestions = Array.isArray(fullItem.questions) ? fullItem.questions : [];
+    const qCount = loadedQuestions.length;
+    const marksVal =
+      fullItem.marksPerQuestion !== undefined && fullItem.marksPerQuestion !== null && !Number.isNaN(Number(fullItem.marksPerQuestion))
+        ? Number(fullItem.marksPerQuestion)
+        : 4;
+    const negVal =
+      fullItem.negativeMarks !== undefined && fullItem.negativeMarks !== null && !Number.isNaN(Number(fullItem.negativeMarks))
+        ? Math.abs(Number(fullItem.negativeMarks))
+        : 1;
+
+    setTsPreviewTab('all');
+    setTsPreviewSearch('');
+    setTsPreviewPage(1);
+    setShowTsJsonPreviewModal(false);
+
     setTsForm({
       title: fullItem.title || '',
       exam: fullItem.exam || 'BSSC CGL',
@@ -6471,44 +8177,24 @@ export default function AdminDashboardPage({
       slug: fullItem.slug || cleanSlug(fullItem.title) || safeId,
       description: fullItem.description || fullItem.subtitle || '',
       durationMinutes: fullItem.durationMinutes || 135,
-      marksPerQuestion: fullItem.marksPerQuestion || 4,
-      negativeMarks: fullItem.negativeMarks || 1,
+      marksPerQuestion: marksVal,
+      negativeMarks: negVal,
       totalQuestions: fullItem.totalQuestions || fullItem.total_questions || (qCount || 150),
       content: fullItem.content || (qCount > 0 ? `// ✅ ${qCount} questions loaded in structured CBT mode.` : ''),
-      questions: fullItem.questions || [],
+      questions: loadedQuestions,
       topicsSummary: fullItem.topicsSummary || {},
       status: fullItem.status || 'Published'
     });
+
     if (qCount > 0) {
-      let qImages = 0;
-      let sImages = 0;
-      let qWithImgs = 0;
-      let sWithImgs = 0;
-      fullItem.questions.forEach((q: any) => {
-        const hasQ = q.image || q.question_image || (Array.isArray(q.images) && q.images.length > 0) || (Array.isArray(q.question_images) && q.question_images.length > 0);
-        if (hasQ) {
-          qWithImgs++;
-          qImages += Array.isArray(q.images) ? q.images.length : (Array.isArray(q.question_images) ? q.question_images.length : 1);
-        }
-        const hasS = q.explanation_image || q.solution_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0) || (Array.isArray(q.solution_images) && q.solution_images.length > 0);
-        if (hasS) {
-          sWithImgs++;
-          sImages += Array.isArray(q.explanation_images) ? q.explanation_images.length : (Array.isArray(q.solution_images) ? q.solution_images.length : 1);
-        }
-      });
-      setTsJsonFileStats({
-        fileName: `${fullItem.title || fullItem.slug}.json`,
-        fileSize: `${qCount} Questions`,
-        totalQuestions: qCount,
-        questionsWithImage: qWithImgs,
-        solutionsWithImage: sWithImgs,
-        questionImagesCount: qImages,
-        solutionImagesCount: sImages,
-        totalImagesCount: qImages + sImages,
-        topicsSummary: fullItem.topicsSummary || {},
-        previewQuestions: fullItem.questions,
-        diagramQuestions: fullItem.questions.filter((q: any) => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0))
-      });
+      setTsJsonFileStats(
+        buildQuizStatsFromQuestions(loadedQuestions, {
+          fileName: `${fullItem.title || fullItem.slug}.json`,
+          fileSize: `${qCount} Questions`,
+          topicsSummary: fullItem.topicsSummary || {},
+          defaultTopic: 'General Studies'
+        })
+      );
     } else {
       setTsJsonFileStats(null);
     }
@@ -6522,6 +8208,26 @@ export default function AdminDashboardPage({
     if (!file) return;
 
     const isZip = file.name.toLowerCase().endsWith('.zip');
+    const curDur = Number(tsForm.durationMinutes) || 135;
+    const curMarks =
+      tsForm.marksPerQuestion !== '' && tsForm.marksPerQuestion !== undefined && !Number.isNaN(Number(tsForm.marksPerQuestion))
+        ? Number(tsForm.marksPerQuestion)
+        : 4;
+    const curNeg =
+      tsForm.negativeMarks !== '' && tsForm.negativeMarks !== undefined && !Number.isNaN(Number(tsForm.negativeMarks))
+        ? Math.abs(Number(tsForm.negativeMarks))
+        : 1;
+
+    const parserOptions = {
+      mode: 'test-series' as const,
+      defaultTitle: tsForm.title || '',
+      defaultExam: tsForm.exam || 'BSSC CGL',
+      defaultCategory: tsForm.category || 'BIHAR GOVT EXAMS',
+      defaultDurationMinutes: curDur,
+      defaultMarks: curMarks,
+      defaultNeg: curNeg,
+      defaultTopic: 'General Studies'
+    };
 
     try {
       showToast(isZip ? `📦 Unpacking ZIP & diagrams from "${file.name}"...` : `Reading "${file.name}"...`, 'info');
@@ -6530,7 +8236,7 @@ export default function AdminDashboardPage({
       if (isZip) {
         parsed = await parseQuizZip(file, (step) => {
           console.log(`[ZIP Loader] ${step}`);
-        });
+        }, parserOptions);
       } else {
         const text = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -6538,7 +8244,7 @@ export default function AdminDashboardPage({
           reader.onerror = (err) => reject(err);
           reader.readAsText(file);
         });
-        parsed = parseQuizJson(text, file.name);
+        parsed = parseQuizJson(text, file.name, undefined, parserOptions);
 
         // Automatically optimize high-res embedded diagrams in background to prevent Firestore bloat and speed up CBT
         if (parsed.questionsWithImage > 0 || parsed.solutionsWithImage > 0) {
@@ -6550,45 +8256,48 @@ export default function AdminDashboardPage({
         }
       }
 
-      const qImgCount = parsed.questionImagesCount || parsed.questionsWithImage || 0;
-      const sImgCount = parsed.solutionImagesCount || parsed.solutionsWithImage || 0;
-      const totalImgCount = parsed.totalImagesCount || (qImgCount + sImgCount);
-      const diagramQs = parsed.questions.filter(q => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0));
-
-      setTsJsonFileStats({
+      const nextStats = buildQuizStatsFromQuestions(parsed.questions, {
         fileName: file.name,
         fileSize: (file.size / 1024).toFixed(1) + ' KB',
-        totalQuestions: parsed.totalQuestions,
-        questionsWithImage: parsed.questionsWithImage,
-        solutionsWithImage: parsed.solutionsWithImage,
-        questionImagesCount: qImgCount,
-        solutionImagesCount: sImgCount,
-        totalImagesCount: totalImgCount,
         topicsSummary: parsed.topicsSummary,
-        previewQuestions: parsed.questions,
-        diagramQuestions: diagramQs,
-        isZip: isZip
+        defaultTopic: 'General Studies',
+        isZip
       });
 
-      // CRITICAL FIX: NEVER set content to JSON.stringify(parsed.questions) which causes Firestore 1MB property limit error!
-      setTsForm(prev => ({
-        ...prev,
-        title: parsed.title,
-        exam: parsed.exam,
-        set: parsed.set,
-        category: parsed.category,
-        slug: parsed.slug,
-        description: parsed.description,
-        durationMinutes: parsed.durationMinutes,
-        marksPerQuestion: parsed.marksPerQuestion,
-        negativeMarks: parsed.negativeMarks,
-        totalQuestions: parsed.totalQuestions,
-        questions: parsed.questions,
-        topicsSummary: parsed.topicsSummary,
-        content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${totalImgCount} total diagrams (${qImgCount} question diagrams across ${parsed.questionsWithImage} Qs, and ${sImgCount} solution diagrams across ${parsed.solutionsWithImage} Qs).\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
-      }));
+      setTsPreviewTab('all');
+      setTsPreviewSearch('');
+      setTsPreviewPage(1);
+      setShowTsJsonPreviewModal(false);
+      setTsJsonFileStats(nextStats);
 
-      showToast(`✅ ${parsed.totalQuestions} प्रश्न व कुल ${totalImgCount} चित्र (${qImgCount} प्रश्न आरेख + ${sImgCount} व्याख्या चित्र) 100% लोड हो गए!`, 'success');
+      // CRITICAL FIX: NEVER set content to JSON.stringify(parsed.questions) which causes Firestore 1MB property limit error!
+      setTsForm(prev => {
+        const keepExistingTitle = !parsed.hasExplicitTitle && parsed.isGenericFileName && Boolean(prev.title && prev.title.trim());
+        const nextTitle = keepExistingTitle ? prev.title : parsed.title;
+        const nextSlug = keepExistingTitle ? (prev.slug || cleanSlug(prev.title)) : parsed.slug;
+        const nextDesc = (!keepExistingTitle || !prev.description || !prev.description.trim() || prev.description.includes('Practice 150 questions full-length CBT'))
+          ? parsed.description
+          : prev.description;
+        return {
+          ...prev,
+          title: nextTitle,
+          exam: keepExistingTitle ? prev.exam : (parsed.exam || prev.exam),
+          set: keepExistingTitle ? prev.set : (parsed.set || prev.set),
+          category: parsed.category || prev.category,
+          postDate: parsed.postDate || prev.postDate,
+          slug: nextSlug,
+          description: nextDesc,
+          durationMinutes: parsed.durationMinutes,
+          marksPerQuestion: parsed.marksPerQuestion,
+          negativeMarks: parsed.negativeMarks,
+          totalQuestions: parsed.totalQuestions,
+          questions: parsed.questions,
+          topicsSummary: parsed.topicsSummary,
+          content: `// ✅ Successfully loaded ${parsed.totalQuestions} questions from "${file.name}"\n// Includes ${nextStats.totalImagesCount} total diagrams (${nextStats.questionImagesCount} question diagrams across ${nextStats.questionsWithImage} Qs, and ${nextStats.solutionImagesCount} solution diagrams across ${nextStats.solutionsWithImage} Qs).\n// Structured CBT Mode: +${parsed.marksPerQuestion} / -${parsed.negativeMarks} scoring.`
+        };
+      });
+
+      showToast(`✅ ${parsed.totalQuestions} प्रश्न व कुल ${nextStats.totalImagesCount} चित्र (${nextStats.questionImagesCount} प्रश्न आरेख + ${nextStats.solutionImagesCount} व्याख्या चित्र) 100% लोड हो गए!`, 'success');
     } catch (err) {
       console.error('Error loading quiz file:', err);
       alert('Error loading file: ' + (err.message || String(err)));
@@ -6619,27 +8328,15 @@ export default function AdminDashboardPage({
         questions: updatedQuestions
       }));
 
-      const totalQImgs = updatedQuestions.filter(q => !!q.image).length;
-      const totalSImgs = updatedQuestions.filter(q => !!q.explanation_image).length;
-
-      const diagramQs = updatedQuestions.filter(q => q.image || (Array.isArray(q.images) && q.images.length > 0) || q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0));
-
-      setTsJsonFileStats(prev => prev ? {
-        ...prev,
-        questionsWithImage: totalQImgs,
-        solutionsWithImage: totalSImgs,
-        previewQuestions: updatedQuestions,
-        diagramQuestions: diagramQs
-      } : {
-        fileName: 'Quiz Package',
-        fileSize: `${tsForm.questions.length} Questions`,
-        totalQuestions: tsForm.questions.length,
-        questionsWithImage: totalQImgs,
-        solutionsWithImage: totalSImgs,
-        topicsSummary: tsForm.topicsSummary || {},
-        previewQuestions: updatedQuestions,
-        diagramQuestions: diagramQs
-      });
+      setTsJsonFileStats(prev =>
+        buildQuizStatsFromQuestions(updatedQuestions, {
+          fileName: prev?.fileName || `${tsForm.title || 'Quiz Package'}.json`,
+          fileSize: prev?.fileSize || `${updatedQuestions.length} Questions`,
+          topicsSummary: tsForm.topicsSummary || prev?.topicsSummary || {},
+          defaultTopic: 'General Studies',
+          isZip: isSingleZip || prev?.isZip
+        })
+      );
 
       showToast(`✅ ${matchedQuestionImgs} प्रश्न आरेख और ${matchedSolutionImgs} व्याख्या चित्र सफलतापूर्वक जुड़ गए!`, 'success');
     } catch (err) {
@@ -6648,6 +8345,20 @@ export default function AdminDashboardPage({
     } finally {
       if (e.target) e.target.value = '';
     }
+  };
+
+  const handleClearTsJson = () => {
+    setTsJsonFileStats(null);
+    setShowTsJsonPreviewModal(false);
+    setTsPreviewTab('all');
+    setTsPreviewSearch('');
+    setTsPreviewPage(1);
+    setTsForm(prev => ({
+      ...prev,
+      questions: [],
+      topicsSummary: {},
+      content: prev.content && prev.content.trim().startsWith('// ✅') ? '' : prev.content
+    }));
   };
 
   const handleDeleteTs = (item) => {
@@ -6698,15 +8409,23 @@ export default function AdminDashboardPage({
     }
 
     const safeSlug = cleanSlug(tsForm.slug || tsForm.title);
+    const trimmedContent = (tsForm.content || '').trim();
+    const contentIsJson = trimmedContent.startsWith('[') || trimmedContent.startsWith('{');
+    const contentQuestions = (!trimmedContent || trimmedContent.startsWith('// ✅'))
+      ? []
+      : extractQuestionsFromContent(trimmedContent);
+
     let parsedQuestions = [];
-    if (Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
+    if (contentIsJson) {
+      parsedQuestions = contentQuestions;
+    } else if (Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
       parsedQuestions = [...tsForm.questions];
     } else {
-      parsedQuestions = extractQuestionsFromContent(tsForm.content);
+      parsedQuestions = contentQuestions;
     }
 
     if (parsedQuestions.length === 0) {
-      alert('⚠️ No questions found! Please select or upload a valid Quiz JSON file before publishing.');
+      alert('⚠️ No questions found! Please select or upload a valid Quiz JSON file (or paste valid JSON/HTML questions) before publishing.');
       return;
     }
 
@@ -6719,21 +8438,33 @@ export default function AdminDashboardPage({
       }
     });
 
+    // Ensure images are optimized if not already
+    try {
+      parsedQuestions = await optimizeQuizQuestionsImages(parsedQuestions);
+    } catch (_) {}
+
     const topicsSummary = {};
     parsedQuestions.forEach(q => {
-      const t = q.topic || 'General Studies';
+      const t = (q.topic && String(q.topic).trim()) || 'General Studies';
       topicsSummary[t] = (topicsSummary[t] || 0) + 1;
+    });
+
+    const statsMeta = buildQuizStatsFromQuestions(parsedQuestions, {
+      topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (tsForm.topicsSummary || {}),
+      defaultTopic: 'General Studies'
     });
 
     const cleanExamSlug = cleanSlug(tsForm.exam || 'bssc-cgl');
     const cleanSetSlug = cleanSlug(tsForm.set || 'set-1').replace(/[^a-z0-9]/g, '') || 'set1';
     const totalQ = parsedQuestions.length > 0 ? parsedQuestions.length : (Number(tsForm.totalQuestions) || 150);
-    const marks = Number(tsForm.marksPerQuestion) || 4;
-
-    // Ensure images are optimized if not already
-    try {
-      parsedQuestions = await optimizeQuizQuestionsImages(parsedQuestions);
-    } catch (_) {}
+    const marks =
+      tsForm.marksPerQuestion !== '' && tsForm.marksPerQuestion !== undefined && tsForm.marksPerQuestion !== null && !Number.isNaN(Number(tsForm.marksPerQuestion))
+        ? Number(tsForm.marksPerQuestion)
+        : 4;
+    const neg =
+      tsForm.negativeMarks !== '' && tsForm.negativeMarks !== undefined && tsForm.negativeMarks !== null && !Number.isNaN(Number(tsForm.negativeMarks))
+        ? Math.abs(Number(tsForm.negativeMarks))
+        : 1;
 
     const postData = {
       ...tsForm,
@@ -6750,10 +8481,13 @@ export default function AdminDashboardPage({
       date: tsForm.postDate ? tsForm.postDate.split('|')[0].trim() : '',
       durationMinutes: Number(tsForm.durationMinutes) || 135,
       marksPerQuestion: marks,
-      negativeMarks: Number(tsForm.negativeMarks) || 1,
+      negativeMarks: neg,
       totalQuestions: totalQ,
-      totalMarks: totalQ * marks,
-      topicsSummary: Object.keys(topicsSummary).length > 0 ? topicsSummary : (tsForm.topicsSummary || {}),
+      totalMarks: Number((totalQ * marks).toFixed(2)),
+      topicsSummary: statsMeta.topicsSummary,
+      questionsWithImage: statsMeta.questionsWithImage,
+      solutionsWithImage: statsMeta.solutionsWithImage,
+      totalImagesCount: statsMeta.totalImagesCount,
       questions: parsedQuestions,
       // CRITICAL: Clear massive string from content when structured questions exist to avoid Firestore 1MB property limit
       content: parsedQuestions.length > 0 ? '' : (tsForm.content || ''),
@@ -6770,7 +8504,7 @@ export default function AdminDashboardPage({
       const res = await publishTestSeriesToFirestore(cleanPostData);
       if (res && res.success) {
         setTestSeriesList(prev => {
-          const filtered = prev.filter(p => (p.id || p.slug) !== safeSlug);
+          const filtered = prev.filter(p => cleanJobId(p.id || p.slug) !== cleanJobId(safeSlug));
           return [cleanPostData, ...filtered];
         });
         setTsAlert({
@@ -6803,6 +8537,17 @@ export default function AdminDashboardPage({
         (item.category && item.category.toLowerCase().includes(s))
       );
     });
+
+    const tsPosLabel =
+      tsForm.marksPerQuestion !== '' && tsForm.marksPerQuestion !== undefined && !Number.isNaN(Number(tsForm.marksPerQuestion))
+        ? tsForm.marksPerQuestion
+        : 4;
+    const tsNegLabel =
+      tsForm.negativeMarks !== '' && tsForm.negativeMarks !== undefined && !Number.isNaN(Number(tsForm.negativeMarks))
+        ? tsForm.negativeMarks
+        : 1;
+    const tsTrim = (tsForm.content || '').trim();
+    const tsIsHtmlContent = Boolean(tsTrim && !tsTrim.startsWith('[') && !tsTrim.startsWith('{') && !tsTrim.startsWith('// ✅'));
 
     return (
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -6953,647 +8698,25 @@ export default function AdminDashboardPage({
             </div>
 
             <form onSubmit={handlePublishTs} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {/* JSON File Uploader Box (Drag & Drop or Select File) */}
-              <div
-                style={{
-                  background: tsJsonFileStats ? '#f0fdf4' : '#eff6ff',
-                  border: tsJsonFileStats ? '2px solid #86efac' : '2px dashed #60a5fa',
-                  borderRadius: '12px',
-                  padding: '18px 22px',
-                  transition: 'all 0.2s',
-                  position: 'relative'
-                }}
-              >
-                {/* Hidden File Input for ZIP or JSON */}
-                <input
-                  type="file"
-                  ref={tsFileInputRef}
-                  accept=".zip,.json,application/zip,application/json,application/x-zip-compressed,multipart/x-zip"
-                  onChange={handleTsJsonFileUpload}
-                  style={{ display: 'none' }}
-                />
-
-                {/* Hidden File Input for attaching Diagrams (ZIP or Image files) */}
-                <input
-                  type="file"
-                  ref={tsImagesInputRef}
-                  accept=".zip,image/*"
-                  multiple
-                  onChange={handleTsImagesAttach}
-                  style={{ display: 'none' }}
-                />
-
-                {!tsJsonFileStats ? (
-                  <div
-                    onClick={() => tsFileInputRef.current && tsFileInputRef.current.click()}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      gap: '8px',
-                      padding: '12px 0'
-                    }}
-                  >
-                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
-                      <UploadCloud size={28} />
-                    </div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a' }}>
-                      📦 Upload Test Series Package (ZIP या JSON फ़ाइल)
-                    </div>
-                    <div style={{ fontSize: '0.84rem', color: '#64748b', maxWidth: '620px', textAlign: 'center', lineHeight: 1.5 }}>
-                      <strong>ZIP पैकेज</strong> (जिसमें JSON और <code style={{ color: '#0284c7', background: '#f0f9ff', padding: '1px 5px', borderRadius: '4px' }}>images/</code> फ़ोल्डर दोनों हों) या अकेला <strong>JSON</strong> चुनें — सभी प्रश्न, 4 विकल्प (A, B, C, D), आरेख (Question Images) और विस्तृत व्याख्या (Solutions) स्वतः तैयार हो जाएँगे।
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (tsFileInputRef.current) {
-                            tsFileInputRef.current.accept = '.zip,application/zip,application/x-zip-compressed';
-                            tsFileInputRef.current.click();
-                          }
-                        }}
-                        style={{
-                          background: '#2563eb',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '9px 18px',
-                          fontSize: '0.88rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
-                        }}
-                      >
-                        📦 Upload ZIP Package (.zip) (JSON + Images एक साथ)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (tsFileInputRef.current) {
-                            tsFileInputRef.current.accept = '.json,application/json';
-                            tsFileInputRef.current.click();
-                          }
-                        }}
-                        style={{
-                          background: '#ffffff',
-                          color: '#1e293b',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '8px',
-                          padding: '9px 16px',
-                          fontSize: '0.88rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <FileText size={16} /> Upload JSON Only (.json)
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
-                          <CheckCircle2 size={24} />
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#166534' }}>
-                            ✅ {tsJsonFileStats.fileName} ({tsJsonFileStats.fileSize})
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
-                            {tsJsonFileStats.isZip ? '📦 ZIP पैकेज से' : 'फ़ाइल से'} सभी {tsJsonFileStats.totalQuestions} प्रश्न व कुल {(tsJsonFileStats.totalImagesCount || (tsJsonFileStats.questionsWithImage + tsJsonFileStats.solutionsWithImage))} चित्र ({tsJsonFileStats.questionImagesCount || tsJsonFileStats.questionsWithImage} प्रश्न आरेख + {tsJsonFileStats.solutionImagesCount || tsJsonFileStats.solutionsWithImage} व्याख्या चित्र) 100% लोड हो गए हैं!
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => tsImagesInputRef.current && tsImagesInputRef.current.click()}
-                          title="Attach diagrams ZIP or images folder"
-                          style={{
-                            background: '#f0fdf4',
-                            border: '1px solid #86efac',
-                            color: '#166534',
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          📷 Attach Images (.zip/files)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowTsJsonPreviewModal(!showTsJsonPreviewModal)}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #cbd5e1',
-                            color: '#334155',
-                            borderRadius: '6px',
-                            padding: '6px 14px',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          <Eye size={14} /> {showTsJsonPreviewModal ? 'Hide Question Preview' : '👁️ Preview Questions & Diagrams'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (tsFileInputRef.current) {
-                              tsFileInputRef.current.accept = '.zip,.json,application/zip,application/json,application/x-zip-compressed';
-                              tsFileInputRef.current.click();
-                            }
-                          }}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #cbd5e1',
-                            color: '#475569',
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Choose Another File (ZIP/JSON)
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Stats Metric Pills */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '12px' }}>
-                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Questions</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>{tsJsonFileStats.totalQuestions} Qs</div>
-                      </div>
-                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #86efac' }}>
-                        <div style={{ fontSize: '0.72rem', color: '#166534', textTransform: 'uppercase', fontWeight: 700 }}>Total Diagrams</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d' }}>
-                          {(tsJsonFileStats.totalImagesCount || (tsJsonFileStats.questionsWithImage + tsJsonFileStats.solutionsWithImage))} Images
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: '#16a34a', fontWeight: 700 }}>✓ 100% Attached from ZIP</div>
-                      </div>
-                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Question Diagrams</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7' }}>
-                          {tsJsonFileStats.questionImagesCount || tsJsonFileStats.questionsWithImage} Images
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({tsJsonFileStats.questionsWithImage} Questions)</div>
-                      </div>
-                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Solution Diagrams</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>
-                          {tsJsonFileStats.solutionImagesCount || tsJsonFileStats.solutionsWithImage} Explanations
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>({tsJsonFileStats.solutionsWithImage} Questions)</div>
-                      </div>
-                    </div>
-
-                    {/* Subject Distribution */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>शामिल विषय (Syllabus):</span>
-                      {Object.entries(tsJsonFileStats.topicsSummary || {}).map(([topic, count]) => (
-                        <span key={topic} style={{ fontSize: '0.75rem', background: '#ffffff', border: '1px solid #86efac', color: '#166534', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>
-                          {topic}: {count}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Preview Drawer */}
-                    {showTsJsonPreviewModal && (
-                      <div id="admin-ts-preview-container" style={{ marginTop: '16px', background: '#ffffff', borderRadius: '10px', border: '2px solid #cbd5e1', padding: '16px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTsPreviewTab('all');
-                                setTsPreviewPage(1);
-                              }}
-                              style={{
-                                padding: '7px 14px',
-                                borderRadius: '6px',
-                                fontSize: '0.82rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                border: tsPreviewTab === 'all' ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                                background: tsPreviewTab === 'all' ? '#eff6ff' : '#ffffff',
-                                color: tsPreviewTab === 'all' ? '#1e40af' : '#64748b'
-                              }}
-                            >
-                              📋 सभी {tsJsonFileStats.totalQuestions} प्रश्न (All Questions)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTsPreviewTab('diagrams');
-                                setTsPreviewPage(1);
-                              }}
-                              style={{
-                                padding: '7px 14px',
-                                borderRadius: '6px',
-                                fontSize: '0.82rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                border: tsPreviewTab === 'diagrams' ? '2px solid #059669' : '1px solid #cbd5e1',
-                                background: tsPreviewTab === 'diagrams' ? '#ecfdf5' : '#ffffff',
-                                color: tsPreviewTab === 'diagrams' ? '#065f46' : '#64748b'
-                              }}
-                            >
-                              🖼️ केवल चित्र वाले प्रश्न ({tsJsonFileStats.diagramQuestions?.length || 0} प्रश्न / {tsJsonFileStats.totalImagesCount || 0} चित्र)
-                            </button>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <input
-                              type="text"
-                              value={tsPreviewSearch}
-                              onChange={(e) => {
-                                setTsPreviewSearch(e.target.value);
-                                setTsPreviewPage(1);
-                              }}
-                              placeholder="🔍 प्रश्न संख्या या शब्द खोजें (उदा. 45, दर्पण, त्रिभुज)..."
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #cbd5e1',
-                                fontSize: '0.82rem',
-                                minWidth: '220px',
-                                outline: 'none'
-                              }}
-                            />
-                            {tsPreviewSearch && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setTsPreviewSearch('');
-                                  setTsPreviewPage(1);
-                                }}
-                                style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
-                              >
-                                ✕ Clear
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Quick Jump Bar for 100/150 Questions */}
-                        {tsPreviewTab === 'all' && !tsPreviewSearch && tsJsonFileStats.totalQuestions > 20 && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>सीधे जाएँ (Quick Jump):</span>
-                            {[1, 25, 50, 75, 100, 125, 150].filter(n => n <= tsJsonFileStats.totalQuestions).map(qNum => (
-                              <button
-                                key={qNum}
-                                type="button"
-                                onClick={() => {
-                                  if (tsPreviewPageSize > 0) {
-                                    const targetPage = Math.ceil(qNum / tsPreviewPageSize);
-                                    setTsPreviewPage(targetPage);
-                                  }
-                                  setTimeout(() => {
-                                    const el = document.getElementById(`admin-q-preview-${qNum}`);
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                  }, 80);
-                                }}
-                                style={{
-                                  fontSize: '0.74rem',
-                                  padding: '2px 8px',
-                                  borderRadius: '4px',
-                                  background: '#ffffff',
-                                  border: '1px solid #cbd5e1',
-                                  color: '#2563eb',
-                                  fontWeight: 600,
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                Q{qNum}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {(() => {
-                          const baseList = tsPreviewTab === 'diagrams'
-                            ? (tsJsonFileStats.diagramQuestions || [])
-                            : (tsJsonFileStats.previewQuestions || []);
-
-                          const filteredQuestions = baseList.filter((q: any) => {
-                            if (!tsPreviewSearch.trim()) return true;
-                            const term = tsPreviewSearch.toLowerCase().trim();
-                            const idStr = String(q.id || '').toLowerCase();
-                            return (
-                              idStr === term ||
-                              idStr.includes(term) ||
-                              String(q.question || '').toLowerCase().includes(term) ||
-                              String(q.topic || '').toLowerCase().includes(term) ||
-                              String(q.solution || '').toLowerCase().includes(term) ||
-                              Object.values(q.options || {}).some((optVal: any) => String(optVal || '').toLowerCase().includes(term))
-                            );
-                          });
-
-                          if (filteredQuestions.length === 0) {
-                            return (
-                              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-                                🔍 कोई प्रश्न नहीं मिला। कृपया अलग सर्च शब्द आज़माएँ।
-                              </div>
-                            );
-                          }
-
-                          const totalFiltered = filteredQuestions.length;
-                          const pageSize = tsPreviewPageSize;
-                          const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalFiltered / pageSize)) : 1;
-                          const safePage = Math.min(Math.max(1, tsPreviewPage), totalPages);
-                          const startIndex = pageSize > 0 ? (safePage - 1) * pageSize : 0;
-                          const endIndex = pageSize > 0 ? Math.min(startIndex + pageSize, totalFiltered) : totalFiltered;
-                          const displayedQuestions = filteredQuestions.slice(startIndex, endIndex);
-
-                          const goToPage = (p: number) => {
-                            const target = Math.min(Math.max(1, p), totalPages);
-                            setTsPreviewPage(target);
-                            const modal = document.getElementById('admin-ts-preview-container');
-                            if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
-                          };
-
-                          const getPageNumbers = () => {
-                            if (totalPages <= 7) {
-                              return Array.from({ length: totalPages }, (_, i) => i + 1);
-                            }
-                            const pages: (number | string)[] = [];
-                            pages.push(1);
-                            if (safePage > 3) pages.push('...');
-                            const start = Math.max(2, safePage - 1);
-                            const end = Math.min(totalPages - 1, safePage + 1);
-                            for (let i = start; i <= end; i++) {
-                              if (!pages.includes(i)) pages.push(i);
-                            }
-                            if (safePage < totalPages - 2) pages.push('...');
-                            if (!pages.includes(totalPages)) pages.push(totalPages);
-                            return pages;
-                          };
-
-                          const renderPaginationBar = (pos: 'top' | 'bottom') => (
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                gap: '10px',
-                                padding: '10px 14px',
-                                background: '#f8fafc',
-                                borderRadius: '8px',
-                                border: '1px solid #e2e8f0',
-                                marginBottom: pos === 'top' ? '14px' : '0px',
-                                marginTop: pos === 'bottom' ? '14px' : '0px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
-                                  प्रदर्शित: <span style={{ color: '#1e40af', fontWeight: 700 }}>प्रश्न {totalFiltered > 0 ? startIndex + 1 : 0} से {endIndex}</span> (कुल <span style={{ fontWeight: 700 }}>{totalFiltered}</span>)
-                                  {pageSize > 0 && totalPages > 1 && (
-                                    <span style={{ color: '#64748b', marginLeft: '6px' }}>• पेज {safePage} / {totalPages}</span>
-                                  )}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <label style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>प्रति पेज:</label>
-                                  <select
-                                    value={tsPreviewPageSize}
-                                    onChange={(e) => {
-                                      setTsPreviewPageSize(Number(e.target.value));
-                                      setTsPreviewPage(1);
-                                    }}
-                                    style={{
-                                      padding: '4px 8px',
-                                      borderRadius: '6px',
-                                      border: '1px solid #cbd5e1',
-                                      fontSize: '0.78rem',
-                                      fontWeight: 600,
-                                      color: '#1e293b',
-                                      background: '#ffffff',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    <option value={10}>10 प्रश्न</option>
-                                    <option value={20}>20 प्रश्न</option>
-                                    <option value={25}>25 प्रश्न</option>
-                                    <option value={50}>50 प्रश्न</option>
-                                    <option value={0}>सभी (All {totalFiltered})</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              {pageSize > 0 && totalPages > 1 && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                                  <button
-                                    type="button"
-                                    disabled={safePage === 1}
-                                    onClick={() => goToPage(1)}
-                                    title="पहला पेज"
-                                    style={{
-                                      padding: '4px 8px',
-                                      borderRadius: '5px',
-                                      border: '1px solid #cbd5e1',
-                                      background: safePage === 1 ? '#f1f5f9' : '#ffffff',
-                                      color: safePage === 1 ? '#94a3b8' : '#334155',
-                                      cursor: safePage === 1 ? 'not-allowed' : 'pointer',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600
-                                    }}
-                                  >
-                                    « First
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={safePage === 1}
-                                    onClick={() => goToPage(safePage - 1)}
-                                    title="पिछला पेज"
-                                    style={{
-                                      padding: '4px 9px',
-                                      borderRadius: '5px',
-                                      border: '1px solid #cbd5e1',
-                                      background: safePage === 1 ? '#f1f5f9' : '#ffffff',
-                                      color: safePage === 1 ? '#94a3b8' : '#334155',
-                                      cursor: safePage === 1 ? 'not-allowed' : 'pointer',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600
-                                    }}
-                                  >
-                                    ‹ Prev
-                                  </button>
-
-                                  {getPageNumbers().map((pn, idx) => {
-                                    if (pn === '...') {
-                                      return (
-                                        <span key={`dots-${idx}`} style={{ padding: '2px 5px', color: '#94a3b8', fontSize: '0.75rem' }}>
-                                          ...
-                                        </span>
-                                      );
-                                    }
-                                    const pageNum = Number(pn);
-                                    const isActive = pageNum === safePage;
-                                    return (
-                                      <button
-                                        key={pageNum}
-                                        type="button"
-                                        onClick={() => goToPage(pageNum)}
-                                        style={{
-                                          minWidth: '28px',
-                                          height: '28px',
-                                          padding: '0 6px',
-                                          borderRadius: '5px',
-                                          border: isActive ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                                          background: isActive ? '#eff6ff' : '#ffffff',
-                                          color: isActive ? '#1e40af' : '#334155',
-                                          fontWeight: isActive ? 800 : 600,
-                                          fontSize: '0.78rem',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        {pageNum}
-                                      </button>
-                                    );
-                                  })}
-
-                                  <button
-                                    type="button"
-                                    disabled={safePage === totalPages}
-                                    onClick={() => goToPage(safePage + 1)}
-                                    title="अगला पेज"
-                                    style={{
-                                      padding: '4px 9px',
-                                      borderRadius: '5px',
-                                      border: '1px solid #cbd5e1',
-                                      background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
-                                      color: safePage === totalPages ? '#94a3b8' : '#334155',
-                                      cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600
-                                    }}
-                                  >
-                                    Next ›
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={safePage === totalPages}
-                                    onClick={() => goToPage(totalPages)}
-                                    title="अंतिम पेज"
-                                    style={{
-                                      padding: '4px 8px',
-                                      borderRadius: '5px',
-                                      border: '1px solid #cbd5e1',
-                                      background: safePage === totalPages ? '#f1f5f9' : '#ffffff',
-                                      color: safePage === totalPages ? '#94a3b8' : '#334155',
-                                      cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600
-                                    }}
-                                  >
-                                    Last »
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-
-                          return (
-                            <div>
-                              {renderPaginationBar('top')}
-                              {displayedQuestions.map((q: any, pIdx: number) => (
-                                <div
-                                  id={`admin-q-preview-${q.id}`}
-                                  key={pIdx}
-                                  style={{ padding: '14px', marginBottom: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}
-                                >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.92rem' }}>
-                                      प्रश्न {q.id}. <span style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600 }}>[{q.topic}]</span>
-                                    </span>
-                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                      {(q.image || (Array.isArray(q.images) && q.images.length > 0)) && (
-                                        <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                          📷 प्रश्न चित्र ({(Array.isArray(q.images) && q.images.length > 0 ? q.images.length : 1)})
-                                        </span>
-                                      )}
-                                      {(q.explanation_image || (Array.isArray(q.explanation_images) && q.explanation_images.length > 0)) && (
-                                        <span style={{ fontSize: '0.72rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                          💡 समाधान चित्र ({(Array.isArray(q.explanation_images) && q.explanation_images.length > 0 ? q.explanation_images.length : 1)})
-                                        </span>
-                                      )}
-                                      <span style={{ fontSize: '0.78rem', background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: '4px', fontWeight: 800 }}>
-                                        सही उत्तर: ({q.correct_answer})
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '10px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
-                                    {q.question}
-                                  </div>
-                                  {(q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : [])).map((imgSrc: string, imgI: number) => (
-                                    <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
-                                      <img
-                                        src={imgSrc}
-                                        alt={`Q ${q.id} diagram ${imgI + 1}`}
-                                        style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
-                                      />
-                                    </div>
-                                  ))}
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', fontSize: '0.82rem', color: '#334155', marginBottom: '10px' }}>
-                                    {Object.entries(q.options || {}).map(([key, val]) => (
-                                      <span
-                                        key={key}
-                                        style={{
-                                          padding: '6px 10px',
-                                          borderRadius: '6px',
-                                          background: key === q.correct_answer ? '#dcfce7' : '#ffffff',
-                                          border: `1px solid ${key === q.correct_answer ? '#86efac' : '#e2e8f0'}`,
-                                          fontWeight: key === q.correct_answer ? 700 : 400,
-                                          color: key === q.correct_answer ? '#166534' : 'inherit'
-                                        }}
-                                      >
-                                        <strong>({key})</strong> {String(val)}
-                                      </span>
-                                    ))}
-                                  </div>
-                                  {(q.explanation_images && q.explanation_images.length > 0 ? q.explanation_images : (q.explanation_image ? [q.explanation_image] : [])).map((imgSrc: string, imgI: number) => (
-                                    <div key={imgI} style={{ margin: '10px 0', textAlign: 'center' }}>
-                                      <img
-                                        src={imgSrc}
-                                        alt={`Sol ${q.id} diagram ${imgI + 1}`}
-                                        style={{ maxHeight: '240px', maxWidth: '100%', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
-                                      />
-                                    </div>
-                                  ))}
-                                  <div style={{ fontSize: '0.82rem', color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid #16a34a', lineHeight: 1.5 }}>
-                                    <strong>💡 व्याख्या / Solution:</strong> {q.solution}
-                                  </div>
-                                </div>
-                              ))}
-                              {renderPaginationBar('bottom')}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* ZIP / JSON Package Uploader (Unified Helper) */}
+              <QuizPackageUploader
+                prefixKey="ts"
+                headingText="📦 Upload Test Series Package (ZIP या JSON फ़ाइल)"
+                stats={tsJsonFileStats}
+                onFileUpload={handleTsJsonFileUpload}
+                onImagesAttach={handleTsImagesAttach}
+                onClearJson={handleClearTsJson}
+                showPreview={showTsJsonPreviewModal}
+                setShowPreview={setShowTsJsonPreviewModal}
+                previewTab={tsPreviewTab}
+                setPreviewTab={setTsPreviewTab}
+                previewSearch={tsPreviewSearch}
+                setPreviewSearch={setTsPreviewSearch}
+                previewPage={tsPreviewPage}
+                setPreviewPage={setTsPreviewPage}
+                previewPageSize={tsPreviewPageSize}
+                setPreviewPageSize={setTsPreviewPageSize}
+              />
 
               {/* Row 1: Title */}
               <div>
@@ -7815,10 +8938,13 @@ export default function AdminDashboardPage({
                   </label>
                   <input
                     type="number"
-                    min="5"
+                    min="1"
                     max="240"
-                    value={tsForm.durationMinutes || 135}
-                    onChange={(e) => setTsForm(prev => ({ ...prev, durationMinutes: Number(e.target.value) || 135 }))}
+                    value={tsForm.durationMinutes === '' ? '' : (tsForm.durationMinutes ?? 135)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTsForm(prev => ({ ...prev, durationMinutes: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -7843,8 +8969,11 @@ export default function AdminDashboardPage({
                     type="number"
                     min="1"
                     max="300"
-                    value={tsForm.totalQuestions || 150}
-                    onChange={(e) => setTsForm(prev => ({ ...prev, totalQuestions: Number(e.target.value) || 150 }))}
+                    value={tsForm.totalQuestions === '' ? '' : (tsForm.totalQuestions ?? 150)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTsForm(prev => ({ ...prev, totalQuestions: val === '' ? '' : Math.max(1, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -7867,10 +8996,14 @@ export default function AdminDashboardPage({
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    max="10"
-                    value={tsForm.marksPerQuestion || 4}
-                    onChange={(e) => setTsForm(prev => ({ ...prev, marksPerQuestion: Number(e.target.value) || 4 }))}
+                    min="0"
+                    max="20"
+                    step="0.25"
+                    value={tsForm.marksPerQuestion === '' ? '' : (tsForm.marksPerQuestion ?? 4)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTsForm(prev => ({ ...prev, marksPerQuestion: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -7883,7 +9016,7 @@ export default function AdminDashboardPage({
                     }}
                   />
                   <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
-                    Positive (+4 marks)
+                    Positive (+{tsPosLabel} marks)
                   </div>
                 </div>
 
@@ -7894,10 +9027,13 @@ export default function AdminDashboardPage({
                   <input
                     type="number"
                     min="0"
-                    max="5"
+                    max="10"
                     step="0.25"
-                    value={tsForm.negativeMarks || 1}
-                    onChange={(e) => setTsForm(prev => ({ ...prev, negativeMarks: Number(e.target.value) || 1 }))}
+                    value={tsForm.negativeMarks === '' ? '' : (tsForm.negativeMarks ?? 1)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTsForm(prev => ({ ...prev, negativeMarks: val === '' ? '' : Math.max(0, Number(val)) }));
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -7910,24 +9046,24 @@ export default function AdminDashboardPage({
                     }}
                   />
                   <div style={{ fontSize: '0.72rem', color: '#9d174d', marginTop: '4px' }}>
-                    Penalty (-1 mark per wrong)
+                    Penalty (-{tsNegLabel} mark per wrong)
                   </div>
                 </div>
               </div>
 
               {/* HTML SOURCE CODE Textarea */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
                     QUESTIONS HTML / JSON SOURCE CODE <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    💡 Paste question cards, MCQs, or quizData script here
+                    💡 Upload ZIP/JSON above OR paste question cards, HTML, or raw JSON here
                   </span>
                 </div>
                 <textarea
                   rows={14}
-                  placeholder="Paste question cards HTML or quizData array here..."
+                  placeholder="Paste question cards HTML, quizData array, or raw JSON [{...}] here..."
                   value={tsForm.content}
                   onChange={(e) => setTsForm(prev => ({ ...prev, content: e.target.value }))}
                   style={{
@@ -7944,9 +9080,9 @@ export default function AdminDashboardPage({
                   }}
                 />
                 {(() => {
-                  if (Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
-                    const qImg = tsForm.questions.filter(q => q.image).length;
-                    const sImg = tsForm.questions.filter(q => q.explanation_image).length;
+                  const isJsonText = tsTrim.startsWith('[') || tsTrim.startsWith('{');
+                  if (!isJsonText && Array.isArray(tsForm.questions) && tsForm.questions.length > 0) {
+                    const st = tsJsonFileStats || buildQuizStatsFromQuestions(tsForm.questions);
                     return (
                       <div style={{
                         marginTop: '8px',
@@ -7962,11 +9098,11 @@ export default function AdminDashboardPage({
                         gap: '8px'
                       }}>
                         <CheckCircle2 size={18} color="#16a34a" />
-                        <span>✅ {tsForm.questions.length} Structured Questions Loaded! ({qImg} question images, {sImg} solution diagrams). Score: +{tsForm.marksPerQuestion || 4} / -{tsForm.negativeMarks || 1}.</span>
+                        <span>✅ {tsForm.questions.length} Structured Questions Loaded! ({st.questionImagesCount} question diagrams, {st.solutionImagesCount} solution diagrams). Score: +{tsPosLabel} / -{tsNegLabel}.</span>
                       </div>
                     );
                   }
-                  const detected = extractQuestionsFromContent(tsForm.content);
+                  const detected = tsTrim && !tsTrim.startsWith('// ✅') ? extractQuestionsFromContent(tsForm.content) : [];
                   if (detected.length > 0) {
                     return (
                       <div style={{
@@ -7983,7 +9119,7 @@ export default function AdminDashboardPage({
                         gap: '8px'
                       }}>
                         <CheckCircle2 size={18} color="#be185d" />
-                        <span>✅ {detected.length} Questions Detected! The Full Length CBT Mock Test will use these questions with +{tsForm.marksPerQuestion || 4} / -{tsForm.negativeMarks || 1} scoring.</span>
+                        <span>✅ {detected.length} Questions Detected! The Full Length CBT Mock Test will use these questions with +{tsPosLabel} / -{tsNegLabel} scoring.</span>
                       </div>
                     );
                   }
@@ -7991,8 +9127,8 @@ export default function AdminDashboardPage({
                 })()}
               </div>
 
-              {/* Live HTML Preview (Sandboxed & Isolated - Only for HTML content) */}
-              {tsForm.content && !tsForm.content.trim().startsWith('[') && !tsForm.content.trim().startsWith('{') && (
+              {/* Live HTML Preview (Sandboxed & Isolated - Only for actual HTML content) */}
+              {tsIsHtmlContent && (
                 <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
@@ -8172,10 +9308,13 @@ export default function AdminDashboardPage({
 
                         <td style={{ padding: '14px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#059669' }}>
-                            +{item.marksPerQuestion || 4} Right
+                            +{(item.marksPerQuestion !== undefined && item.marksPerQuestion !== null) ? item.marksPerQuestion : 4} Right
                           </div>
                           <div style={{ fontSize: '0.76rem', fontWeight: 600, color: '#dc2626', marginTop: '2px' }}>
-                            -{item.negativeMarks || 1} Negative
+                            -{(item.negativeMarks !== undefined && item.negativeMarks !== null) ? item.negativeMarks : 1} Negative
+                            {Number(item.totalImagesCount) > 0 && (
+                              <span style={{ color: '#0284c7', marginLeft: '6px' }}>• 📷 {item.totalImagesCount}</span>
+                            )}
                           </div>
                         </td>
 
@@ -8302,7 +9441,7 @@ export default function AdminDashboardPage({
     { id: 'breaking-news', label: 'Breaking News', icon: Megaphone },
     { id: 'new-post', label: 'New Post', icon: PlusSquare },
     { id: 'test-series', label: 'Test Series & Mock Tests', icon: BookOpen },
-    { id: 'current-affairs', label: 'Current Affairs', icon: Newspaper },
+    { id: 'current-affairs', label: 'Current Affairs / Quiz', icon: Newspaper },
     { id: 'pyq', label: 'Previous Year Questions (PYQ)', icon: GraduationCap },
     { id: 'latest-updates', label: 'Latest Updates', icon: Bell },
     { id: 'featured-posts', label: 'Featured Top Cards', icon: Star },

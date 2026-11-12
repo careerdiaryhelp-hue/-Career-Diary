@@ -357,8 +357,8 @@ export default function CurrentAffairsListingClient({ initialPosts = [] }: { ini
               </a>
             </div>
 
-            {/* Sidebar AdSense Ad */}
-            <SidebarAd label="ADVERTISEMENT" />
+            {/* Sidebar AdSense Ad (Dis2) */}
+            <SidebarAd slot="7208581106" label="ADVERTISEMENT" />
 
             {/* Quick Links / Exam Categories */}
             <div

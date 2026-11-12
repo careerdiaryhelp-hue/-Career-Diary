@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { DisplayAd, InPostAd, InArticleAd1100, MultiplexAd, MultiplexMt5566 } from './AdSenseBanner';
+import { Dis2Ad, InPostAd, InArticleAd1100, MultiplexAd, MultiplexMt5566 } from './AdSenseBanner';
 import AutoFAQSection from './AutoFAQSection';
 
 // Clean, high quality SVG brand icons for exact visual match
@@ -181,8 +181,8 @@ export default function PostFooterSection({ job, category = 'job' }) {
         ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
       </div>
 
-      {/* 6. Bottom Display Banner Ad */}
-      <DisplayAd label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
+      {/* 6. Bottom Display Banner Ad (Dis2 - Slot 7208581106) */}
+      <Dis2Ad label="ADVERTISEMENT" style={{ margin: '20px 0' }} />
 
     </div>
   );

@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 
 import { getJobUrl } from '../data/categoryHelpers.js';
-import { DisplayAd } from '../components/AdSenseBanner';
+import { DisplayAd, Dis2Ad } from '../components/AdSenseBanner';
 
 export default function TopOnlineFormsPage({ jobs = [] }) {
   // Filter jobs marked as isTopForm, or accept already-filtered top forms
@@ -191,8 +191,8 @@ export default function TopOnlineFormsPage({ jobs = [] }) {
           </p>
         </div>
 
-        {/* Ad Space Bottom */}
-        <DisplayAd label="ADVERTISEMENT" style={{ margin: '24px auto' }} />
+        {/* Ad Space Bottom (Dis2) */}
+        <Dis2Ad label="ADVERTISEMENT" style={{ margin: '24px auto' }} />
 
       </div>
     </div>

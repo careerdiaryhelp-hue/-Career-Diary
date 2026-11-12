@@ -59,8 +59,8 @@ export default function JobDetailModal({ job, onClose }) {
             </a>
           </div>
 
-          {/* AdSense Block Ad #1 (Top) */}
-          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '14px 0' }} />
+          {/* AdSense Block Ad #1 (Top - Display Ad) */}
+          <AdSenseBanner slot="1202522135" label="ADVERTISEMENT" style={{ margin: '14px 0' }} />
 
           {/* Important Dates & Application Fee */}
           <div className="detail-boxes-grid">
@@ -97,8 +97,8 @@ export default function JobDetailModal({ job, onClose }) {
             </p>
           </div>
 
-          {/* AdSense Block Ad #2 (Middle) */}
-          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+          {/* AdSense Block Ad #2 (Middle - Dis2) */}
+          <AdSenseBanner slot="7208581106" label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
           {/* Detailed Overview */}
           <div style={{ marginBottom: '20px' }}>
@@ -178,8 +178,8 @@ export default function JobDetailModal({ job, onClose }) {
             </div>
           )}
 
-          {/* AdSense Block Ad #3 (Bottom) */}
-          <AdSenseBanner label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+          {/* AdSense Block Ad #3 (Bottom - Ds3) */}
+          <AdSenseBanner slot="6233897431" label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
 
           {/* Social Alert Community Join Buttons */}
           <div className="action-links-grid" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>

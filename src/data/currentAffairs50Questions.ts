@@ -1,5 +1,8 @@
 export interface CAQuestion {
-  id: number;
+  id: number | string;
+  topic?: string;
+  subtopic?: string;
+  difficulty?: 'Easy' | 'Medium' | 'Hard' | string;
   question: string;
   options: {
     A: string;
@@ -11,6 +14,9 @@ export interface CAQuestion {
   correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   solution: string;
   image?: string;
+  images?: string[];
+  explanation_image?: string;
+  explanation_images?: string[];
 }
 
 export const default50CurrentAffairsQuestions: CAQuestion[] = [

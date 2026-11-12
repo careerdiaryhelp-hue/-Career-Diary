@@ -2,6 +2,8 @@
 
 import AdSenseBanner, {
   DisplayAd,
+  Dis2Ad,
+  Ds3Ad,
   InFeedAd,
   MultiplexAd,
   MultiplexAd1963,
@@ -47,6 +49,8 @@ export default function AdBanner({
 
 export {
   DisplayAd,
+  Dis2Ad,
+  Ds3Ad,
   InFeedAd,
   MultiplexAd,
   MultiplexAd1963,

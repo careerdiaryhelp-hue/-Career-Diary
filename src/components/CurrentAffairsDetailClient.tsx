@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { DisplayAd, SidebarAd, SquareAd, InFeedAd } from './AdSenseBanner';
+import { DisplayAd, Dis2Ad, Ds3Ad, SquareAd } from './AdSenseBanner';
 import {
   Calendar, User, Eye, Share2, Copy, Check, MessageCircle, Send,
   ArrowLeft, ArrowRight, Tag, BookOpen, Flame, Newspaper
@@ -216,9 +216,9 @@ export default function CurrentAffairsDetailClient({
               </div>
             </div>
 
-            {/* In-Article Ad #1 */}
+            {/* In-Article Ad #1 (Dis2) */}
             <div style={{ margin: '16px 0 24px' }}>
-              <DisplayAd label="ADVERTISEMENT" />
+              <Dis2Ad label="ADVERTISEMENT" />
             </div>
 
             {/* Render Raw HTML Questions / MCQs Content */}
@@ -272,9 +272,9 @@ export default function CurrentAffairsDetailClient({
               </div>
             )}
 
-            {/* In-Article Ad #2 (Post Content Bottom) */}
+            {/* In-Article Ad #2 (Post Content Bottom - Ds3) */}
             <div style={{ margin: '28px 0 16px' }}>
-              <DisplayAd label="ADVERTISEMENT" />
+              <Ds3Ad label="ADVERTISEMENT" />
             </div>
 
             {/* Social Share Call to Action */}
@@ -431,8 +431,8 @@ export default function CurrentAffairsDetailClient({
               </a>
             </div>
 
-            {/* Sidebar AdSense Square Display Ad */}
-            <SquareAd label="ADVERTISEMENT" />
+            {/* Sidebar AdSense Square Display Ad (Dis2) */}
+            <SquareAd slot="7208581106" label="ADVERTISEMENT" />
 
             {/* Navigation back to all current affairs */}
             <div
