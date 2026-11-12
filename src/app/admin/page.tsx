@@ -207,6 +207,9 @@ export default function AdminPage() {
     try {
       const res = await publishJobToFirestore(sanitizedJob);
       if (res && res.error) throw res.error;
+      try {
+        localStorage.removeItem('careerdiary_live_jobs_ts');
+      } catch (_) {}
       return { success: true, cleanId: safeId };
     } catch (err) {
       console.error('Firestore publish error:', err);

@@ -24,36 +24,141 @@ async function getClientDb() {
 }
 
 // Helper to sanitize Firestore document IDs (no forward slashes, no spaces, retains underscores for ts_ prefixes and chunks)
+// Caps document ID safely well under Firestore's 1500-byte document ID limit.
 export function cleanJobId(id) {
   if (!id) return '';
-  return String(id)
+  const cleaned = String(id)
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_]+/g, '-')
     .replace(/^-+|-+$/g, '');
+  return cleaned.length > 400 ? cleaned.slice(0, 400).replace(/-+$/g, '') : cleaned;
 }
 
-// Recursively strips undefined values and non-serializable fields so Firestore setDoc / updateDoc never throws:
-// "Function setDoc() called with invalid data. Unsupported field value: undefined"
-export function sanitizeFirestoreData(obj) {
-  if (obj === undefined) return null;
-  if (obj === null) return null;
+const MAX_FIRESTORE_PATH_BYTES = 1200; // Safe margin under Firestore's 1500-byte property path hard limit
+const MAX_FIRESTORE_KEY_BYTES = 600;
+const MAX_FIRESTORE_DEPTH = 15; // Safe margin under Firestore's 20-level nesting limit
+
+function utf8ByteLength(str) {
+  const s = String(str || '');
+  let bytes = 0;
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code <= 0xdbff && i + 1 < s.length) {
+      bytes += 4;
+      i++;
+    } else {
+      bytes += 3;
+    }
+  }
+  return bytes;
+}
+
+function estimateFirestoreEncodedKeyBytes(key) {
+  const s = String(key || '');
+  const rawBytes = utf8ByteLength(s);
+  if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(s)) return rawBytes;
+  let escapes = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '`' || s[i] === '\\') escapes += 1;
+  }
+  return rawBytes + 2 + escapes;
+}
+
+function buildSafeFirestoreKey(rawKey, maxEncodedBytes, existingObj) {
+  const normalized = String(rawKey ?? '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized || /^__.*__$/.test(normalized)) return '';
+
+  const budget = Math.max(16, maxEncodedBytes);
+  let candidate = normalized;
+
+  if (estimateFirestoreEncodedKeyBytes(candidate) > budget) {
+    const target = Math.max(8, budget - 16);
+    let out = '';
+    let used = 2; // conservative backtick wrapping
+    for (const ch of candidate) {
+      const chBytes = utf8ByteLength(ch) + (ch === '`' || ch === '\\' ? 1 : 0);
+      if (used + chBytes > target) break;
+      out += ch;
+      used += chBytes;
+    }
+    candidate = (out.trim() || candidate.slice(0, 8)) + '...';
+  }
+
+  let unique = candidate;
+  let suffix = 2;
+  while (existingObj && Object.prototype.hasOwnProperty.call(existingObj, unique)) {
+    const tag = ` (${suffix++})`;
+    const base = candidate.endsWith('...') ? candidate.slice(0, -3) : candidate;
+    const tagBytes = utf8ByteLength(tag) + 3;
+    let trimmed = '';
+    let used = 2;
+    for (const ch of base) {
+      const chBytes = utf8ByteLength(ch) + (ch === '`' || ch === '\\' ? 1 : 0);
+      if (used + chBytes + tagBytes > budget) break;
+      trimmed += ch;
+      used += chBytes;
+    }
+    unique = `${trimmed.trim() || 'item'}${tag}`;
+  }
+  return unique;
+}
+
+// Recursively strips undefined/non-serializable values, flattens direct nested arrays,
+// and guarantees every field name and dot-joined property path stays safely under Firestore limits (1500 bytes / depth 20).
+export function sanitizeFirestoreData(obj, pathBytes = 0, depth = 0) {
+  if (obj === undefined || obj === null) return null;
   if (typeof obj === 'function' || typeof obj === 'symbol') return null;
+  if (typeof obj === 'number') return Number.isFinite(obj) ? obj : null;
   if (typeof obj !== 'object') return obj;
   if (obj instanceof Date) return obj.toISOString();
+
+  if (depth >= MAX_FIRESTORE_DEPTH) {
+    try {
+      const serialized = JSON.stringify(obj);
+      return serialized && serialized.length > 50000 ? serialized.slice(0, 50000) : (serialized || null);
+    } catch (_) {
+      return null;
+    }
+  }
 
   if (Array.isArray(obj)) {
     return obj
       .filter(item => item !== undefined && typeof item !== 'function' && typeof item !== 'symbol')
-      .map(item => sanitizeFirestoreData(item));
+      .map(item => {
+        if (Array.isArray(item)) {
+          return { items: sanitizeFirestoreData(item, pathBytes + 6, depth + 1) };
+        }
+        return sanitizeFirestoreData(item, pathBytes, depth + 1);
+      });
   }
 
+  const sepBytes = pathBytes > 0 ? 1 : 0;
+  const remainingBudget = MAX_FIRESTORE_PATH_BYTES - pathBytes - sepBytes;
+  if (remainingBudget < 24) {
+    try {
+      const serialized = JSON.stringify(obj);
+      return serialized && serialized.length > 50000 ? serialized.slice(0, 50000) : (serialized || null);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  const maxKeyBudget = Math.min(remainingBudget, MAX_FIRESTORE_KEY_BYTES);
   const cleaned = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined && typeof value !== 'function' && typeof value !== 'symbol') {
-      const sanitized = sanitizeFirestoreData(value);
+      const safeKey = buildSafeFirestoreKey(key, maxKeyBudget, cleaned);
+      if (!safeKey) continue;
+      const nextPathBytes = pathBytes + sepBytes + estimateFirestoreEncodedKeyBytes(safeKey);
+      const sanitized = sanitizeFirestoreData(value, nextPathBytes, depth + 1);
       if (sanitized !== undefined) {
-        cleaned[key] = sanitized;
+        cleaned[safeKey] = sanitized;
       }
     }
   }
@@ -79,7 +184,7 @@ function addPendingSave(job) {
 
 function removePendingSave(jobId) {
   try {
-    const pending = getPendingSaves().filter(j => j.id !== jobId);
+    const pending = getPendingSaves().filter(j => j.id !== jobId && cleanJobId(j.id) !== jobId);
     localStorage.setItem(PENDING_SAVES_KEY, JSON.stringify(pending));
   } catch (_) {}
 }
@@ -90,11 +195,18 @@ export async function retryPendingSaves() {
   const pending = getPendingSaves();
   if (pending.length === 0) return;
   console.log(`[Firestore] Retrying ${pending.length} pending saves...`);
+  let anySucceeded = false;
   for (const job of pending) {
     const res = await publishJobToFirestore(job, /* skipQueue */ true);
     if (res.success) {
+      anySucceeded = true;
       console.log(`[Firestore] ✅ Pending save succeeded for: ${job.id}`);
     }
+  }
+  if (anySucceeded) {
+    try {
+      localStorage.removeItem('careerdiary_live_jobs_ts');
+    } catch (_) {}
   }
 }
 
@@ -107,12 +219,12 @@ export async function publishJobToFirestore(job, skipQueue = false) {
   }
   const { _ts, _safeId, _normTitle, ...cleanData } = job;
   const nowIso = new Date().toISOString();
-  const safeJob = {
+  const safeJob = sanitizeFirestoreData({
     ...cleanData,
     id: safeId,
     slug: safeId,
     updatedAt: nowIso
-  };
+  });
 
   const MAX_RETRIES = 3;
   let lastError = null;
@@ -123,8 +235,7 @@ export async function publishJobToFirestore(job, skipQueue = false) {
       if (!db) throw new Error('Firestore is only available in browser');
       const { doc, setDoc } = await import('firebase/firestore');
       const jobRef = doc(db, 'jobs', safeId);
-      const sanitizedJob = sanitizeFirestoreData(safeJob);
-      await setDoc(jobRef, sanitizedJob, { merge: true });
+      await setDoc(jobRef, safeJob, { merge: true });
       // Invalidate memory cache so next fetch immediately returns fresh data
       memoryCache.data = null;
       memoryCache.timestamp = 0;
@@ -212,12 +323,12 @@ export async function saveBreakingNewsToFirestore(items) {
 
     // Save to public jobs/settings_breakingNews so ALL visitors, APIs and admin can read it
     const publicRef = doc(db, 'jobs', 'settings_breakingNews');
-    await setDoc(publicRef, { 
+    await setDoc(publicRef, sanitizeFirestoreData({ 
       id: 'settings_breakingNews',
       items, 
       updatedAt: new Date().toISOString(),
       isSystemDoc: true 
-    }, { merge: true });
+    }), { merge: true });
 
     breakingNewsCache.data = [];
     breakingNewsCache.timestamp = 0;
@@ -360,7 +471,7 @@ export async function fetchFirestoreJobsOnce() {
         structuredQuery: {
           from: [{ collectionId: 'jobs' }],
           orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
-          limit: 35,
+          limit: 50,
           select: { fields: FIRESTORE_LIST_FIELDS.map(f => ({ fieldPath: f })) }
         }
       };

@@ -57,6 +57,58 @@ export const autoLinkSocialChannels = (html) => {
   return out;
 };
 
+const getUtf8ByteLength = (str) => {
+  const s = String(str || '');
+  let bytes = 0;
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code <= 0xdbff && i + 1 < s.length) {
+      bytes += 4;
+      i++;
+    } else {
+      bytes += 3;
+    }
+  }
+  return bytes;
+};
+
+const stripNonContentTags = (html) =>
+  String(html || '')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ');
+
+const cleanExtractedLabel = (str) =>
+  String(str || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const BOILERPLATE_LABEL_PREFIX_RE = /^(?:eligibility\s*criteria|short\s*info(?:rmation)?|short\s*details?|latest\s*posts?|related\s*posts?|you\s*may\s*also\s*check|disclaimer|question\s*:|answer\s*:|important\s*questions?|how\s*to\s*fill|mode\s*of\s*selection|candidates?\s+must\s+have)/i;
+const GENERIC_ANCHOR_TEXTS = new Set(['click here', 'click here!', 'link', 'here', 'open', 'view', 'download', 'check']);
+
+const isValidLinkLabelKey = (label, maxChars = 140, maxBytes = 220) => {
+  if (!label || typeof label !== 'string') return false;
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length > maxChars || getUtf8ByteLength(trimmed) > maxBytes) return false;
+  if (/^__.*__$/.test(trimmed)) return false;
+  if (/[{}]|;base64,|@media|function\s*\(|window\.|document\./i.test(trimmed)) return false;
+  if (/^[.#"']/.test(trimmed)) return false;
+  if (BOILERPLATE_LABEL_PREFIX_RE.test(trimmed)) return false;
+  return true;
+};
+
 /**
  * Automatically extracts Direct Quick URLs (applyUrl, notificationUrl, officialUrl)
  * and all custom links from HTML tables, existing link objects, or anchor tags.
@@ -65,14 +117,23 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
   let applyUrl = '';
   let notificationUrl = '';
   let officialUrl = '';
-  const links = { ...(currentLinks || {}) };
+  const links = {};
 
-  // 1. First inspect currentLinks object if provided
+  // 1. First inspect & sanitize currentLinks object if provided
   if (currentLinks && typeof currentLinks === 'object') {
     Object.entries(currentLinks).forEach(([rawKey, val]) => {
-      const v = typeof val === 'string' ? val.trim() : (val?.url || val?.link || '');
+      const cleanKey = cleanExtractedLabel(rawKey);
+      if (!isValidLinkLabelKey(cleanKey)) return;
+
+      const isStrVal = typeof val === 'string';
+      const v = isStrVal ? val.trim() : (val?.url || val?.link || '');
+
+      if (isStrVal || v) {
+        links[cleanKey] = v;
+      }
+
       if (!v || !v.startsWith('http')) return;
-      const k = (rawKey || '').toLowerCase();
+      const k = cleanKey.toLowerCase();
       const vl = v.toLowerCase();
       if (vl.includes('t.me') || vl.includes('whatsapp') || vl.includes('careerdiary.in')) return;
 
@@ -88,11 +149,12 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
     });
   }
 
-  // 2. Extract from HTML tables
+  // 2. Extract from HTML tables (stripping scripts/styles/svgs/comments first)
   if (html && typeof html === 'string') {
+    const cleanHtml = stripNonContentTags(html);
     const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     let trMatch;
-    while ((trMatch = trRegex.exec(html)) !== null) {
+    while ((trMatch = trRegex.exec(cleanHtml)) !== null) {
       const rowHtml = trMatch[1];
       const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
       if (aMatches.length > 0) {
@@ -102,39 +164,42 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
         while ((cMatch = cellRegex.exec(rowHtml)) !== null) {
           cellMatches.push(cMatch);
         }
-        
-        let baseLabel = cellMatches.length >= 2 ? cellMatches[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : '';
-        
+
+        const firstCellHtml = cellMatches.length >= 2 ? cellMatches[0][1] : '';
+        const hasNestedBlockContainer = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(firstCellHtml);
+        const rawBaseLabel = (!hasNestedBlockContainer && firstCellHtml) ? cleanExtractedLabel(firstCellHtml) : '';
+        const baseLabel = isValidLinkLabelKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
+
         for (const aMatch of aMatches) {
           const href = aMatch[1].trim();
-          const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
-          
+          const aText = aMatch[2] ? cleanExtractedLabel(aMatch[2]) : '';
+
           let label = baseLabel;
           if (!label) {
-            label = aText || 'Important Link';
+            label = (isValidLinkLabelKey(aText, 120, 200) && !GENERIC_ANCHOR_TEXTS.has(aText.toLowerCase())) ? aText : '';
           } else if (aMatches.length > 1 && aText) {
-            // Append the link's text if there are multiple links in this row to differentiate them
-            label = `${baseLabel} (${aText})`;
+            const combined = `${baseLabel} (${aText})`;
+            label = isValidLinkLabelKey(combined, 140, 220) ? combined : baseLabel;
           }
 
-          const kl = label.toLowerCase();
+          const signalText = (label || aText || '').toLowerCase();
           const hl = href.toLowerCase();
 
           if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
             continue;
           }
 
-          if (!links[label]) {
+          if (label && isValidLinkLabelKey(label, 140, 220) && !GENERIC_ANCHOR_TEXTS.has(label.toLowerCase()) && !links[label]) {
             links[label] = href;
           }
 
-          if (!applyUrl && (kl.includes('apply') || kl.includes('registration') || kl.includes('online form') || kl.includes('otr') || kl.includes('candidate') || hl.includes('apply') || hl.includes('registration') || hl.includes('/otr'))) {
+          if (!applyUrl && (signalText.includes('apply') || signalText.includes('registration') || signalText.includes('online form') || signalText.includes('otr') || signalText.includes('candidate') || hl.includes('apply') || hl.includes('registration') || hl.includes('/otr'))) {
             applyUrl = href;
           }
-          if (!notificationUrl && (kl.includes('notif') || kl.includes('pdf') || kl.includes('advertisement') || kl.includes('advt') || kl.includes('notice') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
+          if (!notificationUrl && (signalText.includes('notif') || signalText.includes('pdf') || signalText.includes('advertisement') || signalText.includes('advt') || signalText.includes('notice') || hl.endsWith('.pdf') || hl.includes('/notice/'))) {
             notificationUrl = href;
           }
-          if (!officialUrl && (kl.includes('website') || kl.includes('portal') || (kl.includes('official') && !kl.includes('notif')))) {
+          if (!officialUrl && (signalText.includes('website') || signalText.includes('portal') || (signalText.includes('official') && !signalText.includes('notif')))) {
             officialUrl = href;
           }
         }
@@ -145,9 +210,9 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
     if (!applyUrl || !notificationUrl || !officialUrl) {
       const aRegex = /<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
       let aMatch;
-      while ((aMatch = aRegex.exec(html)) !== null) {
+      while ((aMatch = aRegex.exec(cleanHtml)) !== null) {
         const href = aMatch[1].trim();
-        const text = aMatch[2].replace(/<[^>]+>/g, '').trim().toLowerCase();
+        const text = cleanExtractedLabel(aMatch[2]).toLowerCase();
         const hl = href.toLowerCase();
         if (hl.includes('t.me') || hl.includes('whatsapp') || hl.includes('careerdiary.in') || hl.includes('facebook') || hl.includes('twitter') || hl.includes('youtube')) {
           continue;

@@ -39,11 +39,55 @@ import { parseQuizJson, parseQuizZip, attachImagesToQuestions, optimizeQuizQuest
 
 const cleanSlug = (str) => {
   if (!str) return '';
-  return String(str)
+  const cleaned = String(str)
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+  return cleaned.length > 220 ? cleaned.slice(0, 220).replace(/-+$/g, '') : cleaned;
+};
+
+const getUtf8ByteLength = (str) => {
+  const s = String(str || '');
+  let bytes = 0;
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code <= 0xdbff && i + 1 < s.length) {
+      bytes += 4;
+      i++;
+    } else {
+      bytes += 3;
+    }
+  }
+  return bytes;
+};
+
+const BOILERPLATE_META_KEY_RE = /^(?:eligibility\s*criteria|short\s*info(?:rmation)?|short\s*details?|latest\s*posts?|related\s*posts?|you\s*may\s*also\s*check|disclaimer|question\s*:|answer\s*:|important\s*questions?|how\s*to\s*fill|mode\s*of\s*selection|candidates?\s+must\s+have)/i;
+
+const isValidMetaKey = (key, maxChars = 140, maxBytes = 220) => {
+  if (!key || typeof key !== 'string') return false;
+  const trimmed = key.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!trimmed || trimmed.length > maxChars || getUtf8ByteLength(trimmed) > maxBytes) return false;
+  if (/^__.*__$/.test(trimmed)) return false;
+  if (/[{}]|;base64,|@media|function\s*\(|window\.|document\.|<script|<style/i.test(trimmed)) return false;
+  if (/^[.#"']/.test(trimmed)) return false;
+  if (BOILERPLATE_META_KEY_RE.test(trimmed)) return false;
+  return true;
+};
+
+const sanitizeMetaRecord = (obj, maxChars = 140, maxBytes = 220) => {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+  const cleaned = {};
+  for (const [rawK, v] of Object.entries(obj)) {
+    const k = String(rawK || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!isValidMetaKey(k, maxChars, maxBytes)) continue;
+    if (v !== undefined && typeof v !== 'function' && typeof v !== 'symbol') {
+      cleaned[k] = v;
+    }
+  }
+  return cleaned;
 };
 
 const CATEGORIES = [
@@ -1646,15 +1690,15 @@ export default function AdminDashboardPage({
 
     const initialHtml = autoLinkSocialChannels(job.content && job.content.trim() ? job.content : buildDefaultJobHtml(job));
 
-    const rawJobLinks = job.importantLinks || job.important_links || {};
+    const rawJobLinks = sanitizeMetaRecord(job.importantLinks || job.important_links || {});
     const quickUrls = extractQuickUrlsFromContent(initialHtml, rawJobLinks);
 
-    const mergedLinks = {
+    const mergedLinks = sanitizeMetaRecord({
       ...rawJobLinks,
       ...quickUrls.links,
       'Join Telegram Channel': rawJobLinks['Join Telegram Channel'] || CAREER_DIARY_TELEGRAM,
       'Join WhatsApp Channel': rawJobLinks['Join WhatsApp Channel'] || CAREER_DIARY_WHATSAPP,
-    };
+    });
 
     const finalApply = job.applyUrl || quickUrls.applyUrl || '';
     const finalNotif = job.notificationUrl || quickUrls.notificationUrl || '';
@@ -1701,9 +1745,9 @@ export default function AdminDashboardPage({
       qualification: job.qualification || '',
       state: job.state || 'All India',
       importantLinks: mergedLinks,
-      importantDates: job.importantDates || {},
-      applicationFee: job.applicationFee || {},
-      ageLimit: job.ageLimit || {},
+      importantDates: sanitizeMetaRecord(job.importantDates || job.important_dates || {}),
+      applicationFee: sanitizeMetaRecord(job.applicationFee || job.application_fee || {}),
+      ageLimit: sanitizeMetaRecord(job.ageLimit || job.age_limits || {}),
       selectionProcess: job.selectionProcess || [],
       howToFill: job.howToFill || [],
       faqImage: job.faqImage || job.postImage || job.bannerImage || '',
@@ -2594,25 +2638,22 @@ export default function AdminDashboardPage({
     if (visualEditorRef.current) {
       visualEditorRef.current.innerHTML = updated;
     }
-    const quickUrls = extractQuickUrlsFromContent(updated, form.importantLinks);
+    const sanitizedFormLinks = sanitizeMetaRecord(form.importantLinks);
+    const quickUrls = extractQuickUrlsFromContent(updated, sanitizedFormLinks);
+    const nextMergedLinks = sanitizeMetaRecord({
+      ...sanitizedFormLinks,
+      ...quickUrls.links,
+      'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
+      'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
+    });
     setForm(prev => ({
       ...prev,
       content: updated,
       applyUrl: prev.applyUrl || quickUrls.applyUrl,
       notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
       officialUrl: prev.officialUrl || quickUrls.officialUrl,
-      importantLinks: {
-        ...(prev.importantLinks || {}),
-        ...quickUrls.links,
-        'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
-        'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-      },
-      important_links: {
-        ...(prev.important_links || {}),
-        ...quickUrls.links,
-        'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
-        'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-      }
+      importantLinks: nextMergedLinks,
+      important_links: nextMergedLinks
     }));
     showToast('⚡ Telegram, WhatsApp & Direct Quick URLs auto-imported!', 'success');
   };
@@ -3030,18 +3071,27 @@ export default function AdminDashboardPage({
     }
 
     // 6. Helper to parse <li> into key/value pairs
+    const stripJunkTags = (h) =>
+      String(h || '')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+        .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ');
+
     const parseList = (html) => {
       const res = {};
       if (!html) return res;
+      const safeHtml = stripJunkTags(html);
       const regex = /<li>([\s\S]*?)<\/li>/gi;
       let m;
-      while ((m = regex.exec(html)) !== null) {
+      while ((m = regex.exec(safeHtml)) !== null) {
         const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         const parts = text.split(/\s*:\s*/);
         if (parts.length >= 2) {
           const k = clean(parts[0].trim());
           const v = clean(parts.slice(1).join(': ').trim());
-          if (k && v) res[k] = v;
+          if (k && v && isValidMetaKey(k, 100, 180)) res[k] = v;
         }
       }
       return res;
@@ -3058,9 +3108,10 @@ export default function AdminDashboardPage({
 
     // 7. Parse links from table or html (support multiple links in a single row)
     const links = {};
-    const trRegex = /<tr>([\s\S]*?)<\/tr>/gi;
+    const safeLinksHtml = stripJunkTags(acf.important_links || '');
+    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     let trMatch;
-    while ((trMatch = trRegex.exec(acf.important_links || '')) !== null) {
+    while ((trMatch = trRegex.exec(safeLinksHtml)) !== null) {
       const row = trMatch[1];
       if (row.toLowerCase().includes('important question')) continue;
       const aRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
@@ -3070,10 +3121,13 @@ export default function AdminDashboardPage({
         aList.push({ href: aMatch[1].trim(), text: clean(aMatch[2].replace(/<[^>]+>/g, '')) });
       }
 
-      const textMatch = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+      const textMatch = row.match(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi);
       if (textMatch && textMatch.length >= 1) {
-        const label = clean(textMatch[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
-        const ll = label.toLowerCase();
+        const firstCell = textMatch[0];
+        if (/<(?:table|tr|tbody|thead|ul|ol)\b/i.test(firstCell)) continue;
+        const rawLabel = clean(firstCell.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+        const label = isValidMetaKey(rawLabel, 120, 200) ? rawLabel : '';
+        const ll = (label || rawLabel).toLowerCase();
         // Skip competitor promotional channels & competitor official site links
         if (ll.includes('telegram') || ll.includes('whatsapp') || ll.includes('mobile app') || ll.includes('android app') || ll.includes('ios app') || ll.includes('sarkari result')) {
           continue;
@@ -3099,15 +3153,19 @@ export default function AdminDashboardPage({
 
         if (aList.length === 1) {
           let href = aList[0].href;
-          if (label && href && href.startsWith('http')) {
-            links[label] = sanitizeCompetitorUrl(href);
+          const fallbackText = isValidMetaKey(aList[0].text, 120, 200) && !['click here', 'link', 'here'].includes(aList[0].text.toLowerCase()) ? aList[0].text : '';
+          const finalLabel = label || fallbackText;
+          if (finalLabel && isValidMetaKey(finalLabel, 140, 220) && href && href.startsWith('http')) {
+            links[finalLabel] = sanitizeCompetitorUrl(href);
           }
         } else if (aList.length > 1) {
           aList.forEach(item => {
             let href = item.href;
             if (href && href.startsWith('http')) {
-              const fullLabel = item.text ? `${label} (${item.text})` : label;
-              links[fullLabel] = sanitizeCompetitorUrl(href);
+              const rawFull = label ? (item.text ? `${label} (${item.text})` : label) : item.text;
+              if (rawFull && isValidMetaKey(rawFull, 140, 220) && !['click here', 'link', 'here'].includes(rawFull.toLowerCase())) {
+                links[rawFull] = sanitizeCompetitorUrl(href);
+              }
             }
           });
         }
@@ -3339,13 +3397,13 @@ export default function AdminDashboardPage({
       vacancies: totalPosts,
       description: shortText,
       content: autoLinkSocialChannels(contentHtml),
-      slug: post.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      slug: cleanSlug(post.slug || title),
       seoTitle: title,
       seoDescription: shortText.slice(0, 160),
-      importantDates: dates,
-      applicationFee: fees,
-      ageLimit: age,
-      importantLinks: links,
+      importantDates: sanitizeMetaRecord(dates),
+      applicationFee: sanitizeMetaRecord(fees),
+      ageLimit: sanitizeMetaRecord(age),
+      importantLinks: sanitizeMetaRecord(links),
       applyUrl,
       notificationUrl,
       officialUrl,
@@ -3363,7 +3421,13 @@ export default function AdminDashboardPage({
   const sanitizeImportedText = (text) => {
     if (!text || typeof text !== 'string') return '';
 
-    let cleaned = String(text);
+    let cleaned = String(text)
+      // 0. Strip scripts, styles, noscripts, svgs, and HTML comments first so CSS/JSON-LD never leaks into scraped tables/keys
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ');
 
     // 1. Remove HTML Header and Nav elements
     cleaned = cleaned
@@ -3596,6 +3660,7 @@ export default function AdminDashboardPage({
         const parts = text.split(':');
         const k = cleanStr(parts[0].trim());
         const v = cleanStr(parts.slice(1).join(':').trim());
+        if (!isValidMetaKey(k, 100, 180)) continue;
         const kl = k.toLowerCase();
         const vl = v.toLowerCase();
 
@@ -3622,10 +3687,14 @@ export default function AdminDashboardPage({
     const trMatches = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
     for (const trm of trMatches) {
       const rowHtml = trm[1];
-      const cells = [...rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)];
+      const cells = [...rowHtml.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)];
       if (cells.length === 2 && !rowHtml.includes('<a ')) {
+        if (/<(?:table|tr|tbody|thead|ul|ol)\b/i.test(cells[0][1]) || /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(cells[1][1])) {
+          continue;
+        }
         const rawK = cleanStr(cells[0][1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
         const rawV = cleanStr(cells[1][1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+        if (!isValidMetaKey(rawK, 80, 160)) continue;
         const kl = rawK.toLowerCase();
         const vl = rawV.toLowerCase();
         if (rawK && rawV && rawK.length < 50 && rawV.length < 120) {
@@ -3655,13 +3724,19 @@ export default function AdminDashboardPage({
         activeSection = 'fees';
         continue;
       } else if (ll.includes('age limit') || ll.includes('age limits')) {
-        activeSection = 'age';
-        ageSectionHeader = line;
-        continue;
+        if (line.length < 100) {
+          activeSection = 'age';
+          ageSectionHeader = line;
+          continue;
+        }
       } else if (
         ll.includes('vacancy details') || ll.includes('eligibility criteria') || 
         ll.includes('mode of selection') || ll.includes('how to fill') || 
-        ll.includes('important links') || ll.includes('some useful') || ll.includes('important question')
+        ll.includes('important links') || ll.includes('some useful') || ll.includes('important question') ||
+        ll.includes('short detail') || ll.includes('short info') || ll.includes('post detail') ||
+        ll.includes('syllabus') || ll.includes('physical') || ll.includes('document required') ||
+        ll.startsWith('question:') || ll.startsWith('answer:') || ll.startsWith('disclaimer') ||
+        ll.includes('latest posts') || ll.includes('related posts') || ll.includes('you may also check')
       ) {
         activeSection = '';
       }
@@ -3671,32 +3746,36 @@ export default function AdminDashboardPage({
           const parts = line.split(':');
           const k = cleanStr(parts[0]);
           const v = cleanStr(parts.slice(1).join(':'));
-          if (k && v && !dates[k]) dates[k] = v;
-        } else if (line.length > 5 && !line.toLowerCase().includes('important dates')) {
-          if (!dates[cleanStr(line)]) dates[cleanStr(line)] = '';
+          if (k && v && isValidMetaKey(k, 100, 180) && v.length < 220 && !dates[k]) dates[k] = v;
+        } else if (line.length > 5 && line.length <= 100 && !line.toLowerCase().includes('important dates')) {
+          const k = cleanStr(line);
+          if (isValidMetaKey(k, 100, 180) && !dates[k]) dates[k] = '';
         }
       } else if (activeSection === 'fees') {
         if (line.includes(':')) {
           const parts = line.split(':');
           const k = cleanStr(parts[0]);
           const v = cleanStr(parts.slice(1).join(':'));
-          if (k && v && !fees[k]) fees[k] = v;
-        } else if (line.length > 3 && !line.toLowerCase().includes('application fee')) {
-          if (!fees[cleanStr(line)]) fees[cleanStr(line)] = '';
+          if (k && v && isValidMetaKey(k, 100, 180) && v.length < 220 && !fees[k]) fees[k] = v;
+        } else if (line.length > 3 && line.length <= 100 && !line.toLowerCase().includes('application fee')) {
+          const k = cleanStr(line);
+          if (isValidMetaKey(k, 100, 180) && !fees[k]) fees[k] = '';
         }
       } else if (activeSection === 'age') {
         if (line.includes(':')) {
           const parts = line.split(':');
           const k = cleanStr(parts[0]);
           const v = cleanStr(parts.slice(1).join(':'));
-          if (k && v && !age[k]) age[k] = v;
-        } else if (line.length > 5 && !line.toLowerCase().includes('age limit')) {
-          if (!age[cleanStr(line)]) age[cleanStr(line)] = '';
+          if (k && v && isValidMetaKey(k, 100, 180) && v.length < 220 && !age[k]) age[k] = v;
+        } else if (line.length > 5 && line.length <= 100 && !line.toLowerCase().includes('age limit')) {
+          const k = cleanStr(line);
+          if (isValidMetaKey(k, 100, 180) && !age[k]) age[k] = '';
         }
       } else if (line.includes(':') && !line.includes('http') && !line.includes('www.')) {
         const parts = line.split(':');
         const k = cleanStr(parts[0].trim());
         const v = cleanStr(parts.slice(1).join(':').trim());
+        if (!isValidMetaKey(k, 100, 180)) continue;
         const kl = k.toLowerCase();
         const vl = v.toLowerCase();
         if (v && v.length < 150) {
@@ -3815,11 +3894,15 @@ export default function AdminDashboardPage({
 
         // Check if line indicates Post Name header
         if (ll === 'post name' || ll.startsWith('post name:')) {
+          let candPost = '';
           if (line.includes(':')) {
-            currentPost = cleanStr(line.split(':')[1]);
+            candPost = cleanStr(line.split(':').slice(1).join(':'));
           } else if (lines[i + 1] && !lines[i + 1].toLowerCase().includes('post') && !lines[i + 1].toLowerCase().includes('eligibility')) {
-            currentPost = cleanStr(lines[i + 1]);
+            candPost = cleanStr(lines[i + 1]);
             i++;
+          }
+          if (candPost && candPost.length < 150) {
+            currentPost = candPost;
           }
           continue;
         }
@@ -3922,21 +4005,26 @@ export default function AdminDashboardPage({
       const rowHtml = trm[1];
       const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
       if (aMatches.length > 0) {
-        const cells = [...rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)];
-        let baseLabel = cells.length >= 2 ? cells[0][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : '';
-        baseLabel = cleanStr(baseLabel);
+        const cells = [...rowHtml.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)];
+        const firstCell = cells.length >= 2 ? cells[0][1] : '';
+        const hasNestedBlock = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(firstCell);
+        const rawBaseLabel = (!hasNestedBlock && firstCell) ? cleanStr(firstCell.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()) : '';
+        const baseLabel = isValidMetaKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
 
         for (const aMatch of aMatches) {
           let href = aMatch[1].trim();
-          const aText = aMatch[2] ? aMatch[2].replace(/<[^>]+>/g, '').trim() : '';
-          
+          const aText = aMatch[2] ? cleanStr(aMatch[2].replace(/<[^>]+>/g, '').trim()) : '';
+          const validAText = isValidMetaKey(aText, 120, 200) && !['click here', 'click here!', 'link', 'here'].includes(aText.toLowerCase()) ? aText : '';
+
           let label = baseLabel;
           if (!label) {
-            label = aText || 'Important Link';
+            label = validAText;
           } else if (aMatches.length > 1 && aText) {
-            label = `${baseLabel} (${aText})`;
+            const combined = `${baseLabel} (${aText})`;
+            label = isValidMetaKey(combined, 140, 220) ? combined : baseLabel;
           }
           label = cleanStr(label);
+          if (!label || !isValidMetaKey(label, 140, 220)) continue;
 
           const ll = label.toLowerCase();
           let hl = href.toLowerCase();
@@ -3987,6 +4075,7 @@ export default function AdminDashboardPage({
             label = `${prefix} ${label}`;
           }
 
+          if (!label || !isValidMetaKey(label, 140, 220)) continue;
           const ll = label.toLowerCase();
           const hl = href.toLowerCase();
 
@@ -4431,16 +4520,16 @@ export default function AdminDashboardPage({
             slug: cleanSlug(wpParsed.slug || prev.slug),
             seoTitle: wpParsed.seoTitle || prev.seoTitle,
             seoDescription: wpParsed.seoDescription || prev.seoDescription,
-            importantDates: { ...(prev.importantDates || {}), ...wpParsed.importantDates },
-            applicationFee: { ...(prev.applicationFee || {}), ...wpParsed.applicationFee },
-            ageLimit: { ...(prev.ageLimit || {}), ...wpParsed.ageLimit },
-            importantLinks: {
+            importantDates: sanitizeMetaRecord({ ...(prev.importantDates || {}), ...wpParsed.importantDates }),
+            applicationFee: sanitizeMetaRecord({ ...(prev.applicationFee || {}), ...wpParsed.applicationFee }),
+            ageLimit: sanitizeMetaRecord({ ...(prev.ageLimit || {}), ...wpParsed.ageLimit }),
+            importantLinks: sanitizeMetaRecord({
               ...(prev.importantLinks || {}),
               ...wpParsed.importantLinks,
               ...quickUrlsWp.links,
               'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
               'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-            },
+            }),
             applyUrl: wpParsed.applyUrl || quickUrlsWp.applyUrl || prev.applyUrl,
             notificationUrl: wpParsed.notificationUrl || quickUrlsWp.notificationUrl || prev.notificationUrl,
             officialUrl: wpParsed.officialUrl || quickUrlsWp.officialUrl || prev.officialUrl,
@@ -4487,7 +4576,9 @@ export default function AdminDashboardPage({
       const importedShort = cleanStr(rawShort || '');
 
       // Extract Important Links
-      const rawLinks = p.importantLinks || p.important_links || p.links || (p['Apply Online'] || p['Official Website'] ? p : null);
+      const explicitRawLinks = p.importantLinks || p.important_links || p.links;
+      const isObjectFallbackLinks = !explicitRawLinks && Boolean(p['Apply Online'] || p['Official Website']);
+      const rawLinks = explicitRawLinks || (isObjectFallbackLinks ? p : null);
       let extractedLinks = {};
       let extractedApply = p.applyUrl || p.apply_url || '';
       let extractedNotif = p.notificationUrl || p.notification_url || '';
@@ -4499,7 +4590,7 @@ export default function AdminDashboardPage({
             if (item && typeof item === 'object') {
               const label = cleanStr(item.label || item.key || item.name || item.title || 'Important Link');
               const url = item.url || item.link || item.href || item.value || '';
-              if (label && url) extractedLinks[label] = url;
+              if (label && url && isValidMetaKey(label, 140, 220)) extractedLinks[label] = url;
             } else if (typeof item === 'string' && item.startsWith('http')) {
               extractedLinks['Important Link'] = item;
             }
@@ -4507,8 +4598,10 @@ export default function AdminDashboardPage({
         } else {
           Object.entries(rawLinks).forEach(([k, v]) => {
             const label = cleanStr(k);
-            const url = typeof v === 'string' ? v : (v?.url || v?.link || '');
-            if (label && url) extractedLinks[label] = url;
+            const url = typeof v === 'string' ? v.trim() : (v?.url || v?.link || '');
+            if (!label || !url || !isValidMetaKey(label, 140, 220)) return;
+            if (isObjectFallbackLinks && !/^(?:https?:\/\/|\/[a-z0-9_-])/i.test(url)) return;
+            extractedLinks[label] = url;
           });
         }
 
@@ -4534,10 +4627,16 @@ export default function AdminDashboardPage({
       // Extract Dates
       const rawDates = p.importantDates || p.important_dates || {};
       let extractedDates = {};
-      if (typeof rawDates === 'object' && !Array.isArray(rawDates)) {
-        Object.entries(rawDates).forEach(([k, v]) => { if (k && v) extractedDates[cleanStr(k)] = cleanStr(v); });
+      if (rawDates && typeof rawDates === 'object' && !Array.isArray(rawDates)) {
+        Object.entries(rawDates).forEach(([k, v]) => {
+          const ck = cleanStr(k);
+          if (ck && v && isValidMetaKey(ck)) extractedDates[ck] = cleanStr(v);
+        });
       } else if (Array.isArray(rawDates)) {
-        rawDates.forEach(d => { if (d.key && d.value) extractedDates[cleanStr(d.key)] = cleanStr(d.value); });
+        rawDates.forEach(d => {
+          const ck = d && d.key ? cleanStr(d.key) : '';
+          if (ck && d.value && isValidMetaKey(ck)) extractedDates[ck] = cleanStr(d.value);
+        });
       }
 
       let extractedAppStart = p.appStart || p.apply_start || rawDates.applyStart || rawDates.appStart || rawDates.start || '';
@@ -4547,10 +4646,16 @@ export default function AdminDashboardPage({
       // Extract Fees
       const rawFees = p.applicationFee || p.application_fee || {};
       let extractedFees = {};
-      if (typeof rawFees === 'object' && !Array.isArray(rawFees)) {
-        Object.entries(rawFees).forEach(([k, v]) => { if (k && v) extractedFees[cleanStr(k)] = cleanStr(v); });
+      if (rawFees && typeof rawFees === 'object' && !Array.isArray(rawFees)) {
+        Object.entries(rawFees).forEach(([k, v]) => {
+          const ck = cleanStr(k);
+          if (ck && v && isValidMetaKey(ck)) extractedFees[ck] = cleanStr(v);
+        });
       } else if (Array.isArray(rawFees)) {
-        rawFees.forEach(f => { if (f.key && f.value) extractedFees[cleanStr(f.key)] = cleanStr(f.value); });
+        rawFees.forEach(f => {
+          const ck = f && f.key ? cleanStr(f.key) : '';
+          if (ck && f.value && isValidMetaKey(ck)) extractedFees[ck] = cleanStr(f.value);
+        });
       }
       let extractedFeeGen = p.feeGen || p.fee_gen || rawFees.General || rawFees.general || rawFees.Gen || '';
       let extractedFeeSc = p.feeSc || p.fee_sc || rawFees['SC / ST'] || rawFees.SC || rawFees.sc || '';
@@ -4558,10 +4663,16 @@ export default function AdminDashboardPage({
       // Extract Age Limits
       const rawAge = p.ageLimit || p.age_limit || {};
       let extractedAge = {};
-      if (typeof rawAge === 'object' && !Array.isArray(rawAge)) {
-        Object.entries(rawAge).forEach(([k, v]) => { if (k && v) extractedAge[cleanStr(k)] = cleanStr(v); });
+      if (rawAge && typeof rawAge === 'object' && !Array.isArray(rawAge)) {
+        Object.entries(rawAge).forEach(([k, v]) => {
+          const ck = cleanStr(k);
+          if (ck && v && isValidMetaKey(ck)) extractedAge[ck] = cleanStr(v);
+        });
       } else if (Array.isArray(rawAge)) {
-        rawAge.forEach(a => { if (a.key && a.value) extractedAge[cleanStr(a.key)] = cleanStr(a.value); });
+        rawAge.forEach(a => {
+          const ck = a && a.key ? cleanStr(a.key) : '';
+          if (ck && a.value && isValidMetaKey(ck)) extractedAge[ck] = cleanStr(a.value);
+        });
       }
       let extractedMinAge = p.minAge || p.min_age || rawAge.min || rawAge.minimum || '';
       let extractedMaxAge = p.maxAge || p.max_age || rawAge.max || rawAge.maximum || '';
@@ -4591,24 +4702,24 @@ export default function AdminDashboardPage({
         feeSc: extractedFeeSc || prev.feeSc,
         minAge: extractedMinAge || prev.minAge,
         maxAge: extractedMaxAge || prev.maxAge,
-        importantLinks: {
+        importantLinks: sanitizeMetaRecord({
           ...(prev.importantLinks || {}),
           ...extractedLinks,
           'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
           'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-        },
-        importantDates: {
+        }),
+        importantDates: sanitizeMetaRecord({
           ...(prev.importantDates || {}),
           ...extractedDates
-        },
-        applicationFee: {
+        }),
+        applicationFee: sanitizeMetaRecord({
           ...(prev.applicationFee || {}),
           ...extractedFees
-        },
-        ageLimit: {
+        }),
+        ageLimit: sanitizeMetaRecord({
           ...(prev.ageLimit || {}),
           ...extractedAge
-        },
+        }),
         faqImage: p.faqImage || p.postImage || p.bannerImage || prev.faqImage || '',
         faqImageLink: p.faqImageLink || prev.faqImageLink || '',
         faqImageCaption: p.faqImageCaption || prev.faqImageCaption || '',
@@ -4678,17 +4789,17 @@ export default function AdminDashboardPage({
             slug: cleanSlug(parsed.slug || prev.slug),
             seoTitle: parsed.seoTitle || prev.seoTitle,
             seoDescription: parsed.seoDescription || prev.seoDescription,
-            importantDates: { ...(prev.importantDates || {}), ...parsed.importantDates },
-            applicationFee: { ...(prev.applicationFee || {}), ...parsed.applicationFee },
-            ageLimit: { ...(prev.ageLimit || {}), ...parsed.ageLimit },
+            importantDates: sanitizeMetaRecord({ ...(prev.importantDates || {}), ...parsed.importantDates }),
+            applicationFee: sanitizeMetaRecord({ ...(prev.applicationFee || {}), ...parsed.applicationFee }),
+            ageLimit: sanitizeMetaRecord({ ...(prev.ageLimit || {}), ...parsed.ageLimit }),
             vacancyDetails: (parsed.vacancyDetails && parsed.vacancyDetails.length > 0) ? parsed.vacancyDetails : (prev.vacancyDetails || []),
-            importantLinks: {
+            importantLinks: sanitizeMetaRecord({
               ...(prev.importantLinks || {}),
               ...parsed.importantLinks,
               ...quickUrlsUni.links,
               'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
               'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-            },
+            }),
             applyUrl: parsed.applyUrl || quickUrlsUni.applyUrl || prev.applyUrl,
             notificationUrl: parsed.notificationUrl || quickUrlsUni.notificationUrl || prev.notificationUrl,
             officialUrl: parsed.officialUrl || quickUrlsUni.officialUrl || prev.officialUrl,
@@ -5014,8 +5125,38 @@ export default function AdminDashboardPage({
       (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
     );
 
+    const isExplicitEdit = Boolean(editingJobId);
     const isUpdate = Boolean(existingJob);
     const finalSlug = cleanSlug(existingJob?.id || baseSlug);
+
+    const safeDates = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.importantDates || existingJob?.important_dates || {})),
+      ...sanitizeMetaRecord(form.importantDates || {}),
+      ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
+      ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
+      ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
+    });
+    const safeFees = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.applicationFee || existingJob?.application_fee || {})),
+      ...sanitizeMetaRecord(form.applicationFee || {}),
+      ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
+      ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
+    });
+    const safeAge = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.ageLimit || existingJob?.age_limits || {})),
+      ...sanitizeMetaRecord(form.ageLimit || {}),
+      ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
+      ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
+    });
+    const safeLinks = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.importantLinks || existingJob?.important_links || {})),
+      ...sanitizeMetaRecord(form.importantLinks || {}),
+      ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
+      ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
+      ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
+      'Join Telegram Channel': 'https://t.me/careerdiary',
+      'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
+    });
 
     const newJob = {
       ...(existingJob || {}),
@@ -5064,64 +5205,16 @@ export default function AdminDashboardPage({
       qualification: form.qualification.trim() || (existingJob?.qualification ?? 'As per notification'),
       vacancyDetails: (form.vacancyDetails && form.vacancyDetails.length > 0) ? form.vacancyDetails : (existingJob?.vacancyDetails || []),
       vacancy_details: (form.vacancyDetails && form.vacancyDetails.length > 0) ? form.vacancyDetails : (existingJob?.vacancy_details || []),
-      importantDates: {
-        ...(existingJob?.importantDates || {}),
-        ...(form.importantDates || {}),
-        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
-        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
-        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-      },
-      important_dates: {
-        ...(existingJob?.important_dates || {}),
-        ...(form.importantDates || {}),
-        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
-        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
-        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-      },
-      applicationFee: {
-        ...(existingJob?.applicationFee || {}),
-        ...(form.applicationFee || {}),
-        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
-        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-      },
-      application_fee: {
-        ...(existingJob?.application_fee || {}),
-        ...(form.applicationFee || {}),
-        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
-        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-      },
-      ageLimit: {
-        ...(existingJob?.ageLimit || {}),
-        ...(form.ageLimit || {}),
-        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
-        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-      },
-      age_limits: {
-        ...(existingJob?.age_limits || {}),
-        ...(form.ageLimit || {}),
-        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
-        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-      },
+      importantDates: safeDates,
+      important_dates: safeDates,
+      applicationFee: safeFees,
+      application_fee: safeFees,
+      ageLimit: safeAge,
+      age_limits: safeAge,
       selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
       howToFill: Array.isArray(form.howToFill) ? form.howToFill.map(s => s.trim()).filter(Boolean) : (existingJob?.howToFill || []),
-      importantLinks: {
-        ...(existingJob?.importantLinks || {}),
-        ...(form.importantLinks || {}),
-        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
-        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
-        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
-        'Join Telegram Channel': 'https://t.me/careerdiary',
-        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
-      },
-      important_links: {
-        ...(existingJob?.important_links || {}),
-        ...(form.importantLinks || {}),
-        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
-        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
-        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
-        'Join Telegram Channel': 'https://t.me/careerdiary',
-        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
-      },
+      importantLinks: safeLinks,
+      important_links: safeLinks,
       faqImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
       faqImageLink: (form.faqImageLink || '').trim(),
       faqImageCaption: (form.faqImageCaption || '').trim(),
@@ -5208,7 +5301,37 @@ export default function AdminDashboardPage({
       (cleanFormTitle && j.title && normalizeStr(j.title) === cleanFormTitle)
     );
 
+    const isExplicitEdit = Boolean(editingJobId);
     const finalSlug = cleanSlug(existingJob?.id || baseSlug) || `draft-${Date.now()}`;
+
+    const safeDates = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.importantDates || existingJob?.important_dates || {})),
+      ...sanitizeMetaRecord(form.importantDates || {}),
+      ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
+      ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
+      ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
+    });
+    const safeFees = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.applicationFee || existingJob?.application_fee || {})),
+      ...sanitizeMetaRecord(form.applicationFee || {}),
+      ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
+      ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
+    });
+    const safeAge = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.ageLimit || existingJob?.age_limits || {})),
+      ...sanitizeMetaRecord(form.ageLimit || {}),
+      ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
+      ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
+    });
+    const safeLinks = sanitizeMetaRecord({
+      ...(isExplicitEdit ? {} : sanitizeMetaRecord(existingJob?.importantLinks || existingJob?.important_links || {})),
+      ...sanitizeMetaRecord(form.importantLinks || {}),
+      ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
+      ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
+      ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
+      'Join Telegram Channel': 'https://t.me/careerdiary',
+      'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
+    });
 
     const draftJob = {
       ...(existingJob || {}),
@@ -5255,64 +5378,16 @@ export default function AdminDashboardPage({
       minAge: form.minAge.trim() || (existingJob?.minAge ?? '18 Years'),
       maxAge: form.maxAge.trim() || (existingJob?.maxAge ?? '37 Years'),
       qualification: form.qualification.trim() || (existingJob?.qualification ?? 'As per notification'),
-      importantDates: {
-        ...(existingJob?.importantDates || {}),
-        ...(form.importantDates || {}),
-        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
-        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
-        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-      },
-      important_dates: {
-        ...(existingJob?.important_dates || {}),
-        ...(form.importantDates || {}),
-        ...(form.appStart ? { applyStart: form.appStart.trim() } : {}),
-        ...(form.lastDate ? { lastDate: form.lastDate.trim() } : {}),
-        ...(form.examDate ? { examDate: form.examDate.trim() } : {}),
-      },
-      applicationFee: {
-        ...(existingJob?.applicationFee || {}),
-        ...(form.applicationFee || {}),
-        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
-        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-      },
-      application_fee: {
-        ...(existingJob?.application_fee || {}),
-        ...(form.applicationFee || {}),
-        ...(form.feeGen ? { General: form.feeGen.trim() } : {}),
-        ...(form.feeSc ? { 'SC / ST': form.feeSc.trim() } : {}),
-      },
-      ageLimit: {
-        ...(existingJob?.ageLimit || {}),
-        ...(form.ageLimit || {}),
-        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
-        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-      },
-      age_limits: {
-        ...(existingJob?.age_limits || {}),
-        ...(form.ageLimit || {}),
-        ...(form.minAge ? { 'Minimum Age': form.minAge.trim() } : {}),
-        ...(form.maxAge ? { 'Maximum Age': form.maxAge.trim() } : {}),
-      },
+      importantDates: safeDates,
+      important_dates: safeDates,
+      applicationFee: safeFees,
+      application_fee: safeFees,
+      ageLimit: safeAge,
+      age_limits: safeAge,
       selectionProcess: Array.isArray(form.selectionProcess) ? form.selectionProcess.map(s => s.trim()).filter(Boolean) : (existingJob?.selectionProcess || []),
       howToFill: Array.isArray(form.howToFill) ? form.howToFill.map(s => s.trim()).filter(Boolean) : (existingJob?.howToFill || []),
-      importantLinks: {
-        ...(existingJob?.importantLinks || {}),
-        ...(form.importantLinks || {}),
-        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
-        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
-        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
-        'Join Telegram Channel': 'https://t.me/careerdiary',
-        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
-      },
-      important_links: {
-        ...(existingJob?.important_links || {}),
-        ...(form.importantLinks || {}),
-        ...(form.applyUrl ? { 'Apply Online': form.applyUrl.trim() } : {}),
-        ...(form.notificationUrl ? { 'Download Official Notification PDF': form.notificationUrl.trim() } : {}),
-        ...(form.officialUrl ? { 'Official Website': form.officialUrl.trim() } : {}),
-        'Join Telegram Channel': 'https://t.me/careerdiary',
-        'Join WhatsApp Channel': 'https://whatsapp.com/channel/0029Va4bvoj6rsQxfA1Pzx2u'
-      },
+      importantLinks: safeLinks,
+      important_links: safeLinks,
       faqImage: (form.faqImage || form.postImage || form.bannerImage || '').trim(),
       faqImageLink: (form.faqImageLink || '').trim(),
       faqImageCaption: (form.faqImageCaption || '').trim(),
@@ -11295,16 +11370,17 @@ export default function AdminDashboardPage({
                         type="button"
                         onClick={() => {
                           const html = visualEditorRef.current ? visualEditorRef.current.innerHTML : form.content;
-                          const quickUrls = extractQuickUrlsFromContent(html, form.importantLinks);
+                          const sanitizedPrevLinks = sanitizeMetaRecord(form.importantLinks);
+                          const quickUrls = extractQuickUrlsFromContent(html, sanitizedPrevLinks);
                           setForm(prev => ({
                             ...prev,
                             applyUrl: quickUrls.applyUrl || prev.applyUrl,
                             notificationUrl: quickUrls.notificationUrl || prev.notificationUrl,
                             officialUrl: quickUrls.officialUrl || prev.officialUrl,
-                            importantLinks: {
-                              ...(prev.importantLinks || {}),
+                            importantLinks: sanitizeMetaRecord({
+                              ...sanitizeMetaRecord(prev.importantLinks),
                               ...quickUrls.links
-                            }
+                            })
                           }));
                           showToast('⚡ Direct Quick URLs extracted and imported!', 'success');
                         }}
@@ -12053,19 +12129,20 @@ export default function AdminDashboardPage({
                   if (sanitized !== original) {
                     visualEditorRef.current.innerHTML = sanitized;
                   }
-                  const quickUrls = extractQuickUrlsFromContent(sanitized, form.importantLinks);
+                  const sanitizedPrevLinks = sanitizeMetaRecord(form.importantLinks);
+                  const quickUrls = extractQuickUrlsFromContent(sanitized, sanitizedPrevLinks);
                   setForm(prev => ({
                     ...prev,
                     content: sanitized,
                     applyUrl: prev.applyUrl || quickUrls.applyUrl,
                     notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
                     officialUrl: prev.officialUrl || quickUrls.officialUrl,
-                    importantLinks: {
-                      ...(prev.importantLinks || {}),
+                    importantLinks: sanitizeMetaRecord({
+                      ...sanitizeMetaRecord(prev.importantLinks),
                       ...quickUrls.links,
                       'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
                       'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-                    }
+                    })
                   }));
                 }
               }}
@@ -12077,19 +12154,20 @@ export default function AdminDashboardPage({
                     if (sanitized !== original) {
                       visualEditorRef.current.innerHTML = sanitized;
                     }
-                    const quickUrls = extractQuickUrlsFromContent(sanitized, form.importantLinks);
+                    const sanitizedPrevLinks = sanitizeMetaRecord(form.importantLinks);
+                    const quickUrls = extractQuickUrlsFromContent(sanitized, sanitizedPrevLinks);
                     setForm(prev => ({
                       ...prev,
                       content: sanitized,
                       applyUrl: prev.applyUrl || quickUrls.applyUrl,
                       notificationUrl: prev.notificationUrl || quickUrls.notificationUrl,
                       officialUrl: prev.officialUrl || quickUrls.officialUrl,
-                      importantLinks: {
-                        ...(prev.importantLinks || {}),
+                      importantLinks: sanitizeMetaRecord({
+                        ...sanitizeMetaRecord(prev.importantLinks),
                         ...quickUrls.links,
                         'Join Telegram Channel': CAREER_DIARY_TELEGRAM,
                         'Join WhatsApp Channel': CAREER_DIARY_WHATSAPP
-                      }
+                      })
                     }));
                     showToast('🔗 Content pasted: Social & Direct Quick URLs auto-imported!', 'info');
                   }
