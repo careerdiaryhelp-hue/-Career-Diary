@@ -31,13 +31,13 @@ export default function LastDateClient({ jobs: initialJobs = [] }) {
       window.location.search.includes('admin')
     );
 
-    // 10-minute client throttle: skip network request if cache is fresh (< 10 mins), protecting Firebase quota
+    // 1-minute client throttle: delivers rapid updates across browsers while protecting Firebase quota
     const lastFetch = Number(localStorage.getItem('careerdiary_live_jobs_ts') || 0);
-    const isCacheFresh = (Date.now() - lastFetch) < 600000;
+    const isCacheFresh = (Date.now() - lastFetch) < 60000;
 
     if (!isCacheFresh || isAdminUser) {
       // 2. Fetch fresh live jobs from /api/jobs for ALL browsers
-      fetch('/api/jobs')
+      fetch('/api/jobs', isAdminUser ? { cache: 'no-store' } : undefined)
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(freshPosts => {
           if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
@@ -51,7 +51,7 @@ export default function LastDateClient({ jobs: initialJobs = [] }) {
         })
         .catch(() => {
           import('../firebase').then(({ fetchFirestoreJobsOnce }) => {
-            fetchFirestoreJobsOnce().then(freshPosts => {
+            fetchFirestoreJobsOnce(isAdminUser).then(freshPosts => {
               if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
                 try {
                   localStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
@@ -70,6 +70,8 @@ export default function LastDateClient({ jobs: initialJobs = [] }) {
       unsub = subscribeToFirestoreJobs((firestorePosts) => {
         if (active && Array.isArray(firestorePosts) && firestorePosts.length > 0) {
           try {
+            localStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+            localStorage.setItem('careerdiary_live_jobs_ts', String(Date.now()));
             sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
           } catch (_) {}
           setJobs(prev => mergeAndSortJobs(firestorePosts, prev));

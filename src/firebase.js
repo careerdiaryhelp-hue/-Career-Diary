@@ -1,5 +1,6 @@
 // Safe Firebase Configuration & Firestore REST/Client Service
 // Avoids top-level Firebase JS SDK imports on the server to prevent Cloudflare Worker EvalError (protobufjs)
+import { sanitizeMetadataMap, sanitizeImportantLinksMap } from './utils/linkUtils.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAMHGJCN8vrmPWZxD2zw-KsXr89DwZBKdM",
@@ -189,6 +190,20 @@ function removePendingSave(jobId) {
   } catch (_) {}
 }
 
+export function clearLiveJobsBrowserCache() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('careerdiary_live_jobs_ts');
+    localStorage.removeItem('careerdiary_live_jobs');
+    localStorage.removeItem('careerdiary_top_forms_ts');
+    localStorage.removeItem('careerdiary_top_forms');
+  } catch (_) {}
+  try {
+    sessionStorage.removeItem('careerdiary_live_jobs');
+    sessionStorage.removeItem('careerdiary_top_forms');
+  } catch (_) {}
+}
+
 // Retry pending Firestore saves (called on app load / after successful save)
 export async function retryPendingSaves() {
   if (typeof window === 'undefined') return;
@@ -204,9 +219,7 @@ export async function retryPendingSaves() {
     }
   }
   if (anySucceeded) {
-    try {
-      localStorage.removeItem('careerdiary_live_jobs_ts');
-    } catch (_) {}
+    clearLiveJobsBrowserCache();
   }
 }
 
@@ -218,9 +231,32 @@ export async function publishJobToFirestore(job, skipQueue = false) {
     return { success: false, error: new Error('Invalid Job ID: Post title or slug must contain letters or numbers.') };
   }
   const { _ts, _safeId, _normTitle, ...cleanData } = job;
+
+  // Strip any corrupted prose/CSS/boilerplate map keys before saving to Firestore
+  const preSanitized = { ...cleanData };
+  const dirtyMapsToReplace = {};
+  for (const linkField of ['importantLinks', 'important_links']) {
+    if (preSanitized[linkField] && typeof preSanitized[linkField] === 'object' && !Array.isArray(preSanitized[linkField])) {
+      const cleanedLinks = sanitizeImportantLinksMap(preSanitized[linkField]);
+      if (Object.keys(cleanedLinks).length !== Object.keys(preSanitized[linkField]).length) {
+        dirtyMapsToReplace[linkField] = sanitizeFirestoreData(cleanedLinks);
+      }
+      preSanitized[linkField] = cleanedLinks;
+    }
+  }
+  for (const metaField of ['importantDates', 'important_dates', 'applicationFee', 'application_fee', 'ageLimit', 'age_limit', 'age_limits']) {
+    if (preSanitized[metaField] && typeof preSanitized[metaField] === 'object' && !Array.isArray(preSanitized[metaField])) {
+      const cleanedMeta = sanitizeMetadataMap(preSanitized[metaField]);
+      if (Object.keys(cleanedMeta).length !== Object.keys(preSanitized[metaField]).length) {
+        dirtyMapsToReplace[metaField] = sanitizeFirestoreData(cleanedMeta);
+      }
+      preSanitized[metaField] = cleanedMeta;
+    }
+  }
+
   const nowIso = new Date().toISOString();
   const safeJob = sanitizeFirestoreData({
-    ...cleanData,
+    ...preSanitized,
     id: safeId,
     slug: safeId,
     updatedAt: nowIso
@@ -233,12 +269,18 @@ export async function publishJobToFirestore(job, skipQueue = false) {
     try {
       const db = await getClientDb();
       if (!db) throw new Error('Firestore is only available in browser');
-      const { doc, setDoc } = await import('firebase/firestore');
+      const { doc, setDoc, updateDoc } = await import('firebase/firestore');
       const jobRef = doc(db, 'jobs', safeId);
       await setDoc(jobRef, safeJob, { merge: true });
-      // Invalidate memory cache so next fetch immediately returns fresh data
+      if (Object.keys(dirtyMapsToReplace).length > 0) {
+        await updateDoc(jobRef, dirtyMapsToReplace);
+      }
+      // Invalidate memory caches & browser storage so next fetch immediately returns fresh data
       memoryCache.data = null;
       memoryCache.timestamp = 0;
+      topFormsCache = { data: [], timestamp: 0 };
+      DOC_MEM_CACHE.delete(`jobs/${safeId}`);
+      clearLiveJobsBrowserCache();
       // Success — remove from pending queue if it was there
       removePendingSave(safeId);
       return { success: true, cleanId: safeId };
@@ -277,6 +319,9 @@ export async function deleteJobFromFirestore(jobId) {
     await deleteDoc(jobRef);
     memoryCache.data = null;
     memoryCache.timestamp = 0;
+    topFormsCache = { data: [], timestamp: 0 };
+    DOC_MEM_CACHE.delete(`jobs/${safeId}`);
+    clearLiveJobsBrowserCache();
     return { success: true };
   } catch (error) {
     console.error('Error deleting job from Firestore:', error);
@@ -332,6 +377,12 @@ export async function saveBreakingNewsToFirestore(items) {
 
     breakingNewsCache.data = [];
     breakingNewsCache.timestamp = 0;
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('careerdiary_breaking_news');
+        sessionStorage.removeItem('careerdiary_breaking_news');
+      }
+    } catch (_) {}
     return { success: true };
   } catch (error) {
     console.error('Error saving breaking news:', error);
@@ -447,17 +498,17 @@ const MASK_QUERY = FIRESTORE_LIST_FIELDS.map(f => `mask.fieldPaths=${encodeURICo
 
 let pendingFetch = null;
 
-// Fetch all jobs once (fast REST fetch with 60-second cache, field masking, quota backoff, and concurrency lock)
-export async function fetchFirestoreJobsOnce() {
+// Fetch all jobs once (fast REST fetch with 2-minute memory cache, quota backoff, and concurrency lock)
+export async function fetchFirestoreJobsOnce(forceFresh = false) {
   const now = Date.now();
   if (now < memoryCache.quotaExceededUntil) {
     return memoryCache.data || [];
   }
-  // 10-minute in-memory cache protects Firestore free tier while delivering fast updates
-  if (memoryCache.data && (now - memoryCache.timestamp < 600000)) {
+  // 2-minute in-memory cache matches CDN cacheTtl while protecting Firestore free tier
+  if (!forceFresh && memoryCache.data && (now - memoryCache.timestamp < 120000)) {
     return memoryCache.data;
   }
-  if (pendingFetch) {
+  if (!forceFresh && pendingFetch) {
     return pendingFetch;
   }
 
@@ -476,13 +527,19 @@ export async function fetchFirestoreJobsOnce() {
         }
       };
 
-      const res = await fetch(url, { 
+      const fetchOpts = { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryBody),
         signal: controller.signal, 
-        cf: { cacheTtl: 120, cacheEverything: true }
-      });
+      };
+      if (forceFresh) {
+        fetchOpts.cache = 'no-store';
+      } else {
+        fetchOpts.cf = { cacheTtl: 120, cacheEverything: true };
+      }
+
+      const res = await fetch(url, fetchOpts);
       clearTimeout(timeoutId);
 
       if (res.status === 429 || res.status === 403) {
@@ -540,7 +597,7 @@ export async function fetchFirestoreJobsOnce() {
 const DOC_MEM_CACHE = new Map();
 
 // Fetch a single document by ID from Firestore (includes full HTML content, ~30KB)
-// Caches both hits and misses (negative caching) to eliminate repetitive 404 queries
+// Caches both hits (2m) and misses (negative caching 10m) to eliminate repetitive 404 queries
 export async function fetchFirestoreJobById(docId, collection = 'jobs') {
   if (!docId) return null;
   const clean = cleanJobId(docId);
@@ -550,14 +607,14 @@ export async function fetchFirestoreJobById(docId, collection = 'jobs') {
     return null;
   }
   const cached = DOC_MEM_CACHE.get(cacheKey);
-  if (cached && (now - cached.time < 600000)) {
+  if (cached && (now - cached.time < (cached.data ? 120000 : 600000))) {
     return cached.data;
   }
   try {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/${collection}/${clean}?key=${firebaseConfig.apiKey}`,
       { 
-        cf: { cacheTtl: 600, cacheEverything: true }
+        cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
     if (res.status === 429 || res.status === 403) {
@@ -583,7 +640,7 @@ export async function fetchFirestoreJobById(docId, collection = 'jobs') {
 // Fetch Breaking News array from Firestore REST (server-side support with 120s memory cache)
 export async function fetchBreakingNewsServer() {
   const now = Date.now();
-  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 600000)) {
+  if (breakingNewsCache.data.length > 0 && (now - breakingNewsCache.timestamp < 120000)) {
     return breakingNewsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {
@@ -593,7 +650,7 @@ export async function fetchBreakingNewsServer() {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/careerdiary-f2e0a/databases/(default)/documents/jobs/settings_breakingNews`,
       { 
-        cf: { cacheTtl: 600, cacheEverything: true }
+        cf: { cacheTtl: 120, cacheEverything: true }
       }
     );
     if (res.status === 429) {
@@ -613,10 +670,10 @@ export async function fetchBreakingNewsServer() {
   return breakingNewsCache.data;
 }
 
-// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 10-minute memory cache)
+// Fetch jobs marked with isTopForm: true directly from Firestore REST (with 2-minute memory cache)
 export async function fetchTopOnlineFormsServer() {
   const now = Date.now();
-  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 600000)) {
+  if (topFormsCache.data.length > 0 && (now - topFormsCache.timestamp < 120000)) {
     return topFormsCache.data;
   }
   if (now < memoryCache.quotaExceededUntil) {

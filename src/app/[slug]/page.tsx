@@ -4,7 +4,7 @@ import JobDetailWrapper from '../../components/JobDetailWrapper';
 import { notFound, redirect } from 'next/navigation';
 import { resolveDestinationUrl } from '../../utils/redirectService';
 
-export const revalidate = 300; // 5-minute edge cache protects Firestore quota while keeping data fresh
+export const revalidate = 120; // 2-minute edge cache protects Firestore quota while keeping data fresh
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;

@@ -34,13 +34,13 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
       window.location.search.includes('admin')
     );
 
-    // 10-minute client throttle: skip network request if cache is fresh (< 10 mins), protecting Firebase quota
+    // 1-minute client throttle: delivers rapid updates across browsers while protecting Firebase quota
     const lastFetch = Number(localStorage.getItem('careerdiary_live_jobs_ts') || 0);
-    const isCacheFresh = (Date.now() - lastFetch) < 600000;
+    const isCacheFresh = (Date.now() - lastFetch) < 60000;
 
     if (!isCacheFresh || isAdminUser) {
       // 2. Fetch fresh live jobs from /api/jobs for ALL browsers
-      fetch('/api/jobs')
+      fetch('/api/jobs', isAdminUser ? { cache: 'no-store' } : undefined)
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(freshPosts => {
           if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
@@ -55,7 +55,7 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
         })
         .catch(() => {
           import('../firebase').then(({ fetchFirestoreJobsOnce }) => {
-            fetchFirestoreJobsOnce().then(freshPosts => {
+            fetchFirestoreJobsOnce(isAdminUser).then(freshPosts => {
               if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
                 try {
                   localStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
@@ -75,6 +75,8 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
       unsubscribe = subscribeToFirestoreJobs((firestorePosts) => {
         if (active && Array.isArray(firestorePosts) && firestorePosts.length > 0) {
           try {
+            localStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+            localStorage.setItem('careerdiary_live_jobs_ts', String(Date.now()));
             sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
           } catch (_) {}
           const catPosts = getJobsForCategory(firestorePosts, categoryKey);
@@ -138,7 +140,7 @@ export default function CategoryPageClient({ categoryKey, title, subtitle, initi
           currentCategory={categoryKey}
           searchQuery={searchQuery}
           onSelectJob={(id) => {
-            const j = initialJobs.find(x => x.id === id);
+            const j = jobs.find(x => x.id === id) || initialJobs.find(x => x.id === id);
             if (j) window.location.href = getJobUrl(j);
           }}
           onNavigateCategory={(cat, slug) => {

@@ -2,9 +2,13 @@
 import React from 'react';
 import { X, Building2, Tag, CalendarCheck, IndianRupee, UserCheck, Info, Link, FileDown, Send, MessageCircle, CheckCircle2, MapPin } from 'lucide-react';
 import AdSenseBanner from './AdSenseBanner';
+import { sanitizeImportantLinksMap } from '../utils/linkUtils';
 
 export default function JobDetailModal({ job, onClose }) {
   if (!job) return null;
+
+  const safeImportantLinks = sanitizeImportantLinksMap(job.importantLinks || job.important_links || {});
+  const validLinkEntries = Object.entries(safeImportantLinks);
 
   const categoryUpper = (job.category || '').toUpperCase();
   const isAdmitCard = categoryUpper.includes('ADMIT CARD');
@@ -20,9 +24,12 @@ export default function JobDetailModal({ job, onClose }) {
   else if (isAdmission) primaryActionText = "Apply Online for Admission";
 
   const getLinkUrl = (key) => {
-    if (job.importantLinks && typeof job.importantLinks === 'object') {
-      const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key));
-      if (foundKey) return job.importantLinks[foundKey];
+    if (safeImportantLinks && typeof safeImportantLinks === 'object') {
+      const foundKey = Object.keys(safeImportantLinks).find(k => k.toLowerCase().includes(key));
+      if (foundKey) {
+        const val: any = safeImportantLinks[foundKey];
+        return typeof val === 'string' ? val : (val?.url || val?.link || null);
+      }
     }
     return null;
   };
@@ -156,18 +163,18 @@ export default function JobDetailModal({ job, onClose }) {
           </div>
 
           {/* Direct Important Links Table */}
-          {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 && (
+          {validLinkEntries.length > 0 && (
             <div style={{ marginBottom: '20px' }}>
               <h4 style={{ fontFamily: 'Outfit', fontSize: '1.1rem', marginBottom: '8px', color: 'var(--primary-color)' }}>
                 <Link className="w-4 h-4 inline mr-1" /> Useful Important Direct Links
               </h4>
               <table className="table-styled">
                 <tbody>
-                  {Object.entries(job.importantLinks).map(([label, url]: [string, any], idx) => (
+                  {validLinkEntries.map(([label, url]: [string, any], idx) => (
                     <tr key={idx}>
                       <td style={{ fontWeight: '600', width: '60%' }}>{label}</td>
                       <td>
-                        <a href={typeof url === 'string' ? url : (url?.url || '')} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 'bold', textDecoration: 'underline' }}>
+                        <a href={typeof url === 'string' ? url : (url?.url || url?.link || '')} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 'bold', textDecoration: 'underline' }}>
                           Click Here
                         </a>
                       </td>

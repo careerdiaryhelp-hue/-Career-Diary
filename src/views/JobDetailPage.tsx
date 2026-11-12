@@ -5,20 +5,32 @@ import AdSenseBanner, { DisplayAd, Dis2Ad, Ds3Ad, InPostAd, InArticleAd1100, Mul
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
 import { isAdmitCard, isResult, isAnswerKey, isAdmission, getJobUrl } from '../data/categoryHelpers';
-import { autoLinkSocialChannels } from '../utils/linkUtils';
+import {
+  autoLinkSocialChannels,
+  cleanExtractedLabel,
+  isValidImportantLinkKey,
+  sanitizeImportantLinksMap,
+  sanitizeMetadataMap
+} from '../utils/linkUtils';
 import { canServeAds } from '../utils/adShield';
 
 export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }) {
   const [copied, setCopied] = useState(false);
   if (!job) return null;
 
+  const rawLinks = job.importantLinks || job.important_links;
+  const safeImportantLinks = sanitizeImportantLinksMap(rawLinks);
+
   const getLinkUrl = (...keys) => {
-    const rawLinks = job.importantLinks || job.important_links;
-    if (rawLinks && typeof rawLinks === 'object') {
+    if (safeImportantLinks && typeof safeImportantLinks === 'object') {
       for (const key of keys) {
-        const foundKey = Object.keys(rawLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
-        if (foundKey && rawLinks[foundKey] && typeof rawLinks[foundKey] === 'string' && rawLinks[foundKey].startsWith('http')) {
-          return rawLinks[foundKey];
+        const foundKey = Object.keys(safeImportantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey) {
+          const val: any = safeImportantLinks[foundKey];
+          const url = typeof val === 'string' ? val : (val?.url || val?.link || '');
+          if (typeof url === 'string' && url.startsWith('http')) {
+            return url;
+          }
         }
       }
     }
@@ -33,9 +45,9 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   const notificationUrl = getLinkUrl('notification', 'brochure', 'rulebook', 'pdf', 'notice') || job.notificationUrl || pdfRouteUrl || officialWebUrl;
   const admitCardUrl = getLinkUrl('admit card', 'admit', 'hall ticket') || officialWebUrl;
 
-  const importantDates = job.importantDates || job.important_dates || {};
-  const applicationFee = job.applicationFee || job.application_fee || {};
-  const ageLimit = job.ageLimit || job.age_limit || {};
+  const importantDates = sanitizeMetadataMap(job.importantDates || job.important_dates || {});
+  const applicationFee = sanitizeMetadataMap(job.applicationFee || job.application_fee || {});
+  const ageLimit = sanitizeMetadataMap(job.ageLimit || job.age_limit || {});
   const vacancyDetails = job.vacancyDetails || job.vacancy_details || [];
 
   // Helper to sanitize links so Career Diary links point to https://careerdiary.in/
@@ -68,21 +80,20 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
   };
 
   // Build comprehensive normalized list of important links
-  const rawLinks = job.importantLinks || job.important_links || {};
-  let customLinks = [];
+  const customLinks = [];
 
   if (Array.isArray(rawLinks)) {
     rawLinks.forEach(item => {
       if (typeof item === 'string' && item.startsWith('http')) {
         customLinks.push(sanitizeLink('Important Link', item));
       } else if (item && typeof item === 'object') {
-        const label = item.label || item.key || item.name || item.title || 'Important Link';
+        const label = cleanExtractedLabel(item.label || item.key || item.name || item.title || 'Important Link');
         const url = item.url || item.link || item.href || item.value || '';
-        if (label && url) customLinks.push(sanitizeLink(label, url));
+        if (label && url && isValidImportantLinkKey(label)) customLinks.push(sanitizeLink(label, url));
       }
     });
-  } else if (typeof rawLinks === 'object' && rawLinks !== null) {
-    Object.entries(rawLinks).forEach(([label, url]: [string, any]) => {
+  } else if (safeImportantLinks && typeof safeImportantLinks === 'object') {
+    Object.entries(safeImportantLinks).forEach(([label, url]: [string, any]) => {
       const linkUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
       if (label && linkUrl) {
         customLinks.push(sanitizeLink(label, linkUrl));
@@ -90,10 +101,11 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     });
   }
 
-  // Filter out any existing telegram / whatsapp to eliminate duplicates
-  const nonSocialLinks = customLinks.filter(
-    l => !l.label.toLowerCase().includes('telegram') && !l.label.toLowerCase().includes('whatsapp')
-  );
+  // Filter out any existing telegram / whatsapp / careerdiary rows to eliminate duplicates
+  const nonSocialLinks = customLinks.filter((l) => {
+    const ll = l.label.toLowerCase();
+    return !ll.includes('telegram') && !ll.includes('whatsapp') && !ll.includes('check career diary') && ll !== 'career diary';
+  });
 
   // Guarantee 'Apply Online' is present if available
   const hasApply = nonSocialLinks.some(l => l.label.toLowerCase().includes('apply'));

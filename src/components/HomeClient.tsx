@@ -69,13 +69,13 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       window.location.search.includes('admin')
     );
 
-    // 10-minute client throttle: skip network request if cache is fresh (< 10 mins), protecting Firebase quota
+    // 1-minute client throttle: delivers rapid updates across browsers while protecting Firebase quota
     const lastFetch = Number(localStorage.getItem('careerdiary_live_jobs_ts') || 0);
-    const isCacheFresh = (Date.now() - lastFetch) < 600000;
+    const isCacheFresh = (Date.now() - lastFetch) < 60000;
 
     if (!isCacheFresh || isAdminUser) {
       // 2. Fetch fresh live jobs from /api/jobs for ALL browsers (works in Chrome, Vivo, Samsung, Firefox, Safari)
-      fetch('/api/jobs')
+      fetch('/api/jobs', isAdminUser ? { cache: 'no-store' } : undefined)
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(freshPosts => {
           if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
@@ -90,7 +90,7 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
         .catch(() => {
           // Fallback: direct REST query from Firestore if API route is unreachable
           import('../firebase').then(({ fetchFirestoreJobsOnce }) => {
-            fetchFirestoreJobsOnce().then(freshPosts => {
+            fetchFirestoreJobsOnce(isAdminUser).then(freshPosts => {
               if (active && Array.isArray(freshPosts) && freshPosts.length > 0) {
                 try {
                   localStorage.setItem('careerdiary_live_jobs', JSON.stringify(freshPosts));
@@ -104,7 +104,7 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
         });
 
       // 3. Fetch fresh breaking news from /api/news for ALL browsers
-      fetch('/api/news')
+      fetch('/api/news', isAdminUser ? { cache: 'no-store' } : undefined)
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(newsData => {
           if (active && Array.isArray(newsData) && newsData.length > 0) {
@@ -139,6 +139,8 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
       unsubJobs = subscribeToFirestoreJobs((firestorePosts) => {
         if (active && Array.isArray(firestorePosts) && firestorePosts.length > 0) {
           try {
+            localStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
+            localStorage.setItem('careerdiary_live_jobs_ts', String(Date.now()));
             sessionStorage.setItem('careerdiary_live_jobs', JSON.stringify(firestorePosts));
           } catch (_) {}
           setJobs(prev => mergeAndSortJobs(firestorePosts, prev));

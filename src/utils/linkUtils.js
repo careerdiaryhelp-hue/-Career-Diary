@@ -82,7 +82,7 @@ const stripNonContentTags = (html) =>
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
     .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ');
 
-const cleanExtractedLabel = (str) =>
+export const cleanExtractedLabel = (str) =>
   String(str || '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
@@ -95,18 +95,54 @@ const cleanExtractedLabel = (str) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const BOILERPLATE_LABEL_PREFIX_RE = /^(?:eligibility\s*criteria|short\s*info(?:rmation)?|short\s*details?|latest\s*posts?|related\s*posts?|you\s*may\s*also\s*check|disclaimer|question\s*:|answer\s*:|important\s*questions?|how\s*to\s*fill|mode\s*of\s*selection|candidates?\s+must\s+have)/i;
+const BOILERPLATE_LABEL_PREFIX_RE = /^(?:post\s*(?:date|update\s*date)\s*:|online\s*apply\s*(?:start|last)\s*date\s*:|last\s*date\s*(?:for|to)\s*(?:apply|fee\s*payment)\s*:|eligibility\s*criteria\b|short\s*info(?:rmation)?\b|short\s*details?\b|latest\s*posts?\b|related\s*posts?\b|you\s*may\s*also\s*check\b|disclaimer\b|question\s*:|answer\s*:|important\s*questions?\b|how\s*to\s*(?:fill|apply|check|download)\b|mode\s*of\s*selection\b|candidates?\s+(?:can|must)\s+(?:have|apply|check|read)\b|age\s*relaxation\b|read\s+the\s+official\s+notification\b)/i;
+const PROSE_LABEL_ANYWHERE_RE = /(?:\bhas\s+released\s+(?:a\s+)?notification\b|\bhas\s+invited\s+online\b|\bfor\s+the\s+recruitment\s+of\b|\bcandidates?\s+(?:can|must)\s+(?:apply|check|read)\b|\bpost\s*date\s*:\s*[a-z]+\s+\d{1,2},?\s+\d{4})/i;
+const GENERIC_LINK_ONLY_RE = /^(?:[➤►▶•*\-\s]*click\s+here[!.\s]*|(?:\d{4}|(?:\d{1,2}(?:st|nd|rd|th)?[-/\s]+)?(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[-/\s,]*(?:\d{1,2}(?:st|nd|rd|th)?)?(?:[-/\s,]+\d{4})?)[.,!\s]*|(?:recruitment|short\s+information|short\s+info|post\s+date|home|here|link|more|details|application\s+home\s+page)[.:!>\s]*)$/i;
 const GENERIC_ANCHOR_TEXTS = new Set(['click here', 'click here!', 'link', 'here', 'open', 'view', 'download', 'check']);
 
-const isValidLinkLabelKey = (label, maxChars = 140, maxBytes = 220) => {
+export const isValidLinkLabelKey = (label, maxChars = 140, maxBytes = 220) => {
   if (!label || typeof label !== 'string') return false;
-  const trimmed = label.trim();
+  const trimmed = cleanExtractedLabel(label);
   if (!trimmed || trimmed.length > maxChars || getUtf8ByteLength(trimmed) > maxBytes) return false;
   if (/^__.*__$/.test(trimmed)) return false;
-  if (/[{}]|;base64,|@media|function\s*\(|window\.|document\./i.test(trimmed)) return false;
+  if (/[{}]|;base64,|@media|function\s*\(|window\.|document\.|<script|<style/i.test(trimmed)) return false;
   if (/^[.#"']/.test(trimmed)) return false;
   if (BOILERPLATE_LABEL_PREFIX_RE.test(trimmed)) return false;
+  if (PROSE_LABEL_ANYWHERE_RE.test(trimmed)) return false;
   return true;
+};
+
+export const isValidImportantLinkKey = (label, maxChars = 140, maxBytes = 220) => {
+  if (!isValidLinkLabelKey(label, maxChars, maxBytes)) return false;
+  const trimmed = cleanExtractedLabel(label);
+  if (GENERIC_LINK_ONLY_RE.test(trimmed)) return false;
+  return true;
+};
+
+export const sanitizeMetadataMap = (obj, maxChars = 140, maxBytes = 220) => {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+  const cleaned = {};
+  for (const [rawK, v] of Object.entries(obj)) {
+    const k = cleanExtractedLabel(rawK);
+    if (!isValidLinkLabelKey(k, maxChars, maxBytes)) continue;
+    if (v !== undefined && typeof v !== 'function' && typeof v !== 'symbol' && !Object.prototype.hasOwnProperty.call(cleaned, k)) {
+      cleaned[k] = v;
+    }
+  }
+  return cleaned;
+};
+
+export const sanitizeImportantLinksMap = (obj, maxChars = 140, maxBytes = 220) => {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+  const cleaned = {};
+  for (const [rawK, v] of Object.entries(obj)) {
+    const k = cleanExtractedLabel(rawK);
+    if (!isValidImportantLinkKey(k, maxChars, maxBytes)) continue;
+    if (v !== undefined && typeof v !== 'function' && typeof v !== 'symbol' && !Object.prototype.hasOwnProperty.call(cleaned, k)) {
+      cleaned[k] = v;
+    }
+  }
+  return cleaned;
 };
 
 /**
@@ -123,7 +159,7 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
   if (currentLinks && typeof currentLinks === 'object') {
     Object.entries(currentLinks).forEach(([rawKey, val]) => {
       const cleanKey = cleanExtractedLabel(rawKey);
-      if (!isValidLinkLabelKey(cleanKey)) return;
+      if (!isValidImportantLinkKey(cleanKey)) return;
 
       const isStrVal = typeof val === 'string';
       const v = isStrVal ? val.trim() : (val?.url || val?.link || '');
@@ -158,6 +194,7 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
       const rowHtml = trMatch[1];
       const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
       if (aMatches.length > 0) {
+        const hasAnyNestedBlock = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(rowHtml);
         const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
         const cellMatches = [];
         let cMatch;
@@ -165,21 +202,34 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
           cellMatches.push(cMatch);
         }
 
+        const rowPlainText = cleanExtractedLabel(rowHtml);
+        const rowIsProseOrBoilerplate =
+          PROSE_LABEL_ANYWHERE_RE.test(rowPlainText) ||
+          BOILERPLATE_LABEL_PREFIX_RE.test(rowPlainText);
+
         const firstCellHtml = cellMatches.length >= 2 ? cellMatches[0][1] : '';
         const hasNestedBlockContainer = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(firstCellHtml);
         const rawBaseLabel = (!hasNestedBlockContainer && firstCellHtml) ? cleanExtractedLabel(firstCellHtml) : '';
-        const baseLabel = isValidLinkLabelKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
+        const baseLabel = isValidImportantLinkKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
+        const hasDisallowedFirstCell = cellMatches.length >= 2 && Boolean(rawBaseLabel) && !baseLabel;
 
         for (const aMatch of aMatches) {
           const href = aMatch[1].trim();
           const aText = aMatch[2] ? cleanExtractedLabel(aMatch[2]) : '';
 
+          const canPromoteRow =
+            !hasAnyNestedBlock &&
+            !hasNestedBlockContainer &&
+            !rowIsProseOrBoilerplate &&
+            !hasDisallowedFirstCell &&
+            (Boolean(baseLabel) || rowPlainText.length <= aText.length + 35);
+
           let label = baseLabel;
-          if (!label) {
-            label = (isValidLinkLabelKey(aText, 120, 200) && !GENERIC_ANCHOR_TEXTS.has(aText.toLowerCase())) ? aText : '';
-          } else if (aMatches.length > 1 && aText) {
+          if (!label && canPromoteRow) {
+            label = (isValidImportantLinkKey(aText, 120, 200) && !GENERIC_ANCHOR_TEXTS.has(aText.toLowerCase())) ? aText : '';
+          } else if (baseLabel && aMatches.length > 1 && aText) {
             const combined = `${baseLabel} (${aText})`;
-            label = isValidLinkLabelKey(combined, 140, 220) ? combined : baseLabel;
+            label = isValidImportantLinkKey(combined, 140, 220) ? combined : baseLabel;
           }
 
           const signalText = (label || aText || '').toLowerCase();
@@ -189,7 +239,7 @@ export const extractQuickUrlsFromContent = (html, currentLinks = {}) => {
             continue;
           }
 
-          if (label && isValidLinkLabelKey(label, 140, 220) && !GENERIC_ANCHOR_TEXTS.has(label.toLowerCase()) && !links[label]) {
+          if (canPromoteRow && label && isValidImportantLinkKey(label, 140, 220) && !GENERIC_ANCHOR_TEXTS.has(label.toLowerCase()) && !links[label]) {
             links[label] = href;
           }
 

@@ -12,7 +12,8 @@ import {
   cleanJobId,
   subscribeToBreakingNews,
   saveBreakingNewsToFirestore,
-  retryPendingSaves
+  retryPendingSaves,
+  clearLiveJobsBrowserCache
 } from '../../firebase';
 
 const DEFAULT_CATEGORIES = [
@@ -206,14 +207,18 @@ export default function AdminPage() {
 
     try {
       const res = await publishJobToFirestore(sanitizedJob);
-      if (res && res.error) throw res.error;
-      try {
-        localStorage.removeItem('careerdiary_live_jobs_ts');
-      } catch (_) {}
-      return { success: true, cleanId: safeId };
+      if (!res?.success) {
+        return {
+          success: false,
+          error: res?.error || new Error('Firestore publish failed'),
+          queued: Boolean(res?.queued),
+        };
+      }
+      clearLiveJobsBrowserCache();
+      return { success: true, cleanId: res.cleanId || safeId };
     } catch (err) {
       console.error('Firestore publish error:', err);
-      return { success: false, error: err };
+      return { success: false, error: err, queued: false };
     }
   };
 
@@ -227,6 +232,7 @@ export default function AdminPage() {
     setJobs(jobs.filter(j => j.id !== id && j.id !== safeId));
     try {
       await deleteJobFromFirestore(safeId || id);
+      clearLiveJobsBrowserCache();
     } catch (err) {
       console.error('Firestore delete error:', err);
     }

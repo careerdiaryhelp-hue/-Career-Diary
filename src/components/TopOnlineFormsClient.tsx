@@ -29,13 +29,13 @@ export default function TopOnlineFormsClient({ initialJobs = [], fallbackJobs = 
       window.location.search.includes('admin')
     );
 
-    // 3-minute client throttle: skip network request if cache is fresh (< 3 mins), protecting Firebase quota
+    // 1-minute client throttle: delivers rapid updates across browsers while protecting Firebase quota
     const lastFetch = Number(localStorage.getItem('careerdiary_top_forms_ts') || 0);
-    const isCacheFresh = (Date.now() - lastFetch) < 180000;
+    const isCacheFresh = (Date.now() - lastFetch) < 60000;
 
     if (!isCacheFresh || isAdminUser) {
       // 2. Fetch fresh top forms from /api/top-forms for ALL browsers
-      fetch('/api/top-forms')
+      fetch('/api/top-forms', isAdminUser ? { cache: 'no-store' } : undefined)
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(fresh => {
           if (active && Array.isArray(fresh) && fresh.length > 0) {
@@ -66,6 +66,8 @@ export default function TopOnlineFormsClient({ initialJobs = [], fallbackJobs = 
       unsub = subscribeToTopForms((livePosts) => {
         if (active && Array.isArray(livePosts) && livePosts.length > 0) {
           try {
+            localStorage.setItem('careerdiary_top_forms', JSON.stringify(livePosts));
+            localStorage.setItem('careerdiary_top_forms_ts', String(Date.now()));
             sessionStorage.setItem('careerdiary_top_forms', JSON.stringify(livePosts));
           } catch (_) {}
           setForms(livePosts);

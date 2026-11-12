@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Calendar, Flame, Clock, Search, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { isResult, isAnswerKey, isAdmitCard, getJobUrl } from '../data/categoryHelpers.js';
+import { sanitizeImportantLinksMap, sanitizeMetadataMap } from '../utils/linkUtils';
 
 // Month names mapping for dynamic parsing
 const MONTH_MAP = {
@@ -144,7 +145,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }: any
     if (job.appLast && typeof job.appLast === 'string' && job.appLast.trim()) return job.appLast.trim();
     if (job.applyLastDate && typeof job.applyLastDate === 'string' && job.applyLastDate.trim()) return job.applyLastDate.trim();
 
-    const dates = job.importantDates || job.important_dates || {};
+    const dates = sanitizeMetadataMap(job.importantDates || job.important_dates || {});
     for (const [k, v] of Object.entries(dates)) {
       const kl = k.toLowerCase();
       if ((kl.includes('last date') || kl.includes('closing') || kl.includes('last day') || kl.includes('application end') || kl.includes('apply end')) && typeof v === 'string' && v.trim()) {
@@ -171,7 +172,7 @@ export default function LastDateJobsPage({ jobs = [], onSelectJob, onBack }: any
   // Extract direct apply URL or fallback
   const getApplyUrl = (job) => {
     if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
-    const links = job.importantLinks || job.important_links || {};
+    const links = sanitizeImportantLinksMap(job.importantLinks || job.important_links || {});
     for (const [k, v] of Object.entries(links)) {
       const kl = k.toLowerCase();
       const vl = typeof v === 'string' ? v : ((v as any)?.url || '');

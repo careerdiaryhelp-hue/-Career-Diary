@@ -1,7 +1,16 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { autoLinkSocialChannels, extractQuickUrlsFromContent, CAREER_DIARY_TELEGRAM, CAREER_DIARY_WHATSAPP } from '../utils/linkUtils';
+import {
+  autoLinkSocialChannels,
+  extractQuickUrlsFromContent,
+  cleanExtractedLabel,
+  isValidLinkLabelKey as isValidMetaKey,
+  isValidImportantLinkKey,
+  sanitizeMetadataMap as sanitizeMetaRecord,
+  CAREER_DIARY_TELEGRAM,
+  CAREER_DIARY_WHATSAPP
+} from '../utils/linkUtils';
 import { getJobUrl } from '../data/categoryHelpers.js';
 import {
   LayoutDashboard, Layers, Megaphone, PlusSquare, FilePlus, Trash2, Search,
@@ -45,49 +54,6 @@ const cleanSlug = (str) => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return cleaned.length > 220 ? cleaned.slice(0, 220).replace(/-+$/g, '') : cleaned;
-};
-
-const getUtf8ByteLength = (str) => {
-  const s = String(str || '');
-  let bytes = 0;
-  for (let i = 0; i < s.length; i++) {
-    const code = s.charCodeAt(i);
-    if (code < 0x80) bytes += 1;
-    else if (code < 0x800) bytes += 2;
-    else if (code >= 0xd800 && code <= 0xdbff && i + 1 < s.length) {
-      bytes += 4;
-      i++;
-    } else {
-      bytes += 3;
-    }
-  }
-  return bytes;
-};
-
-const BOILERPLATE_META_KEY_RE = /^(?:eligibility\s*criteria|short\s*info(?:rmation)?|short\s*details?|latest\s*posts?|related\s*posts?|you\s*may\s*also\s*check|disclaimer|question\s*:|answer\s*:|important\s*questions?|how\s*to\s*fill|mode\s*of\s*selection|candidates?\s+must\s+have)/i;
-
-const isValidMetaKey = (key, maxChars = 140, maxBytes = 220) => {
-  if (!key || typeof key !== 'string') return false;
-  const trimmed = key.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!trimmed || trimmed.length > maxChars || getUtf8ByteLength(trimmed) > maxBytes) return false;
-  if (/^__.*__$/.test(trimmed)) return false;
-  if (/[{}]|;base64,|@media|function\s*\(|window\.|document\.|<script|<style/i.test(trimmed)) return false;
-  if (/^[.#"']/.test(trimmed)) return false;
-  if (BOILERPLATE_META_KEY_RE.test(trimmed)) return false;
-  return true;
-};
-
-const sanitizeMetaRecord = (obj, maxChars = 140, maxBytes = 220) => {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
-  const cleaned = {};
-  for (const [rawK, v] of Object.entries(obj)) {
-    const k = String(rawK || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!isValidMetaKey(k, maxChars, maxBytes)) continue;
-    if (v !== undefined && typeof v !== 'function' && typeof v !== 'symbol') {
-      cleaned[k] = v;
-    }
-  }
-  return cleaned;
 };
 
 const CATEGORIES = [
@@ -4005,26 +3971,34 @@ export default function AdminDashboardPage({
       const rowHtml = trm[1];
       const aMatches = [...rowHtml.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
       if (aMatches.length > 0) {
+        const hasAnyNestedBlock = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(rowHtml);
         const cells = [...rowHtml.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)];
+        const rowPlainText = cleanStr(cleanExtractedLabel(rowHtml));
         const firstCell = cells.length >= 2 ? cells[0][1] : '';
         const hasNestedBlock = /<(?:table|tr|tbody|thead|ul|ol)\b/i.test(firstCell);
-        const rawBaseLabel = (!hasNestedBlock && firstCell) ? cleanStr(firstCell.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()) : '';
-        const baseLabel = isValidMetaKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
+        const rawBaseLabel = (!hasNestedBlock && firstCell) ? cleanStr(cleanExtractedLabel(firstCell)) : '';
+        const baseLabel = isValidImportantLinkKey(rawBaseLabel, 120, 200) ? rawBaseLabel : '';
+        const hasDisallowedFirstCell = cells.length >= 2 && Boolean(rawBaseLabel) && !baseLabel;
+
+        if (hasAnyNestedBlock || hasNestedBlock || hasDisallowedFirstCell || !isValidMetaKey(rowPlainText, 240, 360)) {
+          continue;
+        }
 
         for (const aMatch of aMatches) {
           let href = aMatch[1].trim();
-          const aText = aMatch[2] ? cleanStr(aMatch[2].replace(/<[^>]+>/g, '').trim()) : '';
-          const validAText = isValidMetaKey(aText, 120, 200) && !['click here', 'click here!', 'link', 'here'].includes(aText.toLowerCase()) ? aText : '';
+          const aText = aMatch[2] ? cleanStr(cleanExtractedLabel(aMatch[2])) : '';
+          if (!baseLabel && rowPlainText.length > aText.length + 35) continue;
+          const validAText = isValidImportantLinkKey(aText, 120, 200) && !['click here', 'click here!', 'link', 'here'].includes(aText.toLowerCase()) ? aText : '';
 
           let label = baseLabel;
           if (!label) {
             label = validAText;
           } else if (aMatches.length > 1 && aText) {
             const combined = `${baseLabel} (${aText})`;
-            label = isValidMetaKey(combined, 140, 220) ? combined : baseLabel;
+            label = isValidImportantLinkKey(combined, 140, 220) ? combined : baseLabel;
           }
           label = cleanStr(label);
-          if (!label || !isValidMetaKey(label, 140, 220)) continue;
+          if (!label || !isValidImportantLinkKey(label, 140, 220)) continue;
 
           const ll = label.toLowerCase();
           let hl = href.toLowerCase();
@@ -4075,7 +4049,7 @@ export default function AdminDashboardPage({
             label = `${prefix} ${label}`;
           }
 
-          if (!label || !isValidMetaKey(label, 140, 220)) continue;
+          if (!label || !isValidImportantLinkKey(label, 140, 220)) continue;
           const ll = label.toLowerCase();
           const hl = href.toLowerCase();
 

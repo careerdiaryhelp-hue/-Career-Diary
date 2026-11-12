@@ -4,20 +4,29 @@ import { ArrowLeft, Building2, Tag, CalendarCheck, GraduationCap, IndianRupee, U
 import AdSenseBanner, { DisplayAd, InPostAd, InArticleAd1100, MultiplexAd } from '../components/AdSenseBanner';
 import AutoFAQSection from '../components/AutoFAQSection';
 import PostFooterSection from '../components/PostFooterSection';
+import { sanitizeImportantLinksMap } from '../utils/linkUtils';
 
 export default function AdmissionDetailPage({ job, onBack }) {
   if (!job) return null;
 
+  const safeImportantLinks = sanitizeImportantLinksMap(job.importantLinks || job.important_links || {});
+  const validLinksEntries = Object.entries(safeImportantLinks);
+
   const getLinkUrl = (...keys) => {
-    if (job.importantLinks && typeof job.importantLinks === 'object') {
+    if (safeImportantLinks && typeof safeImportantLinks === 'object') {
       for (const key of keys) {
-        const foundKey = Object.keys(job.importantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
-        if (foundKey && job.importantLinks[foundKey] && typeof job.importantLinks[foundKey] === 'string' && job.importantLinks[foundKey].startsWith('http')) {
-          return job.importantLinks[foundKey];
+        const foundKey = Object.keys(safeImportantLinks).find(k => k.toLowerCase().includes(key.toLowerCase()));
+        if (foundKey) {
+          const val: any = safeImportantLinks[foundKey];
+          const url = typeof val === 'string' ? val : (val?.url || val?.link || '');
+          if (typeof url === 'string' && url.startsWith('http')) return url;
         }
       }
-      const firstVal = Object.values(job.importantLinks).find(v => typeof v === 'string' && v.startsWith('http'));
-      if (firstVal) return firstVal;
+      const firstVal: any = Object.values(safeImportantLinks).find(v => {
+        const url = typeof v === 'string' ? v : ((v as any)?.url || (v as any)?.link || '');
+        return typeof url === 'string' && url.startsWith('http');
+      });
+      if (firstVal) return typeof firstVal === 'string' ? firstVal : (firstVal?.url || firstVal?.link);
     }
     if (job.applyUrl && typeof job.applyUrl === 'string' && job.applyUrl.startsWith('http')) return job.applyUrl;
     if (job.officialUrl && typeof job.officialUrl === 'string' && job.officialUrl.startsWith('http')) return job.officialUrl;
@@ -167,15 +176,16 @@ export default function AdmissionDetailPage({ job, onBack }) {
           </h3>
           <table className="table-styled">
             <tbody>
-              {job.importantLinks && typeof job.importantLinks === 'object' && Object.keys(job.importantLinks).length > 0 ? (
-                Object.entries(job.importantLinks).map(([label, url], idx) => {
-                  const isValid = typeof url === 'string' && url.startsWith('http');
+              {validLinksEntries.length > 0 ? (
+                validLinksEntries.map(([label, url]: [string, any], idx) => {
+                  const linkUrl = typeof url === 'string' ? url : (url?.url || url?.link || '');
+                  const isValid = typeof linkUrl === 'string' && linkUrl.startsWith('http');
                   return (
                     <tr key={idx}>
                       <td style={{ fontWeight: '700', width: '55%' }}>{label}</td>
                       <td>
                         {isValid ? (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
+                          <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ backgroundColor: '#e67e22', color: '#fff' }}>
                             Click Here
                           </a>
                         ) : (
