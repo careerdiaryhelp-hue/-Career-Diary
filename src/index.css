@@ -1795,7 +1795,7 @@ sup .badge-tag {
 .columns-3x3-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
@@ -2383,81 +2383,110 @@ sup .badge-tag {
 
   /* Study With Career Diary home box */
   .study-portal-header {
-    padding-inline: 12px !important;
-    padding-block: 8px !important;
+    padding-inline: 14px !important;
+    padding-block: 14px !important;
   }
   .study-portal-cell {
-    padding-inline: 6px !important;
-    padding-block: 10px !important;
+    padding-inline: 8px !important;
+    padding-block: 12px !important;
+  }
+  .study-portal-click-here {
+    padding-inline: 10px !important;
+    padding-block: 5px !important;
   }
   .study-portal-footer {
-    padding-inline: 10px !important;
-    padding-block: 7px !important;
+    padding-inline: 12px !important;
+    padding-block: 8px !important;
   }
 }
 
 /* =========================================
-   STUDY WITH CAREER DIARY (SARKARI BOX)
+   STUDY WITH CAREER DIARY (MODERN BLUE CARD)
    ========================================= */
 .study-portal-container {
-  margin-block-start: 14px;
-  margin-block-end: 10px;
+  margin-block-start: 16px;
+  margin-block-end: 12px;
 }
 
 .study-portal-box {
   inline-size: 100%;
   max-inline-size: 100%;
   background-color: #ffffff;
-  border: 2px solid #000000;
-  color: #111827;
-  font-family: Arial, Roboto, Helvetica, sans-serif;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  overflow: clip;
+  color: #0f172a;
+  font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.14);
   box-sizing: border-box;
 }
 
 .study-portal-header {
-  background-color: #ff0080;
+  background: linear-gradient(135deg, #1e1b4b 0%, #1e3a8a 50%, #0369a1 100%);
   color: #ffffff;
-  padding-inline: 20px;
-  padding-block: 10px 8px;
-  border-block-end: 1.5px solid #000000;
+  padding-inline: 24px;
+  padding-block: 18px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: safe center;
+  justify-content: safe center;
+}
+
+.study-portal-header-lockup {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: safe center;
+  align-items: baseline;
+  column-gap: 4px;
+  row-gap: 2px;
+  max-inline-size: 100%;
+  margin-inline: auto;
+}
+
+.study-portal-title,
+.study-portal-tagline {
+  margin: 0;
+  font-size: clamp(1.1rem, 0.7rem + 1.8vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-align: start;
+  white-space: nowrap;
 }
 
 .study-portal-title {
-  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: start;
-}
-
-.study-portal-tagline-row {
-  display: flex;
-  align-items: safe center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding-inline-start: clamp(24px, 18vw, 240px);
-}
-
-.study-portal-dots {
-  flex: 1 1 24px;
-  min-inline-size: 0;
-  border-block-end: 2px dotted rgba(255, 255, 255, 0.85);
-  transform: translateY(2px);
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .study-portal-tagline {
-  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
-  font-weight: 700;
-  line-height: 1.25;
-  white-space: nowrap;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (max-width: 600px) {
+  .study-portal-header-lockup {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .study-portal-title {
+    grid-column: 1;
+    grid-row: 1;
+    white-space: normal;
+    text-align: center;
+  }
+  .study-portal-tagline {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+    white-space: normal;
+    text-align: end;
+  }
 }
 
 .study-portal-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.7fr) minmax(0, 1.35fr);
-  border-block-end: 1.5px solid #000000;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block-end: 1px solid #e2e8f0;
 }
 
 .study-portal-cell {
@@ -2466,92 +2495,90 @@ sup .badge-tag {
   flex-direction: column;
   align-items: safe center;
   justify-content: safe center;
-  gap: 4px;
-  padding-inline: 10px;
-  padding-block: 12px;
+  gap: 8px;
+  padding-inline: 14px;
+  padding-block: 16px;
   text-align: center;
   text-decoration: none;
-  color: #111827;
+  color: #0f172a;
   background-color: #ffffff;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.18s ease;
 }
 
 .study-portal-cell:not(:last-child) {
-  border-inline-end: 1.5px solid #000000;
+  border-inline-end: 1px solid #e2e8f0;
 }
 
 .study-portal-cell:hover,
 .study-portal-cell:focus-visible {
-  background-color: #fdf2f8;
+  background-color: #f0f9ff;
 }
 
 .study-portal-cell:focus-visible {
-  outline: 2px solid #0c1cae;
+  outline: 2px solid #2563eb;
   outline-offset: -2px;
 }
 
 .study-portal-cell-title {
-  font-size: clamp(0.8rem, 1.55vw, 1.04rem);
+  font-size: clamp(0.88rem, 1.7vw, 1.12rem);
   font-weight: 800;
-  line-height: 1.25;
-  color: #111827;
+  line-height: 1.3;
+  color: #0f172a;
   overflow-wrap: break-word;
 }
 
 .study-portal-click-here {
-  font-size: clamp(0.74rem, 1.25vw, 0.88rem);
+  display: inline-flex;
+  align-items: safe center;
+  justify-content: safe center;
+  padding-inline: 14px;
+  padding-block: 6px;
+  border-radius: 8px;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: clamp(0.76rem, 1.35vw, 0.9rem);
   font-weight: 700;
-  color: #0c1cae;
-  text-decoration: underline;
-  text-underline-offset: 2px;
   line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  transition: background-color 0.18s ease, transform 0.18s ease;
 }
 
 .study-portal-cell:hover .study-portal-click-here,
 .study-portal-cell:focus-visible .study-portal-click-here {
-  color: #ab183d;
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .study-portal-footer {
-  padding-inline: 16px;
-  padding-block: 8px;
-  background-color: #ffffff;
+  padding-inline: 20px;
+  padding-block: 10px;
+  background-color: #eff6ff;
   display: flex;
   align-items: safe center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: safe center;
   text-align: center;
 }
 
-.study-portal-footer-dots {
-  flex: 1 1 20px;
-  max-inline-size: 90px;
-  min-inline-size: 12px;
-  border-block-end: 2px dotted #64748b;
-  transform: translateY(2px);
-}
-
 .study-portal-footer-text {
-  font-size: clamp(0.8rem, 1.45vw, 0.98rem);
-  font-weight: 800;
-  color: #111827;
-  line-height: 1.3;
+  font-size: clamp(0.86rem, 1.55vw, 1.02rem);
+  font-weight: 700;
+  color: #1e3a8a;
+  line-height: 1.35;
 }
 
 body.dark-mode .study-portal-box {
   background-color: #1e293b;
-  border-color: #475569;
+  border-color: #334155;
   color: #f8fafc;
 }
 
-body.dark-mode .study-portal-header,
 body.dark-mode .study-portal-grid,
 body.dark-mode .study-portal-cell:not(:last-child) {
-  border-color: #475569;
+  border-color: #334155;
 }
 
-body.dark-mode .study-portal-cell,
-body.dark-mode .study-portal-footer {
+body.dark-mode .study-portal-cell {
   background-color: #1e293b;
   color: #f8fafc;
 }
@@ -2561,13 +2588,21 @@ body.dark-mode .study-portal-cell:focus-visible {
   background-color: #334155;
 }
 
-body.dark-mode .study-portal-cell-title,
-body.dark-mode .study-portal-footer-text {
+body.dark-mode .study-portal-footer {
+  background-color: #0f172a;
+}
+
+body.dark-mode .study-portal-cell-title {
   color: #f8fafc;
 }
 
+body.dark-mode .study-portal-footer-text {
+  color: #93c5fd;
+}
+
 body.dark-mode .study-portal-click-here {
-  color: #38bdf8;
+  background-color: #3b82f6;
+  color: #ffffff;
 }
 
 /* Floating Buttons */
@@ -3130,26 +3165,36 @@ ins.adsbygoogle[data-ad-status="unfilled"],
   }
 }
 
-/* HomeColumnInfeedAd: override .col-darkred li bullet spacing & collapse completely when unfilled */
+/* HomeColumnInfeedAd: give full inner card width (~302px on desktop) so 300x250 Display ads fit cleanly without bullet padding */
 .col-darkred .column-body li.home-col-infeed-ad,
 .columns-single-view .category-items-list li.home-col-infeed-ad {
   list-style: none !important;
-  inline-size: 100%;
   box-sizing: border-box;
+}
+
+@media (min-width: 641px) {
+  .columns-3x3-grid .col-darkred .column-body li.home-col-infeed-ad {
+    inline-size: calc(100% + 26px);
+    margin-inline-start: -19px;
+    margin-inline-end: -7px;
+  }
+}
+
+.columns-single-view .category-items-list li.home-col-infeed-ad {
+  inline-size: 100%;
+  padding-inline: 0 !important;
 }
 
 .col-darkred .column-body li.home-col-infeed-ad:not(.is-filled),
 .columns-single-view .category-items-list li.home-col-infeed-ad:not(.is-filled) {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin-block: 6px;
+  padding-block: 0;
   border: 0 !important;
-  min-block-size: 1px;
 }
 
 .col-darkred .column-body li.home-col-infeed-ad.is-filled,
 .columns-single-view .category-items-list li.home-col-infeed-ad.is-filled {
   margin-block: 8px;
-  margin-inline: 0;
   padding-block: 8px;
   padding-inline: 0;
 }

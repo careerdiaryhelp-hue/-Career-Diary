@@ -11,6 +11,7 @@ const ADSENSE_CLIENT_ID = 'ca-pub-2108299943580613';
 export default function DirectAdSense({
   adSlot = '1202522135',
   adId,
+  width = '100%',
   minWidth = '100%',
   minHeight = '100px',
   height,
@@ -199,17 +200,17 @@ export default function DirectAdSense({
           </div>
         </div>
       ) : (
-        <div className="w-full" style={{ minHeight: minHeight || '100px', display: 'block' }}>
+        <div className="w-full" style={{ minHeight: minHeight || '100px', display: 'block', textAlign: 'center' }}>
           <ins
             key={elementKey}
             ref={insRef}
             className="adsbygoogle"
             style={{
-              display: 'block',
-              width: '100%',
+              display: width !== '100%' && height ? 'inline-block' : 'block',
+              width,
               height: height || 'auto',
-              minWidth: minWidth !== '100%' ? minWidth : undefined,
-              minHeight: minHeight || '100px',
+              minWidth: width === '100%' && minWidth !== '100%' ? minWidth : undefined,
+              minHeight: height ? undefined : (minHeight || '100px'),
             }}
             data-ad-client={ADSENSE_CLIENT_ID}
             data-ad-slot={activeSlot}

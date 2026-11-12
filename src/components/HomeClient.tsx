@@ -256,42 +256,39 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
         {currentCategory === 'all' && !searchQuery && (
           <div className="container study-portal-container">
             <section className="study-portal-box" aria-label="Study With Career Diary">
-              {/* Row 1: Pink Header */}
+              {/* Row 1: Blue Gradient Header (Centered staggered lockup: Row 2 starts where Row 1 ends) */}
               <div className="study-portal-header">
-                <div className="study-portal-title">
-                  Study With &ldquo;Career Diary&rdquo;
-                </div>
-                <div className="study-portal-tagline-row">
-                  <span className="study-portal-dots" aria-hidden="true" />
-                  <span className="study-portal-tagline">
+                <div className="study-portal-header-lockup">
+                  <h2 className="study-portal-title">
+                    Study With &ldquo;Career Diary&rdquo;
+                  </h2>
+                  <p className="study-portal-tagline">
                     and &ldquo;Practice More&rdquo;
-                  </span>
+                  </p>
                 </div>
               </div>
 
-              {/* Row 2: 3 Bordered Columns (All tests/PYQs/quizzes open on click) */}
+              {/* Row 2: 3 Clean Columns (Click Here opens all tests/PYQs/quizzes) */}
               <div className="study-portal-grid">
                 <Link href="/test-series" className="study-portal-cell">
                   <span className="study-portal-cell-title">Mock &amp; Test Series</span>
-                  <span className="study-portal-click-here">Click Here</span>
+                  <span className="study-portal-click-here">Click Here &rarr;</span>
                 </Link>
                 <Link href="/pyq" className="study-portal-cell">
                   <span className="study-portal-cell-title">PYQ</span>
-                  <span className="study-portal-click-here">Click Here</span>
+                  <span className="study-portal-click-here">Click Here &rarr;</span>
                 </Link>
                 <Link href="/current-affairs" className="study-portal-cell">
                   <span className="study-portal-cell-title">Quizzes &amp; Current Affairs</span>
-                  <span className="study-portal-click-here">Click Here</span>
+                  <span className="study-portal-click-here">Click Here &rarr;</span>
                 </Link>
               </div>
 
-              {/* Row 3: Bottom Full-Width Footer Bar */}
+              {/* Row 3: Centered Bottom Footer Bar */}
               <div className="study-portal-footer">
-                <span className="study-portal-footer-dots" aria-hidden="true" />
                 <span className="study-portal-footer-text">
                   Attempt All &amp; Boost Your Preparation
                 </span>
-                <span className="study-portal-footer-dots" aria-hidden="true" />
               </div>
             </section>
           </div>

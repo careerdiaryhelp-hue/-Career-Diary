@@ -10,7 +10,7 @@ interface HomeColumnInfeedAdProps {
   priority?: boolean;
 }
 
-type WidthBucket = "pending" | "too-narrow" | "fluid" | "300" | "320";
+type WidthBucket = "pending" | "too-narrow" | "fluid" | "300" | "wide";
 
 const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
   adId,
@@ -27,7 +27,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
   const [isFilled, setIsFilled] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
 
-  // Measure column width so we never request clipped ads inside narrow mobile columns (< 240px)
+  // Measure column width so we never request clipped ads inside narrow mobile 3-col cards (< 240px)
   useEffect(() => {
     const el = liRef.current;
     if (!el || typeof window === "undefined") return;
@@ -39,7 +39,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       if (w <= 0) return;
 
       const next: WidthBucket =
-        w < 240 ? "too-narrow" : w >= 324 ? "320" : w >= 300 ? "300" : "fluid";
+        w < 240 ? "too-narrow" : w >= 380 ? "wide" : w >= 296 ? "300" : "fluid";
 
       setWidthBucket((prev) => (prev === next ? prev : next));
     };
@@ -58,7 +58,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
   }, []);
 
   const canActivateByWidth =
-    widthBucket === "fluid" || widthBucket === "300" || widthBucket === "320";
+    widthBucket === "fluid" || widthBucket === "300" || widthBucket === "wide";
 
   // Lazy-activate below-the-fold cards as they approach the viewport
   useEffect(() => {
@@ -73,7 +73,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
           io.disconnect();
         }
       },
-      { rootMargin: "300px" }
+      { rootMargin: "350px" }
     );
     io.observe(el);
 
@@ -117,7 +117,6 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       }
     }
 
-    setIsFilled(false);
     return false;
   }, []);
 
@@ -130,7 +129,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
 
     const initCheck = setTimeout(() => {
       verifyVisibleFill();
-    }, 0);
+    }, 100);
 
     const observer = new MutationObserver(() => {
       verifyVisibleFill();
@@ -146,13 +145,13 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       verifyVisibleFill();
     }, 500);
 
-    // Safety cleanup if AdSense does not deliver a visible ad within 18s
+    // Collapse cleanly only if AdSense neither fills nor responds within 16s
     const watchdog = setTimeout(() => {
       if (!verifyVisibleFill()) {
         setIsDismissed(true);
         setIsFilled(false);
       }
-    }, 18000);
+    }, 16000);
 
     return () => {
       clearTimeout(initCheck);
@@ -166,24 +165,28 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
     return null;
   }
 
+  const isExact300Box = widthBucket === "300";
+
   return (
     <li
       ref={liRef}
       className={
         isFilled
-          ? "home-col-infeed-ad is-filled my-1 sm:my-1.5 py-2 px-0 list-none flex flex-col items-center justify-center overflow-hidden border-y border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-900/20 rounded-md"
-          : "home-col-infeed-ad !my-0 !p-0 border-0 list-none flex flex-col items-center justify-center overflow-hidden"
+          ? "home-col-infeed-ad is-filled my-1.5 py-2 px-0 list-none flex flex-col items-center justify-center border-y border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-900/20 rounded-md"
+          : "home-col-infeed-ad my-1 py-1 px-0 border-0 list-none flex flex-col items-center justify-center"
       }
-      style={isFilled ? undefined : { minHeight: "1px" }}
+      style={shouldMountAd ? { minHeight: "250px" } : { minHeight: "1px" }}
     >
       {shouldMountAd && (
         <DirectAdSense
           adId={adId}
           adSlot={activeSlot}
-          minWidth={widthBucket === "320" ? "300px" : "250px"}
-          minHeight="1px"
+          width={isExact300Box ? "300px" : "100%"}
+          height={isExact300Box ? "250px" : undefined}
+          minWidth={isExact300Box ? "300px" : "240px"}
+          minHeight="250px"
           adFormat="auto"
-          fullWidthResponsive={true}
+          fullWidthResponsive={widthBucket === "wide"}
           priority={priority}
           showLabel={true}
           compact={true}
@@ -204,4 +207,3 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
 };
 
 export default React.memo(HomeColumnInfeedAd);
-
