@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from './Header';
 import Navbar from './Navbar';
 import TopTicker from './TopTicker';
@@ -251,118 +252,48 @@ export default function HomeClient({ initialJobs = [], initialNews = [] }) {
           />
         )}
 
-        {/* Featured Study & Quiz Banner */}
+        {/* Study With Career Diary Section */}
         {currentCategory === 'all' && !searchQuery && (
-          <div className="container" style={{ marginTop: '16px', marginBottom: '8px' }}>
-            <div
-              className="home-quiz-banner"
-              style={{
-                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #0f766e 100%)',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                color: '#ffffff',
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '14px',
-                boxShadow: '0 6px 20px rgba(30, 27, 75, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxSizing: 'border-box',
-                maxWidth: '100%',
-              }}
-            >
-              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '3px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      backgroundColor: '#22c55e',
-                    }}
-                  />
-                  NEW • 100% FREE STUDY &amp; QUIZ
+          <div className="container study-portal-container">
+            <section className="study-portal-box" aria-label="Study With Career Diary">
+              {/* Row 1: Pink Header */}
+              <div className="study-portal-header">
+                <div className="study-portal-title">
+                  Study With &ldquo;Career Diary&rdquo;
                 </div>
-                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '0 0 4px 0', lineHeight: 1.3 }}>
-                  🎯 BSSC CGL 150 Questions Full Mock Tests (Set 1 &amp; Set 2)
-                </h3>
-                <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, lineHeight: 1.4 }}>
-                  GS (50) • Reasoning (50) • Science (25) • Maths (25) | 135 Mins CBT Timer, -1 Negative Marking &amp; Step-by-Step Solutions.
-                </p>
+                <div className="study-portal-tagline-row">
+                  <span className="study-portal-dots" aria-hidden="true" />
+                  <span className="study-portal-tagline">
+                    and &ldquo;Practice More&rdquo;
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <a
-                  href="/test-series/bssc-cgl/set1?mode=study"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.14)',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255, 255, 255, 0.35)',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  📖 Set 1 (Study Mode)
-                </a>
-                <a
-                  href="/test-series/bssc-cgl/set1?mode=test"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#f59e0b',
-                    color: '#0f172a',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                  }}
-                >
-                  ⚡ Start CBT Mock Test
-                </a>
-                <a
-                  href="/test-series/bssc-cgl/set2"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255, 255, 255, 0.45)',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  🔥 Set 2 (New)
-                </a>
+
+              {/* Row 2: 3 Bordered Columns (All tests/PYQs/quizzes open on click) */}
+              <div className="study-portal-grid">
+                <Link href="/test-series" className="study-portal-cell">
+                  <span className="study-portal-cell-title">Mock &amp; Test Series</span>
+                  <span className="study-portal-click-here">Click Here</span>
+                </Link>
+                <Link href="/pyq" className="study-portal-cell">
+                  <span className="study-portal-cell-title">PYQ</span>
+                  <span className="study-portal-click-here">Click Here</span>
+                </Link>
+                <Link href="/current-affairs" className="study-portal-cell">
+                  <span className="study-portal-cell-title">Quizzes &amp; Current Affairs</span>
+                  <span className="study-portal-click-here">Click Here</span>
+                </Link>
               </div>
-            </div>
+
+              {/* Row 3: Bottom Full-Width Footer Bar */}
+              <div className="study-portal-footer">
+                <span className="study-portal-footer-dots" aria-hidden="true" />
+                <span className="study-portal-footer-text">
+                  Attempt All &amp; Boost Your Preparation
+                </span>
+                <span className="study-portal-footer-dots" aria-hidden="true" />
+              </div>
+            </section>
           </div>
         )}
 
