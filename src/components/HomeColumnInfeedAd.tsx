@@ -147,13 +147,13 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       verifyVisibleFill();
     }, 400);
 
-    // Collapse completely if AdSense does not deliver a real visible creative within 10s
+    // Collapse completely if AdSense does not deliver a real visible creative within 4.5s
     const watchdog = setTimeout(() => {
       if (!verifyVisibleFill()) {
         setIsDismissed(true);
         setIsFilled(false);
       }
-    }, 10000);
+    }, 4500);
 
     return () => {
       clearTimeout(initCheck);
@@ -185,11 +185,11 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
         <DirectAdSense
           adId={adId}
           adSlot={activeSlot}
-          width="100%"
+          width={widthBucket === "300" ? "300px" : "100%"}
           minWidth="0px"
           minHeight="0px"
-          adFormat="auto"
-          fullWidthResponsive={true}
+          adFormat="rectangle"
+          fullWidthResponsive={false}
           priority={priority}
           showLabel={true}
           compact={true}

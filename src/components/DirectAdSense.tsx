@@ -146,7 +146,7 @@ export default function DirectAdSense({
         setAdStatus('unfilled');
         onAdStatusChangeRef.current?.('unfilled');
       }
-    }, 10000);
+    }, 4500);
 
     return () => {
       cancelled = true;
@@ -177,12 +177,13 @@ export default function DirectAdSense({
 
   return (
     <div
-      className={`adsense-container block w-full ${className}`}
+      className={`adsense-container block w-full max-w-full ${className}`}
       style={{
         minHeight: resolvedContainerMinHeight,
         margin: compact ? 0 : '0.75rem 0',
         display: 'block',
         textAlign: 'center',
+        maxWidth: '100%',
       }}
     >
       {showLabel && adStatus === 'filled' && (
@@ -220,7 +221,7 @@ export default function DirectAdSense({
           </div>
         </div>
       ) : (
-        <div className="w-full" style={{ minHeight: compact ? 0 : (minHeight || '100px'), display: 'block', textAlign: 'center' }}>
+        <div className="w-full max-w-full" style={{ minHeight: compact ? 0 : (minHeight || '100px'), display: 'block', textAlign: 'center', maxWidth: '100%' }}>
           <ins
             key={elementKey}
             ref={insRef}
@@ -228,6 +229,8 @@ export default function DirectAdSense({
             style={{
               display: width !== '100%' && height ? 'inline-block' : 'block',
               width,
+              maxWidth: '100%',
+              margin: '0 auto',
               height: height || 'auto',
               minWidth: width === '100%' && minWidth !== '100%' && minWidth !== '0px' ? minWidth : undefined,
               minHeight: compact || height ? undefined : (minHeight || '100px'),

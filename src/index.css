@@ -1791,17 +1791,22 @@ sup .badge-tag {
   border: none;
 }
 
-/* 3x3 Grid Layout — Desktop & Mobile: always 3 columns (3 top + 3 bottom) */
+/* 3x3 Grid Layout — Desktop & Mobile: always 3 equal columns (3 top + 3 bottom) */
 .columns-3x3-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 24px;
 }
 
+.columns-3x3-grid .column-card {
+  min-inline-size: 0;
+  overflow: clip;
+}
+
 @media (max-width: 1024px) {
   .columns-3x3-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
 }

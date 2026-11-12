@@ -80,6 +80,18 @@ function killChip(el: HTMLElement) {
       return;
     }
 
+    // If a stray Discover-More chip was injected inside an in-column ad slot, collapse the whole slot cleanly so no white gap remains
+    const infeedAd = el.closest ? (el.closest('li.home-col-infeed-ad') as HTMLElement | null) : null;
+    if (infeedAd) {
+      infeedAd.style.setProperty('display', 'none', 'important');
+      infeedAd.style.setProperty('height', '0', 'important');
+      infeedAd.style.setProperty('min-height', '0', 'important');
+      infeedAd.style.setProperty('margin', '0', 'important');
+      infeedAd.style.setProperty('padding', '0', 'important');
+      infeedAd.style.setProperty('overflow', 'hidden', 'important');
+      return;
+    }
+
     // Only collapse stray google-auto-placed floating search intent chips
     const autoPlaced = el.closest ? (el.closest('.google-auto-placed') as HTMLElement | null) : null;
     if (autoPlaced) {
