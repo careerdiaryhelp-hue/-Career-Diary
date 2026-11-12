@@ -27,8 +27,12 @@ export default function DirectAdSense({
   onAdStatusChange,
 }: any) {
   const pathname = usePathname();
-  const insRef = useRef(null);
+  const insRef = useRef<HTMLModElement | null>(null);
   const pushAttempted = useRef(false);
+  const onAdStatusChangeRef = useRef(onAdStatusChange);
+  useEffect(() => {
+    onAdStatusChangeRef.current = onAdStatusChange;
+  }, [onAdStatusChange]);
   const activeSlot = adSlot || '1202522135';
   const [isAdSafe, setIsAdSafe] = useState(true);
   const [isLocalhost, setIsLocalhost] = useState(false);
@@ -42,9 +46,9 @@ export default function DirectAdSense({
     if (isLocalDev()) {
       setIsLocalhost(true);
       setAdStatus('filled');
-      if (onAdStatusChange) onAdStatusChange('filled');
+      onAdStatusChangeRef.current?.('filled');
     }
-  }, [onAdStatusChange]);
+  }, []);
 
   const elementKey = `${pathname || ''}-${activeSlot}-${adId || ''}-${adFormat}`;
 
@@ -74,40 +78,49 @@ export default function DirectAdSense({
     }, 150);
   }, []);
 
-  // Monitor status of ad filling — patient approach to avoid flicker
+  // Monitor status of ad filling — only confirm filled when AdSense sets data-ad-status="filled" and creative has real height
   useEffect(() => {
     if (isLocalhost) return;
     const currentIns = insRef.current;
     if (!currentIns) return;
 
     let cancelled = false;
-    let hasConfirmedFill = false;
 
     const checkStatus = () => {
       if (cancelled) return;
       const status = currentIns.getAttribute('data-ad-status');
-      const hasIframe = Boolean(currentIns.querySelector('iframe'));
+      const iframe = currentIns.querySelector('iframe') as HTMLIFrameElement | null;
+      const insRect = currentIns.getBoundingClientRect();
+      const iframeRect = iframe ? iframe.getBoundingClientRect() : null;
+      const iframeStyle = iframe ? window.getComputedStyle(iframe) : null;
+      const hasVisibleAd =
+        status === 'filled' &&
+        Boolean(iframe) &&
+        Boolean(iframeStyle) &&
+        iframeStyle!.display !== 'none' &&
+        iframeStyle!.visibility !== 'hidden' &&
+        Boolean(iframeRect) &&
+        iframeRect!.height >= 50 &&
+        iframeRect!.width >= 150 &&
+        insRect.height >= 50;
 
-      if (status === 'filled' || hasIframe) {
-        hasConfirmedFill = true;
+      if (status === 'unfilled') {
+        setAdStatus('unfilled');
+        onAdStatusChangeRef.current?.('unfilled');
+        return;
+      }
+
+      if (hasVisibleAd) {
         setAdStatus('filled');
-        if (onAdStatusChange) onAdStatusChange('filled');
-      } else if (status === 'unfilled' && !hasIframe && !hasConfirmedFill) {
-        setTimeout(() => {
-          if (cancelled) return;
-          const recheckStatus = currentIns.getAttribute('data-ad-status');
-          const recheckIframe = Boolean(currentIns.querySelector('iframe'));
-          if (recheckStatus === 'unfilled' && !recheckIframe && !hasConfirmedFill) {
-            setAdStatus('unfilled');
-            if (onAdStatusChange) onAdStatusChange('unfilled');
-          }
-        }, 2000);
+        onAdStatusChangeRef.current?.('filled');
+      } else {
+        setAdStatus((prev) => (prev === 'filled' ? 'loading' : prev));
       }
     };
 
     const initialCheckTimer = setTimeout(() => {
       if (!cancelled) checkStatus();
-    }, 1500);
+    }, 300);
 
     const observer = new MutationObserver(() => {
       checkStatus();
@@ -115,18 +128,23 @@ export default function DirectAdSense({
 
     observer.observe(currentIns, {
       attributes: true,
-      attributeFilter: ['data-ad-status'],
+      attributeFilter: ['data-ad-status', 'style', 'class'],
       childList: true,
       subtree: true,
     });
 
+    const poll = setInterval(() => {
+      checkStatus();
+    }, 400);
+
     const safetyTimer = setTimeout(() => {
-      if (cancelled || hasConfirmedFill) return;
+      if (cancelled) return;
       const status = currentIns.getAttribute('data-ad-status');
-      const hasIframe = Boolean(currentIns.querySelector('iframe'));
-      if (!hasIframe && status !== 'filled') {
+      const iframe = currentIns.querySelector('iframe') as HTMLIFrameElement | null;
+      const rect = iframe ? iframe.getBoundingClientRect() : null;
+      if (status !== 'filled' || !rect || rect.height < 50) {
         setAdStatus('unfilled');
-        if (onAdStatusChange) onAdStatusChange('unfilled');
+        onAdStatusChangeRef.current?.('unfilled');
       }
     }, 10000);
 
@@ -134,9 +152,10 @@ export default function DirectAdSense({
       cancelled = true;
       observer.disconnect();
       clearTimeout(initialCheckTimer);
+      clearInterval(poll);
       clearTimeout(safetyTimer);
     };
-  }, [onAdStatusChange, isLocalhost, pathname, activeSlot]);
+  }, [isLocalhost, pathname, activeSlot]);
 
   useEffect(() => {
     if (isLocalhost || !isAdSafe) return;
@@ -150,22 +169,23 @@ export default function DirectAdSense({
     return null;
   }
 
+  if (adStatus === 'unfilled') {
+    return null;
+  }
+
+  const resolvedContainerMinHeight = compact ? 0 : (minHeight || '100px');
+
   return (
     <div
-      className={`adsense-container block w-full transition-all duration-500 ease-in-out ${className}`}
-      style={
-        adStatus === 'unfilled'
-          ? { height: 0, minHeight: 0, margin: 0, padding: 0, opacity: 0, overflow: 'hidden' }
-          : {
-              minHeight: minHeight || '100px',
-              margin: compact ? 0 : '0.75rem 0',
-              display: 'block',
-              textAlign: 'center',
-              overflow: 'hidden',
-            }
-      }
+      className={`adsense-container block w-full ${className}`}
+      style={{
+        minHeight: resolvedContainerMinHeight,
+        margin: compact ? 0 : '0.75rem 0',
+        display: 'block',
+        textAlign: 'center',
+      }}
     >
-      {showLabel && adStatus !== 'unfilled' && (
+      {showLabel && adStatus === 'filled' && (
         <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
           Advertisement
         </span>
@@ -185,7 +205,7 @@ export default function DirectAdSense({
             padding: '16px',
             textAlign: 'center',
             margin: '4px 0',
-            minHeight: minHeight || '100px',
+            minHeight: minHeight && minHeight !== '0px' ? minHeight : '100px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', marginBottom: '4px' }}>
@@ -200,7 +220,7 @@ export default function DirectAdSense({
           </div>
         </div>
       ) : (
-        <div className="w-full" style={{ minHeight: minHeight || '100px', display: 'block', textAlign: 'center' }}>
+        <div className="w-full" style={{ minHeight: compact ? 0 : (minHeight || '100px'), display: 'block', textAlign: 'center' }}>
           <ins
             key={elementKey}
             ref={insRef}
@@ -209,8 +229,8 @@ export default function DirectAdSense({
               display: width !== '100%' && height ? 'inline-block' : 'block',
               width,
               height: height || 'auto',
-              minWidth: width === '100%' && minWidth !== '100%' ? minWidth : undefined,
-              minHeight: height ? undefined : (minHeight || '100px'),
+              minWidth: width === '100%' && minWidth !== '100%' && minWidth !== '0px' ? minWidth : undefined,
+              minHeight: compact || height ? undefined : (minHeight || '100px'),
             }}
             data-ad-client={ADSENSE_CLIENT_ID}
             data-ad-slot={activeSlot}

@@ -3,7 +3,7 @@ import React from 'react';
 import { ALL_COLUMNS, getJobsForCategory, getJobUrl, getJobBadgeInfo } from '../data/categoryHelpers.js';
 import HomeColumnInfeedAd from './HomeColumnInfeedAd';
 
-const GRID_DISPLAY_SLOTS = ['1202522135', '7208581106', '6233897431'];
+const GRID_DISPLAY_SLOTS = ['6233897431', '7208581106', '1202522135'];
 
 export default function JobColumnsGrid({
   jobs = [],

@@ -102,13 +102,14 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
     if (ins) {
       const status = ins.getAttribute("data-ad-status");
       const iframe = ins.querySelector("iframe") as HTMLIFrameElement | null;
-      if (status !== "unfilled" && iframe) {
+      const insRect = ins.getBoundingClientRect();
+      if (status === "filled" && iframe && insRect.height >= 50) {
         const style = window.getComputedStyle(iframe);
         const rect = iframe.getBoundingClientRect();
         if (
           style.display !== "none" &&
           style.visibility !== "hidden" &&
-          rect.height >= 35 &&
+          rect.height >= 50 &&
           rect.width >= 150
         ) {
           setIsFilled(true);
@@ -117,6 +118,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       }
     }
 
+    setIsFilled(false);
     return false;
   }, []);
 
@@ -129,7 +131,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
 
     const initCheck = setTimeout(() => {
       verifyVisibleFill();
-    }, 100);
+    }, 200);
 
     const observer = new MutationObserver(() => {
       verifyVisibleFill();
@@ -143,15 +145,15 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
 
     const poll = setInterval(() => {
       verifyVisibleFill();
-    }, 500);
+    }, 400);
 
-    // Collapse cleanly only if AdSense neither fills nor responds within 16s
+    // Collapse completely if AdSense does not deliver a real visible creative within 10s
     const watchdog = setTimeout(() => {
       if (!verifyVisibleFill()) {
         setIsDismissed(true);
         setIsFilled(false);
       }
-    }, 16000);
+    }, 10000);
 
     return () => {
       clearTimeout(initCheck);
@@ -165,28 +167,29 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
     return null;
   }
 
-  const isExact300Box = widthBucket === "300";
-
   return (
     <li
       ref={liRef}
       className={
         isFilled
-          ? "home-col-infeed-ad is-filled my-1.5 py-2 px-0 list-none flex flex-col items-center justify-center border-y border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-900/20 rounded-md"
-          : "home-col-infeed-ad my-1 py-1 px-0 border-0 list-none flex flex-col items-center justify-center"
+          ? "home-col-infeed-ad is-filled list-none flex flex-col items-center justify-center"
+          : "home-col-infeed-ad list-none flex flex-col items-center justify-center"
       }
-      style={shouldMountAd ? { minHeight: "250px" } : { minHeight: "1px" }}
+      style={
+        isFilled
+          ? undefined
+          : { margin: 0, padding: 0, border: 0, minHeight: 0 }
+      }
     >
       {shouldMountAd && (
         <DirectAdSense
           adId={adId}
           adSlot={activeSlot}
-          width={isExact300Box ? "300px" : "100%"}
-          height={isExact300Box ? "250px" : undefined}
-          minWidth={isExact300Box ? "300px" : "240px"}
-          minHeight="250px"
+          width="100%"
+          minWidth="0px"
+          minHeight="0px"
           adFormat="auto"
-          fullWidthResponsive={widthBucket === "wide"}
+          fullWidthResponsive={true}
           priority={priority}
           showLabel={true}
           compact={true}
@@ -197,7 +200,7 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
               setIsFilled(false);
             } else if (status === "filled") {
               verifyVisibleFill();
-              setTimeout(verifyVisibleFill, 300);
+              setTimeout(verifyVisibleFill, 250);
             }
           }}
         />
