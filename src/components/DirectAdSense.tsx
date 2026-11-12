@@ -22,8 +22,9 @@ export default function DirectAdSense({
   className = '',
   priority = false,
   lazy = true,
+  compact = false,
   onAdStatusChange,
-}) {
+}: any) {
   const pathname = usePathname();
   const insRef = useRef(null);
   const pushAttempted = useRef(false);
@@ -154,7 +155,13 @@ export default function DirectAdSense({
       style={
         adStatus === 'unfilled'
           ? { height: 0, minHeight: 0, margin: 0, padding: 0, opacity: 0, overflow: 'hidden' }
-          : { minHeight: minHeight || '100px', margin: '0.75rem 0', display: 'block', textAlign: 'center', overflow: 'hidden' }
+          : {
+              minHeight: minHeight || '100px',
+              margin: compact ? 0 : '0.75rem 0',
+              display: 'block',
+              textAlign: 'center',
+              overflow: 'hidden',
+            }
       }
     >
       {showLabel && adStatus !== 'unfilled' && (

@@ -3129,3 +3129,27 @@ ins.adsbygoogle[data-ad-status="unfilled"],
     min-height: 250px;
   }
 }
+
+/* HomeColumnInfeedAd: override .col-darkred li bullet spacing & collapse completely when unfilled */
+.col-darkred .column-body li.home-col-infeed-ad,
+.columns-single-view .category-items-list li.home-col-infeed-ad {
+  list-style: none !important;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.col-darkred .column-body li.home-col-infeed-ad:not(.is-filled),
+.columns-single-view .category-items-list li.home-col-infeed-ad:not(.is-filled) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  min-block-size: 1px;
+}
+
+.col-darkred .column-body li.home-col-infeed-ad.is-filled,
+.columns-single-view .category-items-list li.home-col-infeed-ad.is-filled {
+  margin-block: 8px;
+  margin-inline: 0;
+  padding-block: 8px;
+  padding-inline: 0;
+}

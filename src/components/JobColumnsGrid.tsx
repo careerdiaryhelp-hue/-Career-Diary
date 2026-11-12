@@ -1,7 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ALL_COLUMNS, getJobsForCategory, getJobUrl, getJobBadgeInfo } from '../data/categoryHelpers.js';
-import { RectangleAd } from './AdSenseBanner';
+import HomeColumnInfeedAd from './HomeColumnInfeedAd';
 
 const GRID_DISPLAY_SLOTS = ['1202522135', '7208581106', '6233897431'];
 
@@ -12,14 +12,6 @@ export default function JobColumnsGrid({
   onSelectJob,
   onNavigateCategory
 }) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 640);
-    const handleResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   const renderJobItem = (job, isSingle = false) => {
     if (!job || !job.title) return null;
     const tl = job.title.toLowerCase();
@@ -90,14 +82,12 @@ export default function JobColumnsGrid({
               {displayedJobs.map((job, idx) => (
                 <React.Fragment key={job.id || idx}>
                   {renderJobItem(job, isSingle)}
-                  {((isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : (!isMobile && idx === 4))) && (
-                    <li className="in-column-ad-item" style={{ listStyle: 'none', margin: '8px 0', padding: 0 }}>
-                      <RectangleAd
-                        slot={GRID_DISPLAY_SLOTS[(isSingle ? Math.floor(idx / 5) : colIndex) % GRID_DISPLAY_SLOTS.length]}
-                        label=""
-                        style={{ margin: '4px 0' }}
-                      />
-                    </li>
+                  {(isSingle ? (idx > 0 && (idx + 1) % 5 === 0) : idx === 4) && (
+                    <HomeColumnInfeedAd
+                      adId={`home-col-${col.key}-${colIndex}-${idx}`}
+                      adSlot={GRID_DISPLAY_SLOTS[(isSingle ? Math.floor(idx / 5) : colIndex) % GRID_DISPLAY_SLOTS.length]}
+                      priority={!isSingle && colIndex < 3}
+                    />
                   )}
                 </React.Fragment>
               ))}
