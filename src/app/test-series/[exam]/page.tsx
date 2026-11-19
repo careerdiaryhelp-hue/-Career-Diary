@@ -62,10 +62,14 @@ export async function generateMetadata({
 
 export default async function TestSeriesExamRoute({
   params,
+  searchParams,
 }: {
   params: Promise<{ exam: string }>;
+  searchParams?: Promise<{ mode?: string }>;
 }) {
   const { exam } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const initialMode = resolvedSearchParams?.mode === 'test' ? 'test' : (resolvedSearchParams?.mode === 'study' ? 'study' : 'hub');
   const clean = String(exam || '').toLowerCase().replace(/_/g, '-');
 
   const allDynamic = await fetchTestSeriesOnce();
@@ -85,5 +89,5 @@ export default async function TestSeriesExamRoute({
     notFound();
   }
 
-  return <StudyQuizPage initialSlug={sets[0].slug || sets[0].id} initialSet={sets[0]} initialMode="hub" />;
+  return <StudyQuizPage initialSlug={sets[0].slug || sets[0].id} initialSet={sets[0]} initialMode={initialMode} />;
 }

@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "node scripts/precompute.js && next build && opennextjs-cloudflare build --skipNextBuild && node scripts/copy_static_assets.js",
-    "build:next": "next build",
+    "build": "node scripts/precompute.js && next build --webpack && opennextjs-cloudflare build --skipNextBuild && node scripts/copy_static_assets.js",
+    "build:next": "next build --webpack",
     "build:worker": "opennextjs-cloudflare build",
     "postinstall": "npm run build",
     "start": "next start",

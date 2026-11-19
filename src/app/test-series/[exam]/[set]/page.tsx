@@ -76,10 +76,14 @@ export async function generateMetadata({
 
 export default async function TestSeriesSetRoute({
   params,
+  searchParams,
 }: {
   params: Promise<{ exam: string; set: string }>;
+  searchParams?: Promise<{ mode?: string }>;
 }) {
   const { exam, set: setParam } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const initialMode = resolvedSearchParams?.mode === 'test' ? 'test' : 'study';
   const cleanExam = String(exam || '').toLowerCase().trim().replace(/_/g, '-');
   const cleanSet = String(setParam || '').toLowerCase().trim().replace(/[-_]/g, '');
 
@@ -126,5 +130,5 @@ export default async function TestSeriesSetRoute({
     }
   }
 
-  return <StudyQuizPage initialSlug={set.slug || set.id} initialSet={set} initialMode="study" />;
+  return <StudyQuizPage initialSlug={set.slug || set.id} initialSet={set} initialMode={initialMode} />;
 }

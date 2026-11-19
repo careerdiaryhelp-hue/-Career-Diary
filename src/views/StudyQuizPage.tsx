@@ -241,8 +241,8 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState<boolean>(false);
 
   // ───────── TEST MODE STATE ─────────
-  const [testTimeRemaining, setTestTimeRemaining] = useState<number>(() => selectedSet.durationMinutes * 60);
-  const [isTestRunning, setIsTestRunning] = useState<boolean>(false);
+  const [testTimeRemaining, setTestTimeRemaining] = useState<number>(() => (selectedSet?.durationMinutes || 135) * 60);
+  const [isTestRunning, setIsTestRunning] = useState<boolean>(() => initialMode === 'test');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [testAnswers, setTestAnswers] = useState<{ [qId: string]: string }>({});
   const [markedForReview, setMarkedForReview] = useState<{ [qId: string]: boolean }>({});
@@ -341,6 +341,63 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
     };
   }, [initialSlug]);
 
+  // ───────── TEST / STUDY NAVIGATION ACTIONS ─────────
+  const startTest = () => {
+    const totalSecs = (selectedSet?.durationMinutes || 135) * 60;
+    setTestTimeRemaining(totalSecs);
+    setTestAnswers({});
+    setMarkedForReview({});
+    setVisitedQuestions({});
+    setCurrentQuestionIndex(0);
+    setIsTestRunning(true);
+    setMode('test');
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('mode', 'test');
+        window.history.pushState({}, '', url.toString());
+      } catch (_) {}
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const startStudy = () => {
+    setIsTestRunning(false);
+    setMode('study');
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('mode', 'study');
+        window.history.pushState({}, '', url.toString());
+      } catch (_) {}
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleFinalSubmit = () => {
+    setIsTestRunning(false);
+    setIsSubmitModalOpen(false);
+    setIsResultReadyModalOpen(true);
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('mode', 'result');
+        window.history.pushState({}, '', url.toString());
+      } catch (_) {}
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Sync mode with initialMode prop updates
+  useEffect(() => {
+    if (initialMode === 'test') {
+      setIsTestRunning(true);
+      setMode('test');
+    } else if (initialMode === 'study') {
+      setMode('study');
+    }
+  }, [initialMode]);
+
   // Load bookmarks and URL query params
   useEffect(() => {
     try {
@@ -351,10 +408,10 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const urlMode = params.get('mode');
-      if (urlMode === 'study') {
-        setMode('study');
-      } else if (urlMode === 'test') {
+      if (urlMode === 'test') {
         startTest();
+      } else if (urlMode === 'study') {
+        setMode('study');
       }
     }
   }, []);
@@ -432,17 +489,6 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
   }, [selectedSet]);
 
   // ───────── TEST NAVIGATION & ACTIONS ─────────
-  const startTest = () => {
-    setTestTimeRemaining(selectedSet.durationMinutes * 60);
-    setTestAnswers({});
-    setMarkedForReview({});
-    setVisitedQuestions({});
-    setCurrentQuestionIndex(0);
-    setIsTestRunning(true);
-    setMode('test');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleSelectOptionInTest = (qId: string, optKey: string) => {
     setTestAnswers(prev => ({
       ...prev,
@@ -467,13 +513,6 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
       ...prev,
       [currentQ.id]: !prev[currentQ.id]
     }));
-  };
-
-  const handleFinalSubmit = () => {
-    setIsTestRunning(false);
-    setIsSubmitModalOpen(false);
-    setIsResultReadyModalOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ───────── TEST SCORE CARD CALCULATION ─────────
@@ -760,37 +799,50 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
               </div>
 
               {/* Mode Toggle Pills */}
-              <div style={{ display: 'inline-flex', background: '#e2e8f0', borderRadius: '8px', padding: '3px' }}>
+              <div style={{ display: 'inline-flex', background: '#e2e8f0', borderRadius: '8px', padding: '3px', gap: '3px' }}>
                 <button
+                  type="button"
+                  onClick={startStudy}
                   style={{
                     padding: '6px 14px',
                     borderRadius: '6px',
                     border: 'none',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: '0.82rem',
-                    backgroundColor: '#ffffff',
-                    color: '#2563eb',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    cursor: 'default'
+                    backgroundColor: mode === 'study' ? '#ffffff' : 'transparent',
+                    color: mode === 'study' ? '#2563eb' : '#475569',
+                    boxShadow: mode === 'study' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: mode === 'study' ? 'default' : 'pointer',
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   📖 Study (अध्ययन)
                 </button>
-                <button
-                  onClick={startTest}
+                <a
+                  href={`${selectedSet?.urlPath || `/test-series/${selectedSet?.examSlug || 'bssc-cgl'}/${selectedSet?.setSlug || 'set1'}`}?mode=test`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    startTest();
+                  }}
                   style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
                     padding: '6px 14px',
                     borderRadius: '6px',
                     border: 'none',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: '0.82rem',
-                    backgroundColor: 'transparent',
-                    color: '#64748b',
-                    cursor: 'pointer'
+                    backgroundColor: mode === 'test' ? '#2563eb' : '#2563eb',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 4px rgba(37,99,235,0.25)',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   ⏱️ Take Quiz (टेस्ट)
-                </button>
+                </a>
               </div>
             </div>
 
@@ -1238,6 +1290,30 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <a
+                  href={`${selectedSet?.urlPath || `/test-series/${selectedSet?.examSlug || 'bssc-cgl'}/${selectedSet?.setSlug || 'set1'}`}?mode=study`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    startStudy();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: '#2563eb',
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                  title="Switch to Study Mode"
+                >
+                  <BookOpen size={16} /> Study Mode
+                </a>
                 <button
                   onClick={() => setShowPaletteMobile(!showPaletteMobile)}
                   style={{
