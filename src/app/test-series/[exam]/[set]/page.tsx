@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import StudyQuizPage from '../../../../views/StudyQuizPage';
 import { getQuizSetByExamAndSet, getAllQuizSets, getQuizSetBySlug } from '../../../../data/quizRegistry';
 import { fetchTestSeriesBySlug, fetchTestSeriesOnce } from '../../../../firebase';
@@ -6,7 +7,7 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
 export const dynamicParams = true;
-export const revalidate = 60;
+export const revalidate = 120;
 
 export async function generateStaticParams() {
   const sets = getAllQuizSets();
@@ -23,12 +24,8 @@ export async function generateStaticParams() {
   return params;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ exam: string; set: string }>;
-}): Promise<Metadata> {
-  const { exam, set: setParam } = await params;
+// Request-scoped memoized fetch to prevent duplicate Firestore requests and Worker CPU/Memory spikes
+const getTestSeriesForRoute = cache(async (exam: string, setParam: string) => {
   const cleanExam = String(exam || '').toLowerCase().trim().replace(/_/g, '-');
   const cleanSet = String(setParam || '').toLowerCase().trim().replace(/[-_]/g, '');
 
@@ -40,9 +37,48 @@ export async function generateMetadata({
     return (sExam === cleanExam && sSet === cleanSet) || sSlug === cleanSet || sSlug === String(setParam || '').toLowerCase().trim();
   }) || (await fetchTestSeriesBySlug(setParam));
 
-  if (!set) {
-    set = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+  if (set && (!set.questions || set.questions.length <= 3 || set.isChunked)) {
+    const fullSet = await fetchTestSeriesBySlug(set.slug || set.id || setParam);
+    if (fullSet && Array.isArray(fullSet.questions) && fullSet.questions.length > 0) {
+      set = { ...set, ...fullSet };
+    }
   }
+
+  if (!set || !set.questions || set.questions.length === 0) {
+    const fallbackStatic = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
+    if (fallbackStatic && fallbackStatic.questions && fallbackStatic.questions.length > 0) {
+      set = set ? { ...set, questions: fallbackStatic.questions } : fallbackStatic;
+    }
+  }
+
+  // Pre-extract questions ONLY if set has 0 questions but has content (avoids catastrophic regex on huge content)
+  if (set && (!set.questions || set.questions.length === 0) && set.content) {
+    try {
+      const extracted = extractQuestionsFromContent(set.content);
+      if (extracted && extracted.length > 0) {
+        set = {
+          ...set,
+          questions: extracted
+        };
+      }
+    } catch (_) {}
+  }
+
+  // Optimize payload: If questions are already loaded, strip huge raw HTML content string to save Worker RAM and avoid Error 1102
+  if (set && Array.isArray(set.questions) && set.questions.length > 0 && set.content && set.content.length > 5000) {
+    set = { ...set, content: '' };
+  }
+
+  return set;
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ exam: string; set: string }>;
+}): Promise<Metadata> {
+  const { exam, set: setParam } = await params;
+  const set = await getTestSeriesForRoute(exam, setParam);
 
   if (!set) {
     return {
@@ -84,50 +120,11 @@ export default async function TestSeriesSetRoute({
   const { exam, set: setParam } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const initialMode = resolvedSearchParams?.mode === 'test' ? 'test' : 'study';
-  const cleanExam = String(exam || '').toLowerCase().trim().replace(/_/g, '-');
-  const cleanSet = String(setParam || '').toLowerCase().trim().replace(/[-_]/g, '');
 
-  // 1. Check dynamic test series from Firestore first so admin updates take effect immediately
-  const allDynamic = await fetchTestSeriesOnce();
-  let set: any = (allDynamic || []).find((s: any) => {
-    const sExam = String(s.examSlug || s.exam || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
-    const sSet = String(s.setSlug || s.set || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    const sSlug = String(s.slug || s.id || '').toLowerCase().trim();
-    return (sExam === cleanExam && sSet === cleanSet) || sSlug === cleanSet || sSlug === String(setParam || '').toLowerCase().trim();
-  }) || (await fetchTestSeriesBySlug(setParam));
-
-  // If set came from summary list or is chunked, load full document with all questions
-  if (set && (!set.questions || set.questions.length <= 3 || set.isChunked)) {
-    const fullSet = await fetchTestSeriesBySlug(set.slug || set.id || setParam);
-    if (fullSet && Array.isArray(fullSet.questions) && fullSet.questions.length > 0) {
-      set = { ...set, ...fullSet };
-    }
-  }
-
-  // 2. Fallback to hardcoded sets if not found or if dynamic set has 0 questions
-  if (!set || !set.questions || set.questions.length === 0) {
-    const fallbackStatic = getQuizSetByExamAndSet(exam, setParam) || getQuizSetBySlug(setParam);
-    if (fallbackStatic && fallbackStatic.questions && fallbackStatic.questions.length > 0) {
-      set = set ? { ...set, questions: fallbackStatic.questions } : fallbackStatic;
-    }
-  }
+  const set = await getTestSeriesForRoute(exam, setParam);
 
   if (!set) {
     notFound();
-  }
-
-  // Pre-extract questions on the server if Firestore questions had empty options/solution
-  if (set && set.content) {
-    const questionsHaveNoOptions = !set.questions || set.questions.length === 0 || !set.questions[0]?.options?.A;
-    if (questionsHaveNoOptions) {
-      const extracted = extractQuestionsFromContent(set.content);
-      if (extracted && extracted.length > 0) {
-        set = {
-          ...set,
-          questions: extracted
-        };
-      }
-    }
   }
 
   return <StudyQuizPage initialSlug={set.slug || set.id} initialSet={set} initialMode={initialMode} />;
