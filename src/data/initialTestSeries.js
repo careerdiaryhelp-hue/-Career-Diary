@@ -1,5 +1,6 @@
 import bsscSet1Json from './quiz/bssc-cgl-set-1.json';
 import bsscSet2Json from './quiz/bssc-cgl-set-2.json';
+import bsscSet3Json from './quiz/bssc-cgl-set-3.json';
 
 export const initialTestSeries = [
   {
@@ -7,7 +8,9 @@ export const initialTestSeries = [
     slug: 'bssc-cgl-set-1',
     title: 'BSSC CGL Full Mock Test (Set 1)',
     exam: 'BSSC CGL',
+    examSlug: 'bssc-cgl',
     set: 'Set 1',
+    setSlug: 'set1',
     category: 'BIHAR GOVT EXAMS',
     subject: 'Full Syllabus Practice Set',
     description: 'Complete full-length practice mock test for BSSC CGL examination with 150 questions, CBT timer, negative marking (+4 / -1), and detailed solutions.',
@@ -28,7 +31,9 @@ export const initialTestSeries = [
     slug: 'bssc-cgl-set-2',
     title: 'BSSC CGL Full Mock Test (Set 2)',
     exam: 'BSSC CGL',
+    examSlug: 'bssc-cgl',
     set: 'Set 2',
+    setSlug: 'set2',
     category: 'BIHAR GOVT EXAMS',
     subject: 'Full Syllabus Practice Set',
     description: 'Complete full-length practice mock test 2 for BSSC CGL examination with 150 questions covering GS, Science, Maths, and Reasoning.',
@@ -43,5 +48,52 @@ export const initialTestSeries = [
     badge: 'New Set 2 Live',
     questions: bsscSet2Json.questions,
     updatedAt: '2026-10-26T08:30:00.000Z'
+  },
+  {
+    id: 'bssc-cgl-set-3',
+    slug: 'bssc-cgl-set-3',
+    title: 'BSSC CGL-4 मॉडल प्रैक्टिस सेट - SET 01 (EDU TERIA)',
+    exam: 'BSSC CGL-4',
+    examSlug: 'bssc-cgl',
+    set: 'Set 3',
+    setSlug: 'set3',
+    category: 'BIHAR GOVT EXAMS',
+    subject: 'Edu Teria Vol-1 (Set 1)',
+    description: 'BSSC CGL-4 प्रारंभिक परीक्षा 2026 हेतु EDU TERIA Volume-1 का सम्पूर्ण 150 प्रश्नों का मॉडल प्रैक्टिस सेट-1।',
+    durationMinutes: 135,
+    marksPerQuestion: 4,
+    negativeMarks: 1,
+    totalQuestions: bsscSet3Json.questions.length,
+    status: 'Published',
+    postDate: '28 October 2026 | 10:00 AM',
+    date: '28 October 2026',
+    views: 4120,
+    badge: 'Edu Teria Vol-1 Live',
+    questions: bsscSet3Json.questions,
+    updatedAt: '2026-10-28T10:00:00.000Z'
+  },
+  {
+    id: 'bssc-cgl-4-bso-aso-293-set12',
+    slug: 'bssc-cgl-4-bso-aso-293-set12',
+    title: 'BSSC इंटर लेवल (CGL-4), BSO, ASO - सेट 293 • CBT MOCK TEST',
+    exam: 'BSSC इंटर लेवल (CGL-4), BSO, ASO - सेट 293',
+    examSlug: 'bssc-cgl-4-bso-aso-293',
+    set: 'Set 12',
+    setSlug: 'set12',
+    urlPath: '/test-series/bssc-cgl-4-bso-aso-293/set12',
+    category: 'BIHAR GOVT EXAMS',
+    subject: 'BSO / ASO Practice Set 12',
+    description: 'BSSC CGL-4 (BSO, ASO) परीक्षा 2026 हेतु सम्पूर्ण 150 प्रश्नों का फुल मॉक टेस्ट। इसमें सामान्य अध्ययन (50), सामान्य विज्ञान (25), गणित (25), और तर्कशक्ति (50) के प्रश्न विस्तृत व्याख्या और आरेखों सहित शामिल हैं।',
+    durationMinutes: 135,
+    marksPerQuestion: 4,
+    negativeMarks: 1,
+    totalQuestions: bsscSet3Json.questions.length,
+    status: 'Published',
+    postDate: '19 November 2026 | 11:00 AM',
+    date: '19 November 2026',
+    views: 2890,
+    badge: 'Live CBT Mock',
+    questions: bsscSet3Json.questions,
+    updatedAt: '2026-11-19T11:00:00.000Z'
   }
 ];

@@ -124,6 +124,32 @@ export const QUIZ_SETS: QuizSet[] = [
       'Mathematics': 25
     },
     questions: bsscSet3Json.questions as Question[]
+  },
+  {
+    id: 'bssc-cgl-4-bso-aso-293-set12',
+    slug: 'bssc-cgl-4-bso-aso-293-set12',
+    exam: 'BSSC इंटर लेवल (CGL-4), BSO, ASO - सेट 293',
+    examSlug: 'bssc-cgl-4-bso-aso-293',
+    setSlug: 'set12',
+    urlPath: '/test-series/bssc-cgl-4-bso-aso-293/set12',
+    subject: 'BSO / ASO Practice Set 12',
+    title: 'BSSC इंटर लेवल (CGL-4), BSO, ASO - सेट 293 • CBT MOCK TEST',
+    subtitle: '150 Questions • Full Syllabus • Negative Marking • Official Pattern & Detailed Solution',
+    description: 'BSSC CGL-4 (प्रखंड आपूर्ति पदाधिकारी BSO एवं सहायक प्रशाखा पदाधिकारी ASO) परीक्षा 2026 हेतु सम्पूर्ण 150 प्रश्नों का फुल मॉक टेस्ट। इसमें सामान्य अध्ययन (50), सामान्य विज्ञान (25), गणित (25), और तर्कशक्ति (50) के प्रश्न विस्तृत व्याख्या और आरेखों सहित शामिल हैं।',
+    total_questions: bsscSet3Json.questions.length,
+    durationMinutes: 135,
+    marksPerQuestion: 4,
+    negativeMarks: 1,
+    totalMarks: bsscSet3Json.questions.length * 4,
+    category: 'BIHAR GOVT EXAMS',
+    badge: 'Live CBT Mock',
+    topicsSummary: {
+      'General Studies': 50,
+      'Reasoning': 50,
+      'General Science': 25,
+      'Mathematics': 25
+    },
+    questions: bsscSet3Json.questions as Question[]
   }
 ];
 
@@ -135,6 +161,14 @@ export function getQuizSetByExamAndSet(examSlug: string, setSlug: string): QuizS
     const sExam = s.examSlug.toLowerCase().replace(/_/g, '-');
     const sSet = s.setSlug.toLowerCase().replace(/[-_]/g, '');
     if (sExam === cleanExam && sSet === cleanSet) return true;
+
+    // Support bssc-cgl-4-bso-aso-293 / set12 alias
+    if (
+      (cleanExam === 'bssc-cgl-4-bso-aso-293' || cleanExam.includes('bso-aso') || cleanExam.includes('293')) &&
+      (cleanSet === 'set12' || cleanSet === '12' || cleanSet === 'set293' || cleanSet === '293' || cleanSet === 'set1')
+    ) {
+      return s.id === 'bssc-cgl-4-bso-aso-293-set12' || s.id === 'bssc-cgl-set-3';
+    }
 
     // Support bssc-cgl-4 aliases
     if ((cleanExam === 'bssc-cgl4' || cleanExam === 'bssc-cgl-4') && (cleanSet === 'set1' || cleanSet === 'set01') && s.id === 'bssc-cgl-set-3') {
@@ -151,8 +185,8 @@ export function getQuizSetByExamAndSet(examSlug: string, setSlug: string): QuizS
 
 export function getQuizSetsByExam(examSlug: string): QuizSet[] {
   const cleanExam = String(examSlug || '').toLowerCase().trim().replace(/_/g, '-');
-  if (cleanExam === 'bssc-cgl4' || cleanExam === 'bssc-cgl-4') {
-    return QUIZ_SETS.filter(s => s.examSlug === 'bssc-cgl' || s.exam.includes('CGL-4'));
+  if (cleanExam === 'bssc-cgl4' || cleanExam === 'bssc-cgl-4' || cleanExam === 'bssc-cgl-4-bso-aso-293' || cleanExam.includes('bso-aso') || cleanExam.includes('293')) {
+    return QUIZ_SETS.filter(s => s.examSlug === 'bssc-cgl-4-bso-aso-293' || s.examSlug === 'bssc-cgl' || s.exam.includes('CGL-4'));
   }
   return QUIZ_SETS.filter(s => s.examSlug.toLowerCase().replace(/_/g, '-') === cleanExam);
 }
@@ -161,6 +195,7 @@ export function getAllExamSlugs(): string[] {
   const set = new Set<string>();
   QUIZ_SETS.forEach(s => set.add(s.examSlug));
   set.add('bssc-cgl4');
+  set.add('bssc-cgl-4-bso-aso-293');
   return Array.from(set);
 }
 
@@ -172,6 +207,17 @@ export function getQuizSetBySlug(slug: string): QuizSet | undefined {
   const norm = clean.replace(/[-_]/g, '');
   const bySet = QUIZ_SETS.find(s => s.setSlug.toLowerCase().replace(/[-_]/g, '') === norm);
   if (bySet) return bySet;
+
+  if (
+    clean === 'bssc-cgl-4-bso-aso-293' ||
+    clean === 'bssc-cgl-4-bso-aso-293-set12' ||
+    clean === 'set12' ||
+    clean === 'set293' ||
+    norm === 'bssccgl4bsoaso293' ||
+    norm === 'bssccgl4bsoaso293set12'
+  ) {
+    return QUIZ_SETS.find(s => s.id === 'bssc-cgl-4-bso-aso-293-set12') || QUIZ_SETS.find(s => s.id === 'bssc-cgl-set-3');
+  }
 
   if (norm === 'bssccgl4set1' || norm === 'eduteriaset1' || norm === 'bssccgleduteriaset1') {
     return QUIZ_SETS.find(s => s.id === 'bssc-cgl-set-3');

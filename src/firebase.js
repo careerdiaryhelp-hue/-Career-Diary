@@ -1822,6 +1822,29 @@ export async function fetchTestSeriesBySlug(slug) {
     }
   } catch (_) {}
 
+  // 3. Fallback to initialTestSeries / static sets if Firestore is rate-limited (429)
+  try {
+    const { initialTestSeries } = await import('./data/initialTestSeries.js');
+    const staticMatch = (initialTestSeries || []).find(item => {
+      const iId = cleanJobId(item.id || '').replace(/^ts_/, '');
+      const iSlug = cleanJobId(item.slug || '').replace(/^ts_/, '');
+      const iSet = cleanJobId(item.setSlug || item.set || '');
+      const iExam = cleanJobId(item.examSlug || item.exam || '');
+      return (
+        iId === rawClean ||
+        iSlug === rawClean ||
+        iSet === rawClean ||
+        iExam === rawClean ||
+        cleanJobId(item.title || '') === rawClean ||
+        (item.urlPath && item.urlPath.endsWith('/' + rawClean)) ||
+        (rawClean.includes('293') && (iId.includes('293') || iSlug.includes('293')))
+      );
+    });
+    if (staticMatch && Array.isArray(staticMatch.questions) && staticMatch.questions.length > 0) {
+      return staticMatch;
+    }
+  } catch (_) {}
+
   return null;
 }
 

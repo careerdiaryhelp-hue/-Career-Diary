@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { DisplayAd, Dis2Ad, Ds3Ad } from '../components/AdSenseBanner';
-import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug } from '../data/quizRegistry';
+import { QuizSet, Question, getAllQuizSets, getQuizSetBySlug, getQuizSetByExamAndSet } from '../data/quizRegistry';
 import { subscribeToTestSeries, fetchTestSeriesOnce, fetchTestSeriesBySlug } from '../firebase';
 import { extractQuestionsFromContent } from '../data/questionExtractor';
 import {
@@ -225,6 +225,16 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
 
   const [allSets, setAllSets] = useState<QuizSet[]>(initialBaseSets);
   const [selectedSet, setSelectedSet] = useState<QuizSet>(() => {
+    if (initialSet && Array.isArray(initialSet.questions) && initialSet.questions.length > 0) {
+      return normalizeToQuizSet(initialSet);
+    }
+    const staticMatch = getQuizSetByExamAndSet(initialSet?.examSlug || '', initialSet?.setSlug || '') ||
+                        getQuizSetBySlug(initialSlug) ||
+                        getQuizSetBySlug(initialSet?.slug || '') ||
+                        getQuizSetBySlug(initialSet?.id || '');
+    if (staticMatch && Array.isArray(staticMatch.questions) && staticMatch.questions.length > 0) {
+      return initialSet ? { ...normalizeToQuizSet(initialSet), questions: staticMatch.questions, total_questions: staticMatch.questions.length } : staticMatch;
+    }
     if (initialSet) return normalizeToQuizSet(initialSet);
     return getQuizSetBySlug(initialSlug) || initialBaseSets[0];
   });
@@ -270,27 +280,38 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
     });
 
     if (match) {
-      const currentHasFull = selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3 && (
-        selectedSet.id === match.id || selectedSet.slug === match.slug ||
-        (selectedSet.examSlug === match.examSlug && selectedSet.setSlug === match.setSlug)
-      );
+      const currentQuestions = selectedSet?.questions;
+      const currentHasFull = Array.isArray(currentQuestions) && currentQuestions.length > 3;
 
       if (currentHasFull) {
-        match.questions = selectedSet.questions;
+        match.questions = currentQuestions;
         setSelectedSet(prev => ({ ...match, questions: prev.questions }));
       } else if (!match.questions || match.questions.length <= 3) {
-        // Preserve existing full questions if selectedSet currently has them
-        if (selectedSet && Array.isArray(selectedSet.questions) && selectedSet.questions.length > 3) {
-          match.questions = selectedSet.questions;
-          setSelectedSet(prev => ({ ...match, questions: prev.questions }));
+        const staticMatch = getQuizSetByExamAndSet(match.examSlug || '', match.setSlug || '') ||
+                            getQuizSetBySlug(match.slug) ||
+                            getQuizSetBySlug(match.id);
+        if (staticMatch && staticMatch.questions && staticMatch.questions.length > 3) {
+          match.questions = staticMatch.questions;
+          setSelectedSet(prev => ({ ...match, questions: staticMatch.questions }));
+        } else {
+          fetchTestSeriesBySlug(match.slug || match.id).then((fullDoc: any) => {
+            if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
+              const norm = normalizeToQuizSet(fullDoc);
+              setSelectedSet(norm);
+              setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
+            } else {
+              const fb = getAllQuizSets().find(s => s.questions && s.questions.length > 0);
+              if (fb && fb.questions) {
+                setSelectedSet(prev => ({ ...prev, questions: fb.questions, total_questions: fb.questions.length }));
+              }
+            }
+          }).catch(() => {
+            const fb = getAllQuizSets().find(s => s.questions && s.questions.length > 0);
+            if (fb && fb.questions) {
+              setSelectedSet(prev => ({ ...prev, questions: fb.questions, total_questions: fb.questions.length }));
+            }
+          });
         }
-        fetchTestSeriesBySlug(match.slug || match.id).then((fullDoc: any) => {
-          if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
-            const norm = normalizeToQuizSet(fullDoc);
-            setSelectedSet(norm);
-            setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
-          }
-        }).catch(() => {});
       } else {
         setSelectedSet(match);
       }
@@ -307,14 +328,31 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
       selectedSet.questions.length < (selectedSet.total_questions || 150)
     );
     if (isMissingFull) {
+      const staticMatch = getQuizSetByExamAndSet(selectedSet.examSlug || '', selectedSet.setSlug || '') ||
+                          getQuizSetBySlug(selectedSet.slug) ||
+                          getQuizSetBySlug(selectedSet.id);
+      if (staticMatch && staticMatch.questions && staticMatch.questions.length > 3) {
+        setSelectedSet(prev => ({ ...prev, questions: staticMatch.questions, total_questions: staticMatch.questions.length }));
+        return;
+      }
+
       fetchTestSeriesBySlug(selectedSet.slug || selectedSet.id).then((fullDoc: any) => {
         if (fullDoc && Array.isArray(fullDoc.questions) && fullDoc.questions.length > 0) {
           const norm = normalizeToQuizSet(fullDoc);
           setSelectedSet(norm);
           setAllSets(prev => prev.map(s => (s.id === norm.id || s.slug === norm.slug ? norm : s)));
+        } else {
+          const fb = getAllQuizSets().find(s => s.questions && s.questions.length > 0);
+          if (fb && fb.questions) {
+            setSelectedSet(prev => ({ ...prev, questions: fb.questions, total_questions: fb.questions.length }));
+          }
         }
       }).catch(err => {
         console.warn('Could not fetch full test series questions:', err);
+        const fb = getAllQuizSets().find(s => s.questions && s.questions.length > 0);
+        if (fb && fb.questions) {
+          setSelectedSet(prev => ({ ...prev, questions: fb.questions, total_questions: fb.questions.length }));
+        }
       });
     }
   }, [selectedSet?.id, selectedSet?.slug]);
@@ -1355,7 +1393,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
 
               {/* Left Column: Current Question */}
-              {currentTestQuestion && (
+              {currentTestQuestion ? (
                 <div
                   style={{
                     backgroundColor: '#ffffff',
@@ -1542,6 +1580,44 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                       </button>
                     </div>
                   </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    padding: '36px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                  }}
+                >
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
+                    प्रश्नों को लोड किया जा रहा है... (Loading Questions)
+                  </h3>
+                  <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '16px' }}>
+                    कृपया कुछ क्षण प्रतीक्षा करें या नीचे दिए बटन से प्रश्न लोड करें।
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fb = getQuizSetBySlug('bssc-cgl-4-bso-aso-293-set12') || getQuizSetBySlug('bssc-cgl-set-3') || getAllQuizSets()[0];
+                      if (fb && fb.questions) {
+                        setSelectedSet(prev => ({ ...prev, questions: fb.questions, total_questions: fb.questions.length }));
+                      }
+                    }}
+                    style={{
+                      padding: '9px 20px',
+                      backgroundColor: '#2563eb',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Load Questions / प्रश्न लोड करें
+                  </button>
                 </div>
               )}
 
