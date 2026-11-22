@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { canServeAds, isLocalDev } from '../utils/adShield';
 
 export default function AdSenseBanner({
-  slot = '1202522135',
+  slot = '7208581106',
   format = 'auto',
   layout = null,
   layoutKey = null,
@@ -213,11 +213,11 @@ export default function AdSenseBanner({
 }
 
 // Dedicated helper presets with exact Slot IDs and Formats from Google AdSense account
-// 1. Display Ad (Slot 1202522135) - Responsive Graphic & Image Banner Ad Unit (300x250, 336x280, 728x90, Rich Media)
-export function DisplayAd({ style, insStyle, ...rest }: any) {
+// 1. Display Ad (Slot 7208581106 - Dis2) - Responsive Graphic & Image Banner Ad Unit (300x250, 336x280, 728x90, Rich Media)
+export function DisplayAd({ style, insStyle, slot = '7208581106', ...rest }: any) {
   return (
     <AdSenseBanner
-      slot="1202522135"
+      slot={slot}
       format="auto"
       responsive="true"
       minHeight="250px"
@@ -239,11 +239,11 @@ export function Ds3Ad(props: any) {
   return <DisplayAd slot="6233897431" {...props} />;
 }
 
-// 2. Sidebar Ad (Default Slot 1202522135; override via slot prop e.g. 7208581106 / 6233897431)
-export function SidebarAd({ style, insStyle, ...rest }: any) {
+// 2. Sidebar Ad (Default Slot 7208581106; override via slot prop e.g. 7208581106 / 6233897431)
+export function SidebarAd({ style, insStyle, slot = '7208581106', ...rest }: any) {
   return (
     <AdSenseBanner
-      slot="1202522135"
+      slot={slot}
       format="auto"
       responsive="true"
       minHeight="600px"
@@ -255,11 +255,11 @@ export function SidebarAd({ style, insStyle, ...rest }: any) {
   );
 }
 
-// 3. Rectangle Ad (Default Slot 1202522135; override via slot prop) - Standard 300x250 Medium Rectangle Display Banner
-export function RectangleAd({ style, insStyle, ...rest }: any) {
+// 3. Rectangle Ad (Default Slot 7208581106; override via slot prop) - Standard 300x250 Medium Rectangle Display Banner
+export function RectangleAd({ style, insStyle, slot = '7208581106', ...rest }: any) {
   return (
     <AdSenseBanner
-      slot="1202522135"
+      slot={slot}
       format="auto"
       responsive="true"
       minHeight="250px"
@@ -271,11 +271,11 @@ export function RectangleAd({ style, insStyle, ...rest }: any) {
   );
 }
 
-// 4. Square Ad (Default Slot 1202522135; override via slot prop) - 300x250 Fixed Square Display Banner
-export function SquareAd({ style, insStyle, ...rest }: any) {
+// 4. Square Ad (Default Slot 7208581106; override via slot prop) - 300x250 Fixed Square Display Banner
+export function SquareAd({ style, insStyle, slot = '7208581106', ...rest }: any) {
   return (
     <AdSenseBanner
-      slot="1202522135"
+      slot={slot}
       format="auto"
       responsive="true"
       minHeight="250px"

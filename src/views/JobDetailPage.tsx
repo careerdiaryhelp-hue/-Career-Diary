@@ -327,40 +327,47 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
     // 5. Google In-Article Native Ad Unit 3 (InPost - Slot 7544533819)
     const inArticleSnippet3 = `<div class="adsense-banner-wrapper incontent-ad" style="margin: 24px auto; text-align: center;"><div class="ad-label" style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;">ADVERTISEMENT</div><ins class="adsbygoogle" style="display:block;width:100%;text-align:center;min-height:90px;" data-ad-client="ca-pub-2108299943580613" data-ad-slot="7544533819" data-ad-layout="in-article" data-ad-format="fluid"></ins></div>`;
 
+    // Explicitly locate the "Some Useful Important Links" table to ALWAYS place an ad directly above it
+    const linksHeaderMatch = sanitizedContent.match(/<t[hd][^>]*>[^<]*(?:some\s+useful\s+important\s+links|some\s+important\s+links|important\s+links)[^<]*<\/t[hd]>/i)
+      || sanitizedContent.match(/Some\s+Useful\s+Important\s+Links|Some\s+Important\s+Links|IMPORTANT\s+LINKS/i);
+
+    let importantLinksTableStartIdx: number | null = null;
+    if (linksHeaderMatch && linksHeaderMatch.index !== undefined) {
+      const idx = sanitizedContent.lastIndexOf('<table', linksHeaderMatch.index);
+      if (idx !== -1) {
+        importantLinksTableStartIdx = idx;
+      }
+    }
+
     const tableMatches = Array.from(sanitizedContent.matchAll(/<\/table>/gi));
     const nTables = tableMatches.length;
 
-    let insertionIndices: number[] = [];
+    let candidateIndices: number[] = [];
 
     if (nTables >= 2) {
       if (nTables === 2) {
         // 2 tables -> 1 in-content ad after Table 1
-        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        candidateIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
       } else if (nTables === 3) {
         // 3 tables -> 2 in-content ads: after Table 1 and Table 2
-        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[1].index! + tableMatches[1][0].length);
+        candidateIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        candidateIndices.push(tableMatches[1].index! + tableMatches[1][0].length);
       } else if (nTables === 4) {
-        // 4 tables -> 2 in-content ads: after Table 1 and Table 3
-        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[2].index! + tableMatches[2][0].length);
+        // 4 tables -> 2 in-content ads: after Table 1 and Table 2
+        candidateIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        candidateIndices.push(tableMatches[1].index! + tableMatches[1][0].length);
       } else if (nTables >= 5 && nTables <= 7) {
         // 5-7 tables -> 3 in-content ads: early, middle, and before last table
         const mid = Math.floor(nTables / 2);
-        insertionIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
-        insertionIndices.push(tableMatches[mid].index! + tableMatches[mid][0].length);
-        insertionIndices.push(tableMatches[nTables - 2].index! + tableMatches[nTables - 2][0].length);
+        candidateIndices.push(tableMatches[0].index! + tableMatches[0][0].length);
+        candidateIndices.push(tableMatches[mid].index! + tableMatches[mid][0].length);
+        candidateIndices.push(tableMatches[nTables - 2].index! + tableMatches[nTables - 2][0].length);
       } else {
-        // 8+ tables (long post with syllabus / detailed rules) -> 4-5 in-content ads evenly spaced
+        // 8+ tables (long post with syllabus / detailed rules) -> in-content ads evenly spaced
         const step = Math.max(2, Math.floor(nTables / 4));
         for (let i = 0; i < nTables - 1; i += step) {
-          if (insertionIndices.length >= 5) break;
-          insertionIndices.push(tableMatches[i].index! + tableMatches[i][0].length);
-        }
-        // Always place one before the last table (usually Important Links)
-        const lastBeforeFinal = tableMatches[nTables - 2].index! + tableMatches[nTables - 2][0].length;
-        if (!insertionIndices.includes(lastBeforeFinal)) {
-          insertionIndices.push(lastBeforeFinal);
+          if (candidateIndices.length >= 5) break;
+          candidateIndices.push(tableMatches[i].index! + tableMatches[i][0].length);
         }
       }
     } else {
@@ -370,28 +377,43 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
         const step = Math.floor(breakMatches.length / 3);
         const idx1 = breakMatches[step].index! + (breakMatches[step][0].startsWith('<h') ? 0 : breakMatches[step][0].length);
         const idx2 = breakMatches[step * 2].index! + (breakMatches[step * 2][0].startsWith('<h') ? 0 : breakMatches[step * 2][0].length);
-        insertionIndices.push(idx1, idx2);
+        candidateIndices.push(idx1, idx2);
       } else if (sanitizedContent.length > 800) {
         const mid = Math.floor(sanitizedContent.length / 2);
         const spaceIdx = sanitizedContent.indexOf(' ', mid);
-        if (spaceIdx > 0) insertionIndices.push(spaceIdx);
+        if (spaceIdx > 0) candidateIndices.push(spaceIdx);
       }
     }
 
-    // Distribute Dis2, Ds3 display banners and all 3 in-article native ads harmoniously across the article
-    const snippets = [dis2Snippet, inArticleSnippet1, ds3Snippet, inArticleSnippet2, inArticleSnippet3];
-    const sortedAsc = Array.from(new Set(insertionIndices)).sort((a, b) => a - b);
-    const insertions = sortedAsc.map((idx, i) => ({
+    // Filter out candidate indices that are too close (within 300 chars) to the Important Links table
+    if (importantLinksTableStartIdx !== null) {
+      candidateIndices = candidateIndices.filter(
+        idx => Math.abs(idx - (importantLinksTableStartIdx as number)) > 300
+      );
+    }
+
+    // In-article native snippets to distribute between content sections
+    const generalSnippets = [inArticleSnippet1, inArticleSnippet2, inArticleSnippet3, dis2Snippet];
+    const sortedAsc = Array.from(new Set(candidateIndices)).sort((a, b) => a - b);
+    const insertions: Array<{ idx: number; snippet: string }> = sortedAsc.map((idx, i) => ({
       idx,
-      snippet: snippets[i % snippets.length]
+      snippet: generalSnippets[i % generalSnippets.length]
     }));
+
+    // ALWAYS insert the Ds3 display banner directly above "Some Useful Important Links" table
+    if (importantLinksTableStartIdx !== null) {
+      insertions.push({
+        idx: importantLinksTableStartIdx,
+        snippet: ds3Snippet
+      });
+    }
 
     // Sort descending so inserting from back to front never alters previous indices!
     insertions.sort((a, b) => b.idx - a.idx);
 
     let out = sanitizedContent;
     for (const item of insertions) {
-      if (item.idx > 0 && item.idx < out.length) {
+      if (item.idx >= 0 && item.idx <= out.length) {
         out = out.substring(0, item.idx) + '\n' + item.snippet + '\n' + out.substring(item.idx);
       }
     }
@@ -569,8 +591,8 @@ export default function JobDetailPage({ job, onBack, allJobs = [], onSelectJob }
           </button>
         </div>
 
-        {/* AdSense Block Ad #1: Display Ad (Slot 1202522135) */}
-        <DisplayAd label="ADVERTISEMENT" style={{ margin: '16px 0' }} />
+        {/* Ad directly below WhatsApp / Social sharing buttons */}
+        <Dis2Ad label="ADVERTISEMENT" style={{ margin: '20px auto' }} />
 
         {/* If post has HTML content from Visual Editor / Bigbooster, render it directly */}
         {(job.content || job.htmlContent) ? (
