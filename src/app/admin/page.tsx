@@ -142,7 +142,7 @@ export default function AdminPage() {
         }
       },
       undefined,
-      300,
+      1200, // Sufficient limit so Test Series (ts_*) documents do not push regular jobs out
       true // includeDrafts = true for Admin Dashboard
     );
 
