@@ -118,6 +118,24 @@ const HomeColumnInfeedAd: React.FC<HomeColumnInfeedAdProps> = ({
       }
     }
 
+    const gamEl = el.querySelector(".gam-ad-wrapper, [id^='div-gpt-ad']") as HTMLElement | null;
+    if (gamEl) {
+      const iframe = gamEl.querySelector("iframe") as HTMLIFrameElement | null;
+      if (iframe) {
+        const style = window.getComputedStyle(iframe);
+        const rect = iframe.getBoundingClientRect();
+        if (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          rect.height >= 50 &&
+          rect.width >= 150
+        ) {
+          setIsFilled(true);
+          return true;
+        }
+      }
+    }
+
     setIsFilled(false);
     return false;
   }, []);

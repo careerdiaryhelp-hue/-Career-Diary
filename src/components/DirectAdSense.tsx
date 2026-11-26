@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { canServeAds, isLocalDev } from '../utils/adShield';
+import GamBanner from './GamBanner';
 
 // AdSense Global Switch
 const GLOBAL_DISABLE_ADSENSE = false;
@@ -24,6 +25,7 @@ export default function DirectAdSense({
   priority = false,
   lazy = true,
   compact = false,
+  enableGamFallback = true,
   onAdStatusChange,
 }: any) {
   const pathname = usePathname();
@@ -169,11 +171,22 @@ export default function DirectAdSense({
     return null;
   }
 
+  const resolvedContainerMinHeight = compact ? 0 : (minHeight || '100px');
+
   if (adStatus === 'unfilled') {
+    if (enableGamFallback) {
+      return (
+        <GamBanner
+          adUnitPath="/23374332010/carrierdiarybanner"
+          sizes={[[320, 50], [320, 100], [300, 250]]}
+          minHeight={resolvedContainerMinHeight ? `${resolvedContainerMinHeight}px` : '50px'}
+          label={showLabel ? 'Advertisement' : null}
+          className={className}
+        />
+      );
+    }
     return null;
   }
-
-  const resolvedContainerMinHeight = compact ? 0 : (minHeight || '100px');
 
   return (
     <div

@@ -7,6 +7,8 @@ declare global {
     google?: any;
     googleTranslateElementInit?: any;
     google_ad_client?: string;
+    googletag?: any;
+    __gamServicesEnabled?: boolean;
   }
 
   namespace JSX {

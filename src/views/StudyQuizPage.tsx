@@ -871,7 +871,7 @@ export default function StudyQuizPage({ initialSlug = 'bssc-cgl-set-1', initialM
                     border: 'none',
                     fontWeight: 700,
                     fontSize: '0.82rem',
-                    backgroundColor: mode === 'test' ? '#2563eb' : '#2563eb',
+                    backgroundColor: '#2563eb',
                     color: '#ffffff',
                     boxShadow: '0 2px 4px rgba(37,99,235,0.25)',
                     cursor: 'pointer',

@@ -52,6 +52,22 @@ export default function RootLayout({ children }) {
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2108299943580613"
           crossOrigin="anonymous"
         />
+        {/* Google Publisher Tag (GPT / GAM) Script */}
+        <script
+          async
+          src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+          crossOrigin="anonymous"
+        />
+        <Script id="gam-init" strategy="afterInteractive">
+          {`
+            window.googletag = window.googletag || {cmd: []};
+            googletag.cmd.push(function() {
+              googletag.pubads().enableSingleRequest();
+              googletag.pubads().collapseEmptyDivs();
+              googletag.enableServices();
+            });
+          `}
+        </Script>
         {/* Google Analytics Script */}
         <Script
           async

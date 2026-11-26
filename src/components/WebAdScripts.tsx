@@ -75,8 +75,8 @@ function isDiscoverMoreChip(el: Element): boolean {
  */
 function killChip(el: HTMLElement) {
   try {
-    // PROTECT user's intended in-page ads: NEVER kill .adsense-banner-wrapper!
-    if (el.closest && el.closest('.adsense-banner-wrapper')) {
+    // PROTECT user's intended in-page ads: NEVER kill .adsense-banner-wrapper or GAM ad wrappers!
+    if (el.closest && (el.closest('.adsense-banner-wrapper') || el.closest('.gam-ad-wrapper') || el.closest('[id^="div-gpt-ad"]'))) {
       return;
     }
 

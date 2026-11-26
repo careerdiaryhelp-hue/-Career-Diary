@@ -10,7 +10,8 @@ import AdSenseBanner, {
   InArticleAd2022,
   InArticleAd1100,
   InPostAd,
-  InArticleAd
+  InArticleAd,
+  GamBanner
 } from './AdSenseBanner';
 
 /**
@@ -25,13 +26,13 @@ export default function AdBanner({
   fullWidthResponsive = true,
   className = '',
   fallbackGamAdId = '',
-  adUnitPath = '',
+  adUnitPath = '/23374332010/carrierdiarybanner',
   onAdEmpty,
-  enableAdSenseFallback = true,
+  enableGamFallback = true,
   minHeight = '100px',
   style = {},
   label = 'ADVERTISEMENT'
-}) {
+}: any) {
   return (
     <div
       className={`w-full flex justify-center ${className}`}
@@ -42,12 +43,15 @@ export default function AdBanner({
         format={adFormat}
         responsive={fullWidthResponsive ? 'true' : 'false'}
         label={label}
+        enableGamFallback={enableGamFallback}
+        gamAdUnitPath={adUnitPath || '/23374332010/carrierdiarybanner'}
       />
     </div>
   );
 }
 
 export {
+  GamBanner,
   DisplayAd,
   Dis2Ad,
   Ds3Ad,

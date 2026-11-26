@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { canServeAds, isLocalDev } from '../utils/adShield';
+import GamBanner from './GamBanner';
 
 export default function AdSenseBanner({
   slot = '7208581106',
@@ -12,7 +13,10 @@ export default function AdSenseBanner({
   style = {},
   insStyle = {},
   minHeight = '250px',
-  label = 'ADVERTISEMENT'
+  label = 'ADVERTISEMENT',
+  enableGamFallback = true,
+  gamAdUnitPath = '/23374332010/carrierdiarybanner',
+  gamSizes = [[320, 50], [320, 100], [300, 250]]
 }: {
   slot?: string;
   format?: string;
@@ -23,6 +27,9 @@ export default function AdSenseBanner({
   insStyle?: React.CSSProperties;
   minHeight?: string;
   label?: string | null;
+  enableGamFallback?: boolean;
+  gamAdUnitPath?: string;
+  gamSizes?: (number[] | [number, number])[];
 }) {
   const pathname = usePathname();
   const isAdmin = pathname ? pathname.startsWith('/admin') : false;
@@ -68,7 +75,7 @@ export default function AdSenseBanner({
       checkStatus();
     }, 300);
 
-    // Generous 12s safety timeout: only if Google completely fails to bid or fill, mark unfilled
+    // 5s safety timeout: if Google completely fails to bid or fill, mark unfilled so GAM fallback can trigger
     safetyTimer = setTimeout(() => {
       if (!isMounted || !el) return;
       const hasIframe = Boolean(el.querySelector('iframe'));
@@ -76,7 +83,7 @@ export default function AdSenseBanner({
       if (!hasIframe && status !== 'filled') {
         setAdStatus('unfilled');
       }
-    }, 12000);
+    }, 5000);
 
     let retryCount = 0;
     const tryPush = () => {
@@ -124,11 +131,22 @@ export default function AdSenseBanner({
     return null;
   }
 
+  const effectiveMinHeight = layout ? 'auto' : minHeight;
+
   if (adStatus === 'unfilled') {
+    if (enableGamFallback) {
+      return (
+        <GamBanner
+          adUnitPath={gamAdUnitPath}
+          sizes={gamSizes}
+          minHeight={effectiveMinHeight}
+          label={label}
+          style={style}
+        />
+      );
+    }
     return null;
   }
-
-  const effectiveMinHeight = layout ? 'auto' : minHeight;
 
   return (
     <div
@@ -382,6 +400,8 @@ export function MultiplexAd1963(props) {
 export function InArticleAd2022(props) {
   return <InArticlePo2022 {...props} />;
 }
+
+export { GamBanner };
 
 
 
